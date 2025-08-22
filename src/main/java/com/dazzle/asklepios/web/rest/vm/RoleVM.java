@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import jakarta.persistence.Column;
+import com.dazzle.asklepios.domain.Role;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,7 +11,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * View Model for creating/updating a Facility via REST.
+ * View Model for creating/updating a Role via REST.
  */
 @Getter
 @Setter
@@ -20,7 +19,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @ToString
-public class FacilityVM {
+public class RoleVM {
 
         @NotNull
         private String name;
@@ -28,19 +27,15 @@ public class FacilityVM {
         @NotNull
         private String type;
 
-        private String emailAddress;
+        @NotNull
+        private Long facilityId;
 
-        private String phone1;
 
-        private String phone2;
-
-        private String fax;
-
-        private String addressId;
-
-        private String defaultCurrencyLkey;
-
-        @Column(nullable = false)
-        private Boolean isValid;
-    }
-
+        public static RoleVM from(Role role) {
+                return RoleVM.builder()
+                        .name(role.getName())
+                        .type(role.getType())
+                        .facilityId(role.getFacilityId())
+                        .build();
+        }
+}

@@ -59,9 +59,16 @@ public class FacilityController {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
         Facility toCreate = Facility.builder()
-            .name(facilityVM.getName())
-            .type(facilityVM.getType())
-            .build();
+                .name(facilityVM.getName())
+                .type(facilityVM.getType())
+                .emailAddress(facilityVM.getEmailAddress())
+                .phone1(facilityVM.getPhone1())
+                .phone2(facilityVM.getPhone2())
+                .fax(facilityVM.getFax())
+                .addressId(facilityVM.getAddressId())
+                .defaultCurrencyLkey(facilityVM.getDefaultCurrencyLkey())
+                .isValid(facilityVM.getIsValid() != null ? facilityVM.getIsValid() : true)
+                .build();
 
         Facility result = facilityService.create(toCreate);
         return ResponseEntity
