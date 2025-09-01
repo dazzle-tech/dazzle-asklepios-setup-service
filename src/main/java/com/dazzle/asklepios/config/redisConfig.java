@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.config;
 
+import com.dazzle.asklepios.repository.AllergensRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,8 @@ public class redisConfig {
                 .disableCachingNullValues();
 
         Set<String> cacheNames = Set.of(
-                FacilityRepository.FACILITIES
+                FacilityRepository.FACILITIES,
+                AllergensRepository.ALLERGENS
         );
 
         return RedisCacheManager.builder(redisConnectionFactory)
