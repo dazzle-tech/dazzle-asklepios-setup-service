@@ -43,6 +43,10 @@ public class Allergens implements Serializable {
     private String description;
 
     @NotNull
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @NotNull
     @Column(name = "created_by", nullable = false, length = 50)
     private String createdBy;
 

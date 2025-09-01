@@ -41,6 +41,7 @@ public class AllergensService {
                     existing.setCode(allergen.getCode());
                     existing.setName(allergen.getName());
                     existing.setType(allergen.getType());
+                    existing.setIsActive(allergen.getIsActive());
                     existing.setDescription(allergen.getDescription());
                     existing.setLastModifiedBy(allergen.getLastModifiedBy());
                     existing.setLastModifiedDate(allergen.getLastModifiedDate());
