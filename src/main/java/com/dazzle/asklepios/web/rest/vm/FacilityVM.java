@@ -1,46 +1,49 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.NotBlank;
+import com.dazzle.asklepios.domain.Facility;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
- * View Model for creating/updating a Facility via REST.
+ *  View Model for creating/updating a Facility via REST.
  */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @ToString
+@Builder
 public class FacilityVM {
 
         @NotNull
-        private String name;
+        private final String name;
 
         @NotNull
-        private String type;
+        private final String type;
 
-        private String emailAddress;
+        private final String emailAddress;
 
-        private String phone1;
+        private final String phone1;
 
-        private String phone2;
+        private final String phone2;
 
-        private String fax;
+        private final String fax;
 
-        private String addressId;
+        private final String addressId;
 
-        private String defaultCurrencyLkey;
+        private final String defaultCurrencyLkey;
 
-        @Column(nullable = false)
-        private Boolean isValid;
-    }
-
+        @NotNull
+        private final Boolean isValid;
+        public static FacilityVM ofEntity(Facility facility) {
+                return FacilityVM.builder()
+                        .name(facility.getName())
+                        .type(facility.getType())
+                        .emailAddress(facility.getEmailAddress())
+                        .phone1(facility.getPhone1())
+                        .phone2(facility.getPhone2())
+                        .fax(facility.getFax())
+                        .addressId(facility.getAddressId())
+                        .defaultCurrencyLkey(facility.getDefaultCurrencyLkey())
+                        .build();
+        }
+}

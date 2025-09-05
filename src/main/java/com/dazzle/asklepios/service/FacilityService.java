@@ -59,8 +59,14 @@ public class FacilityService {
     }
 
     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
-    public void delete(Long id) {
+    public boolean delete(Long id) {
         LOG.debug("Request to delete Facility : {}", id);
+        if (!facilityRepository.existsById(id)) {
+            return false;
+        }
         facilityRepository.deleteById(id);
+        return true;
     }
+
+
 }

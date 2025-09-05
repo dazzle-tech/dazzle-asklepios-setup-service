@@ -67,7 +67,6 @@ public class FacilityController {
                 .fax(facilityVM.getFax())
                 .addressId(facilityVM.getAddressId())
                 .defaultCurrencyLkey(facilityVM.getDefaultCurrencyLkey())
-                .isValid(facilityVM.getIsValid() != null ? facilityVM.getIsValid() : true)
                 .build();
 
         Facility result = facilityService.create(toCreate);
@@ -113,9 +112,12 @@ public class FacilityController {
      * or with status {@code 404 (Not Found)} if it does not exist.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Facility> getFacility(@PathVariable("id") Long id) {
+    public ResponseEntity<FacilityVM> getFacility(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Facility : {}", id);
-        return facilityService.findOne(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return facilityService.findOne(id)
+                .map(FacilityVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -127,7 +129,11 @@ public class FacilityController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFacility(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Facility : {}", id);
-        facilityService.delete(id);
+        boolean deleted = facilityService.delete(id);
+
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 

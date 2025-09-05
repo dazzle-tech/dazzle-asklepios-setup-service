@@ -42,15 +42,18 @@ public class RoleService {
 
 
     public Optional<Role> update(Long id, RoleVM roleVM) {
+        LOG.debug("Request to update Role id={} with data: {}", id, roleVM);
+
         return roleRepository.findById(id).map(existing -> {
             existing.setName(roleVM.getName());
             existing.setType(roleVM.getType());
 
-            Facility facility = facilityRepository.findById(roleVM.getFacilityId())
-                    .orElseThrow(() -> new RuntimeException("Facility not found"));
+            Facility facility = facilityRepository.getReferenceById(roleVM.getFacilityId());
             existing.setFacility(facility);
 
-            return roleRepository.save(existing);
+            Role updated = roleRepository.save(existing);
+            LOG.debug("Role id={} updated successfully", id);
+            return updated;
         });
     }
 
@@ -66,9 +69,14 @@ public class RoleService {
         return roleRepository.findById(id);
     }
 
-    public void delete(Long id) {
+
+    public boolean delete(Long id) {
         LOG.debug("Request to delete Role : {}", id);
+        if (!roleRepository.existsById(id)) {
+            return false;
+        }
         roleRepository.deleteById(id);
+        return true;
     }
 
     @Transactional(readOnly = true)

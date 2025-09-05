@@ -49,7 +49,7 @@ public class RoleController {
 
         return ResponseEntity
                 .created(URI.create("/setup/api/role/" + result.getId()))
-                .body(RoleVM.from(result));
+                .body(RoleVM.ofEntity(result));
     }
 
     /**
@@ -78,7 +78,7 @@ public class RoleController {
     @GetMapping("/{id}")
     public ResponseEntity<RoleVM> getRole(@PathVariable Long id) {
         return roleService.findOne(id)
-                .map(role -> ResponseEntity.ok(RoleVM.from(role)))
+                .map(role -> ResponseEntity.ok(RoleVM.ofEntity(role)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -88,7 +88,10 @@ public class RoleController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRole(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Role : {}", id);
-        roleService.delete(id);
+        boolean deleted = roleService.delete(id);
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 

@@ -58,20 +58,5 @@ public class Facility implements Serializable {
     @Column(length = 100)
     private String defaultCurrencyLkey;
 
-    @Column(nullable = false)
-    private Boolean isValid = true;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (isValid == null) {
-            isValid = true;
-        }
-    }
 
 }
