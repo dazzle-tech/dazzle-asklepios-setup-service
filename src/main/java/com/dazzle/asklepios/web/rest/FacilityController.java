@@ -55,25 +55,26 @@ public class FacilityController {
     @PostMapping
     public ResponseEntity<Facility> createFacility(@Valid @RequestBody FacilityVM facilityVM) {
         LOG.debug("REST request to save Facility : {}", facilityVM);
-        if (facilityVM.getName() != null && facilityRepository.existsByNameIgnoreCase(facilityVM.getName())) {
+        if (facilityVM.name() != null && facilityRepository.existsByNameIgnoreCase(facilityVM.name())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
         Facility toCreate = Facility.builder()
-                .name(facilityVM.getName())
-                .type(facilityVM.getType())
-                .emailAddress(facilityVM.getEmailAddress())
-                .phone1(facilityVM.getPhone1())
-                .phone2(facilityVM.getPhone2())
-                .fax(facilityVM.getFax())
-                .addressId(facilityVM.getAddressId())
-                .defaultCurrencyLkey(facilityVM.getDefaultCurrencyLkey())
+                .name(facilityVM.name())
+                .type(facilityVM.type())
+                .emailAddress(facilityVM.emailAddress())
+                .phone1(facilityVM.phone1())
+                .phone2(facilityVM.phone2())
+                .fax(facilityVM.fax())
+                .addressId(facilityVM.addressId())
+                .defaultCurrencyLkey(facilityVM.defaultCurrencyLkey())
                 .build();
 
         Facility result = facilityService.create(toCreate);
         return ResponseEntity
-            .created(URI.create("/api/facility/" + result.getId()))
-            .body(result);
+                .created(URI.create("/api/facility/" + result.getId()))
+                .body(result);
     }
+
 
     /**
      * {@code PUT /api/facility/{id}} : Update an existing Facility.

@@ -45,10 +45,10 @@ public class RoleService {
         LOG.debug("Request to update Role id={} with data: {}", id, roleVM);
 
         return roleRepository.findById(id).map(existing -> {
-            existing.setName(roleVM.getName());
-            existing.setType(roleVM.getType());
+            existing.setName(roleVM.name());
+            existing.setType(roleVM.type());
 
-            Facility facility = facilityRepository.getReferenceById(roleVM.getFacilityId());
+            Facility facility = facilityRepository.getReferenceById(roleVM.facilityId());
             existing.setFacility(facility);
 
             Role updated = roleRepository.save(existing);

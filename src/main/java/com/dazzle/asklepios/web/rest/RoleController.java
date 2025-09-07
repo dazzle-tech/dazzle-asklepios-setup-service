@@ -28,21 +28,18 @@ public class RoleController {
         this.roleRepository = roleRepository;
     }
 
-    /**
-     * {@code POST /api/role} : Create a new Role.
-     */
     @PostMapping
     public ResponseEntity<RoleVM> createRole(@Valid @RequestBody RoleVM roleVM) {
         LOG.debug("REST request to save Role : {}", roleVM);
 
-        if (roleRepository.existsByNameIgnoreCase(roleVM.getName())) {
+        if (roleRepository.existsByNameIgnoreCase(roleVM.name())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
 
         Role toCreate = Role.builder()
-                .name(roleVM.getName())
-                .type(roleVM.getType())
-                .facilityId(roleVM.getFacilityId())
+                .name(roleVM.name())
+                .type(roleVM.type())
+                .facilityId(roleVM.facilityId())
                 .build();
 
         Role result = roleService.create(toCreate);
@@ -56,10 +53,13 @@ public class RoleController {
      * {@code PUT /api/role/{id}} : Update an existing Role.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Role> updateRole(@PathVariable("id") Long id, @Valid @RequestBody RoleVM roleVM) {
+    public ResponseEntity<RoleVM> updateRole(@PathVariable("id") Long id, @Valid @RequestBody RoleVM roleVM) {
         LOG.debug("REST request to update Role : {}, {}", id, roleVM);
         Optional<Role> updated = roleService.update(id, roleVM);
-        return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return updated
+                .map(RoleVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -78,8 +78,9 @@ public class RoleController {
     @GetMapping("/{id}")
     public ResponseEntity<RoleVM> getRole(@PathVariable Long id) {
         return roleService.findOne(id)
-                .map(role -> ResponseEntity.ok(RoleVM.ofEntity(role)))
-                .orElse(ResponseEntity.notFound().build());
+                .map(RoleVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
