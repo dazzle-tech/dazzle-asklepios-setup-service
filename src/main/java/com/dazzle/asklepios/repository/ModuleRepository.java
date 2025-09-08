@@ -9,7 +9,4 @@ import org.springframework.stereotype.Repository;
 public interface ModuleRepository extends JpaRepository<Module, Long> {
     String MODULES = "modules";
 
-    Optional<Module> findByName(String name);
-
-    boolean existsByName(String name);
 }

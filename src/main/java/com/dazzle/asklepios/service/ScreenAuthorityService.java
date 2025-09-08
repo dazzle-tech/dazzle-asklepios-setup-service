@@ -23,19 +23,4 @@ public class ScreenAuthorityService {
         return repository.save(sa);
     }
 
-    public List<ScreenAuthority> findAll() {
-        return repository.findAll();
-    }
-
-    public Optional<ScreenAuthority> findOne(ScreenAuthorityId id) {
-        return repository.findById(id);
-    }
-
-    public List<ScreenAuthority> getByAuthorityName(String authorityName) {
-        return repository.findByIdAuthorityName(authorityName);
-    }
-
-    public void delete(ScreenAuthorityId id) {
-        repository.deleteById(id);
-    }
 }

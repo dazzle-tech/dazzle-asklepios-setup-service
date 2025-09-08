@@ -13,10 +13,7 @@ import org.springframework.stereotype.Repository;
 public interface ScreenRepository extends JpaRepository<Screen, Long> {
     String SCREENS = "screens";
     @Query("SELECT sa.screen FROM ScreenAuthority sa WHERE sa.authorityName = :authorityName")
-    List<Screen> findScreensByAuthorityName(@Param("authorityName") String authorityName);
-    List<Screen> findByModuleId(Long moduleId);
 
-    Optional<Screen> findByModuleIdAndName(Long moduleId, String name);
 
     boolean existsByModuleIdAndName(Long moduleId, String name);
 }

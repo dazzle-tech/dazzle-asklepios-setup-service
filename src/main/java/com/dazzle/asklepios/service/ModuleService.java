@@ -33,42 +33,5 @@ public class ModuleService {
         return moduleRepository.save(module);
     }
 
-    // ================= Update =================
-    @CacheEvict(cacheNames = ModuleRepository.MODULES, key = "'all'")
-    public Optional<Module> update(Long id, Module module) {
-        LOG.debug("Request to update Module id={} with : {}", id, module);
-        return moduleRepository
-                .findById(id)
-                .map(existing -> {
-                    existing.setName(module.getName());
-                    existing.setDescription(module.getDescription());
-                    return moduleRepository.save(existing);
-                });
-    }
 
-    // ================= Read =================
-    @Transactional(readOnly = true)
-    @Cacheable(cacheNames = ModuleRepository.MODULES, key = "'all'")
-    public List<Module> findAll() {
-        LOG.debug("Request to get all Modules");
-        return moduleRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Module> findOne(Long id) {
-        LOG.debug("Request to get Module : {}", id);
-        return moduleRepository.findById(id);
-    }
-
-    // ================= Delete =================
-    @CacheEvict(cacheNames = ModuleRepository.MODULES, key = "'all'")
-    public void delete(Long id) {
-        LOG.debug("Request to delete Module : {}", id);
-        moduleRepository.deleteById(id);
-    }
-
-    // ================= Extra =================
-    public boolean existsByName(String name) {
-        return moduleRepository.existsByName(name);
-    }
 }

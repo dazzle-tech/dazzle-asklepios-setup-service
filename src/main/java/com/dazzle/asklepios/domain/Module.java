@@ -1,8 +1,20 @@
 package com.dazzle.asklepios.domain;
 
-import jakarta.persistence.*;
+
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.CascadeType;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 import java.io.Serializable;
