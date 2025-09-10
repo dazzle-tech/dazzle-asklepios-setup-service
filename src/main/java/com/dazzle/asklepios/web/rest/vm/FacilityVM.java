@@ -1,6 +1,9 @@
 package com.dazzle.asklepios.web.rest.vm;
 
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.FacilityType;
+
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -8,13 +11,13 @@ import jakarta.validation.constraints.NotNull;
  */
 public record FacilityVM(
         @NotNull String name,
-        @NotNull String type,
+        @NotNull FacilityType type,
         String emailAddress,
         String phone1,
         String phone2,
         String fax,
         String addressId,
-        String defaultCurrencyLkey
+        Currency defaultCurrency
 ) {
         public static FacilityVM ofEntity(Facility facility) {
                 return new FacilityVM(
@@ -25,7 +28,7 @@ public record FacilityVM(
                         facility.getPhone2(),
                         facility.getFax(),
                         facility.getAddressId(),
-                        facility.getDefaultCurrencyLkey()
+                        facility.getDefaultCurrency()
                 );
         }
 }

@@ -33,8 +33,8 @@ public class RoleService {
 
         role.setId(null);
 
-        Facility facility = facilityRepository.findById(role.getFacilityId())
-                .orElseThrow(() -> new IllegalArgumentException("Facility not found with id " + role.getFacilityId()));
+        Facility facility = new Facility();
+        facility.setId(role.getFacilityId());
         role.setFacility(facility);
 
         return roleRepository.save(role);
@@ -48,7 +48,8 @@ public class RoleService {
             existing.setName(roleVM.name());
             existing.setType(roleVM.type());
 
-            Facility facility = facilityRepository.getReferenceById(roleVM.facilityId());
+            Facility facility = new Facility();
+            facility.setId(roleVM.facilityId());
             existing.setFacility(facility);
 
             Role updated = roleRepository.save(existing);

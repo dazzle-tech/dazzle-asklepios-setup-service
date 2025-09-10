@@ -1,12 +1,19 @@
 package com.dazzle.asklepios.domain.enumeration;
 
-/**
- * Type of Facility.
- */
-public enum FacilityType {
-    // UPDATED COUSE IN DB IS NOT FULL UPPERCASE
-    Clinic,
-    Hospital
-}
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-//TODO: I MUST RETURN THE UPPERCASE , AND UPDATE THE DB TO UPPERCASE SO WE CAN MAP, OTHERWISE IT WILL FAIL
+public enum FacilityType {
+    CLINIC,
+    HOSPITAL;
+
+    @JsonValue
+    public String toValue() {
+        return name().toLowerCase();
+    }
+
+    @JsonCreator
+    public static FacilityType fromValue(String value) {
+        return FacilityType.valueOf(value.toUpperCase());
+    }
+}

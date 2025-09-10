@@ -66,7 +66,7 @@ public class FacilityController {
                 .phone2(facilityVM.phone2())
                 .fax(facilityVM.fax())
                 .addressId(facilityVM.addressId())
-                .defaultCurrencyLkey(facilityVM.defaultCurrencyLkey())
+                .defaultCurrency(facilityVM.defaultCurrency())
                 .build();
 
         Facility result = facilityService.create(toCreate);

@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.dazzle.asklepios.domain.enumeration.FacilityTypeConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -35,8 +37,9 @@ public class Facility implements Serializable {
     private String name;
 
     @NotNull
-    @Column(nullable = false, length = 255)
-    private String type;
+    @Column(nullable = false, length = 50)
+    @Convert(converter = FacilityTypeConverter.class)
+    private FacilityType type;
 
     private LocalDate registrationDate;
 
@@ -55,8 +58,10 @@ public class Facility implements Serializable {
     @Column(length = 100)
     private String addressId;
 
-    @Column(length = 100)
-    private String defaultCurrencyLkey;
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private Currency defaultCurrency;
 
 
 }
