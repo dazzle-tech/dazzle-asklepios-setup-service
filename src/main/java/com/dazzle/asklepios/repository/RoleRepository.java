@@ -10,4 +10,5 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     boolean existsByNameIgnoreCase(String name);
 
     List<Role> findByFacilityId(Long facilityId);
+
 }
