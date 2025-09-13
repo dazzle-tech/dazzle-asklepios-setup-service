@@ -3,6 +3,9 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.FacilityService;
+import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
+import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.FacilityVM;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -53,48 +56,45 @@ public class FacilityController {
      * or with status {@code 409 (Conflict)} if a facility with the same name already exists.
      */
     @PostMapping
-    public ResponseEntity<Facility> createFacility(@Valid @RequestBody FacilityVM facilityVM) {
+    public ResponseEntity<FacilityResponseVM> createFacility(@Valid @RequestBody FacilityCreateVM facilityVM) {
         LOG.debug("REST request to save Facility : {}", facilityVM);
-        if (facilityVM.getName() != null && facilityRepository.existsByNameIgnoreCase(facilityVM.getName())) {
+
+        if (facilityVM.name() != null && facilityRepository.existsByNameIgnoreCase(facilityVM.name())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        Facility toCreate = Facility.builder()
-            .name(facilityVM.getName())
-            .type(facilityVM.getType())
-            .build();
 
-        Facility result = facilityService.create(toCreate);
-        return ResponseEntity
-            .created(URI.create("/api/facility/" + result.getId()))
-            .body(result);
+         FacilityResponseVM created = facilityService.create(facilityVM);
+
+         return ResponseEntity
+                .created(URI.create("/api/facility/" + created.id()))
+                .body(created);
     }
 
-    /**
-     * {@code PUT /api/facility/{id}} : Update an existing Facility.
-     *
-     * @param id the id of the facility to update.
-     * @param facility the facility data to update.
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and with body the updated facility,
-     * or with status {@code 404 (Not Found)} if the facility does not exist.
-     */
+
+
     @PutMapping("/{id}")
-    public ResponseEntity<Facility> updateFacility(@PathVariable("id") Long id, @Valid @RequestBody Facility facility) {
-        LOG.debug("REST request to update Facility : {}, {}", id, facility);
-        Optional<Facility> updated = facilityService.update(id, facility);
-        return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
+    public ResponseEntity<FacilityResponseVM> updateFacility(
+            @PathVariable Long id,
+            @Valid @RequestBody FacilityUpdateVM facilityVM) {
 
+        LOG.debug("REST request to update Facility : {}, {}", id, facilityVM);
+
+        return facilityService.update(id, facilityVM)
+                .map(FacilityResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
     /**
      * {@code GET /api/facility} : Get all facilities (cached).
-     *
+     * <p>
      * Returns the full list of facilities without pagination.
      *
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of all facilities.
      */
     @GetMapping
-    public ResponseEntity<List<Facility>> getAllFacilities() {
+    public ResponseEntity<List<FacilityResponseVM>> getAllFacilities() {
         LOG.debug("REST request to get all Facilities (cached)");
-        List<Facility> facilities = facilityService.findAll();
+        List<FacilityResponseVM> facilities = facilityService.findAll();
         return ResponseEntity.ok(facilities);
     }
 
@@ -106,11 +106,12 @@ public class FacilityController {
      * or with status {@code 404 (Not Found)} if it does not exist.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Facility> getFacility(@PathVariable("id") Long id) {
+    public ResponseEntity<FacilityResponseVM> getFacility(@PathVariable("id") Long id) {
         LOG.debug("REST request to get Facility : {}", id);
-        return facilityService.findOne(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return facilityService.findOne(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
     /**
      * {@code DELETE /api/facility/{id}} : Delete the facility by id.
      *
@@ -120,7 +121,11 @@ public class FacilityController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFacility(@PathVariable("id") Long id) {
         LOG.debug("REST request to delete Facility : {}", id);
-        facilityService.delete(id);
+        boolean deleted = facilityService.delete(id);
+
+        if (!deleted) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.noContent().build();
     }
 

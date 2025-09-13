@@ -3,13 +3,13 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-
 import jakarta.validation.constraints.NotNull;
+import java.io.Serializable;
 
 /**
- *  View Model for creating/updating a Facility via REST.
+ * View Model for creating a Facility via REST.
  */
-public record FacilityVM(
+public record FacilityCreateVM(
         @NotNull String name,
         @NotNull FacilityType type,
         String emailAddress,
@@ -18,9 +18,10 @@ public record FacilityVM(
         String fax,
         String addressId,
         Currency defaultCurrency
-) {
-        public static FacilityVM ofEntity(Facility facility) {
-                return new FacilityVM(
+) implements Serializable {
+
+        public static FacilityCreateVM ofEntity(Facility facility) {
+                return new FacilityCreateVM(
                         facility.getName(),
                         facility.getType(),
                         facility.getEmailAddress(),

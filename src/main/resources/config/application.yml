@@ -77,6 +77,10 @@ management:
       application: ${spring.application.name}
 
 spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+
   application:
     name: setup
   docker:
