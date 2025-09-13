@@ -68,7 +68,6 @@ public class FacilityService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public List<FacilityResponseVM> findAll() {
         LOG.debug("Request to get all Facilities");
         return facilityRepository.findAll()

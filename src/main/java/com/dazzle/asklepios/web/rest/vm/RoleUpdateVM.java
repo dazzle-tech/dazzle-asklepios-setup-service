@@ -11,16 +11,15 @@ import java.io.Serializable;
 public record RoleUpdateVM(
         @NotNull Long id,
         String name,
-        String type,
-        Long facilityId
+        String type
+
 ) implements Serializable {
 
         public static RoleUpdateVM ofEntity(Role role) {
                 return new RoleUpdateVM(
                         role.getId(),
                         role.getName(),
-                        role.getType(),
-                        role.getFacility() != null ? role.getFacility().getId() : null
+                        role.getType()
                 );
         }
 }

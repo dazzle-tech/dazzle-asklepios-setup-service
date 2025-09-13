@@ -56,15 +56,6 @@ public class RoleService {
             existing.setName(roleVM.name());
             existing.setType(roleVM.type());
 
-            if (roleVM.facilityId() != null) {
-                Facility facility = facilityRepository.findById(roleVM.facilityId())
-                        .orElseThrow(() -> new ResponseStatusException(
-                                HttpStatus.BAD_REQUEST,
-                                "Facility not found with id " + roleVM.facilityId()
-                        ));
-                existing.setFacility(facility);
-            }
-
             Role updated = roleRepository.save(existing);
             LOG.debug("Role id={} updated successfully", id);
             return updated;
