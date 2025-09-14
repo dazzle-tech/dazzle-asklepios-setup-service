@@ -67,7 +67,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Currency defaultCurrency;
-    
+
     @NotNull
     @Column(nullable = false, length = 10)
     private Boolean isActive = true;

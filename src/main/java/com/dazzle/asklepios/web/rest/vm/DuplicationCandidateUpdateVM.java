@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm;
 
 import com.dazzle.asklepios.domain.DuplicationCandidate;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.io.Serializable;
 
@@ -11,11 +10,16 @@ public record DuplicationCandidateUpdateVM(
         Boolean lastName,
         Boolean documentNo,
         Boolean mobileNumber,
-        Boolean gender,
-        @JsonProperty("isActive")
-        Boolean active
-        ,
-        Long facilityId,
-        String role
-) implements Serializable {}
+        Boolean gender
+) implements Serializable {
 
+    public static DuplicationCandidateUpdateVM ofEntity(DuplicationCandidate candidate) {
+        return new DuplicationCandidateUpdateVM(
+                candidate.getDob(),
+                candidate.getLastName(),
+                candidate.getDocumentNo(),
+                candidate.getMobileNumber(),
+                candidate.getGender()
+        );
+    }
+}

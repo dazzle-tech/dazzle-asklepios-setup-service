@@ -1,10 +1,9 @@
 package com.dazzle.asklepios.web.rest.vm;
 
 import com.dazzle.asklepios.domain.DuplicationCandidate;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.Serializable;
 import java.time.Instant;
+
 public record DuplicationCandidateResponseVM(
         Long id,
         String role,
@@ -16,12 +15,8 @@ public record DuplicationCandidateResponseVM(
         String createdBy,
         Instant createdDate,
         String lastModifiedBy,
-        Instant lastModifiedDate,
-        @JsonProperty("isActive")
-        Boolean active
-        ,
-        Long facilityId
-) implements Serializable {
+        Instant lastModifiedDate
+) {
     public static DuplicationCandidateResponseVM ofEntity(DuplicationCandidate entity) {
         return new DuplicationCandidateResponseVM(
                 entity.getId(),
@@ -34,13 +29,7 @@ public record DuplicationCandidateResponseVM(
                 entity.getCreatedBy(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedBy(),
-                entity.getLastModifiedDate(),
-                entity.getActive(),
-                entity.getFacility() != null ? entity.getFacility().getId() : null
-        );
-    }
-}
+                entity.getLastModifiedDate()
 
-
-
-
+                );
+    }}

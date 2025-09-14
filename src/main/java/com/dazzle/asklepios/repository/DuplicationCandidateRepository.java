@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DuplicationCandidateRepository extends JpaRepository<DuplicationCandidate, Long> {
+
     String CACHE_NAME = "duplicationCandidates";
 
     @Query("SELECT MAX(dc.role) FROM DuplicationCandidate dc")
     String findMaxRole();
+
     boolean existsById(Long id);
 
     List<DuplicationCandidate> findByRoleContaining(String text);
