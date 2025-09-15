@@ -12,5 +12,5 @@ public enum ServiceItemsType {
     RESOURCES,
     MEDICATIONS,
     VACCINE,
-    DIAGNOSTICSTEST
+    DIAGNOSTICS_TEST
 }
