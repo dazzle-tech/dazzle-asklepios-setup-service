@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
 import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
@@ -24,9 +25,10 @@ public class FacilityService {
     private static final Logger LOG = LoggerFactory.getLogger(FacilityService.class);
 
     private final FacilityRepository facilityRepository;
-
-    public FacilityService(FacilityRepository facilityRepository) {
+    private final DuplicationCandidateRepository duplicationCandidateRepository;
+    public FacilityService(FacilityRepository facilityRepository, DuplicationCandidateRepository duplicationCandidateRepository) {
         this.facilityRepository = facilityRepository;
+        this.duplicationCandidateRepository = duplicationCandidateRepository;
     }
 
      @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
@@ -94,4 +96,21 @@ public class FacilityService {
         facilityRepository.deleteById(id);
         return true;
     }
+    @Transactional(readOnly = true)
+    public List<FacilityResponseVM> findUnlinkedOrLinkedToRole(Long roleId) {
+        LOG.debug("Request to get all Facilities unlinked or linked to roleId={}", roleId);
+
+        if (!duplicationCandidateRepository.existsById(roleId)) {
+            LOG.info("Role with id {} not found, returning empty list", roleId);
+            return List.of(); // 👈 يرجع فاضي، بدون Error
+        }
+
+        return facilityRepository.findUnlinkedOrLinkedToRole(roleId)
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .toList();
+    }
+
+
+
 }
