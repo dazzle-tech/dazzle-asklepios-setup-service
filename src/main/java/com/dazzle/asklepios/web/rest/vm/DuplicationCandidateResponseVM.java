@@ -4,6 +4,8 @@ import com.dazzle.asklepios.domain.DuplicationCandidate;
 
 import java.time.Instant;
 
+import java.io.Serializable;
+import java.time.Instant;
 public record DuplicationCandidateResponseVM(
         Long id,
         String role,
@@ -16,7 +18,7 @@ public record DuplicationCandidateResponseVM(
         Instant createdDate,
         String lastModifiedBy,
         Instant lastModifiedDate
-) {
+) implements Serializable {
     public static DuplicationCandidateResponseVM ofEntity(DuplicationCandidate entity) {
         return new DuplicationCandidateResponseVM(
                 entity.getId(),
@@ -33,3 +35,4 @@ public record DuplicationCandidateResponseVM(
 
                 );
     }}
+

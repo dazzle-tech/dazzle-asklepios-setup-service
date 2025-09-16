@@ -71,6 +71,11 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @NotNull
     @Column(nullable = false, length = 10)
     private Boolean isActive = true;
+    
+    @OneToOne
+    @JoinColumn(name = "role_id", referencedColumnName = "id")
+    private DuplicationCandidate role;
+
 
     @OneToOne
     @JoinColumn(name = "role_id", referencedColumnName = "id")
