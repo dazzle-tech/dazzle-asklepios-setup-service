@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/setup/api/role")
+@RequestMapping("/api/setup/role")
 public class RoleController {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoleController.class);

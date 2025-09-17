@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/setup/api/facility")
+@RequestMapping("/api/setup/facility")
 public class FacilityController {
 
     private static final Logger LOG = LoggerFactory.getLogger(FacilityController.class);
