@@ -1,0 +1,153 @@
+package com.dazzle.asklepios.domain.enumeration;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+public enum Screen {
+    // Scheduling
+    SCHEDULING_SCREEN,
+
+    // Inventory Management
+    INVENTORY_TRANSFER,
+    INVENTORY_TRANSACTIONS,
+    INVENTORY_TRANSFER_APPROVAL,
+    PRODUCTS_CATALOG,
+    WAREHOUSE_SETUP,
+    WAREHOUSE_ITEMS_SETUP,
+
+    // Billing & Finance
+    LEDGER_ACCOUNT,
+    PRICE_LISTS,
+
+    // System Setup
+    ALLERGENS,
+    POTENTIAL_DUPLICATE,
+    BRAND_MEDICATIONS,
+    LOV_SETUP,
+    MODULES_SETUP,
+    DVM,
+    ACCESS_ROLES,
+    FACILITIES,
+    DEPARTMENTS,
+    UOM_GROUP,
+    PRESCRIPTION_INSTRUCTIONS,
+    AGE_GROUP,
+    PRACTITIONERS,
+    ACTIVE_INGREDIENTS,
+    METADATA,
+    RESOURCES,
+    DENTAL_ACTIONS,
+    USERS,
+    CATALOG,
+    DIAGNOSTICS_TEST,
+    VACCINE_SETUP,
+    PROCEDURE_SETUP,
+    ROOM_BED_SETUP,
+    MED_MATRIX_SETUP,
+    SERVICES_SETUP,
+    VACCINE_SCHEDULE_SETUP,
+    CHECKLISTS,
+    OPERATION_SETUP,
+    PURCHASE_APPROVAL,
+    QUESTIONNAIRE_SETUP,
+    MEDICATION_SCHEDULE,
+    VISIT_DURATION,
+    CLINICAL_PROTOCOLS_SETUP,
+    SHIFT_SETUP,
+    SUPPLIER_SETUP,
+    SURGICAL_KITS_SETUP,
+    USER_NEW,
+    REPORT_RESULT_TEMPLATE,
+    INVENTORY_PRODUCT_SETUP,
+
+    // Front Desk Office
+    QUICK_APPOINTMENT,
+    PATIENT_REGISTRATION,
+    INFORMATION_DESK,
+    FILES_MERGE,
+
+    // Emergency
+    ER_TRIAGE,
+    ER_WAITING_LIST,
+    ER_DEPARTMENT,
+    ER_DASHBOARD,
+
+    // Purchasing
+    SUPPLIER_MANAGEMENT,
+    QUOTATION_MANAGEMENT,
+    PAYMENT_TRACKING,
+    LIST_OF_REQUISITION,
+    PURCHASE_RETURN,
+    PURCHASE_REQUISITION,
+    REQUISITION_APPROVAL,
+    PURCHASE_ORDERS,
+    GOODS_RECEIPT_NOTE,
+
+    // Telemedicine
+    TELE_CONSULTATIONS_REQUESTS,
+
+    // Inpatient Care
+    INPATIENT_LIST,
+    WAITING_LIST,
+    DEPARTMENT_STOCK,
+
+    // Day Case
+    DAY_CASE_PATIENT_LIST,
+
+    // Procedures
+    PROCEDURE_REQUESTS_LIST,
+
+    // Operation Theater
+    OPERATION_REQUESTS,
+    RECOVERY_ROOM,
+    OPERATION_ROOM_MATERIALS,
+
+    //EMR Module
+
+    ELECTRONIC_MEDICAL_RECORDS,
+
+    // Clinics Management
+    PATIENTS_VISITS_LIST,
+    REVIEW_RESULTS,
+
+
+    // Laboratory
+    CLINICAL_LABORATORY,
+
+    // Radiology
+    IMAGING_RADIOLOGY,
+
+    // Pharmacy
+    INTERNAL_DRUG_ORDERS,
+    EPRESCRIPTIONS,
+    CONTROLLED_MEDICATIONS,
+
+    // Coding Module
+    CPT,
+    ICD10,
+    LOINC,
+    CDT_CODES,
+    SNOMED_CT;
+
+    @JsonValue
+    public String toValue() {
+        String value = name().toLowerCase().replace("_", " ");
+        String[] words = value.split(" ");
+        StringBuilder sb = new StringBuilder();
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                sb.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1))
+                        .append(" ");
+            }
+        }
+        return sb.toString().trim();
+    }
+
+
+    @JsonCreator
+    public static Screen fromValue(String value) {
+        return Screen.valueOf(value.toUpperCase().replace(" ", "_"));
+    }
+
+}
