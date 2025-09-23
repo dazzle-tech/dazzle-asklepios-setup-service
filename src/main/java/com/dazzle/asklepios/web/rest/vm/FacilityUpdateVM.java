@@ -18,7 +18,8 @@ public record FacilityUpdateVM(
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency
+        Currency defaultCurrency,
+        Boolean isActive
 ) implements Serializable {
 
         public static FacilityUpdateVM ofEntity(Facility facility) {
@@ -31,7 +32,8 @@ public record FacilityUpdateVM(
                         facility.getPhone2(),
                         facility.getFax(),
                         facility.getAddressId(),
-                        facility.getDefaultCurrency()
+                        facility.getDefaultCurrency(),
+                        facility.getIsActive()
                 );
         }
 }
