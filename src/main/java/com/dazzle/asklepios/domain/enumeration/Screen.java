@@ -68,7 +68,7 @@ public enum Screen {
 
     // Emergency
     ER_TRIAGE,
-    ER_WAITING_LIST,
+
     ER_DEPARTMENT,
     ER_DASHBOARD,
 
@@ -124,7 +124,7 @@ public enum Screen {
 
     // Coding Module
     CPT,
-    ICD10,
+    ICD_10,
     LOINC,
     CDT_CODES,
     SNOMED_CT;
