@@ -43,5 +43,6 @@ public enum DepartmentType {
         return Arrays.stream(name().split("_"))
                 .map(word -> word.charAt(0) + word.substring(1).toLowerCase())
                 .collect(Collectors.joining(" "));
+
     }
 }
