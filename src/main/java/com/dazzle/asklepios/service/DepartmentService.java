@@ -104,7 +104,6 @@ public class DepartmentService {
         LOG.debug("Request to get Departments by Department Type department_type={}", departmentType);
         return departmentRepository.findByDepartmentType(departmentType);
     }
-
     @Transactional(readOnly = true)
     public List<Department> findByDepartmentName(String name) {
         LOG.debug("Request to get Departments by Name name={}", name);
