@@ -12,9 +12,7 @@ import java.util.Optional;
 
 public interface RoleScreenRepository extends JpaRepository<RoleScreen, Long> {
 
-
     List<RoleScreen> findByRoleId(Long roleId);
-
 
     Optional<RoleScreen> findByRoleIdAndScreenAndOperation(Long roleId, Screen screen, Operation operation);
 

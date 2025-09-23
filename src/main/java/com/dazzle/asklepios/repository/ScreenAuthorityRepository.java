@@ -8,7 +8,6 @@ import java.util.List;
 
 public interface ScreenAuthorityRepository extends JpaRepository<ScreenAuthority, Long> {
 
-
     List<ScreenAuthority> findByScreenAndOperation(String screen, Operation operation);
 
 
