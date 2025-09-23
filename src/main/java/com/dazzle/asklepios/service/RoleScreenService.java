@@ -38,6 +38,16 @@ public class RoleScreenService {
 
         return roleScreenRepository.save(rs);
     }
+    // حذف شاشة + عملية لرول
+    @Transactional
+    public void removeScreenFromRole(Long roleId, Screen screen, Operation operation) {
+        roleScreenRepository.deleteByRoleIdAndScreenAndOperation(roleId, screen, operation);
+    }
 
+    // مسح كل الشاشات لرول
+    @Transactional
+    public void clearScreensForRole(Long roleId) {
+        roleScreenRepository.deleteByRoleId(roleId);
+    }
 
 }
