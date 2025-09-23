@@ -17,7 +17,8 @@ public record FacilityResponseVM(
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency
+        Currency defaultCurrency,
+        Boolean isActive
 ) implements Serializable {
 
         public static FacilityResponseVM ofEntity(Facility facility) {
@@ -30,7 +31,8 @@ public record FacilityResponseVM(
                         facility.getPhone2(),
                         facility.getFax(),
                         facility.getAddressId(),
-                        facility.getDefaultCurrency()
+                        facility.getDefaultCurrency(),
+                        facility.getIsActive()
                 );
         }
 }

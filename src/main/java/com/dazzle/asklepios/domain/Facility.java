@@ -49,6 +49,10 @@ public class Facility implements Serializable {
     @Convert(converter = FacilityTypeConverter.class)
     private FacilityType type;
 
+    @NotNull
+    @Column(nullable = false, length = 50)
+    private String code;
+
     private LocalDate registrationDate;
 
     @Column(length = 100)
@@ -70,6 +74,10 @@ public class Facility implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Currency defaultCurrency;
+
+    @NotNull
+    @Column(nullable = false, length = 10)
+    private Boolean isActive = true;
 
 
 }

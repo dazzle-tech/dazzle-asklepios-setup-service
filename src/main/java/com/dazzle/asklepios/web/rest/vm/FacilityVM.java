@@ -17,7 +17,8 @@ public record FacilityVM(
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency
+        Currency defaultCurrency,
+        Boolean isActive
 ) {
         public static FacilityVM ofEntity(Facility facility) {
                 return new FacilityVM(
@@ -28,7 +29,8 @@ public record FacilityVM(
                         facility.getPhone2(),
                         facility.getFax(),
                         facility.getAddressId(),
-                        facility.getDefaultCurrency()
+                        facility.getDefaultCurrency(),
+                        facility.getIsActive()
                 );
         }
 }
