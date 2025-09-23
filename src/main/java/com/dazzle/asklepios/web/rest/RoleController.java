@@ -1,13 +1,17 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Role;
+import com.dazzle.asklepios.domain.enumeration.Operation;
 import com.dazzle.asklepios.repository.RoleRepository;
+import com.dazzle.asklepios.service.RolePermissionService;
 import com.dazzle.asklepios.service.RoleService;
+import com.dazzle.asklepios.service.dto.RoleScreenRequest;
 import com.dazzle.asklepios.web.rest.vm.RoleCreateVM;
 import com.dazzle.asklepios.web.rest.vm.RoleResponseVM;
 import com.dazzle.asklepios.web.rest.vm.RoleUpdateVM;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -31,10 +35,12 @@ public class RoleController {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoleController.class);
 
+    private final RolePermissionService rolePermissionService;
     private final RoleService roleService;
     private final RoleRepository roleRepository;
 
-    public RoleController(RoleService roleService, RoleRepository roleRepository) {
+    public RoleController(RolePermissionService rolePermissionService, RoleService roleService, RoleRepository roleRepository) {
+        this.rolePermissionService = rolePermissionService;
         this.roleService = roleService;
         this.roleRepository = roleRepository;
     }
@@ -102,4 +108,57 @@ public class RoleController {
                 .toList();
         return ResponseEntity.ok(roles);
     }
+
+    @PutMapping("/{roleId}/screens")
+    public ResponseEntity<Void> updateRoleScreens(
+            @PathVariable Long roleId,
+            @RequestBody List<RoleScreenRequest> requests
+    ) {
+        rolePermissionService.updateRolePermissions(roleId, requests);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Get all screens + operations for a role
+     */
+    @GetMapping("/{roleId}/screens")
+    public ResponseEntity<List<RoleScreenRequest>> getRoleScreens(
+            @PathVariable Long roleId
+    ) {
+        List<RoleScreenRequest> screens = rolePermissionService.getRoleScreens(roleId);
+        return ResponseEntity.ok(screens);
+    }
+
+//    @GetMapping("/{id}/permissions")
+//    public ResponseEntity<List<RoleScreenRequest>> getRoleScreens(@PathVariable Long id) {
+//        LOG.debug("Enter: getRoleScreens() with roleId={}", id);
+//
+//        List<RoleScreenRequest> permissions = rolePermissionService.getRoleScreens(id);
+//        return ResponseEntity.ok(permissions);
+//    }
+//
+//    /**
+//     * POST: Update role permissions (role_screen + role_authority).
+//     */
+//    @PostMapping("/{id}/permissions")
+//    public ResponseEntity<Void> updateRolePermissions(
+//            @PathVariable Long id,
+//            @RequestBody List<RoleScreenRequest> requests
+//    ) {
+//        LOG.debug("Enter: updateRolePermissions() with roleId={}, requests={}", id, requests);
+//
+//        // Handle ALL → convert into VIEW + EDIT
+//        List<RoleScreenRequest> expanded = new ArrayList<>();
+//        for (RoleScreenRequest req : requests) {
+//            if (req.getPermission() == Operation.ALL) {
+//                expanded.add(new RoleScreenRequest(req.getScreen(), Operation.VIEW));
+//                expanded.add(new RoleScreenRequest(req.getScreen(), Operation.EDIT));
+//            } else {
+//                expanded.add(req);
+//            }
+//        }
+//
+//        rolePermissionService.updateRolePermissions(id, expanded);
+//        return ResponseEntity.ok().build();
+//    }
 }
