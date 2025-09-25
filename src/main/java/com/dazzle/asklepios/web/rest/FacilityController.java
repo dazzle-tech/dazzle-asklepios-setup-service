@@ -1,6 +1,9 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.dazzle.asklepios.domain.enumeration.Screen;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.FacilityService;
 import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
@@ -127,6 +130,18 @@ public class FacilityController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/facility-types")
+    public ResponseEntity<List<FacilityType>> getFacilityType() {
+        List<FacilityType> facilityType = Arrays.asList(FacilityType.values());
+        return ResponseEntity.ok(facilityType); // status 200 + body
+    }
+
+    @GetMapping("/currencies")
+    public ResponseEntity<List<Currency>> getCurrency() {
+        List<Currency> currencies = Arrays.asList(Currency.values());
+        return ResponseEntity.ok(currencies); // status 200 + body
     }
 
     private boolean onlyContainsAllowedProperties(Pageable pageable) {
