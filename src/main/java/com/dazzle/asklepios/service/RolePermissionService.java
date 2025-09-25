@@ -35,31 +35,29 @@ public class RolePermissionService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleId));
 
-        // 1. جيب الموجود من DB
         List<RoleScreen> existingScreens = roleScreenRepository.findByRoleId(roleId);
 
-        // 2. حوله إلى مفاتيح screen+operation
         Set<String> existingKeys = existingScreens.stream()
                 .map(rs -> rs.getScreen() + "_" + rs.getOperation().name())
                 .collect(Collectors.toSet());
 
-        // 3. جهز الـ requests الجديدة كمفاتيح
+
         Set<String> newKeys = requests.stream()
                 .map(req -> req.getScreen().name() + "_" + req.getPermission().name())
                 .collect(Collectors.toSet());
 
-        // 4. حدد الفرق
+
         Set<String> toDelete = new HashSet<>(existingKeys);
         toDelete.removeAll(newKeys);
 
         Set<String> toAdd = new HashSet<>(newKeys);
         toAdd.removeAll(existingKeys);
 
-        // 5. احذف RoleScreens + RoleAuthorities المرتبطة
+
         existingScreens.stream()
                 .filter(rs -> toDelete.contains(rs.getScreen() + "_" + rs.getOperation().name()))
                 .forEach(rs -> {
-                    // أولاً نحذف authorities المرتبطة
+
                     List<ScreenAuthority> screenAuths =
                             screenAuthorityRepository.findByScreenAndOperation(rs.getScreen(), rs.getOperation());
                     for (ScreenAuthority sa : screenAuths) {
@@ -68,7 +66,7 @@ public class RolePermissionService {
                         );
                     }
 
-                    // بعدها نحذف الـ role_screen
+
                     roleScreenRepository.delete(rs);
                 });
 
@@ -115,28 +113,20 @@ public class RolePermissionService {
     }
 
     public List<RoleScreenRequest> getRoleScreens(Long roleId) {
-        // 1. Fetch authorities
-        List<RoleAuthority> roleAuthorities = roleAuthorityRepository.findByIdRoleId(roleId);
-        System.out.println(">>> ROLE_AUTHORITY records found: " + roleAuthorities.size());
+        // 1. Fetch screen-role mappings
+        List<RoleScreen> screenRoles = roleScreenRepository.findByRoleId(roleId);
 
-        List<String> authorityNames = roleAuthorities.stream()
-                .map(ra -> ra.getId().getAuthorityName())
-                .toList();
-
-        // 2. Match against screen_authority
-        List<ScreenAuthority> screenAuthorities =
-                screenAuthorityRepository.findByAuthorityNameIn(authorityNames);
-
-        if (screenAuthorities.isEmpty()) {
-            System.out.println(">>> No matching screen_authority found for roleId=" + roleId);
+        if (screenRoles.isEmpty()) {
+            System.out.println(">>> No screen_role found for roleId=" + roleId);
         }
 
-        // 3. Return DTO
-        return screenAuthorities.stream()
-                .map(sa -> new RoleScreenRequest(
-                        Screen.fromValue(sa.getScreen()),  // safer mapping
-                        sa.getOperation()
+        // 2. Return DTO
+        return screenRoles.stream()
+                .map(sr -> new RoleScreenRequest(
+                        Screen.fromValue(sr.getScreen()),
+                        sr.getOperation()
                 ))
                 .toList();
     }
+
 }

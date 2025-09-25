@@ -10,7 +10,8 @@ public record RoleResponseVM(
         Long id,
         String name,
         String type,
-        Long facilityId
+        Long facilityId,
+        String facilityName
 ) implements Serializable {
 
         public static RoleResponseVM ofEntity(Role role) {
@@ -18,7 +19,10 @@ public record RoleResponseVM(
                         role.getId(),
                         role.getName(),
                         role.getType(),
-                        role.getFacility() != null ? role.getFacility().getId() : null
+                        role.getFacility() != null ? role.getFacility().getId() : null,
+                        role.getFacility() != null ? role.getFacility().getName() : null
                 );
         }
 }
+
+
