@@ -7,9 +7,6 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 
-/**
- * View Model for creating a Department via REST.
- */
 public record DepartmentCreateVM(
         @NotNull String name,
         @NotNull Long facilityId,

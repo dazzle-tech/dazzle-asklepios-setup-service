@@ -194,4 +194,9 @@ setup:
     contact-email:
     license: unlicensed
     license-url:
+    servers:
+      - url: "https://asklepios.com/api"
+        description: "Main server"
+      - url: "https://backup.asklepios.com/api"
+        description: "Backup server"
   security:

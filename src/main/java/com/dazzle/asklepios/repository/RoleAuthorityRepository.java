@@ -19,7 +19,6 @@ public interface RoleAuthorityRepository extends JpaRepository<RoleAuthority, Ro
 
     void deleteByIdRoleId(Long roleId);
 
-
 }
 
 
