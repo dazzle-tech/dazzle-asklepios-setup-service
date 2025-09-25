@@ -2,8 +2,6 @@ package com.dazzle.asklepios.domain.enumeration;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-
-
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -18,7 +16,6 @@ public enum EncounterType {
         return Arrays.stream(name().split("_"))
                 .map(word -> word.charAt(0) + word.substring(1).toLowerCase())
                 .collect(Collectors.joining(" "));
-
     }
 
     @JsonCreator
@@ -30,6 +27,5 @@ public enum EncounterType {
         return EncounterType.valueOf(
                 value.toUpperCase().replace(" ", "_")
         );
-
     }
 }
