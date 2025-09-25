@@ -128,5 +128,4 @@ public class RoleController {
         List<RoleScreenRequest> screens = rolePermissionService.getRoleScreens(roleId);
         return ResponseEntity.ok(screens);
     }
-
 }
