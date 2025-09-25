@@ -129,36 +129,5 @@ public class RoleController {
         return ResponseEntity.ok(screens);
     }
 
-//    @GetMapping("/{id}/permissions")
-//    public ResponseEntity<List<RoleScreenRequest>> getRoleScreens(@PathVariable Long id) {
-//        LOG.debug("Enter: getRoleScreens() with roleId={}", id);
-//
-//        List<RoleScreenRequest> permissions = rolePermissionService.getRoleScreens(id);
-//        return ResponseEntity.ok(permissions);
-//    }
-//
-//    /**
-//     * POST: Update role permissions (role_screen + role_authority).
-//     */
-//    @PostMapping("/{id}/permissions")
-//    public ResponseEntity<Void> updateRolePermissions(
-//            @PathVariable Long id,
-//            @RequestBody List<RoleScreenRequest> requests
-//    ) {
-//        LOG.debug("Enter: updateRolePermissions() with roleId={}, requests={}", id, requests);
-//
-//        // Handle ALL → convert into VIEW + EDIT
-//        List<RoleScreenRequest> expanded = new ArrayList<>();
-//        for (RoleScreenRequest req : requests) {
-//            if (req.getPermission() == Operation.ALL) {
-//                expanded.add(new RoleScreenRequest(req.getScreen(), Operation.VIEW));
-//                expanded.add(new RoleScreenRequest(req.getScreen(), Operation.EDIT));
-//            } else {
-//                expanded.add(req);
-//            }
-//        }
-//
-//        rolePermissionService.updateRolePermissions(id, expanded);
-//        return ResponseEntity.ok().build();
-//    }
+
 }
