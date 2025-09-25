@@ -5,7 +5,6 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-
 import com.dazzle.asklepios.web.rest.vm.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,9 +104,19 @@ public class DepartmentService {
         LOG.debug("Request to get Departments by Department Type department_type={}", departmentType);
         return departmentRepository.findByDepartmentType(departmentType);
     }
+
     @Transactional(readOnly = true)
     public List<Department> findByDepartmentName(String name) {
         LOG.debug("Request to get Departments by Name name={}", name);
         return departmentRepository.findByNameContainingIgnoreCase(name);
     }
+
+    public Optional<Department> toggleIsActive(Long id) {
+        return departmentRepository.findById(id)
+                .map(department -> {
+                    department.setIsActive(!Boolean.TRUE.equals(department.getIsActive()));
+                    return departmentRepository.save(department);
+                });
+    }
+
 }
