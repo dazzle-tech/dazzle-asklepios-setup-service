@@ -30,7 +30,7 @@ public class Department implements Serializable {
     private Facility facility;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @NotNull
@@ -41,7 +41,7 @@ public class Department implements Serializable {
     private LocalDateTime createdDate;
 
     @NotNull
-    @Column(name = "department_type", nullable = false)
+    @Column(name = "type", nullable = false, length = 50)
     @Convert(converter = DepartmentTypeConverter.class)
     private DepartmentType departmentType;
 
@@ -55,16 +55,16 @@ public class Department implements Serializable {
     private Boolean appointable;
 
     @NotNull
-    @Column(name = "department_code", nullable = false)
+    @Column(name = "department_code", nullable = false, length = 50)
     private String departmentCode;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", length = 50)
     private String phoneNumber;
 
-    @Column
+    @Column(length = 100)
     private String email;
 
-    @Column(name = "encounter_type")
+    @Column(name = "encounter_type", length = 50)
     @Convert(converter = EncounterTypeConverter.class)
     private EncounterType encounterType;
 
