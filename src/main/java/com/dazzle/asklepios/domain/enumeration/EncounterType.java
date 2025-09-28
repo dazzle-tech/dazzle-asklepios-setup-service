@@ -21,6 +21,7 @@ public enum EncounterType {
 
     @JsonCreator
     public static EncounterType fromValue(String value) {
+
         if (value == null) {
             return null;
         }
