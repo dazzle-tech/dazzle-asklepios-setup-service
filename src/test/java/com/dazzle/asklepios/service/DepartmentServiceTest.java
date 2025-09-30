@@ -3,13 +3,13 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -43,6 +43,9 @@ class DepartmentServiceTest {
         facility = Facility.builder()
                 .id(1L)
                 .name("Facility One")
+                .isActive(true)
+                .type(FacilityType.HOSPITAL)
+                .code("76438")
                 .build();
 
         department = Department.builder()

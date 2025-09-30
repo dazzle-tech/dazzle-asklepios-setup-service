@@ -1,36 +1,34 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.SetupApp;
+import com.dazzle.asklepios.config.TestSecurityConfig;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.DepartmentService;
-import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.security.access.SecurityConfig;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 
+
 import java.util.List;
 import java.util.Optional;
-import java.util.Arrays;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = DepartmentController.class)
-@Import(SecurityConfig.class) // optional if you want the real security beans
+@Import(TestSecurityConfig.class)
+@AutoConfigureMockMvc
 class DepartmentControllerTest {
 
     @Autowired
@@ -38,14 +36,6 @@ class DepartmentControllerTest {
 
     @MockitoBean
     private DepartmentService departmentService;
-
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public String secretKey() {
-            return "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTc2MTc2NDYzNCwiYXV0aCI6IlJPTEVfTEFCIiwiaWF0IjoxNzU5MTcyNjM0LCJ0ZW5hbnQiOjF9.B1bWupouzuHpo5S9MMHbrcYWuIE_iCQgFpIJn_JWbj_BymfjENrqGd6EXIT461yj5CpnFNt9t_5ns_QCBoIMXw"; // any value suitable for your test
-        }
-    }
 
     // GET /api/setup/department
     @Test
@@ -151,7 +141,7 @@ class DepartmentControllerTest {
 
         when(departmentService.update(5000L, updateVM)).thenReturn(Optional.of(dept));
 
-        mockMvc.perform(put("/api/setup/department/5003")
+        mockMvc.perform(put("/api/setup/department/5000")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -230,15 +220,15 @@ class DepartmentControllerTest {
     void testGetDepartmentByType() throws Exception {
         Department dept = new Department();
         dept.setId(5000L);
-        dept.setName("Oncology");
+        dept.setName("INPATIENT Department");
 
         when(departmentService.findByDepartmentType(DepartmentType.INPATIENT_WARD))
                 .thenReturn(List.of(dept));
 
         mockMvc.perform(get("/api/setup/department/department-list-by-type")
-                        .header("type", "OUTPATIENT_CLINIC"))
+                        .header("type", "INPATIENT_WARD"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Oncology"));
+                .andExpect(jsonPath("$[0].name").value("INPATIENT Department"));
     }
 
     // GET /api/setup/department/department-list-by-name
@@ -246,15 +236,16 @@ class DepartmentControllerTest {
     void testGetDepartmentByName() throws Exception {
         Department dept = new Department();
         dept.setId(5000L);
-        dept.setName("Oncology");
+        dept.setName("INPATIENT Department");
 
         when(departmentService.findByDepartmentName("INPATIENT Department"))
                 .thenReturn(List.of(dept));
 
         mockMvc.perform(get("/api/setup/department/department-list-by-name")
-                        .header("name", "Oncology"))
+                        .header("name", "INPATIENT Department"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Oncology"));
+                .andExpect(jsonPath("$[0].name").value("INPATIENT Department"));
+
     }
 
     // PATCH /api/setup/department/{id}/toggle-active
@@ -268,10 +259,10 @@ class DepartmentControllerTest {
         when(departmentService.toggleIsActive(5000L))
                 .thenReturn(Optional.of(dept));
 
-        mockMvc.perform(patch("/api/setup/department/5007/toggle-active"))
+        mockMvc.perform(patch("/api/setup/department/5000/toggle-active"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Oncology"))
-                .andExpect(jsonPath("$.active").value(true));
+                .andExpect(jsonPath("$.isActive").value(true));
 
         verify(departmentService, times(1)).toggleIsActive(5000L);
     }
@@ -289,8 +280,8 @@ class DepartmentControllerTest {
     void testGetAllDepartmentTypes() throws Exception {
         mockMvc.perform(get("/api/setup/department/department-type"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(DepartmentType.INPATIENT_WARD.name()))
-                .andExpect(jsonPath("$[1]").value(DepartmentType.OUTPATIENT_CLINIC.name()));
+                .andExpect(jsonPath("$[0]").value("Inpatient Ward"))
+                .andExpect(jsonPath("$[1]").value("Outpatient Clinic"));
     }
 
     // GET /api/setup/department/encounter-type
@@ -298,7 +289,7 @@ class DepartmentControllerTest {
     void testGetAllEncounterTypes() throws Exception {
         mockMvc.perform(get("/api/setup/department/encounter-type"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(EncounterType.INPATIENT.name()))
-                .andExpect(jsonPath("$[1]").value(EncounterType.CLINIC.name()));
+                .andExpect(jsonPath("$[0]").value("Emergency"))
+                .andExpect(jsonPath("$[1]").value("Clinic"));
     }
 }
