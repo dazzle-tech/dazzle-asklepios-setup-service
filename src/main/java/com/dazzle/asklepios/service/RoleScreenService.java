@@ -19,12 +19,12 @@ public class RoleScreenService {
     private final RoleScreenRepository roleScreenRepository;
     private final RoleRepository roleRepository;
 
-    // استرجاع كل الشاشات المرتبطة برول
+
     public List<RoleScreen> getScreensForRole(Long roleId) {
         return roleScreenRepository.findByRoleId(roleId);
     }
 
-    // إضافة شاشة مع صلاحية لرول
+
     @Transactional
     public RoleScreen addScreenToRole(Long roleId, Screen screen, Operation operation) {
         Role role = roleRepository.findById(roleId)

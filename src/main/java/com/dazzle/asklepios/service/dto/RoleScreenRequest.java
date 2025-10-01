@@ -7,8 +7,8 @@ import lombok.Data;
 @Data
 public class RoleScreenRequest {
 
-    private Screen screen;     // ex: "Coding Module:CPT"
-    private Operation permission; // "VIEW" or "EDIT"
+    private Screen screen;
+    private Operation permission;
 
     public RoleScreenRequest(Screen screen, Operation permission) {
         this.screen = screen;
