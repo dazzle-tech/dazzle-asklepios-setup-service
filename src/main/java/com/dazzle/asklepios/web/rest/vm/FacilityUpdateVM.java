@@ -12,6 +12,7 @@ import java.io.Serializable;
 public record FacilityUpdateVM(
         @NotNull Long id,
         String name,
+        @NotNull String code,
         @NotNull FacilityType type,
         String emailAddress,
         String phone1,
@@ -26,6 +27,7 @@ public record FacilityUpdateVM(
                 return new FacilityUpdateVM(
                         facility.getId(),
                         facility.getName(),
+                        facility.getCode(),
                         facility.getType(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),

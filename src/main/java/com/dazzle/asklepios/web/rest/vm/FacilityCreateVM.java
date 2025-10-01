@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record FacilityCreateVM(
         @NotNull String name,
+        @NotNull String code,
         @NotNull FacilityType type,
         String emailAddress,
         String phone1,
@@ -28,6 +29,7 @@ public record FacilityCreateVM(
         public static FacilityCreateVM ofEntity(Facility facility) {
                 return new FacilityCreateVM(
                         facility.getName(),
+                        facility.getCode(),
                         facility.getType(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),
