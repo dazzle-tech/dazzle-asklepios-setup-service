@@ -1,8 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.enumeration.Screen;
-import com.dazzle.asklepios.service.ScreenService;
-import com.dazzle.asklepios.web.rest.vm.RoleResponseVM;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,10 +13,10 @@ import java.util.List;
 @RequestMapping("/api/setup/screen")
 public class ScreenController {
 
-    private final ScreenService screenService;
 
-    public ScreenController(ScreenService screenService) {
-        this.screenService = screenService;
+
+    public ScreenController() {
+
     }
 
     @GetMapping
