@@ -22,8 +22,9 @@ public class RoleScreen {
     @Column(name = "role_id", nullable = false)
     private Long roleId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "screen", nullable = false, length = 100)
-    private String screen;
+    private Screen screen;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "operation", nullable = false, length = 50)

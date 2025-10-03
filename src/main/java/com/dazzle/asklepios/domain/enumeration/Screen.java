@@ -132,20 +132,7 @@ public enum Screen {
     CDT_CODES,
     SNOMED_CT;
 
-    @JsonValue
-    public String toValue() {
-        String value = name().toLowerCase().replace("_", " ");
-        String[] words = value.split(" ");
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                sb.append(Character.toUpperCase(word.charAt(0)))
-                        .append(word.substring(1))
-                        .append(" ");
-            }
-        }
-        return sb.toString().trim();
-    }
+
 
 
     @JsonCreator

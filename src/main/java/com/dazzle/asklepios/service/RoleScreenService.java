@@ -32,7 +32,7 @@ public class RoleScreenService {
 
         RoleScreen rs = RoleScreen.builder()
                 .role(role)
-                .screen(screen.toString())
+                .screen(screen)
                 .operation(operation)
                 .build();
 

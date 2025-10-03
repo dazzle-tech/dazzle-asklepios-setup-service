@@ -13,12 +13,8 @@ import java.util.List;
 public interface RoleAuthorityRepository extends JpaRepository<RoleAuthority, RoleAuthorityId> {
 
 
-    @Modifying
-    @Query("delete from RoleAuthority ra where ra.id.roleId = :roleId and ra.id.authorityName = :authorityName")
-    void deleteByRoleIdAndAuthority(@Param("roleId") Long roleId,
-                                    @Param("authorityName") String authorityName);
 
-
+    void deleteByRoleId(Long roleId);
 
 }
 
