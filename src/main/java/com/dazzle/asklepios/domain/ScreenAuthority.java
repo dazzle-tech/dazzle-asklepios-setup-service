@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Operation;
+import com.dazzle.asklepios.domain.enumeration.Screen;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -21,8 +22,9 @@ public class ScreenAuthority {
     private Long id;
 
     @NotNull(message = "screen must not be null")
+    @Enumerated(EnumType.STRING)
     @Column(name = "screen", nullable = false, length = 100)
-    private String screen;
+    private Screen screen;
 
     @NotNull(message = "operation must not be null")
     @Enumerated(EnumType.STRING)

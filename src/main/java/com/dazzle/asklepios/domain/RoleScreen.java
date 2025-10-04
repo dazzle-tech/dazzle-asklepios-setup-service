@@ -1,10 +1,17 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.Operation;
-import com.dazzle.asklepios.domain.enumeration.Screen;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.EmbeddedId;
 
 @Entity
 @Getter
@@ -15,23 +22,12 @@ import lombok.*;
 @Table(name = "role_screen")
 public class RoleScreen {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "role_id", nullable = false)
-    private Long roleId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "screen", nullable = false, length = 100)
-    private Screen screen;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "operation", nullable = false, length = 50)
-    private Operation operation;
+    @EmbeddedId
+    private RoleScreenId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", referencedColumnName = "id", insertable = false, updatable = false)
     private Role role;
 }
+
 

@@ -13,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,84 +29,57 @@ public class RolePermissionService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleId));
 
-        // 🗑️ 1. Remove all existing role screens and authorities
-        roleScreenRepository.deleteByRoleId(roleId);
+        // 🧹 1. Delete all existing role screens and authorities for this role
+        roleScreenRepository.deleteByIdRoleId(roleId);
         roleAuthorityRepository.deleteByRoleId(roleId);
 
-        // 🗂️ 2. Prepare lists for batch insert
+        // 📋 2. Prepare lists for batch insert
         List<RoleScreen> roleScreensToSave = new ArrayList<>();
         List<RoleAuthority> roleAuthoritiesToSave = new ArrayList<>();
 
-        // ➕ 3. Build new role screens and authorities
+        // ➕ 3. Build new role screen and authority entries
         for (RoleScreenRequest req : requests) {
-            // Add RoleScreen
+            Screen screenEnum = req.getScreen();
+            Operation operationEnum = req.getPermission();
+
+            // 🧠 Composite primary key
+            RoleScreenId rsId = new RoleScreenId(roleId, screenEnum, operationEnum);
+
+            // 📝 Build entity without a separate auto-generated ID
             RoleScreen rs = RoleScreen.builder()
+                    .id(rsId)
                     .role(role)
-                    .roleId(roleId)
-                    .screen(req.getScreen())
-                    .operation(req.getPermission())
                     .build();
             roleScreensToSave.add(rs);
 
-            // Add RoleAuthorities
-            if (req.getPermission() == Operation.ALL) {
-                // If ALL, fetch all operations from screen_authority
-                List<ScreenAuthority> allOps = screenAuthorityRepository.findByScreen(req.getScreen());
-                for (ScreenAuthority sa : allOps) {
-                    RoleAuthorityId raId = new RoleAuthorityId(roleId, sa.getAuthorityName());
-                    RoleAuthority ra = RoleAuthority.builder()
-                            .id(raId)
-                            .role(role)
-                            .build();
-                    roleAuthoritiesToSave.add(ra);
-                }
-            } else {
-                // Otherwise, fetch specific screen + operation authorities
-                List<ScreenAuthority> screenAuths =
-                        screenAuthorityRepository.findByScreenAndOperation(req.getScreen(), req.getPermission());
-                for (ScreenAuthority sa : screenAuths) {
-                    RoleAuthorityId raId = new RoleAuthorityId(roleId, sa.getAuthorityName());
-                    RoleAuthority ra = RoleAuthority.builder()
-                            .id(raId)
-                            .role(role)
-                            .build();
-                    roleAuthoritiesToSave.add(ra);
-                }
+            // 🔐 Create role authorities for this screen + operation
+            List<ScreenAuthority> screenAuths =
+                    screenAuthorityRepository.findByScreenAndOperation(screenEnum, operationEnum);
+            for (ScreenAuthority sa : screenAuths) {
+                RoleAuthorityId raId = new RoleAuthorityId(roleId, sa.getAuthorityName());
+                RoleAuthority ra = RoleAuthority.builder()
+                        .id(raId)
+                        .role(role)
+                        .build();
+                roleAuthoritiesToSave.add(ra);
             }
         }
 
-        // 💾 4. Save all in batch
+        // 💾 4. Save all records in batch
         roleScreenRepository.saveAll(roleScreensToSave);
         roleAuthorityRepository.saveAll(roleAuthoritiesToSave);
     }
 
-
-    private void addAuthorities(Long roleId, Role role, Screen screen, Operation op) {
-        List<ScreenAuthority> screenAuths =
-                screenAuthorityRepository.findByScreenAndOperation(screen, op);
-
-        for (ScreenAuthority sa : screenAuths) {
-            RoleAuthorityId raId = new RoleAuthorityId(roleId, sa.getAuthorityName());
-            RoleAuthority ra = RoleAuthority.builder()
-                    .id(raId)
-                    .role(role)
-                    .build();
-            roleAuthorityRepository.save(ra);
-        }
-    }
-
-
     public List<RoleScreenRequest> getRoleScreens(Long roleId) {
-        // Fetch role_screen mappings for the given role
-        List<RoleScreen> screenRoles = roleScreenRepository.findByRoleId(roleId);
+        // 📥 Fetch all role_screen mappings for the given role
+        List<RoleScreen> screenRoles = roleScreenRepository.findByIdRoleId(roleId);
 
-        // Convert to DTO
+        // 🔄 Convert entities to DTOs
         return screenRoles.stream()
                 .map(sr -> new RoleScreenRequest(
-                        sr.getScreen(),      // Enum مباشرة
-                        sr.getOperation()    // Enum مباشرة
+                        sr.getId().getScreen(),
+                        sr.getId().getOperation()
                 ))
-
                 .toList();
     }
 }
