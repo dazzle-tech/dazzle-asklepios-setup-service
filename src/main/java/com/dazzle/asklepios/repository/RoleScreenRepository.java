@@ -2,11 +2,10 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.RoleScreen;
 import com.dazzle.asklepios.domain.RoleScreenId;
-import com.dazzle.asklepios.domain.enumeration.Operation;
-import com.dazzle.asklepios.domain.enumeration.Screen;
-import jakarta.transaction.Transactional;
+import com.dazzle.asklepios.web.rest.vm.RoleScreenVM;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,6 +16,8 @@ public interface RoleScreenRepository extends JpaRepository<RoleScreen, RoleScre
 
     void deleteByIdRoleId(Long roleId);
     List<RoleScreen> findByIdRoleId(Long roleId);
+
+
 
 }
 

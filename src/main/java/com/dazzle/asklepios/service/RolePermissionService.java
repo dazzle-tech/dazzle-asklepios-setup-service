@@ -1,31 +1,43 @@
 package com.dazzle.asklepios.service;
 
-import com.dazzle.asklepios.domain.*;
+import com.dazzle.asklepios.domain.Role;
+import com.dazzle.asklepios.domain.RoleAuthority;
+import com.dazzle.asklepios.domain.RoleAuthorityId;
+import com.dazzle.asklepios.domain.RoleScreen;
+import com.dazzle.asklepios.domain.RoleScreenId;
+import com.dazzle.asklepios.domain.ScreenAuthority;
 import com.dazzle.asklepios.domain.enumeration.Operation;
 import com.dazzle.asklepios.domain.enumeration.Screen;
 import com.dazzle.asklepios.repository.RoleAuthorityRepository;
 import com.dazzle.asklepios.repository.RoleRepository;
 import com.dazzle.asklepios.repository.RoleScreenRepository;
 import com.dazzle.asklepios.repository.ScreenAuthorityRepository;
-import com.dazzle.asklepios.service.dto.RoleScreenRequest;
+import com.dazzle.asklepios.web.rest.vm.RoleScreenVM;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 
 @Service
 @RequiredArgsConstructor
 public class RolePermissionService {
+
+    private static final int MAX_FETCH_LIMIT = 2000;
 
     private final RoleScreenRepository roleScreenRepository;
     private final RoleRepository roleRepository;
     private final RoleAuthorityRepository roleAuthorityRepository;
     private final ScreenAuthorityRepository screenAuthorityRepository;
 
+
     @Transactional
-    public void updateRolePermissions(Long roleId, List<RoleScreenRequest> requests) {
+    public void updateRolePermissions(Long roleId, List<RoleScreenVM> requests) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + roleId));
 
@@ -38,9 +50,9 @@ public class RolePermissionService {
         List<RoleAuthority> roleAuthoritiesToSave = new ArrayList<>();
 
         // ➕ 3. Build new role screen and authority entries
-        for (RoleScreenRequest req : requests) {
-            Screen screenEnum = req.getScreen();
-            Operation operationEnum = req.getPermission();
+        for (RoleScreenVM req : requests) {
+            Screen screenEnum = req.screen();
+            Operation operationEnum = req.permission();
 
             // 🧠 Composite primary key
             RoleScreenId rsId = new RoleScreenId(roleId, screenEnum, operationEnum);
@@ -70,16 +82,27 @@ public class RolePermissionService {
         roleAuthorityRepository.saveAll(roleAuthoritiesToSave);
     }
 
-    public List<RoleScreenRequest> getRoleScreens(Long roleId) {
-        // 📥 Fetch all role_screen mappings for the given role
+    @Transactional
+    public List<RoleScreenVM> getRoleScreens(Long roleId) {
+
+        if (!roleRepository.existsById(roleId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found");
+        }
+
         List<RoleScreen> screenRoles = roleScreenRepository.findByIdRoleId(roleId);
 
-        // 🔄 Convert entities to DTOs
+        if (screenRoles.size() > MAX_FETCH_LIMIT) {
+
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "Too many records to fetch");
+        }
+
         return screenRoles.stream()
-                .map(sr -> new RoleScreenRequest(
+                .filter(Objects::nonNull)
+                .map(sr -> new RoleScreenVM(
                         sr.getId().getScreen(),
                         sr.getId().getOperation()
                 ))
-                .toList();
+                .toList(); // Collect results into an immutable list
     }
+
 }
