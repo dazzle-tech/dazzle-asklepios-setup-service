@@ -1,7 +1,6 @@
-// src/main/java/com/dazzle/asklepios/repository/MenuRepository.java
 package com.dazzle.asklepios.repository;
 
-import com.dazzle.asklepios.domain.Role; // <-- managed @Entity already in your app
+import com.dazzle.asklepios.domain.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

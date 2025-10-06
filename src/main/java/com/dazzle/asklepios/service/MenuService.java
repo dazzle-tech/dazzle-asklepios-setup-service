@@ -1,4 +1,3 @@
-// src/main/java/com/dazzle/asklepios/service/MenuService.java
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.enumeration.Operation;
@@ -6,10 +5,15 @@ import com.dazzle.asklepios.domain.enumeration.Screen;
 import com.dazzle.asklepios.repository.MenuRepository;
 import com.dazzle.asklepios.web.rest.vm.MenuItemVM;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger; import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -22,11 +26,12 @@ public class MenuService {
     public List<MenuItemVM> getMenu(Long userId, Long facilityId) {
         var rows = menuRepository.findScreensForUserAndFacility(userId, facilityId);
 
-        // screen -> union(operations)
+        // screen -> union(xoperations)
         Map<Screen, EnumSet<Operation>> byScreen = new EnumMap<>(Screen.class);
 
+        System.out.println(byScreen);
         for (var row : rows) {
-            Screen screen = tryParseScreen(row.getScreen());
+          Screen screen = tryParseScreen(row.getScreen());
             if (screen == null) {
                 LOG.warn("Skipping unknown screen value from DB: {}", row.getScreen());
                 continue;
@@ -40,7 +45,7 @@ public class MenuService {
         }
 
         if (byScreen.isEmpty()) {
-            // No grants in this facility for this user → frontend will show only Dashboard
+            // No screen in this facility for this user → frontend will show only Dashboard
             return List.of();
         }
 
@@ -50,19 +55,16 @@ public class MenuService {
                 .toList();
     }
 
+
     private Screen tryParseScreen(String raw) {
-        if (raw == null) return null;
-        String s = raw.trim();
-        // 1) Try exact enum (USERS, ICD_10, etc.)
-        try { return Screen.valueOf(s.toUpperCase()); } catch (Exception ignore) {}
-        // 2) Replace hyphens/slashes with spaces and use your @JsonCreator(fromValue)
-        String cleaned = s.replace('-', ' ').replace('/', ' ').replaceAll("\\s+", " ").trim();
-        try { return Screen.fromValue(cleaned); } catch (Exception ignore) {}
-        // 3) Strip non-alphanumerics → spaces, then fromValue again
-        String alpha = s.replaceAll("[^A-Za-z0-9]+", " ").trim();
-        try { return Screen.fromValue(alpha); } catch (Exception ignore) {}
+    if (raw == null) return null;
+    try {
+        return Screen.valueOf(raw.trim());
+    } catch (Exception e) {
+        LOG.warn("Skipping unknown screen value from DB (no normalization applied): {}", raw);
         return null;
     }
+}
 
     private Operation tryParseOperation(String raw) {
         if (raw == null) return null;

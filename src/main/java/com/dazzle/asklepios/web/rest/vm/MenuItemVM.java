@@ -8,10 +8,9 @@ import java.util.EnumSet;
 
 public record MenuItemVM(
         Screen screen,                // backend enum value
-        String label,                 // human label (e.g., "Users")
         EnumSet<Operation> operations // union of ops from all roles
 ) {
     public static MenuItemVM of(Screen screen, String label, EnumSet<Operation> ops) {
-        return new MenuItemVM(screen, label, ops == null ? EnumSet.noneOf(Operation.class) : ops);
+        return new MenuItemVM(screen, ops == null ? EnumSet.noneOf(Operation.class) : ops);
     }
 }
