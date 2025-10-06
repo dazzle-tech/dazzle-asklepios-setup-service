@@ -55,7 +55,7 @@ public class Department implements Serializable {
     private Boolean appointable;
 
     @NotNull
-    @Column(name = "department_code", nullable = false, length = 50)
+    @Column(name = "code", nullable = false, length = 50)
     private String departmentCode;
 
     @Column(name = "phone_number", length = 50)

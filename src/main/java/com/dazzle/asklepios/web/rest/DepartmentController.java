@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/setup/department")
@@ -51,10 +53,13 @@ public class DepartmentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments() {
+    public ResponseEntity<Map<String, Object>> getAllDepartments() {
         LOG.debug("REST request to get all Departments");
         List<DepartmentResponseVM> departments = departmentService.findAll();
-        return ResponseEntity.ok(departments);
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalRecords", departments.size());
+        response.put("data", departments);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -67,30 +72,39 @@ public class DepartmentController {
 
 
     @GetMapping("/facility/{facilityId}")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByFacility(@PathVariable("facilityId") Long facilityId) {
+    public ResponseEntity<Map<String, Object>> getDepartmentByFacility(@PathVariable("facilityId") Long facilityId) {
         LOG.debug("REST request to get Departments by Facility facility_id={}", facilityId);
         List<DepartmentResponseVM> departments = departmentService.findByFacilityId(facilityId).stream()
                 .map(DepartmentResponseVM::ofEntity)
                 .toList();
-        return ResponseEntity.ok(departments);
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalRecords", departments.size());
+        response.put("data", departments);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/department-list-by-type")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByType(@RequestHeader DepartmentType type) {
+    public ResponseEntity<Map<String, Object>> getDepartmentByType(@RequestHeader DepartmentType type) {
         LOG.debug("REST request to get Departments by Type department_type={}", type);
         List<DepartmentResponseVM> departments = departmentService.findByDepartmentType(type).stream()
                 .map(DepartmentResponseVM::ofEntity)
                 .toList();
-        return ResponseEntity.ok(departments);
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalRecords", departments.size());
+        response.put("data", departments);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/department-list-by-name")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByName(@RequestHeader String name) {
+    public ResponseEntity<Map<String, Object>> getDepartmentByName(@RequestHeader String name) {
         LOG.debug("REST request to get Departments by Name name={}", name);
         List<DepartmentResponseVM> departments = departmentService.findByDepartmentName(name).stream()
                 .map(DepartmentResponseVM::ofEntity)
                 .toList();
-        return ResponseEntity.ok(departments);
+        Map<String, Object> response = new HashMap<>();
+        response.put("totalRecords", departments.size());
+        response.put("data", departments);
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/toggle-active")

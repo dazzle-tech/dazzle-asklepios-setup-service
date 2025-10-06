@@ -49,7 +49,8 @@ class DepartmentControllerTest {
 
         mockMvc.perform(get("/api/setup/department"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("INPATIENT Department"));
+                .andExpect(jsonPath("$.totalRecords").value(1))
+                .andExpect(jsonPath("$.data[0].name").value("INPATIENT Department"));
     }
 
     // GET /api/setup/department/{id}
@@ -212,7 +213,8 @@ class DepartmentControllerTest {
 
         mockMvc.perform(get("/api/setup/department/facility/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Oncology"));
+                .andExpect(jsonPath("$.totalRecords").value(1))
+                .andExpect(jsonPath("$.data[0].name").value("Oncology"));
     }
 
     // GET /api/setup/department/department-list-by-type
@@ -226,9 +228,10 @@ class DepartmentControllerTest {
                 .thenReturn(List.of(dept));
 
         mockMvc.perform(get("/api/setup/department/department-list-by-type")
-                        .header("type", "INPATIENT_WARD"))
+                        .header("type", DepartmentType.INPATIENT_WARD))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("INPATIENT Department"));
+                .andExpect(jsonPath("$.totalRecords").value(1))
+                .andExpect(jsonPath("$.data[0].name").value("INPATIENT Department"));
     }
 
     // GET /api/setup/department/department-list-by-name
@@ -244,7 +247,8 @@ class DepartmentControllerTest {
         mockMvc.perform(get("/api/setup/department/department-list-by-name")
                         .header("name", "INPATIENT Department"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("INPATIENT Department"));
+                .andExpect(jsonPath("$.totalRecords").value(1))
+                .andExpect(jsonPath("$.data[0].name").value("INPATIENT Department"));
 
     }
 
@@ -280,8 +284,8 @@ class DepartmentControllerTest {
     void testGetAllDepartmentTypes() throws Exception {
         mockMvc.perform(get("/api/setup/department/department-type"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value("Inpatient Ward"))
-                .andExpect(jsonPath("$[1]").value("Outpatient Clinic"));
+                .andExpect(jsonPath("$[0]").value(DepartmentType.INPATIENT_WARD.name()))
+                .andExpect(jsonPath("$[1]").value(DepartmentType.OUTPATIENT_CLINIC.name()));
     }
 
     // GET /api/setup/department/encounter-type
@@ -289,7 +293,7 @@ class DepartmentControllerTest {
     void testGetAllEncounterTypes() throws Exception {
         mockMvc.perform(get("/api/setup/department/encounter-type"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value("Emergency"))
-                .andExpect(jsonPath("$[1]").value("Clinic"));
+                .andExpect(jsonPath("$[0]").value(EncounterType.EMERGENCY.name()))
+                .andExpect(jsonPath("$[1]").value(EncounterType.CLINIC.name()));
     }
 }
