@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.ScreenAuthority;
-import com.dazzle.asklepios.domain.enumeration.Operation;
 import com.dazzle.asklepios.repository.ScreenAuthorityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
