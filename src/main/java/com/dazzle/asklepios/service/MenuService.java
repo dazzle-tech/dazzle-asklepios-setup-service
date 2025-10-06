@@ -51,7 +51,7 @@ public class MenuService {
 
         return byScreen.entrySet().stream()
                 .sorted(Comparator.comparing(e -> e.getKey().name()))
-                .map(e -> MenuItemVM.of(e.getKey(), e.getKey().toValue(), e.getValue()))
+                .map(e -> MenuItemVM.of(e.getKey(), e.getValue()))
                 .toList();
     }
 

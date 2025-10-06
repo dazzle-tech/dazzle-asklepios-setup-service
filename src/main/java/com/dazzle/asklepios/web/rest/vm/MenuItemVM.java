@@ -10,7 +10,7 @@ public record MenuItemVM(
         Screen screen,                // backend enum value
         EnumSet<Operation> operations // union of ops from all roles
 ) {
-    public static MenuItemVM of(Screen screen, String label, EnumSet<Operation> ops) {
+    public static MenuItemVM of(Screen screen, EnumSet<Operation> ops) {
         return new MenuItemVM(screen, ops == null ? EnumSet.noneOf(Operation.class) : ops);
     }
 }
