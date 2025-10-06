@@ -36,6 +36,7 @@ public class SecurityConfiguration {
                 // prettier-ignore
                 authz
                     .requestMatchers(mvc.pattern("/setup/api/**")).permitAll()
+                    .requestMatchers(mvc.pattern("/setup-service/v3/api-docs/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers(mvc.pattern("/api/**")).permitAll()
                     .requestMatchers(mvc.pattern("/v3/api-docs/**")).hasAuthority(AuthoritiesConstants.ADMIN)
