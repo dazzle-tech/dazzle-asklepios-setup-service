@@ -116,15 +116,4 @@ public class DepartmentController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    @GetMapping("/department-type")
-    public ResponseEntity<List<DepartmentType>> getAllDepartmentTypes() {
-        List<DepartmentType> departmentTypes = Arrays.asList(DepartmentType.values());
-        return ResponseEntity.ok(departmentTypes);
-    }
-
-    @GetMapping("/encounter-type")
-    public ResponseEntity<List<EncounterType>> getAllEncounterTypes() {
-        List<EncounterType> encounterTypes = Arrays.asList(EncounterType.values());
-        return ResponseEntity.ok(encounterTypes);
-    }
 }
