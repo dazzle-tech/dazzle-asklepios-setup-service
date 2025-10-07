@@ -7,12 +7,16 @@ import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -61,7 +65,7 @@ class DepartmentServiceTest {
 
     @Test
     void testCreateDepartment_Success() {
-        DepartmentCreateVM vm = new DepartmentCreateVM(
+        var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", null, true, "tester"
         );
@@ -74,13 +78,12 @@ class DepartmentServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Cardiology");
         assertThat(result.getFacility()).isEqualTo(facility);
-
         verify(departmentRepository).save(any(Department.class));
     }
 
     @Test
     void testCreateDepartment_FacilityNotFound() {
-        DepartmentCreateVM vm = new DepartmentCreateVM(
+        var vm = new DepartmentCreateVM(
                 "Cardiology", 99L, DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", null, true, "tester"
         );
@@ -88,14 +91,13 @@ class DepartmentServiceTest {
         when(facilityRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> departmentService.create(vm));
-
         verify(departmentRepository, never()).save(any());
     }
 
     @Test
     void testUpdateDepartment_Success() {
-        DepartmentUpdateVM vm = new DepartmentUpdateVM( 5000L,
-                "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+        var vm = new DepartmentUpdateVM(
+                5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "NEW01", "111", "new@test.com", null, false, "modifier"
         );
 
@@ -122,26 +124,64 @@ class DepartmentServiceTest {
     }
 
     @Test
-    void testFindByFacilityId() {
-        when(departmentRepository.findByFacilityId(facility.getId()))
-                .thenReturn(List.of(department));
+    void testFindAll_Paginated_MapsToVM() {
+        var pageable = PageRequest.of(0, 10);
+        Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
 
-        List<Department> result = departmentService.findByFacilityId(facility.getId());
+        when(departmentRepository.findAll(pageable)).thenReturn(page);
 
-        assertThat(result).hasSize(1).contains(department);
+        Page<DepartmentResponseVM> result = departmentService.findAll(pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        assertThat(result.getContent().get(0).departmentCode()).isEqualTo("CARD01");
+        verify(departmentRepository).findAll(pageable);
     }
 
     @Test
-    void testFindAll() {
-        when(departmentRepository.findAll()).thenReturn(List.of(department));
+    void testFindByFacilityId_Paginated() {
+        var pageable = PageRequest.of(0, 5);
+        Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
 
-        var result = departmentService.findAll();
+        when(departmentRepository.findByFacilityId(facility.getId(), pageable)).thenReturn(page);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).name()).isEqualTo(department.getName());
-        assertThat(result.get(0).departmentCode()).isEqualTo(department.getDepartmentCode());
+        Page<DepartmentResponseVM> result = departmentService.findByFacilityId(facility.getId(), pageable);
 
-        verify(departmentRepository).findAll();
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        verify(departmentRepository).findByFacilityId(facility.getId(), pageable);
+    }
+
+    @Test
+    void testFindByDepartmentType_Paginated() {
+        var pageable = PageRequest.of(0, 5);
+        Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
+
+        when(departmentRepository.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable))
+                .thenReturn(page);
+
+        Page<DepartmentResponseVM> result =
+                departmentService.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        verify(departmentRepository).findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
+    }
+
+    @Test
+    void testFindByDepartmentName_Paginated() {
+        var pageable = PageRequest.of(0, 5);
+        Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
+
+        when(departmentRepository.findByNameContainingIgnoreCase("Card", pageable))
+                .thenReturn(page);
+
+        Page<DepartmentResponseVM> result = departmentService.findByDepartmentName("Card", pageable);
+
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        verify(departmentRepository).findByNameContainingIgnoreCase("Card", pageable);
     }
 
     @Test
@@ -152,7 +192,6 @@ class DepartmentServiceTest {
 
         assertThat(result).isPresent();
         assertThat(result.get()).isEqualTo(department);
-
         verify(departmentRepository).findById(department.getId());
     }
 
@@ -163,30 +202,6 @@ class DepartmentServiceTest {
         Optional<Department> result = departmentService.findOne(99L);
 
         assertThat(result).isEmpty();
-
         verify(departmentRepository).findById(99L);
     }
-
-    @Test
-    void testFindByDepartmentType() {
-        when(departmentRepository.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC))
-                .thenReturn(List.of(department));
-
-        List<Department> result = departmentService.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC);
-
-        assertThat(result).hasSize(1).contains(department);
-        verify(departmentRepository).findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC);
-    }
-
-    @Test
-    void testFindByDepartmentName() {
-        when(departmentRepository.findByNameContainingIgnoreCase("Card"))
-                .thenReturn(List.of(department));
-
-        List<Department> result = departmentService.findByDepartmentName("Card");
-
-        assertThat(result).hasSize(1).contains(department);
-        verify(departmentRepository).findByNameContainingIgnoreCase("Card");
-    }
-
 }
