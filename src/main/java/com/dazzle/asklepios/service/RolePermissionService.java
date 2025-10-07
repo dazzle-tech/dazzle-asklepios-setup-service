@@ -13,6 +13,7 @@ import com.dazzle.asklepios.repository.RoleRepository;
 import com.dazzle.asklepios.repository.RoleScreenRepository;
 import com.dazzle.asklepios.repository.ScreenAuthorityRepository;
 import com.dazzle.asklepios.web.rest.RoleController;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.RoleScreenVM;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,11 @@ public class RolePermissionService {
     @Transactional
     public void updateRolePermissions(Long roleId, List<RoleScreenVM> requests) {
         Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleId));
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Role not found",
+                        "role",
+                        "roleNotFound"
+                ));
 
         // 🧹 1. Delete all existing role screens and authorities for this role
         roleScreenRepository.deleteByIdRoleId(roleId);
