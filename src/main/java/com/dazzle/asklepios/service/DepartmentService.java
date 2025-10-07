@@ -5,9 +5,14 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-import com.dazzle.asklepios.web.rest.vm.*;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,35 +61,65 @@ public class DepartmentService {
 
     public Optional<Department> update(Long id, DepartmentUpdateVM departmentVM) {
         LOG.debug("Request to update Department id={} with {}", id, departmentVM);
+
         Facility facility = facilityRepository.findById(departmentVM.facilityId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Facility not found with id " + departmentVM.facilityId()
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Facility not found with id " + departmentVM.facilityId(),
+                        "facility",
+                        "notfound"
                 ));
-        return departmentRepository.findById(id).map(existing -> {
-            if (departmentVM.name() != null) existing.setName(departmentVM.name());
-            if (facility != null) existing.setFacility(facility);
-            if (departmentVM.departmentType() != null) existing.setDepartmentType(departmentVM.departmentType());
-            if (departmentVM.appointable() != null) existing.setAppointable(departmentVM.appointable());
-            if (departmentVM.departmentCode() != null) existing.setDepartmentCode(departmentVM.departmentCode());
-            if (departmentVM.phoneNumber() != null) existing.setPhoneNumber(departmentVM.phoneNumber());
-            if (departmentVM.email() != null) existing.setEmail(departmentVM.email());
-            if (departmentVM.encounterType() != null) existing.setEncounterType(departmentVM.encounterType());
-            if (departmentVM.isActive() != null) existing.setIsActive(departmentVM.isActive());
-            if (departmentVM.lastModifiedBy() != null) existing.setLastModifiedBy(departmentVM.lastModifiedBy());
-            existing.setLastModifiedDate(LocalDateTime.now());
-            Department updated = departmentRepository.save(existing);
-            return updated;
-        });
+
+        Department department = departmentRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Department not found with id " + id,
+                        "department",
+                        "notfound"
+                ));
+        if (departmentVM.name() != null) department.setName(departmentVM.name());
+        if (facility != null) department.setFacility(facility);
+        if (departmentVM.departmentType() != null) department.setDepartmentType(departmentVM.departmentType());
+        if (departmentVM.appointable() != null) department.setAppointable(departmentVM.appointable());
+        if (departmentVM.departmentCode() != null) department.setDepartmentCode(departmentVM.departmentCode());
+        if (departmentVM.phoneNumber() != null) department.setPhoneNumber(departmentVM.phoneNumber());
+        if (departmentVM.email() != null) department.setEmail(departmentVM.email());
+        if (departmentVM.encounterType() != null) department.setEncounterType(departmentVM.encounterType());
+        if (departmentVM.isActive() != null) department.setIsActive(departmentVM.isActive());
+        if (departmentVM.lastModifiedBy() != null) department.setLastModifiedBy(departmentVM.lastModifiedBy());
+
+        department.setLastModifiedDate(LocalDateTime.now());
+        Department updated = departmentRepository.save(department);
+
+        return Optional.of(updated);
     }
 
     @Transactional(readOnly = true)
     public List<DepartmentResponseVM> findAll() {
-        LOG.debug("Request to get all Facilities");
+        LOG.debug("Request to get all Departments (no pagination)");
         return departmentRepository.findAll()
                 .stream()
                 .map(DepartmentResponseVM::ofEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DepartmentResponseVM> findAll(Pageable pageable) {
+        LOG.debug("Request to get Departments with pagination: {}", pageable);
+        return departmentRepository.findAll(pageable).map(DepartmentResponseVM::ofEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DepartmentResponseVM> findByFacilityId(Long facilityId, Pageable pageable) {
+        return departmentRepository.findByFacilityId(facilityId, pageable).map(DepartmentResponseVM::ofEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DepartmentResponseVM> findByDepartmentType(DepartmentType type, Pageable pageable) {
+        return departmentRepository.findByDepartmentType(type, pageable).map(DepartmentResponseVM::ofEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DepartmentResponseVM> findByDepartmentName(String name, Pageable pageable) {
+        return departmentRepository.findByNameContainingIgnoreCase(name, pageable).map(DepartmentResponseVM::ofEntity);
     }
 
     @Transactional(readOnly = true)
@@ -118,5 +153,4 @@ public class DepartmentService {
                     return departmentRepository.save(department);
                 });
     }
-
 }
