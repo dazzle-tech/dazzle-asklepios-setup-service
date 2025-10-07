@@ -126,16 +126,4 @@ public class FacilityController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/facility-types")
-    public ResponseEntity<List<FacilityType>> getFacilityType() {
-        List<FacilityType> facilityType = Arrays.asList(FacilityType.values());
-        return ResponseEntity.ok(facilityType); // status 200 + body
-    }
-
-    @GetMapping("/currencies")
-    public ResponseEntity<List<Currency>> getCurrency() {
-        List<Currency> currencies = Arrays.asList(Currency.values());
-        return ResponseEntity.ok(currencies); // status 200 + body
-    }
-
 }

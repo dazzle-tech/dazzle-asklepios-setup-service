@@ -24,13 +24,12 @@ public class MenuService {
     private final MenuRepository menuRepository;
 
     public List<MenuItemVM> getMenu(Long userId, Long facilityId) {
-        var rows = menuRepository.findScreensForUserAndFacility(userId, facilityId);
+        List<MenuRepository.MenuRow> rows = menuRepository.findScreensForUserAndFacility(userId, facilityId);
 
         // screen -> union(xoperations)
         Map<Screen, EnumSet<Operation>> byScreen = new EnumMap<>(Screen.class);
 
-        System.out.println(byScreen);
-        for (var row : rows) {
+        for (MenuRepository.MenuRow row : rows) {
           Screen screen = tryParseScreen(row.getScreen());
             if (screen == null) {
                 LOG.warn("Skipping unknown screen value from DB: {}", row.getScreen());
@@ -44,8 +43,11 @@ public class MenuService {
             byScreen.computeIfAbsent(screen, k -> EnumSet.noneOf(Operation.class)).add(op);
         }
 
+        LOG.info("Total screens: {}", byScreen);
+
         if (byScreen.isEmpty()) {
             // No screen in this facility for this user → frontend will show only Dashboard
+            LOG.info("This User without any authority : {}", userId);
             return List.of();
         }
 
