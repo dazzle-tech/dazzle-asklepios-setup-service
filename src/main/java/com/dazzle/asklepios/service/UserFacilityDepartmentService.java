@@ -10,17 +10,20 @@ import com.dazzle.asklepios.repository.UserFacilityDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.vm.UserFacilityDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.UserFacilityDepartmentResponseVM;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import java.time.Instant;
 import java.util.List;
+import org.slf4j.Logger;
 
 @Service
 @Transactional
 public class UserFacilityDepartmentService {
 
     private static final String ENTITY_NAME = "userFacilityDepartment";
+    private static final Logger LOG = LoggerFactory.getLogger(UserFacilityDepartmentService.class);
 
     private final UserFacilityDepartmentRepository userFacilityDepartmentsRepository;
     private final FacilityRepository facilityRepository;
@@ -35,6 +38,7 @@ public class UserFacilityDepartmentService {
     }
 
     public UserFacilityDepartmentResponseVM createUserFacilityDepartment(UserFacilityDepartmentCreateVM vm) {
+        LOG.debug("Create UFD request vm={}", vm);
         Long facilityId = vm.facilityId();
         Long userId = vm.userId();
         Long departmentId = vm.departmentId();
@@ -64,6 +68,7 @@ public class UserFacilityDepartmentService {
     }
 
     public void toggleActiveStatus(Long id) {
+        LOG.debug("Toggle UFD isActive id={}", id);
         userFacilityDepartmentsRepository.findById(id).ifPresent(ufd -> {
             ufd.setIsActive(!Boolean.TRUE.equals(ufd.getIsActive()));
             ufd.setLastModifiedDate(Instant.now());
@@ -73,6 +78,7 @@ public class UserFacilityDepartmentService {
 
     @Transactional(readOnly = true)
     public List<UserFacilityDepartmentResponseVM> getUserFacilityDepartmentsByUser(Long userId) {
+        LOG.debug("List UFDs by userId={}", userId);
         return userFacilityDepartmentsRepository.findByUserId(userId)
                 .stream()
                 .map(UserFacilityDepartmentResponseVM::ofEntity)
@@ -81,6 +87,7 @@ public class UserFacilityDepartmentService {
 
     @Transactional(readOnly = true)
     public boolean exists(Long facilityId, Long userId, Long departmentId) {
+        LOG.debug("Check UFD exists facilityId={} userId={} departmentId={}", facilityId, userId, departmentId);
         return userFacilityDepartmentsRepository.findByFacilityIdAndUserIdAndDepartmentId(facilityId, userId, departmentId).isPresent();
     }
 }
