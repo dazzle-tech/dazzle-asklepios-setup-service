@@ -43,6 +43,8 @@ public class RolePermissionService {
 
     @Transactional
     public void updateRolePermissions(Long roleId, List<RoleScreenVM> requests) {
+
+        // ✅ 1. Verify that the role exists, otherwise throw 404
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new NotFoundAlertException(
                         "Role not found",
@@ -50,46 +52,62 @@ public class RolePermissionService {
                         "roleNotFound"
                 ));
 
-        // 🧹 1. Delete all existing role screens and authorities for this role
+        // 🧹 2. Remove all existing role screens and authorities
         roleScreenRepository.deleteByIdRoleId(roleId);
         roleAuthorityRepository.deleteByRoleId(roleId);
 
-        // 📋 2. Prepare lists for batch insert
+        // 📋 3. Prepare new lists for batch saving
         List<RoleScreen> roleScreensToSave = new ArrayList<>();
         List<RoleAuthority> roleAuthoritiesToSave = new ArrayList<>();
 
-        // ➕ 3. Build new role screen and authority entries
+        // ⚡ 4. Load all ScreenAuthority records once (to avoid N+1 queries)
+        List<ScreenAuthority> allAuthorities = screenAuthorityRepository.findAll();
+
+        LOG.info("Starting permission update for roleId={} with {} requests", roleId, requests.size());
+
+        // 🔁 5. Iterate over all incoming requests from the frontend
         for (RoleScreenVM req : requests) {
-            Screen screenEnum = req.screen();
-            Operation operationEnum = req.permission();
+            Screen screen = req.screen();
+            Operation operation = req.permission();
 
-            // 🧠 Composite primary key
-            RoleScreenId rsId = new RoleScreenId(roleId, screenEnum, operationEnum);
-
-            // 📝 Build entity without a separate auto-generated ID
-            RoleScreen rs = RoleScreen.builder()
-                    .id(rsId)
+            // 🧩 Create RoleScreen entity (link between role, screen, and operation)
+            RoleScreen roleScreen = RoleScreen.builder()
+                    .id(new RoleScreenId(roleId, screen, operation))
                     .role(role)
                     .build();
-            roleScreensToSave.add(rs);
+            roleScreensToSave.add(roleScreen);
 
-            // 🔐 Create role authorities for this screen + operation
-            List<ScreenAuthority> screenAuths =
-                    screenAuthorityRepository.findByScreenAndOperation(screenEnum, operationEnum);
-            for (ScreenAuthority sa : screenAuths) {
-                RoleAuthorityId raId = new RoleAuthorityId(roleId, sa.getAuthorityName());
-                RoleAuthority ra = RoleAuthority.builder()
-                        .id(raId)
-                        .role(role)
-                        .build();
-                roleAuthoritiesToSave.add(ra);
+            // 🔍 6. Find matching authorities for this screen and operation
+            List<RoleAuthority> matchedAuthorities = new ArrayList<>();
+
+            for (ScreenAuthority sa : allAuthorities) {
+                if (sa.getScreen() == screen && sa.getOperation() == operation) {
+                    RoleAuthority roleAuthority = RoleAuthority.builder()
+                            .id(new RoleAuthorityId(roleId, sa.getAuthorityName()))
+                            .role(role)
+                            .build();
+                    matchedAuthorities.add(roleAuthority);
+                }
             }
+
+            // ➕ 7. Collect all matched authorities for batch saving
+            roleAuthoritiesToSave.addAll(matchedAuthorities);
+
+            // 🧾 8. Log details for debugging and traceability
+            LOG.debug("Added {} authorities for screen={} operation={}",
+                    matchedAuthorities.size(), screen.name(), operation.name());
         }
 
-        // 💾 4. Save all records in batch
+        // 💾 9. Save all records in batch to minimize DB operations
         roleScreenRepository.saveAll(roleScreensToSave);
         roleAuthorityRepository.saveAll(roleAuthoritiesToSave);
+
+        // ✅ 10. Final summary log
+        LOG.info("Role permissions updated successfully for roleId={} ({} screens, {} authorities)",
+                roleId, roleScreensToSave.size(), roleAuthoritiesToSave.size());
     }
+
+
 
     @Transactional
     public List<RoleScreenVM> getRoleScreens(Long roleId) {

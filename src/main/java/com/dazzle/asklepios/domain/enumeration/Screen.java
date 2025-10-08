@@ -14,6 +14,7 @@ public enum Screen {
     PRODUCTS_CATALOG,
     WAREHOUSE_SETUP,
     WAREHOUSE_ITEMS_SETUP,
+    DEPARTMENT_STOCK,
 
     // Billing & Finance
     LEDGER_ACCOUNT,
@@ -92,7 +93,7 @@ public enum Screen {
     // Inpatient Care
     INPATIENT_LIST,
     WAITING_LIST,
-    DEPARTMENT_STOCK,
+
 
     // Day Case
     DAY_CASE_PATIENT_LIST,
