@@ -13,10 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,9 +36,10 @@ public class DepartmentService {
         LOG.debug("Request to create Department : {}", departmentVM);
 
         Facility facility = facilityRepository.findById(departmentVM.facilityId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Facility not found with id " + departmentVM.facilityId()
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Facility not found with id " + departmentVM.facilityId(),
+                        "facility",
+                        "notfound"
                 ));
 
         Department department = Department.builder()
