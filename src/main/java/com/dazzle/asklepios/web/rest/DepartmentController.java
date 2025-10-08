@@ -41,6 +41,7 @@ public class DepartmentController {
 
     @PostMapping
     public ResponseEntity<DepartmentResponseVM> createDepartment(@Valid @RequestBody DepartmentCreateVM departmentVM) {
+        LOG.debug("REST create Department payload={}", departmentVM);
         var result = departmentService.create(departmentVM);
         return ResponseEntity
                 .created(URI.create("/setup/api/department/" + result.getId()))
@@ -49,6 +50,7 @@ public class DepartmentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<DepartmentResponseVM> updateDepartment(@PathVariable Long id,@Valid @RequestBody DepartmentUpdateVM departmentUpdateVM) {
+        LOG.debug("REST update Department id={} payload={}", id, departmentUpdateVM);
         return departmentService.update(id, departmentUpdateVM)
                 .map(DepartmentResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -57,6 +59,7 @@ public class DepartmentController {
 
     @GetMapping
     public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments(@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
+        LOG.debug("REST list Departments page={} size={} sort={}", page, size, sort);
         Pageable pageable = buildPageable(page, size, sort);
         var pageResult = departmentService.findAll(pageable);
         HttpHeaders headers = new HttpHeaders();
@@ -67,6 +70,7 @@ public class DepartmentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<DepartmentResponseVM> getDepartment(@PathVariable Long id) {
+        LOG.debug("REST get Department id={}", id);
         return departmentService.findOne(id)
                 .map(DepartmentResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -75,6 +79,7 @@ public class DepartmentController {
 
     @GetMapping("/facility/{facilityId}")
     public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByFacility(@PathVariable("facilityId") Long facilityId,@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
+        LOG.debug("REST list Departments by facilityId={} page={} size={} sort={}", facilityId, page, size, sort);
         Pageable pageable = buildPageable(page, size, sort);
         var pageResult = departmentService.findByFacilityId(facilityId, pageable);
         HttpHeaders headers = new HttpHeaders();
@@ -85,6 +90,7 @@ public class DepartmentController {
 
     @GetMapping("/department-list-by-type")
     public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByType(@RequestParam DepartmentType type, @RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
+        LOG.debug("REST list Departments by type={} page={} size={} sort={}", type, page, size, sort);
         Pageable pageable = buildPageable(page, size, sort);
         var pageResult = departmentService.findByDepartmentType(type, pageable);
         HttpHeaders headers = new HttpHeaders();
@@ -95,6 +101,7 @@ public class DepartmentController {
 
     @GetMapping("/department-list-by-name")
     public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByName(@RequestParam String name,@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
+        LOG.debug("REST list Departments by name='{}' page={} size={} sort={}", name, page, size, sort);
         Pageable pageable = buildPageable(page, size, sort);
         var pageResult = departmentService.findByDepartmentName(name, pageable);
         HttpHeaders headers = new HttpHeaders();
@@ -105,6 +112,7 @@ public class DepartmentController {
 
     @PatchMapping("/{id}/toggle-active")
     public ResponseEntity<DepartmentResponseVM> toggleDepartmentActiveStatus(@PathVariable Long id) {
+        LOG.debug("REST toggle Department isActive id={}", id);
         return departmentService.toggleIsActive(id)
                 .map(DepartmentResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -112,6 +120,7 @@ public class DepartmentController {
     }
 
     private Pageable buildPageable(Integer page, Integer size, String sort) {
+        LOG.debug("Build pageable page={} size={} sort={}", page, size, sort);
         int p = Math.max(0, page);
         int s = Math.max(1, size);
         String[] parts = sort.split(",", 2);

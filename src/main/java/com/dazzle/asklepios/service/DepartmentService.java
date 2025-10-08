@@ -109,16 +109,19 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public Page<DepartmentResponseVM> findByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get Departments by Facility with pagination facilityId={} pageable={}", facilityId, pageable);
         return departmentRepository.findByFacilityId(facilityId, pageable).map(DepartmentResponseVM::ofEntity);
     }
 
     @Transactional(readOnly = true)
     public Page<DepartmentResponseVM> findByDepartmentType(DepartmentType type, Pageable pageable) {
+        LOG.debug("Request to get Departments by Type with pagination type={} pageable={}", type, pageable);
         return departmentRepository.findByDepartmentType(type, pageable).map(DepartmentResponseVM::ofEntity);
     }
 
     @Transactional(readOnly = true)
     public Page<DepartmentResponseVM> findByDepartmentName(String name, Pageable pageable) {
+        LOG.debug("Request to get Departments by Name with pagination name='{}' pageable={}", name, pageable);
         return departmentRepository.findByNameContainingIgnoreCase(name, pageable).map(DepartmentResponseVM::ofEntity);
     }
 
@@ -147,6 +150,7 @@ public class DepartmentService {
     }
 
     public Optional<Department> toggleIsActive(Long id) {
+        LOG.debug("Request to toggle Department isActive id={}", id);
         return departmentRepository.findById(id)
                 .map(department -> {
                     department.setIsActive(!Boolean.TRUE.equals(department.getIsActive()));
