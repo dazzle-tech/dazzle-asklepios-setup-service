@@ -2,28 +2,30 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Role;
 import com.dazzle.asklepios.repository.RoleRepository;
+import com.dazzle.asklepios.service.RolePermissionService;
 import com.dazzle.asklepios.service.RoleService;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.RoleCreateVM;
 import com.dazzle.asklepios.web.rest.vm.RoleResponseVM;
+import com.dazzle.asklepios.web.rest.vm.RoleScreenVM;
 import com.dazzle.asklepios.web.rest.vm.RoleUpdateVM;
 import jakarta.validation.Valid;
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.DeleteMapping;
-
 import org.springframework.web.server.ResponseStatusException;
+
+import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/setup/role")
@@ -31,10 +33,12 @@ public class RoleController {
 
     private static final Logger LOG = LoggerFactory.getLogger(RoleController.class);
 
+    private final RolePermissionService rolePermissionService;
     private final RoleService roleService;
     private final RoleRepository roleRepository;
 
-    public RoleController(RoleService roleService, RoleRepository roleRepository) {
+    public RoleController(RolePermissionService rolePermissionService, RoleService roleService, RoleRepository roleRepository) {
+        this.rolePermissionService = rolePermissionService;
         this.roleService = roleService;
         this.roleRepository = roleRepository;
     }
@@ -102,4 +106,48 @@ public class RoleController {
                 .toList();
         return ResponseEntity.ok(roles);
     }
+
+    @PutMapping("/{roleId}/screens")
+    public ResponseEntity<Void> updateRoleScreens(
+            @PathVariable Long roleId,
+            @RequestBody List<RoleScreenVM> requests
+    ) {
+        // Check for invalid or missing screen/permission definitions
+        boolean hasInvalid = requests.stream()
+                .anyMatch(req -> req.screen() == null || req.permission() == null);
+
+        if (hasInvalid) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "The request could not be processed"
+            );
+        }
+
+        rolePermissionService.updateRolePermissions(roleId, requests);
+        return ResponseEntity.ok().build();
+    }
+
+
+
+    /**
+     * Get all screens + operations for a role
+     */
+    @GetMapping("/{roleId}/screens")
+    public ResponseEntity<List<RoleScreenVM>> getRoleScreens(@PathVariable Long roleId) {
+        if (!roleRepository.existsById(roleId)) {
+            throw new NotFoundAlertException(
+                    "Role not found",
+                    "roleScreen",
+                    "roleNotFound"
+            );
+        }
+
+        List<RoleScreenVM> screens = rolePermissionService.getRoleScreens(roleId);
+        return ResponseEntity.ok(screens);
+    }
+
+
+
+
+
 }

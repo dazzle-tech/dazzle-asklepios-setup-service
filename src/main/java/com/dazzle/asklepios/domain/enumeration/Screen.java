@@ -14,6 +14,7 @@ public enum Screen {
     PRODUCTS_CATALOG,
     WAREHOUSE_SETUP,
     WAREHOUSE_ITEMS_SETUP,
+    DEPARTMENT_STOCK,
 
     // Billing & Finance
     LEDGER_ACCOUNT,
@@ -23,9 +24,11 @@ public enum Screen {
     ALLERGENS,
     POTENTIAL_DUPLICATE,
     BRAND_MEDICATIONS,
-    LOV_SETUP,
-    MODULES_SETUP,
+    LISTS_OF_VALUE,
+    MODULES_AND_SCREENS,
+    DATA_VALIDATION_MANAGER,
     DVM,
+
     ACCESS_ROLES,
     FACILITIES,
     DEPARTMENTS,
@@ -38,8 +41,8 @@ public enum Screen {
     RESOURCES,
     DENTAL_ACTIONS,
     USERS,
-    CATALOG,
-    DIAGNOSTICS_TEST,
+    CATALOG_SETUP,
+    DIAGNOSTICS_SETUP,
     VACCINE_SETUP,
     PROCEDURE_SETUP,
     ROOM_BED_SETUP,
@@ -50,15 +53,16 @@ public enum Screen {
     OPERATION_SETUP,
     PURCHASE_APPROVAL,
     QUESTIONNAIRE_SETUP,
-    MEDICATION_SCHEDULE,
+    MEDICATION_MATRIX_SETUP,
+    MEDICATION_SCHEDULE_SETUP,
     VISIT_DURATION,
     CLINICAL_PROTOCOLS_SETUP,
     SHIFT_SETUP,
     SUPPLIER_SETUP,
     SURGICAL_KITS_SETUP,
     USER_NEW,
-    REPORT_RESULT_TEMPLATE,
-    INVENTORY_PRODUCT_SETUP,
+    TEST_REPORT_TEMPLATE_SETUP,
+    PRODUCTS_SETUP,
 
     // Front Desk Office
     QUICK_APPOINTMENT,
@@ -68,7 +72,7 @@ public enum Screen {
 
     // Emergency
     ER_TRIAGE,
-    ER_WAITING_LIST,
+
     ER_DEPARTMENT,
     ER_DASHBOARD,
 
@@ -89,7 +93,7 @@ public enum Screen {
     // Inpatient Care
     INPATIENT_LIST,
     WAITING_LIST,
-    DEPARTMENT_STOCK,
+
 
     // Day Case
     DAY_CASE_PATIENT_LIST,
@@ -124,25 +128,12 @@ public enum Screen {
 
     // Coding Module
     CPT,
-    ICD10,
+    ICD_10,
     LOINC,
     CDT_CODES,
     SNOMED_CT;
 
-    @JsonValue
-    public String toValue() {
-        String value = name().toLowerCase().replace("_", " ");
-        String[] words = value.split(" ");
-        StringBuilder sb = new StringBuilder();
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                sb.append(Character.toUpperCase(word.charAt(0)))
-                        .append(word.substring(1))
-                        .append(" ");
-            }
-        }
-        return sb.toString().trim();
-    }
+
 
 
     @JsonCreator

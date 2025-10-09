@@ -1,0 +1,23 @@
+package com.dazzle.asklepios.domain.enumeration;
+public enum DepartmentType {
+    INPATIENT_WARD,
+    OUTPATIENT_CLINIC,
+    REGISTRATION,
+    EMERGENCY_ROOM,
+    DAY_CASE,
+    OPERATION_THEATER,
+    LABORATORY,
+    RADIOLOGY,
+    PATHOLOGY,
+    GENETIC_LAB,
+    OPTIC_LAB,
+    PHARMACY,
+    BLOOD_BANK,
+    DIALYSIS_ROOM,
+    PHYSIOTHERAPY_ROOM,
+    STERILIZATION_ROOM,
+    MAINTENANCE,
+    LAUNDRY,
+    KITCHEN,
+    MORGUE;
+}

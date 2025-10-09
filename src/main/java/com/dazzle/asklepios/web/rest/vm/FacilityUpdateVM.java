@@ -12,26 +12,30 @@ import java.io.Serializable;
 public record FacilityUpdateVM(
         @NotNull Long id,
         String name,
+        @NotNull String code,
         @NotNull FacilityType type,
         String emailAddress,
         String phone1,
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency
+        Currency defaultCurrency,
+        Boolean isActive
 ) implements Serializable {
 
         public static FacilityUpdateVM ofEntity(Facility facility) {
                 return new FacilityUpdateVM(
                         facility.getId(),
                         facility.getName(),
+                        facility.getCode(),
                         facility.getType(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),
                         facility.getPhone2(),
                         facility.getFax(),
                         facility.getAddressId(),
-                        facility.getDefaultCurrency()
+                        facility.getDefaultCurrency(),
+                        facility.getIsActive()
                 );
         }
 }

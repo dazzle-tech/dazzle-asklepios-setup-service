@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Facility implements Serializable {
+public class Facility extends AbstractAuditingEntity<Long> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -48,6 +48,10 @@ public class Facility implements Serializable {
     @Column(nullable = false, length = 50)
     @Convert(converter = FacilityTypeConverter.class)
     private FacilityType type;
+
+    @NotNull
+    @Column(nullable = false, length = 50)
+    private String code;
 
     private LocalDate registrationDate;
 
@@ -66,10 +70,14 @@ public class Facility implements Serializable {
     @Column(length = 100)
     private String addressId;
 
-    @NotNull
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Currency defaultCurrency;
+
+    @NotNull
+    @Column(nullable = false, length = 10)
+    private Boolean isActive = true;
 
 
 }
