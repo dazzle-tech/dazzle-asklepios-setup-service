@@ -17,7 +17,8 @@ public record DuplicationCandidateResponseVM(
         String createdBy,
         Instant createdDate,
         String lastModifiedBy,
-        Instant lastModifiedDate
+        Instant lastModifiedDate,
+        Boolean isActive
 ) implements Serializable {
     public static DuplicationCandidateResponseVM ofEntity(DuplicationCandidate entity) {
         return new DuplicationCandidateResponseVM(
@@ -31,8 +32,12 @@ public record DuplicationCandidateResponseVM(
                 entity.getCreatedBy(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedBy(),
-                entity.getLastModifiedDate()
+                entity.getLastModifiedDate(),
+                entity.getIsActive()
+        );
+    }
+}
 
-                );
-    }}
+
+
 

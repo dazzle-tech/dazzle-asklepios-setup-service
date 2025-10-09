@@ -77,11 +77,6 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     private DuplicationCandidate role;
 
 
-    @OneToOne
-    @JoinColumn(name = "role_id", referencedColumnName = "id")
-    private DuplicationCandidate role;
-
-
 
 
 }

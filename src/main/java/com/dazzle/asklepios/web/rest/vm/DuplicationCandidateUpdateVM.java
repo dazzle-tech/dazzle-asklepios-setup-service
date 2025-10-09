@@ -12,10 +12,8 @@ public record DuplicationCandidateUpdateVM(
         Boolean documentNo,
         Boolean mobileNumber,
         Boolean gender,
-        @JsonProperty("isActive")
-        Boolean active
-        ,
-        Long facilityId,
+        Boolean isActive
+,
         String role
 ) implements Serializable {}
 

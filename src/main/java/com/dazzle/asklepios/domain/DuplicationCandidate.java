@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -13,7 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.io.Serializable;
 
 @Entity
 @Getter
@@ -24,12 +25,13 @@ import java.time.Instant;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 
 @Table(name = "duplication_candidate")
-public class DuplicationCandidate {
+public class DuplicationCandidate extends AbstractAuditingEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     private String role;
 
     @Column(nullable = false)
@@ -47,20 +49,11 @@ public class DuplicationCandidate {
     @Column(nullable = false)
     private Boolean gender = false;
 
-    @Column(name = "created_by", nullable = false)
-    private String createdBy;
-
-    @Column(name = "created_date")
-    private Instant createdDate;
-
-    @Column(name = "last_modified_by")
-    private String lastModifiedBy;
-
-    @Column(name = "last_modified_date")
-    private Instant lastModifiedDate;
-
-    @Column(name = "active", nullable = false)
-    private Boolean active = true;
-
+    @NotNull
+    @Column(nullable = false, length = 10)
+    private Boolean isActive = true;
 
 }
+
+
+

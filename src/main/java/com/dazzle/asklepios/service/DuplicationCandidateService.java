@@ -31,7 +31,6 @@ public class DuplicationCandidateService {
         this.repository = repository;
         this.facilityRepository = facilityRepository;
     }
-
     public DuplicationCandidateResponseVM create(DuplicationCandidateCreateVM vm, String user) {
         LOG.debug("Request to create DuplicationCandidate : {}", vm);
 
@@ -41,6 +40,8 @@ public class DuplicationCandidateService {
         entity.setDocumentNo(vm.documentNo());
         entity.setMobileNumber(vm.mobileNumber());
         entity.setGender(vm.gender());
+        entity.setIsActive(vm.isActive() != null ? vm.isActive() : true);
+
 
         String lastRole = repository.findMaxRole();
         if (lastRole == null || lastRole.isEmpty()) {
@@ -67,6 +68,8 @@ public class DuplicationCandidateService {
             if (vm.documentNo() != null) existing.setDocumentNo(vm.documentNo());
             if (vm.mobileNumber() != null) existing.setMobileNumber(vm.mobileNumber());
             if (vm.gender() != null) existing.setGender(vm.gender());
+            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+
 
             existing.setLastModifiedBy(user != null ? user : "system");
             existing.setLastModifiedDate(Instant.now());
@@ -88,7 +91,7 @@ public class DuplicationCandidateService {
     public boolean deactivate(Long id, String user) {
         LOG.debug("Request to deactivate DuplicationCandidate : {}", id);
         return repository.findById(id).map(existing -> {
-            existing.setActive(false);
+            existing.setIsActive(false);
             existing.setLastModifiedBy(user != null ? user : "system");
             existing.setLastModifiedDate(Instant.now());
             repository.save(existing);
@@ -99,7 +102,7 @@ public class DuplicationCandidateService {
     public boolean reactivate(Long id, String user) {
         LOG.debug("Request to reactivate DuplicationCandidate : {}", id);
         return repository.findById(id).map(existing -> {
-            existing.setActive(true);
+            existing.setIsActive(true);
             existing.setLastModifiedBy(user != null ? user : "system");
             existing.setLastModifiedDate(Instant.now());
             repository.save(existing);
@@ -108,7 +111,7 @@ public class DuplicationCandidateService {
     }
 
     public List<DuplicationCandidateResponseVM> findByRoleFilter(String roleFilter) {
-        return repository.findByRoleContaining(roleFilter) // أو findByRoleStartingWith(roleFilter)
+        return repository.findByRoleContaining(roleFilter)
                 .stream()
                 .map(DuplicationCandidateResponseVM::ofEntity)
                 .toList();

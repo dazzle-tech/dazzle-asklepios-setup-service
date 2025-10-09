@@ -102,7 +102,7 @@ public class FacilityService {
 
         if (!duplicationCandidateRepository.existsById(roleId)) {
             LOG.info("Role with id {} not found, returning empty list", roleId);
-            return List.of(); // 👈 يرجع فاضي، بدون Error
+            return List.of();
         }
 
         return facilityRepository.findUnlinkedOrLinkedToRole(roleId)

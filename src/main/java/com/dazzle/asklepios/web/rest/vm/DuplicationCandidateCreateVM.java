@@ -10,6 +10,8 @@ public record DuplicationCandidateCreateVM(
         Boolean lastName,
         Boolean documentNo,
         Boolean mobileNumber,
-        Boolean gender
-) {}
-
+        Boolean gender,
+        Boolean isActive
+        ,
+        String role
+) implements Serializable {}
