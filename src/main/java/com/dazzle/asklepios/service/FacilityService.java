@@ -36,6 +36,7 @@ public class FacilityService {
         Facility facility = new Facility();
         facility.setName(vm.name());
         facility.setType(vm.type());
+        facility.setCode(vm.code());
         facility.setEmailAddress(vm.emailAddress());
         facility.setPhone1(vm.phone1());
         facility.setPhone2(vm.phone2());
