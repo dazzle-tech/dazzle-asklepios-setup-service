@@ -14,6 +14,9 @@ public interface FacilityRepository extends JpaRepository<Facility, Long> {
     String FACILITIES = "facilities";
 
     boolean existsByNameIgnoreCase(String name);
-    @Query("SELECT f FROM Facility f WHERE f.role IS NULL OR f.role.id = :roleId")
+    @Query("SELECT f FROM Facility f WHERE f.rool IS NULL OR f.rool" +
+            ".id = :roleId")
     List<Facility> findUnlinkedOrLinkedToRole(@Param("roleId") Long roleId);
+
+
 }
