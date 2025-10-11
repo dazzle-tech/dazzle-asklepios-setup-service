@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +28,13 @@ public class FacilityService {
         this.facilityRepository = facilityRepository;
     }
 
-     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
+    @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public FacilityResponseVM create(FacilityCreateVM vm) {
         LOG.debug("Request to create Facility : {}", vm);
 
         Facility facility = new Facility();
         facility.setName(vm.name());
+        facility.setCode(vm.code());
         facility.setType(vm.type());
         facility.setEmailAddress(vm.emailAddress());
         facility.setPhone1(vm.phone1());
@@ -43,10 +43,21 @@ public class FacilityService {
         facility.setAddressId(vm.addressId());
         facility.setDefaultCurrency(vm.defaultCurrency());
 
+        if (vm.isActive() != null) {
+            facility.setIsActive(vm.isActive());
+        } else {
+            facility.setIsActive(true);
+        }
+
+        if (vm.registrationDate() != null) {
+            facility.setRegistrationDate(vm.registrationDate());
+        } else {
+            facility.setRegistrationDate(java.time.LocalDate.now());
+        }
+
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
     }
-
 
     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
@@ -54,6 +65,7 @@ public class FacilityService {
 
         return facilityRepository.findById(id).map(existing -> {
             if (vm.name() != null) existing.setName(vm.name());
+            if (vm.code() != null) existing.setCode(vm.code());
             if (vm.type() != null) existing.setType(vm.type());
             if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
             if (vm.phone1() != null) existing.setPhone1(vm.phone1());
@@ -61,6 +73,7 @@ public class FacilityService {
             if (vm.fax() != null) existing.setFax(vm.fax());
             if (vm.addressId() != null) existing.setAddressId(vm.addressId());
             if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
+            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
 
             Facility updated = facilityRepository.save(existing);
             return updated;
@@ -76,7 +89,6 @@ public class FacilityService {
                 .collect(Collectors.toList());
     }
 
-
     @Transactional(readOnly = true)
     public Optional<FacilityResponseVM> findOne(Long id) {
         LOG.debug("Request to get Facility : {}", id);
@@ -84,7 +96,7 @@ public class FacilityService {
                 .map(FacilityResponseVM::ofEntity);
     }
 
-     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
+    @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public boolean delete(Long id) {
         LOG.debug("Request to delete Facility : {}", id);
         if (!facilityRepository.existsById(id)) {

@@ -8,13 +8,15 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "user_role")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserRole {
+public class UserRole implements Serializable {
 
     @EmbeddedId
     private UserRoleId id;

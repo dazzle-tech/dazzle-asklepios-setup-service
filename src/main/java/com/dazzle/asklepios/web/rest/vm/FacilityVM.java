@@ -12,6 +12,7 @@ import jakarta.validation.constraints.NotNull;
 public record FacilityVM(
         @NotNull String name,
         @NotNull FacilityType type,
+        @NotNull String code,
         String emailAddress,
         String phone1,
         String phone2,
@@ -24,6 +25,7 @@ public record FacilityVM(
                 return new FacilityVM(
                         facility.getName(),
                         facility.getType(),
+                        facility.getCode(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),
                         facility.getPhone2(),

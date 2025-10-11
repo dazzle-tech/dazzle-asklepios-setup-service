@@ -13,6 +13,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 
 @Entity
 @Getter
@@ -22,7 +24,7 @@ import lombok.EqualsAndHashCode;
 @Builder
 @Table(name = "app_user")
 @Data
-public class User{
+public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

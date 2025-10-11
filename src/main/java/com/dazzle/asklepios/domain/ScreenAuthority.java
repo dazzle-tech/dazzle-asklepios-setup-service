@@ -5,6 +5,9 @@ import com.dazzle.asklepios.domain.enumeration.Screen;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
+import java.io.Serializable;
+
 @Entity
 @Getter
 @Setter
@@ -13,7 +16,7 @@ import lombok.*;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "screen_authority")
-public class ScreenAuthority {
+public class ScreenAuthority implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
