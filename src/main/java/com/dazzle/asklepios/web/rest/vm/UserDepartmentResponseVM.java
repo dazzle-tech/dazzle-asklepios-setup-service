@@ -1,12 +1,12 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.UserFacilityDepartment;
+import com.dazzle.asklepios.domain.UserDepartment;
 import java.io.Serializable;
 
 /**
- * View Model for reading a UserFacilityDepartment via REST.
+ * View Model for reading a UserDepartment via REST.
  */
-public record UserFacilityDepartmentResponseVM(
+public record UserDepartmentResponseVM(
         Long id,
         Long userId,
         Long facilityId,
@@ -14,8 +14,8 @@ public record UserFacilityDepartmentResponseVM(
         Boolean isActive
 ) implements Serializable {
 
-    public static UserFacilityDepartmentResponseVM ofEntity(UserFacilityDepartment entity) {
-        return new UserFacilityDepartmentResponseVM(
+    public static UserDepartmentResponseVM ofEntity(UserDepartment entity) {
+        return new UserDepartmentResponseVM(
                 entity.getId(),
                 entity.getUser() != null ? entity.getUser().getId() : null,
                 (entity.getDepartment() != null && entity.getDepartment().getFacility() != null)

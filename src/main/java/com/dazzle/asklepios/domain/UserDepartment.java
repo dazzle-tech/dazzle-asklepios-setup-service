@@ -23,9 +23,9 @@ import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
-@Table(name = "user_facility_departments"
-        ,uniqueConstraints = {@UniqueConstraint(name = "uq_user_facility_departments_combination", columnNames = {"facility_id", "user_id", "department_id"})}
-        ,indexes = {@Index(name = "idx_user_facility_departments_user_id", columnList = "user_id")}
+@Table(name = "user_departments"
+        ,uniqueConstraints = {@UniqueConstraint(name = "uq_user_departments_combination", columnNames = {"user_id", "department_id"})}
+        ,indexes = {@Index(name = "idx_user_departments_user_id", columnList = "user_id")}
 )
 @Getter
 @Setter
@@ -33,7 +33,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class UserFacilityDepartment implements Serializable {
+public class UserDepartment implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,11 +41,11 @@ public class UserFacilityDepartment implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_facility_departments_user"))
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_user"))
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_facility_departments_department"))
+    @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_department"))
     private Department department;
 
     @Column(name = "created_by", length = 50)

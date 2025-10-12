@@ -1,14 +1,14 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.UserFacilityDepartment;
+import com.dazzle.asklepios.domain.UserDepartment;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.Instant;
 
 /**
- * View Model for creating a UserFacilityDepartment via REST.
+ * View Model for creating a UserDepartment via REST.
  **/
-public record UserFacilityDepartmentCreateVM(
+public record UserDepartmentCreateVM(
         @NotNull Long userId,
         @NotNull Long departmentId,
         Boolean isActive,
@@ -16,8 +16,8 @@ public record UserFacilityDepartmentCreateVM(
         Instant createdDate
 ) implements Serializable {
 
-    public static UserFacilityDepartmentCreateVM ofEntity(UserFacilityDepartment entity) {
-        return new UserFacilityDepartmentCreateVM(
+    public static UserDepartmentCreateVM ofEntity(UserDepartment entity) {
+        return new UserDepartmentCreateVM(
                 entity.getUser() != null ? entity.getUser().getId() : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
                 entity.getIsActive(),

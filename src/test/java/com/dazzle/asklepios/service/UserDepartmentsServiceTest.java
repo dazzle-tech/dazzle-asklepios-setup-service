@@ -1,15 +1,14 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Department;
-import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.User;
-import com.dazzle.asklepios.domain.UserFacilityDepartment;
+import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
-import com.dazzle.asklepios.repository.UserFacilityDepartmentRepository;
+import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.UserFacilityDepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.UserFacilityDepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.UserDepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.UserDepartmentResponseVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,10 +28,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-class UserFacilityDepartmentsServiceTest {
+class UserDepartmentsServiceTest {
 
     @Mock
-    private UserFacilityDepartmentRepository ufdRepository;
+    private UserDepartmentRepository ufdRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -41,11 +40,11 @@ class UserFacilityDepartmentsServiceTest {
     private DepartmentsRepository departmentRepository;
 
     @InjectMocks
-    private UserFacilityDepartmentService service;
+    private UserDepartmentService service;
 
     private User user;
     private Department department;
-    private UserFacilityDepartment existing;
+    private UserDepartment existing;
 
     @BeforeEach
     void setUp() {
@@ -57,7 +56,7 @@ class UserFacilityDepartmentsServiceTest {
         department = new Department();
         department.setId(10L);
 
-        existing = UserFacilityDepartment.builder()
+        existing = UserDepartment.builder()
                 .id(23L)
                 .user(user)
                 .department(department)
@@ -67,7 +66,7 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testCreate_ReturnsExistingIfPresent() {
-        var vm = new UserFacilityDepartmentCreateVM(
+        var vm = new UserDepartmentCreateVM(
                 user.getId(), department.getId(),
                 true, "creator", Instant.parse("2024-01-01T00:00:00Z")
         );
@@ -75,7 +74,7 @@ class UserFacilityDepartmentsServiceTest {
         when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L))
                 .thenReturn(Optional.of(existing));
 
-        UserFacilityDepartmentResponseVM out = service.createUserFacilityDepartment(vm);
+        UserDepartmentResponseVM out = service.createUserDepartment(vm);
 
         assertThat(out.id()).isEqualTo(23L);
         assertThat(out.userId()).isEqualTo(5L);
@@ -88,7 +87,7 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testCreate_PersistsNew_WhenRefsExist() {
-        var vm = new UserFacilityDepartmentCreateVM(
+        var vm = new UserDepartmentCreateVM(
                 5L,  10L,
                 null, "creator", Instant.parse("2024-01-01T00:00:00Z")
         );
@@ -97,14 +96,14 @@ class UserFacilityDepartmentsServiceTest {
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         when(departmentRepository.findById(10L)).thenReturn(Optional.of(department));
 
-        ArgumentCaptor<UserFacilityDepartment> captor = ArgumentCaptor.forClass(UserFacilityDepartment.class);
+        ArgumentCaptor<UserDepartment> captor = ArgumentCaptor.forClass(UserDepartment.class);
         when(ufdRepository.save(captor.capture())).thenAnswer(inv -> {
-            UserFacilityDepartment saved = inv.getArgument(0);
+            UserDepartment saved = inv.getArgument(0);
             saved.setId(99L);
             return saved;
         });
 
-        UserFacilityDepartmentResponseVM out = service.createUserFacilityDepartment(vm);
+        UserDepartmentResponseVM out = service.createUserDepartment(vm);
 
         assertThat(out.id()).isEqualTo(99L);
         assertThat(out.userId()).isEqualTo(5L);
@@ -112,7 +111,7 @@ class UserFacilityDepartmentsServiceTest {
         assertThat(out.departmentId()).isEqualTo(10L);
         assertThat(out.isActive()).isTrue(); // default applied
 
-        UserFacilityDepartment saved = captor.getValue();
+        UserDepartment saved = captor.getValue();
         assertThat(saved.getUser()).isEqualTo(user);
         assertThat(saved.getDepartment()).isEqualTo(department);
         assertThat(saved.getCreatedBy()).isEqualTo("creator");
@@ -123,31 +122,31 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testCreate_UserNotFound() {
-        var vm = new UserFacilityDepartmentCreateVM(2L, 10L, true, "creator", null);
+        var vm = new UserDepartmentCreateVM(2L, 10L, true, "creator", null);
 
         when(ufdRepository.findByUserIdAndDepartmentId(5L, 10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.empty());
 
-        assertThrows(BadRequestAlertException.class, () -> service.createUserFacilityDepartment(vm));
+        assertThrows(BadRequestAlertException.class, () -> service.createUserDepartment(vm));
         verifyNoInteractions(departmentRepository);
         verify(ufdRepository, never()).save(any());
     }
 
     @Test
     void testCreate_DepartmentNotFound() {
-        var vm = new UserFacilityDepartmentCreateVM( 2L, 10L, true, "creator", null);
+        var vm = new UserDepartmentCreateVM( 2L, 10L, true, "creator", null);
 
         when(ufdRepository.findByUserIdAndDepartmentId( 5L, 10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         when(departmentRepository.findById(10L)).thenReturn(Optional.empty());
 
-        assertThrows(BadRequestAlertException.class, () -> service.createUserFacilityDepartment(vm));
+        assertThrows(BadRequestAlertException.class, () -> service.createUserDepartment(vm));
         verify(ufdRepository, never()).save(any());
     }
 
     @Test
     void testToggleActiveStatus_TogglesAndSetsLastModified() {
-        UserFacilityDepartment e = UserFacilityDepartment.builder()
+        UserDepartment e = UserDepartment.builder()
                 .id(50L).user(user).department(department).isActive(true).build();
 
         when(ufdRepository.findById(50L)).thenReturn(Optional.of(e));
@@ -171,12 +170,12 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testGetByUser_ReturnsResponseVMs() {
-        var e1 = UserFacilityDepartment.builder().id(1L).user(user).department(department).isActive(true).build();
-        var e2 = UserFacilityDepartment.builder().id(2L).user(user).department(department).isActive(false).build();
+        var e1 = UserDepartment.builder().id(1L).user(user).department(department).isActive(true).build();
+        var e2 = UserDepartment.builder().id(2L).user(user).department(department).isActive(false).build();
 
         when(ufdRepository.findByUserId(5L)).thenReturn(List.of(e1, e2));
 
-        List<UserFacilityDepartmentResponseVM> out = service.getUserFacilityDepartmentsByUser(5L);
+        List<UserDepartmentResponseVM> out = service.getUserDepartmentsByUser(5L);
 
         assertThat(out).hasSize(2);
         assertThat(out.get(0).id()).isEqualTo(1L);

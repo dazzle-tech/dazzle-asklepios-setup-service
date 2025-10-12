@@ -10,7 +10,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class UserFacilityDepartmentTest {
+class UserDepartmentTest {
 
     private User user(Long id) {
         User u = new User();
@@ -28,7 +28,7 @@ class UserFacilityDepartmentTest {
     void testBuilderAndGetters() {
         Instant now = Instant.now();
 
-        UserFacilityDepartment ufd = UserFacilityDepartment.builder()
+        UserDepartment ufd = UserDepartment.builder()
                 .user(user(2L))
                 .department(department(3L))
                 .createdBy("tester")
@@ -51,7 +51,7 @@ class UserFacilityDepartmentTest {
 
     @Test
     void noArgsConstructorAppliesFieldDefaults() {
-        UserFacilityDepartment ufd = new UserFacilityDepartment();
+        UserDepartment ufd = new UserDepartment();
         assertThat(ufd.getIsActive()).isTrue();
         assertThat(ufd.getId()).isNull();
         assertThat(ufd.getUser()).isNull();
@@ -60,9 +60,9 @@ class UserFacilityDepartmentTest {
 
     @Test
     void testEqualsAndHashCode() {
-        UserFacilityDepartment a = new UserFacilityDepartment();
+        UserDepartment a = new UserDepartment();
         a.setId(100L);
-        UserFacilityDepartment b = new UserFacilityDepartment();
+        UserDepartment b = new UserDepartment();
         b.setId(100L);
 
         assertThat(a).isEqualTo(b);
@@ -71,9 +71,9 @@ class UserFacilityDepartmentTest {
 
     @Test
     void testEqualsAndHashCodeNotEqual() {
-        UserFacilityDepartment a = new UserFacilityDepartment();
+        UserDepartment a = new UserDepartment();
         a.setId(100L);
-        UserFacilityDepartment b = new UserFacilityDepartment();
+        UserDepartment b = new UserDepartment();
         b.setId(101L);
 
         assertThat(a).isNotEqualTo(b);
@@ -82,8 +82,8 @@ class UserFacilityDepartmentTest {
 
     @Test
     void TestEqualsIDs() {
-        UserFacilityDepartment a = new UserFacilityDepartment(); // id null
-        UserFacilityDepartment b = new UserFacilityDepartment();
+        UserDepartment a = new UserDepartment(); // id null
+        UserDepartment b = new UserDepartment();
         b.setId(1L);
 
         assertThat(a).isNotEqualTo(b);
@@ -91,7 +91,7 @@ class UserFacilityDepartmentTest {
     }
     @Test
     void testSerialization() throws Exception {
-        UserFacilityDepartment original = UserFacilityDepartment.builder()
+        UserDepartment original = UserDepartment.builder()
                 .user(user(2L))
                 .department(department(3L))
                 .createdBy("ser")
@@ -110,10 +110,10 @@ class UserFacilityDepartmentTest {
             bytes = baos.toByteArray();
         }
 
-        UserFacilityDepartment copy;
+        UserDepartment copy;
         try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
              ObjectInputStream ois = new ObjectInputStream(bais)) {
-            copy = (UserFacilityDepartment) ois.readObject();
+            copy = (UserDepartment) ois.readObject();
         }
 
         assertThat(copy.getId()).isEqualTo(777L);
