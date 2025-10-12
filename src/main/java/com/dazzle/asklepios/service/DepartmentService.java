@@ -152,4 +152,10 @@ public class DepartmentService {
                     return departmentRepository.save(department);
                 });
     }
+
+    @Transactional(readOnly = true)
+    public List<Department> findActiveByFacilityId(Long facilityId) {
+        LOG.debug("Request to get ACTIVE Departments by Facility facility_id={}", facilityId);
+        return departmentRepository.findByFacilityIdAndIsActiveTrue(facilityId);
+    }
 }

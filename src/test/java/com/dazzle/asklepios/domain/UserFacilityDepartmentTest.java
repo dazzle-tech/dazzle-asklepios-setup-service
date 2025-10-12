@@ -12,12 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class UserFacilityDepartmentTest {
 
-    private Facility facility(Long id) {
-        Facility f = new Facility();
-        f.setId(id);
-        return f;
-    }
-
     private User user(Long id) {
         User u = new User();
         u.setId(id);
@@ -35,7 +29,6 @@ class UserFacilityDepartmentTest {
         Instant now = Instant.now();
 
         UserFacilityDepartment ufd = UserFacilityDepartment.builder()
-                .facility(facility(1L))
                 .user(user(2L))
                 .department(department(3L))
                 .createdBy("tester")
@@ -45,8 +38,6 @@ class UserFacilityDepartmentTest {
                 .isActive(Boolean.TRUE)
                 .build();
 
-        assertThat(ufd.getFacility()).isNotNull();
-        assertThat(ufd.getFacility().getId()).isEqualTo(1L);
         assertThat(ufd.getUser()).isNotNull();
         assertThat(ufd.getUser().getId()).isEqualTo(2L);
         assertThat(ufd.getDepartment()).isNotNull();
@@ -63,7 +54,6 @@ class UserFacilityDepartmentTest {
         UserFacilityDepartment ufd = new UserFacilityDepartment();
         assertThat(ufd.getIsActive()).isTrue();
         assertThat(ufd.getId()).isNull();
-        assertThat(ufd.getFacility()).isNull();
         assertThat(ufd.getUser()).isNull();
         assertThat(ufd.getDepartment()).isNull();
     }
@@ -102,7 +92,6 @@ class UserFacilityDepartmentTest {
     @Test
     void testSerialization() throws Exception {
         UserFacilityDepartment original = UserFacilityDepartment.builder()
-                .facility(facility(1L))
                 .user(user(2L))
                 .department(department(3L))
                 .createdBy("ser")
@@ -128,7 +117,6 @@ class UserFacilityDepartmentTest {
         }
 
         assertThat(copy.getId()).isEqualTo(777L);
-        assertThat(copy.getFacility().getId()).isEqualTo(1L);
         assertThat(copy.getUser().getId()).isEqualTo(2L);
         assertThat(copy.getDepartment().getId()).isEqualTo(3L);
         assertThat(copy.getCreatedBy()).isEqualTo("ser");

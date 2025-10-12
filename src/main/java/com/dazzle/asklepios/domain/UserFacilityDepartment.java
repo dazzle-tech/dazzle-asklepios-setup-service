@@ -41,10 +41,6 @@ public class UserFacilityDepartment implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "facility_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_facility_departments_facility"))
-    private Facility facility;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_facility_departments_user"))
     private User user;
 

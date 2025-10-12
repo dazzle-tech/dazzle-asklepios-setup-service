@@ -18,9 +18,12 @@ public record UserFacilityDepartmentResponseVM(
         return new UserFacilityDepartmentResponseVM(
                 entity.getId(),
                 entity.getUser() != null ? entity.getUser().getId() : null,
-                entity.getFacility() != null ? entity.getFacility().getId() : null,
+                (entity.getDepartment() != null && entity.getDepartment().getFacility() != null)
+                        ? entity.getDepartment().getFacility().getId()
+                        : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
                 entity.getIsActive()
         );
     }
+
 }

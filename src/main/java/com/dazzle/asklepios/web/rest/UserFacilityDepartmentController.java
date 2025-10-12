@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/user-facility-departments")
+@RequestMapping("/api/setup/user-facility-departments")
 public class UserFacilityDepartmentController {
 
     private final Logger log = LoggerFactory.getLogger(UserFacilityDepartmentController.class);
@@ -64,10 +64,10 @@ public class UserFacilityDepartmentController {
      * GET  /api/user-facility-departments/exists : Check if a link exists.
      */
     @GetMapping("/exists")
-    public ResponseEntity<Boolean> exists(@RequestParam Long facilityId, @RequestParam Long userId, @RequestParam Long departmentId) {
+    public ResponseEntity<Boolean> exists( @RequestParam Long userId, @RequestParam Long departmentId) {
         log.debug("REST request to check existence of UserFacilityDepartment (facilityId={}, userId={}, departmentId={})",
-                facilityId, userId, departmentId);
-        boolean exists = userFacilityDepartmentService.exists(facilityId, userId, departmentId);
+                 userId, departmentId);
+        boolean exists = userFacilityDepartmentService.exists( userId, departmentId);
         return ResponseEntity.ok(exists);
     }
 }

@@ -19,4 +19,5 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
 
     List<Department> findByDepartmentType(DepartmentType departmentType);
     List<Department> findByNameContainingIgnoreCase (String name);
+    List<Department> findByFacilityIdAndIsActiveTrue(Long facilityId);
 }

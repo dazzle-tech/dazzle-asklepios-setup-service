@@ -26,37 +26,31 @@ public class UserFacilityDepartmentService {
     private static final Logger LOG = LoggerFactory.getLogger(UserFacilityDepartmentService.class);
 
     private final UserFacilityDepartmentRepository userFacilityDepartmentsRepository;
-    private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
     private final DepartmentsRepository departmentRepository;
 
-    public UserFacilityDepartmentService(UserFacilityDepartmentRepository repository, FacilityRepository facilityRepository, UserRepository userRepository, DepartmentsRepository departmentRepository) {
+    public UserFacilityDepartmentService(UserFacilityDepartmentRepository repository, UserRepository userRepository, DepartmentsRepository departmentRepository) {
         this.userFacilityDepartmentsRepository = repository;
-        this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
     }
 
     public UserFacilityDepartmentResponseVM createUserFacilityDepartment(UserFacilityDepartmentCreateVM vm) {
         LOG.debug("Create UFD request vm={}", vm);
-        Long facilityId = vm.facilityId();
         Long userId = vm.userId();
         Long departmentId = vm.departmentId();
 
-        var existing = userFacilityDepartmentsRepository.findByFacilityIdAndUserIdAndDepartmentId(facilityId, userId, departmentId);
+        var existing = userFacilityDepartmentsRepository.findByUserIdAndDepartmentId( userId, departmentId);
         if (existing.isPresent()) {
             return UserFacilityDepartmentResponseVM.ofEntity(existing.get());
         }
 
-        Facility facilityRef = facilityRepository.findById(facilityId)
-                .orElseThrow(() -> new BadRequestAlertException("Facility not found", ENTITY_NAME, "notfound"));
         User userRef = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestAlertException("User not found", ENTITY_NAME, "notfound"));
         Department departmentRef = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new BadRequestAlertException("Department not found", ENTITY_NAME, "notfound"));
 
         UserFacilityDepartment ufd = UserFacilityDepartment.builder()
-                .facility(facilityRef)
                 .user(userRef)
                 .department(departmentRef)
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
@@ -86,8 +80,8 @@ public class UserFacilityDepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public boolean exists(Long facilityId, Long userId, Long departmentId) {
-        LOG.debug("Check UFD exists facilityId={} userId={} departmentId={}", facilityId, userId, departmentId);
-        return userFacilityDepartmentsRepository.findByFacilityIdAndUserIdAndDepartmentId(facilityId, userId, departmentId).isPresent();
+    public boolean exists(Long userId, Long departmentId) {
+        LOG.debug("Check UFD exists facilityId={} userId={} departmentId={}", userId, departmentId);
+        return userFacilityDepartmentsRepository.findByUserIdAndDepartmentId( userId, departmentId).isPresent();
     }
 }

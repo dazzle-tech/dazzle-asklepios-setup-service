@@ -5,7 +5,6 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserFacilityDepartment;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
-import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.UserFacilityDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -36,9 +35,6 @@ class UserFacilityDepartmentsServiceTest {
     private UserFacilityDepartmentRepository ufdRepository;
 
     @Mock
-    private FacilityRepository facilityRepository;
-
-    @Mock
     private UserRepository userRepository;
 
     @Mock
@@ -47,7 +43,6 @@ class UserFacilityDepartmentsServiceTest {
     @InjectMocks
     private UserFacilityDepartmentService service;
 
-    private Facility facility;
     private User user;
     private Department department;
     private UserFacilityDepartment existing;
@@ -55,9 +50,6 @@ class UserFacilityDepartmentsServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        facility = new Facility();
-        facility.setId(2L);
 
         user = new User();
         user.setId(5L);
@@ -67,7 +59,6 @@ class UserFacilityDepartmentsServiceTest {
 
         existing = UserFacilityDepartment.builder()
                 .id(23L)
-                .facility(facility)
                 .user(user)
                 .department(department)
                 .isActive(true)
@@ -77,34 +68,32 @@ class UserFacilityDepartmentsServiceTest {
     @Test
     void testCreate_ReturnsExistingIfPresent() {
         var vm = new UserFacilityDepartmentCreateVM(
-                user.getId(), facility.getId(), department.getId(),
+                user.getId(), department.getId(),
                 true, "creator", Instant.parse("2024-01-01T00:00:00Z")
         );
 
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 10L))
+        when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L))
                 .thenReturn(Optional.of(existing));
 
         UserFacilityDepartmentResponseVM out = service.createUserFacilityDepartment(vm);
 
         assertThat(out.id()).isEqualTo(23L);
         assertThat(out.userId()).isEqualTo(5L);
-        assertThat(out.facilityId()).isEqualTo(2L);
         assertThat(out.departmentId()).isEqualTo(10L);
         assertThat(out.isActive()).isTrue();
 
-        verifyNoInteractions(facilityRepository, userRepository, departmentRepository);
+        verifyNoInteractions(userRepository, departmentRepository);
         verify(ufdRepository, never()).save(any());
     }
 
     @Test
     void testCreate_PersistsNew_WhenRefsExist() {
         var vm = new UserFacilityDepartmentCreateVM(
-                5L, 2L, 10L,
+                5L,  10L,
                 null, "creator", Instant.parse("2024-01-01T00:00:00Z")
         );
 
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 10L)).thenReturn(Optional.empty());
-        when(facilityRepository.findById(2L)).thenReturn(Optional.of(facility));
+        when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         when(departmentRepository.findById(10L)).thenReturn(Optional.of(department));
 
@@ -124,7 +113,6 @@ class UserFacilityDepartmentsServiceTest {
         assertThat(out.isActive()).isTrue(); // default applied
 
         UserFacilityDepartment saved = captor.getValue();
-        assertThat(saved.getFacility()).isEqualTo(facility);
         assertThat(saved.getUser()).isEqualTo(user);
         assertThat(saved.getDepartment()).isEqualTo(department);
         assertThat(saved.getCreatedBy()).isEqualTo("creator");
@@ -132,24 +120,12 @@ class UserFacilityDepartmentsServiceTest {
         assertThat(saved.getIsActive()).isTrue();
     }
 
-    @Test
-    void testCreate_FacilityNotFound() {
-        var vm = new UserFacilityDepartmentCreateVM(5L, 999L, 10L, true, "creator", null);
-
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(999L, 5L, 10L)).thenReturn(Optional.empty());
-        when(facilityRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThrows(BadRequestAlertException.class, () -> service.createUserFacilityDepartment(vm));
-        verifyNoInteractions(userRepository, departmentRepository);
-        verify(ufdRepository, never()).save(any());
-    }
 
     @Test
     void testCreate_UserNotFound() {
-        var vm = new UserFacilityDepartmentCreateVM(5L, 2L, 10L, true, "creator", null);
+        var vm = new UserFacilityDepartmentCreateVM(2L, 10L, true, "creator", null);
 
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 10L)).thenReturn(Optional.empty());
-        when(facilityRepository.findById(2L)).thenReturn(Optional.of(facility));
+        when(ufdRepository.findByUserIdAndDepartmentId(5L, 10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.empty());
 
         assertThrows(BadRequestAlertException.class, () -> service.createUserFacilityDepartment(vm));
@@ -159,10 +135,9 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testCreate_DepartmentNotFound() {
-        var vm = new UserFacilityDepartmentCreateVM(5L, 2L, 10L, true, "creator", null);
+        var vm = new UserFacilityDepartmentCreateVM( 2L, 10L, true, "creator", null);
 
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 10L)).thenReturn(Optional.empty());
-        when(facilityRepository.findById(2L)).thenReturn(Optional.of(facility));
+        when(ufdRepository.findByUserIdAndDepartmentId( 5L, 10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
         when(departmentRepository.findById(10L)).thenReturn(Optional.empty());
 
@@ -173,7 +148,7 @@ class UserFacilityDepartmentsServiceTest {
     @Test
     void testToggleActiveStatus_TogglesAndSetsLastModified() {
         UserFacilityDepartment e = UserFacilityDepartment.builder()
-                .id(50L).facility(facility).user(user).department(department).isActive(true).build();
+                .id(50L).user(user).department(department).isActive(true).build();
 
         when(ufdRepository.findById(50L)).thenReturn(Optional.of(e));
         when(ufdRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -196,8 +171,8 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testGetByUser_ReturnsResponseVMs() {
-        var e1 = UserFacilityDepartment.builder().id(1L).facility(facility).user(user).department(department).isActive(true).build();
-        var e2 = UserFacilityDepartment.builder().id(2L).facility(facility).user(user).department(department).isActive(false).build();
+        var e1 = UserFacilityDepartment.builder().id(1L).user(user).department(department).isActive(true).build();
+        var e2 = UserFacilityDepartment.builder().id(2L).user(user).department(department).isActive(false).build();
 
         when(ufdRepository.findByUserId(5L)).thenReturn(List.of(e1, e2));
 
@@ -206,7 +181,6 @@ class UserFacilityDepartmentsServiceTest {
         assertThat(out).hasSize(2);
         assertThat(out.get(0).id()).isEqualTo(1L);
         assertThat(out.get(0).userId()).isEqualTo(5L);
-        assertThat(out.get(0).facilityId()).isEqualTo(2L);
         assertThat(out.get(0).departmentId()).isEqualTo(10L);
         assertThat(out.get(0).isActive()).isTrue();
 
@@ -218,10 +192,10 @@ class UserFacilityDepartmentsServiceTest {
 
     @Test
     void testExists_DelegatesToRepository() {
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 10L)).thenReturn(Optional.of(existing));
-        assertThat(service.exists(2L, 5L, 10L)).isTrue();
+        when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L)).thenReturn(Optional.of(existing));
+        assertThat(service.exists(5L, 10L)).isTrue();
 
-        when(ufdRepository.findByFacilityIdAndUserIdAndDepartmentId(2L, 5L, 11L)).thenReturn(Optional.empty());
-        assertThat(service.exists(2L, 5L, 11L)).isFalse();
+        when(ufdRepository.findByUserIdAndDepartmentId(2L,  11L)).thenReturn(Optional.empty());
+        assertThat(service.exists( 5L, 11L)).isFalse();
     }
 }

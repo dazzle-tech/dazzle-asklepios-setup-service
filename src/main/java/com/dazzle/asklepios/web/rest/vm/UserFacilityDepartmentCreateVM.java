@@ -10,7 +10,6 @@ import java.time.Instant;
  **/
 public record UserFacilityDepartmentCreateVM(
         @NotNull Long userId,
-        @NotNull Long facilityId,
         @NotNull Long departmentId,
         Boolean isActive,
         String createdBy,
@@ -20,7 +19,6 @@ public record UserFacilityDepartmentCreateVM(
     public static UserFacilityDepartmentCreateVM ofEntity(UserFacilityDepartment entity) {
         return new UserFacilityDepartmentCreateVM(
                 entity.getUser() != null ? entity.getUser().getId() : null,
-                entity.getFacility() != null ? entity.getFacility().getId() : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
                 entity.getIsActive(),
                 entity.getCreatedBy(),

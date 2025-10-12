@@ -61,7 +61,6 @@ public class DepartmentController {
         var pageResult = departmentService.findAll(pageable);
         HttpHeaders headers = new HttpHeaders();
         headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
         return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
     }
 
@@ -79,7 +78,6 @@ public class DepartmentController {
         var pageResult = departmentService.findByFacilityId(facilityId, pageable);
         HttpHeaders headers = new HttpHeaders();
         headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
         return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
     }
 
@@ -89,7 +87,6 @@ public class DepartmentController {
         var pageResult = departmentService.findByDepartmentType(type, pageable);
         HttpHeaders headers = new HttpHeaders();
         headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
         return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
     }
 
@@ -99,7 +96,6 @@ public class DepartmentController {
         var pageResult = departmentService.findByDepartmentName(name, pageable);
         HttpHeaders headers = new HttpHeaders();
         headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
         return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
     }
 
@@ -119,5 +115,11 @@ public class DepartmentController {
         Sort.Direction dir = (parts.length > 1 && "desc".equalsIgnoreCase(parts[1]))
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
         return PageRequest.of(p, s, Sort.by(dir, prop));
+    }
+    @GetMapping("/facility/{facilityId}/active/list")
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveDepartmentsByFacilityIdList(
+            @PathVariable Long facilityId
+    ) {
+        return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId).stream().map(DepartmentResponseVM::ofEntity).toList());
     }
 }

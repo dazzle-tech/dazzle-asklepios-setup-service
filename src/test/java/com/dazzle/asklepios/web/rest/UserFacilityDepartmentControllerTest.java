@@ -40,12 +40,11 @@ class UserFacilityDepartmentControllerTest {
         when(service.createUserFacilityDepartment(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(resp);
 
-        mockMvc.perform(post("/api/user-facility-departments")
+        mockMvc.perform(post("/api/setup/user-facility-departments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                             {
                               "userId": 5,
-                              "facilityId": 2,
                               "departmentId": 10,
                               "isActive": true,
                               "createdBy": "tester",
@@ -56,21 +55,20 @@ class UserFacilityDepartmentControllerTest {
                 .andExpect(header().string("Location", endsWith("/api/user-facility-departments/23")))
                 .andExpect(jsonPath("$.id").value(23))
                 .andExpect(jsonPath("$.userId").value(5))
-                .andExpect(jsonPath("$.facilityId").value(2))
                 .andExpect(jsonPath("$.departmentId").value(10))
                 .andExpect(jsonPath("$.isActive").value(true));
     }
 
     @Test
     void testToggleActiveStatus() throws Exception {
-        mockMvc.perform(patch("/api/user-facility-departments/{id}/toggle", 42L))
+        mockMvc.perform(patch("/api/setup/user-facility-departments/{id}/toggle", 42L))
                 .andExpect(status().isNoContent());
 
         verify(service).toggleActiveStatus(42L);
     }
     @Test
     void testToggleActiveStatus_NotFound() throws Exception {
-        mockMvc.perform(patch("/api/user-facility-departments/{id}/toggle", 9999L))
+        mockMvc.perform(patch("/api/setup/user-facility-departments/{id}/toggle", 9999L))
                 .andExpect(status().isNoContent());
 
         verify(service).toggleActiveStatus(9999L);
@@ -81,7 +79,7 @@ class UserFacilityDepartmentControllerTest {
         var r2 = new UserFacilityDepartmentResponseVM(2L, 5L, 3L, 12L, false);
         when(service.getUserFacilityDepartmentsByUser(5L)).thenReturn(List.of(r1, r2));
 
-        mockMvc.perform(get("/api/user-facility-departments/user/{userId}", 5L))
+        mockMvc.perform(get("/api/setup/user-facility-departments/user/{userId}", 5L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -98,7 +96,7 @@ class UserFacilityDepartmentControllerTest {
     void testGetByUser_NotFound() throws Exception {
         when(service.getUserFacilityDepartmentsByUser(9999L)).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/user-facility-departments/user/{userId}", 9999L)
+        mockMvc.perform(get("/api/setup/user-facility-departments/user/{userId}", 9999L)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -106,10 +104,9 @@ class UserFacilityDepartmentControllerTest {
     }
     @Test
     void testExists_true() throws Exception {
-        when(service.exists(eq(2L), eq(5L), eq(10L))).thenReturn(true);
+        when(service.exists( eq(5L), eq(10L))).thenReturn(true);
 
-        mockMvc.perform(get("/api/user-facility-departments/exists")
-                        .param("facilityId", "2")
+        mockMvc.perform(get("/api/setup/user-facility-departments/exists")
                         .param("userId", "5")
                         .param("departmentId", "10"))
                 .andExpect(status().isOk())
@@ -118,10 +115,9 @@ class UserFacilityDepartmentControllerTest {
 
     @Test
     void testExists_false() throws Exception {
-        when(service.exists(eq(2L), eq(5L), eq(11L))).thenReturn(false);
+        when(service.exists( eq(5L), eq(11L))).thenReturn(false);
 
-        mockMvc.perform(get("/api/user-facility-departments/exists")
-                        .param("facilityId", "2")
+        mockMvc.perform(get("/api/setup/user-facility-departments/exists")
                         .param("userId", "5")
                         .param("departmentId", "11"))
                 .andExpect(status().isOk())
