@@ -1,0 +1,32 @@
+package com.dazzle.asklepios.web.rest.vm;
+
+import com.dazzle.asklepios.domain.Service;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import java.io.Serializable;
+import java.math.BigDecimal;
+
+public record ServiceResponseVM(
+        Long id,
+        String name,
+        String abbreviation,
+        String code,
+        ServiceCategory category,
+        BigDecimal price,
+        Currency currency,
+        Boolean isActive
+) implements Serializable {
+
+    public static ServiceResponseVM ofEntity(Service service) {
+        return new ServiceResponseVM(
+                service.getId(),
+                service.getName(),
+                service.getAbbreviation(),
+                service.getCode(),
+                service.getCategory(),
+                service.getPrice(),
+                service.getCurrency(),
+                service.getIsActive()
+        );
+    }
+}
