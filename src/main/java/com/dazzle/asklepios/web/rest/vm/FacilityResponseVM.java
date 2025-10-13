@@ -3,6 +3,8 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -11,6 +13,7 @@ import java.io.Serializable;
 public record FacilityResponseVM(
         Long id,
         String name,
+        String code,
         FacilityType type,
         String emailAddress,
         String phone1,
@@ -25,6 +28,7 @@ public record FacilityResponseVM(
                 return new FacilityResponseVM(
                         facility.getId(),
                         facility.getName(),
+                        facility.getCode(),
                         facility.getType(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),
