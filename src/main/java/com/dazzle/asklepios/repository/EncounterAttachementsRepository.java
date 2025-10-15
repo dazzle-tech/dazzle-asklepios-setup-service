@@ -16,9 +16,8 @@ public interface EncounterAttachementsRepository extends JpaRepository<Encounter
     Page<EncounterAttachments> findByEncounterIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long encounterId, Pageable pageable);
 
     @Query("select e from EncounterAttachments e where e.id = :id and e.deletedAt is null")
-    Optional<PatientAttachments> findActiveById(@Param("id") Long id);
+    Optional<EncounterAttachments> findActiveById(@Param("id") Long id);
 
-    boolean existsByPatientIdAndSpaceKey(Long patientId, String spaceKey);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update EncounterAttachments e set e.deletedAt = CURRENT_TIMESTAMP where e.id = :id and e.deletedAt is null")
