@@ -21,7 +21,7 @@ import java.io.Serializable;
 
 @Entity
 @Table(
-        name = "department_medical_sheets_visibility",
+        name = "department_medical_sheets_nurse_visibility",
         uniqueConstraints = @UniqueConstraint(columnNames = {"department_id", "medical_sheet"})
 )
 @Getter
@@ -30,7 +30,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = false, onlyExplicitlyIncluded = true)
-public class DepartmentMedicalSheetsVisibility extends AbstractAuditingEntity implements Serializable {
+public class DepartmentMedicalSheetsNurseVisbility extends AbstractAuditingEntity implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

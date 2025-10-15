@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.domain.enumeration;
 
 public enum MedicalSheets {
-    PATIENT_DASHBOARD,
     CLINICAL_VISIT,
     DIAGNOSTICS_ORDER,
     PRESCRIPTION,

@@ -22,7 +22,6 @@ public class DepartmentMedicalSheetsVisibilityService {
         DepartmentMedicalSheetsVisibility entity = new DepartmentMedicalSheetsVisibility();
         entity.setDepartmentId(vm.departmentId());
         entity.setMedicalSheet(vm.medicalSheet());
-        entity.setIsVisible(vm.isVisible());
         DepartmentMedicalSheetsVisibility saved = repository.save(entity);
         return DepartmentMedicalSheetsVisibilityVM.ofEntity(saved);
     }
@@ -44,4 +43,30 @@ public class DepartmentMedicalSheetsVisibilityService {
     public void delete(Long id) {
         repository.deleteById(id);
     }
+
+
+
+
+    @Transactional
+    public List<DepartmentMedicalSheetsVisibilityVM> bulkSave(List<DepartmentMedicalSheetsVisibilityVM> list) {
+        if (list.isEmpty()) return List.of();
+
+        Long departmentId = list.get(0).departmentId();
+        repository.deleteByDepartmentId(departmentId);
+
+        var entities = list.stream()
+                .map(vm -> {
+                    DepartmentMedicalSheetsVisibility e = new DepartmentMedicalSheetsVisibility();
+                    e.setDepartmentId(vm.departmentId());
+                    e.setMedicalSheet(vm.medicalSheet());
+                    return e;
+                })
+                .toList();
+
+        var saved = repository.saveAll(entities);
+        return saved.stream().map(DepartmentMedicalSheetsVisibilityVM::ofEntity).toList();
+    }
+
+
+
 }
