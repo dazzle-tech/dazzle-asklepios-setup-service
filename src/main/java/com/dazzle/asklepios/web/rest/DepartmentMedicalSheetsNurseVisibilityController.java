@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.DepartmentMedicalSheetsNurseVisbility;
 import com.dazzle.asklepios.service.DepartmentMedicalSheetsNurseVisibilityService;
 import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsNurseVisibilityVM;
 import org.slf4j.Logger;
@@ -16,7 +17,6 @@ import java.util.List;
 public class DepartmentMedicalSheetsNurseVisibilityController {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentMedicalSheetsNurseVisibilityController.class);
-
     private final DepartmentMedicalSheetsNurseVisibilityService service;
 
     public DepartmentMedicalSheetsNurseVisibilityController(DepartmentMedicalSheetsNurseVisibilityService service) {
@@ -26,27 +26,40 @@ public class DepartmentMedicalSheetsNurseVisibilityController {
     @PostMapping
     public ResponseEntity<DepartmentMedicalSheetsNurseVisibilityVM> create(
             @RequestBody DepartmentMedicalSheetsNurseVisibilityVM vm) throws URISyntaxException {
-        LOG.info("Request to create DepartmentMedicalSheetsNurseVisibility: {}", vm);
-        DepartmentMedicalSheetsNurseVisibilityVM result = service.create(vm);
-        LOG.debug("Created DepartmentMedicalSheetsNurseVisibility with departmentId={} and medicalSheet={}",
-                result.departmentId(), result.medicalSheet());
+
+        LOG.info("Request to create DepartmentMedicalSheetsNurseVisibility for departmentId={} and medicalSheet={}",
+                vm.departmentId(), vm.medicalSheet());
+
+        DepartmentMedicalSheetsNurseVisbility entity = new DepartmentMedicalSheetsNurseVisbility();
+        entity.setDepartmentId(vm.departmentId());
+        entity.setMedicalSheet(vm.medicalSheet());
+
+        DepartmentMedicalSheetsNurseVisbility saved = service.create(entity);
+        LOG.debug("Created entity with id={}, departmentId={}, medicalSheet={}",
+                saved.getId(), saved.getDepartmentId(), saved.getMedicalSheet());
+
+        DepartmentMedicalSheetsNurseVisibilityVM result = DepartmentMedicalSheetsNurseVisibilityVM.ofEntity(saved);
         return ResponseEntity.created(new URI("/api/setup/department-medical-sheets-nurse/" + result.departmentId()))
                 .body(result);
     }
 
     @GetMapping
     public ResponseEntity<List<DepartmentMedicalSheetsNurseVisibilityVM>> getAll() {
-        LOG.info("Request to get all DepartmentMedicalSheetsNurseVisibility entries");
-        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.findAll();
-        LOG.debug("Found {} DepartmentMedicalSheetsNurseVisibility entries", result.size());
+        LOG.info("Request to get all DepartmentMedicalSheetsNurseVisibility records");
+        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.findAll().stream()
+                .map(DepartmentMedicalSheetsNurseVisibilityVM::ofEntity)
+                .toList();
+        LOG.debug("Retrieved {} records", result.size());
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/department/{departmentId}")
     public ResponseEntity<List<DepartmentMedicalSheetsNurseVisibilityVM>> getByDepartment(@PathVariable Long departmentId) {
-        LOG.info("Request to get DepartmentMedicalSheetsNurseVisibility entries for departmentId={}", departmentId);
-        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.findByDepartmentId(departmentId);
-        LOG.debug("Found {} entries for departmentId={}", result.size(), departmentId);
+        LOG.info("Request to get DepartmentMedicalSheetsNurseVisibility records for departmentId={}", departmentId);
+        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.findByDepartmentId(departmentId).stream()
+                .map(DepartmentMedicalSheetsNurseVisibilityVM::ofEntity)
+                .toList();
+        LOG.debug("Found {} records for departmentId={}", result.size(), departmentId);
         return ResponseEntity.ok(result);
     }
 
@@ -54,22 +67,29 @@ public class DepartmentMedicalSheetsNurseVisibilityController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.warn("Request to delete DepartmentMedicalSheetsNurseVisibility with id={}", id);
         service.delete(id);
-        LOG.debug("Deleted DepartmentMedicalSheetsNurseVisibility with id={}", id);
+        LOG.debug("Deleted record with id={}", id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/bulk")
     public ResponseEntity<List<DepartmentMedicalSheetsNurseVisibilityVM>> bulkSave(
-            @RequestBody List<DepartmentMedicalSheetsNurseVisibilityVM> list
-    ) {
-        LOG.info("Request to bulk save {} DepartmentMedicalSheetsNurseVisibility entries", list.size());
-        if (LOG.isDebugEnabled()) {
-            list.forEach(item ->
-                    LOG.debug(" -> departmentId={}, medicalSheet={}", item.departmentId(), item.medicalSheet())
-            );
-        }
-        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.bulkSave(list);
-        LOG.debug("Successfully bulk saved {} DepartmentMedicalSheetsNurseVisibility entries", result.size());
+            @RequestBody List<DepartmentMedicalSheetsNurseVisibilityVM> list) {
+
+        LOG.info("Request to bulk save {} DepartmentMedicalSheetsNurseVisibility records", list.size());
+        LOG.debug("bulk save request payload: {}", list);
+
+        List<DepartmentMedicalSheetsNurseVisbility> entities = list.stream().map(vm -> {
+            DepartmentMedicalSheetsNurseVisbility e = new DepartmentMedicalSheetsNurseVisbility();
+            e.setDepartmentId(vm.departmentId());
+            e.setMedicalSheet(vm.medicalSheet());
+            return e;
+        }).toList();
+
+        List<DepartmentMedicalSheetsNurseVisibilityVM> result = service.bulkSave(entities).stream()
+                .map(DepartmentMedicalSheetsNurseVisibilityVM::ofEntity)
+                .toList();
+
+        LOG.debug("Successfully bulk saved {} records", result.size());
         return ResponseEntity.ok(result);
     }
 }

@@ -2,7 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DepartmentMedicalSheetsVisibility;
 import com.dazzle.asklepios.repository.DepartmentMedicalSheetsVisibilityRepository;
-import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsVisibilityVM;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,60 +13,56 @@ import java.util.List;
 public class DepartmentMedicalSheetsVisibilityService {
 
     private final DepartmentMedicalSheetsVisibilityRepository repository;
+    private static final String ENTITY_NAME = "departmentMedicalSheetsVisibility";
 
     public DepartmentMedicalSheetsVisibilityService(DepartmentMedicalSheetsVisibilityRepository repository) {
         this.repository = repository;
     }
 
-    public DepartmentMedicalSheetsVisibilityVM create(DepartmentMedicalSheetsVisibilityVM vm) {
-        DepartmentMedicalSheetsVisibility entity = new DepartmentMedicalSheetsVisibility();
-        entity.setDepartmentId(vm.departmentId());
-        entity.setMedicalSheet(vm.medicalSheet());
-        DepartmentMedicalSheetsVisibility saved = repository.save(entity);
-        return DepartmentMedicalSheetsVisibilityVM.ofEntity(saved);
+    public DepartmentMedicalSheetsVisibility create(DepartmentMedicalSheetsVisibility entity) {
+        if (entity.getMedicalSheet() == null ) {
+            throw new BadRequestAlertException("Invalid medical sheet code", ENTITY_NAME, "medicalSheetInvalid");
+        }
+        return repository.save(entity);
     }
 
     @Transactional(readOnly = true)
-    public List<DepartmentMedicalSheetsVisibilityVM> findAll() {
-        return repository.findAll().stream()
-                .map(DepartmentMedicalSheetsVisibilityVM::ofEntity)
-                .toList();
+    public List<DepartmentMedicalSheetsVisibility> findAll() {
+        return repository.findAll();
     }
 
     @Transactional(readOnly = true)
-    public List<DepartmentMedicalSheetsVisibilityVM> findByDepartmentId(Long departmentId) {
-        return repository.findByDepartmentId(departmentId).stream()
-                .map(DepartmentMedicalSheetsVisibilityVM::ofEntity)
-                .toList();
+    public List<DepartmentMedicalSheetsVisibility> findByDepartmentId(Long departmentId) {
+        return repository.findByDepartmentId(departmentId);
     }
 
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
-
-
-
     @Transactional
-    public List<DepartmentMedicalSheetsVisibilityVM> bulkSave(List<DepartmentMedicalSheetsVisibilityVM> list) {
-        if (list.isEmpty()) return List.of();
+    public List<DepartmentMedicalSheetsVisibility> bulkSave(List<DepartmentMedicalSheetsVisibility> list) {
+        if (list.isEmpty()) {
+            throw new BadRequestAlertException("Bulk save list cannot be empty", ENTITY_NAME, "listEmpty");
+        }
 
-        Long departmentId = list.get(0).departmentId();
+        list.stream()
+                .filter(e -> e.getMedicalSheet() == null)
+                .findAny()
+                .ifPresent(e -> {
+                    throw new BadRequestAlertException("Invalid medical sheet code", ENTITY_NAME, "medicalSheetInvalid");
+                });
+
+        list.stream()
+                .filter(e -> e.getDepartmentId() == null)
+                .findAny()
+                .ifPresent(e -> {
+                    throw new BadRequestAlertException("Missing department id", ENTITY_NAME, "departmentMissing");
+                });
+
+        Long departmentId = list.get(0).getDepartmentId();
         repository.deleteByDepartmentId(departmentId);
-
-        var entities = list.stream()
-                .map(vm -> {
-                    DepartmentMedicalSheetsVisibility e = new DepartmentMedicalSheetsVisibility();
-                    e.setDepartmentId(vm.departmentId());
-                    e.setMedicalSheet(vm.medicalSheet());
-                    return e;
-                })
-                .toList();
-
-        var saved = repository.saveAll(entities);
-        return saved.stream().map(DepartmentMedicalSheetsVisibilityVM::ofEntity).toList();
+        return repository.saveAll(list);
     }
-
-
 
 }

@@ -21,8 +21,7 @@ import java.io.Serializable;
 
 @Entity
 @Table(
-        name = "department_medical_sheets_nurse_visibility",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"department_id", "medical_sheet"})
+        name = "department_medical_sheets_nurse_visibility"
 )
 @Getter
 @Setter

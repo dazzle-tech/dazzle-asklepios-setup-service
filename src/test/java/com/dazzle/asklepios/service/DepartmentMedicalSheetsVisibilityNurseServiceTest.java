@@ -1,24 +1,19 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DepartmentMedicalSheetsNurseVisbility;
-
 import com.dazzle.asklepios.domain.enumeration.MedicalSheets;
 import com.dazzle.asklepios.repository.DepartmentMedicalSheetsNurseVisibilityRepository;
-import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsNurseVisibilityVM;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
-class DepartmentMedicalSheetsVisibilityNurseServiceTest {
+class DepartmentMedicalSheetsNurseVisibilityServiceTest {
 
     private DepartmentMedicalSheetsNurseVisibilityRepository repository;
     private DepartmentMedicalSheetsNurseVisibilityService service;
@@ -31,8 +26,9 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
 
     @Test
     void testCreate() {
-        DepartmentMedicalSheetsNurseVisibilityVM vm =
-                new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.CARE_PLAN_AND_GOALS);
+        DepartmentMedicalSheetsNurseVisbility entity = new DepartmentMedicalSheetsNurseVisbility();
+        entity.setDepartmentId(1L);
+        entity.setMedicalSheet(MedicalSheets.CARE_PLAN_AND_GOALS);
 
         DepartmentMedicalSheetsNurseVisbility savedEntity = new DepartmentMedicalSheetsNurseVisbility();
         savedEntity.setId(10L);
@@ -41,11 +37,24 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
 
         when(repository.save(any())).thenReturn(savedEntity);
 
-        DepartmentMedicalSheetsNurseVisibilityVM result = service.create(vm);
+        DepartmentMedicalSheetsNurseVisbility result = service.create(entity);
 
-        assertThat(result.departmentId()).isEqualTo(1L);
-        assertThat(result.medicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
+        assertThat(result.getDepartmentId()).isEqualTo(1L);
+        assertThat(result.getMedicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
         verify(repository, times(1)).save(any(DepartmentMedicalSheetsNurseVisbility.class));
+    }
+
+    @Test
+    void testCreateInvalidMedicalSheetThrows() {
+        DepartmentMedicalSheetsNurseVisbility entity = new DepartmentMedicalSheetsNurseVisbility();
+        entity.setDepartmentId(1L);
+        entity.setMedicalSheet(null);
+
+        assertThatThrownBy(() -> service.create(entity))
+                .isInstanceOf(BadRequestAlertException.class)
+                .hasMessageContaining("Invalid medical sheet code");
+
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -57,7 +66,7 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
         var result = service.findAll();
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).medicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
+        assertThat(result.get(0).getMedicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
         verify(repository).findAll();
     }
 
@@ -69,7 +78,7 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
         var result = service.findByDepartmentId(5L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).departmentId()).isEqualTo(5L);
+        assertThat(result.get(0).getDepartmentId()).isEqualTo(5L);
         verify(repository).findByDepartmentId(5L);
     }
 
@@ -81,12 +90,9 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
 
     @Test
     void testBulkSave() {
-        var vm1 = new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.ALLERGIES);
-        var vm2 = new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.CARDIOLOGY);
-        List<DepartmentMedicalSheetsNurseVisibilityVM> list = List.of(vm1, vm2);
-
         DepartmentMedicalSheetsNurseVisbility e1 = new DepartmentMedicalSheetsNurseVisbility(11L, 1L, MedicalSheets.ALLERGIES);
         DepartmentMedicalSheetsNurseVisbility e2 = new DepartmentMedicalSheetsNurseVisbility(12L, 1L, MedicalSheets.CARDIOLOGY);
+        List<DepartmentMedicalSheetsNurseVisbility> list = List.of(e1, e2);
 
         when(repository.saveAll(any())).thenReturn(List.of(e1, e2));
 
@@ -94,18 +100,43 @@ class DepartmentMedicalSheetsVisibilityNurseServiceTest {
 
         verify(repository).deleteByDepartmentId(1L);
         verify(repository).saveAll(any());
-
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).medicalSheet()).isEqualTo(MedicalSheets.ALLERGIES);
-        assertThat(result.get(1).medicalSheet()).isEqualTo(MedicalSheets.CARDIOLOGY);
+        assertThat(result.get(0).getMedicalSheet()).isEqualTo(MedicalSheets.ALLERGIES);
     }
 
-
     @Test
-    void testBulkSaveEmptyList() {
-        var result = service.bulkSave(List.of());
-        assertThat(result).isEmpty();
+    void testBulkSaveEmptyListThrows() {
+        assertThatThrownBy(() -> service.bulkSave(List.of()))
+                .isInstanceOf(BadRequestAlertException.class)
+                .hasMessageContaining("Bulk save list cannot be empty");
+
         verify(repository, never()).saveAll(any());
         verify(repository, never()).deleteByDepartmentId(any());
+    }
+
+    @Test
+    void testBulkSaveMissingDepartmentThrows() {
+        DepartmentMedicalSheetsNurseVisbility e = new DepartmentMedicalSheetsNurseVisbility();
+        e.setDepartmentId(null);
+        e.setMedicalSheet(MedicalSheets.ALLERGIES);
+
+        assertThatThrownBy(() -> service.bulkSave(List.of(e)))
+                .isInstanceOf(BadRequestAlertException.class)
+                .hasMessageContaining("Missing department id");
+
+        verify(repository, never()).saveAll(any());
+    }
+
+    @Test
+    void testBulkSaveInvalidMedicalSheetThrows() {
+        DepartmentMedicalSheetsNurseVisbility e = new DepartmentMedicalSheetsNurseVisbility();
+        e.setDepartmentId(1L);
+        e.setMedicalSheet(null);
+
+        assertThatThrownBy(() -> service.bulkSave(List.of(e)))
+                .isInstanceOf(BadRequestAlertException.class)
+                .hasMessageContaining("Invalid medical sheet code");
+
+        verify(repository, never()).saveAll(any());
     }
 }

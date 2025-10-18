@@ -15,8 +15,7 @@ public interface DepartmentMedicalSheetsNurseVisibilityRepository
 
     List<DepartmentMedicalSheetsNurseVisbility> findByDepartmentId(Long departmentId);
 
-    @Modifying
-    @Query("delete from DepartmentMedicalSheetsNurseVisbility d where d.departmentId = :departmentId")
+
     void deleteByDepartmentId(@Param("departmentId") Long departmentId);
 }
 

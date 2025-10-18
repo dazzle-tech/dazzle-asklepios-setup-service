@@ -1,9 +1,8 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.DepartmentMedicalSheetsNurseVisbility;
 import com.dazzle.asklepios.domain.enumeration.MedicalSheets;
-import com.dazzle.asklepios.repository.DepartmentMedicalSheetsNurseVisibilityRepository;
 import com.dazzle.asklepios.service.DepartmentMedicalSheetsNurseVisibilityService;
-import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsNurseVisibilityVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -14,17 +13,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class DepartmentMedicalSheetsNurseVisibilityControllerTest {
 
@@ -41,9 +32,12 @@ class DepartmentMedicalSheetsNurseVisibilityControllerTest {
 
     @Test
     void testCreate() throws Exception {
-        DepartmentMedicalSheetsNurseVisibilityVM vm =
-                new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.ALLERGIES);
-        when(service.create(any())).thenReturn(vm);
+        DepartmentMedicalSheetsNurseVisbility entity = new DepartmentMedicalSheetsNurseVisbility();
+        entity.setId(10L);
+        entity.setDepartmentId(1L);
+        entity.setMedicalSheet(MedicalSheets.ALLERGIES);
+
+        when(service.create(any())).thenReturn(entity);
 
         mockMvc.perform(post("/api/setup/department-medical-sheets-nurse")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -60,22 +54,23 @@ class DepartmentMedicalSheetsNurseVisibilityControllerTest {
     @Test
     void testGetAll() throws Exception {
         var list = List.of(
-                new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.ALLERGIES),
-                new DepartmentMedicalSheetsNurseVisibilityVM(2L, MedicalSheets.CARDIOLOGY)
+                new DepartmentMedicalSheetsNurseVisbility(1L, 1L, MedicalSheets.ALLERGIES),
+                new DepartmentMedicalSheetsNurseVisbility(2L, 2L, MedicalSheets.CARDIOLOGY)
         );
         when(service.findAll()).thenReturn(list);
 
         mockMvc.perform(get("/api/setup/department-medical-sheets-nurse"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"));
+                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"))
+                .andExpect(jsonPath("$[1].medicalSheet").value("CARDIOLOGY"));
 
         verify(service).findAll();
     }
 
     @Test
     void testGetByDepartment() throws Exception {
-        var list = List.of(new DepartmentMedicalSheetsNurseVisibilityVM(5L, MedicalSheets.ALLERGIES));
+        var list = List.of(new DepartmentMedicalSheetsNurseVisbility(1L, 5L, MedicalSheets.ALLERGIES));
         when(service.findByDepartmentId(5L)).thenReturn(list);
 
         mockMvc.perform(get("/api/setup/department-medical-sheets-nurse/department/5"))
@@ -98,11 +93,11 @@ class DepartmentMedicalSheetsNurseVisibilityControllerTest {
 
     @Test
     void testBulkSave() throws Exception {
-        var inputList = List.of(
-                new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.ALLERGIES),
-                new DepartmentMedicalSheetsNurseVisibilityVM(1L, MedicalSheets.CARDIOLOGY)
+        var list = List.of(
+                new DepartmentMedicalSheetsNurseVisbility(11L, 1L, MedicalSheets.ALLERGIES),
+                new DepartmentMedicalSheetsNurseVisbility(12L, 1L, MedicalSheets.CARDIOLOGY)
         );
-        when(service.bulkSave(ArgumentMatchers.anyList())).thenReturn(inputList);
+        when(service.bulkSave(ArgumentMatchers.anyList())).thenReturn(list);
 
         mockMvc.perform(post("/api/setup/department-medical-sheets-nurse/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -114,6 +109,7 @@ class DepartmentMedicalSheetsNurseVisibilityControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"))
                 .andExpect(jsonPath("$[1].medicalSheet").value("CARDIOLOGY"));
 
         verify(service).bulkSave(anyList());

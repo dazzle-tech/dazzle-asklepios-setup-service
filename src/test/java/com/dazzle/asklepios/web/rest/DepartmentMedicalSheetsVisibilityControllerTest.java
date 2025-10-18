@@ -1,8 +1,8 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.DepartmentMedicalSheetsVisibility;
 import com.dazzle.asklepios.domain.enumeration.MedicalSheets;
 import com.dazzle.asklepios.service.DepartmentMedicalSheetsVisibilityService;
-import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsVisibilityVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -15,11 +15,9 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.hamcrest.Matchers.*;
 
-public class DepartmentMedicalSheetsVisibilityControllerTest {
-
+class DepartmentMedicalSheetsVisibilityControllerTest {
 
     private DepartmentMedicalSheetsVisibilityService service;
     private MockMvc mockMvc;
@@ -34,9 +32,12 @@ public class DepartmentMedicalSheetsVisibilityControllerTest {
 
     @Test
     void testCreate() throws Exception {
-        DepartmentMedicalSheetsVisibilityVM vm =
-                new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.ALLERGIES);
-        when(service.create(any())).thenReturn(vm);
+        DepartmentMedicalSheetsVisibility entity = new DepartmentMedicalSheetsVisibility();
+        entity.setId(10L);
+        entity.setDepartmentId(1L);
+        entity.setMedicalSheet(MedicalSheets.ALLERGIES);
+
+        when(service.create(any())).thenReturn(entity);
 
         mockMvc.perform(post("/api/setup/department-medical-sheets")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -53,22 +54,23 @@ public class DepartmentMedicalSheetsVisibilityControllerTest {
     @Test
     void testGetAll() throws Exception {
         var list = List.of(
-                new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.ALLERGIES),
-                new DepartmentMedicalSheetsVisibilityVM(2L, MedicalSheets.CARDIOLOGY)
+                new DepartmentMedicalSheetsVisibility(1L, 1L, MedicalSheets.ALLERGIES),
+                new DepartmentMedicalSheetsVisibility(2L, 2L, MedicalSheets.CARDIOLOGY)
         );
         when(service.findAll()).thenReturn(list);
 
         mockMvc.perform(get("/api/setup/department-medical-sheets"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"));
+                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"))
+                .andExpect(jsonPath("$[1].medicalSheet").value("CARDIOLOGY"));
 
         verify(service).findAll();
     }
 
     @Test
     void testGetByDepartment() throws Exception {
-        var list = List.of(new DepartmentMedicalSheetsVisibilityVM(5L, MedicalSheets.ALLERGIES));
+        var list = List.of(new DepartmentMedicalSheetsVisibility(1L, 5L, MedicalSheets.ALLERGIES));
         when(service.findByDepartmentId(5L)).thenReturn(list);
 
         mockMvc.perform(get("/api/setup/department-medical-sheets/department/5"))
@@ -91,11 +93,11 @@ public class DepartmentMedicalSheetsVisibilityControllerTest {
 
     @Test
     void testBulkSave() throws Exception {
-        var inputList = List.of(
-                new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.ALLERGIES),
-                new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.CARDIOLOGY)
+        var list = List.of(
+                new DepartmentMedicalSheetsVisibility(11L, 1L, MedicalSheets.ALLERGIES),
+                new DepartmentMedicalSheetsVisibility(12L, 1L, MedicalSheets.CARDIOLOGY)
         );
-        when(service.bulkSave(ArgumentMatchers.anyList())).thenReturn(inputList);
+        when(service.bulkSave(ArgumentMatchers.anyList())).thenReturn(list);
 
         mockMvc.perform(post("/api/setup/department-medical-sheets/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,6 +109,7 @@ public class DepartmentMedicalSheetsVisibilityControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].medicalSheet").value("ALLERGIES"))
                 .andExpect(jsonPath("$[1].medicalSheet").value("CARDIOLOGY"));
 
         verify(service).bulkSave(anyList());

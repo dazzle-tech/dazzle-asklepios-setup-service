@@ -3,14 +3,14 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.DepartmentMedicalSheetsVisibility;
 import com.dazzle.asklepios.domain.enumeration.MedicalSheets;
 import com.dazzle.asklepios.repository.DepartmentMedicalSheetsVisibilityRepository;
-import com.dazzle.asklepios.web.rest.vm.DepartmentMedicalSheetsVisibilityVM;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class DepartmentMedicalSheetsVisibilityServiceTest {
@@ -26,8 +26,9 @@ class DepartmentMedicalSheetsVisibilityServiceTest {
 
     @Test
     void testCreate() {
-        DepartmentMedicalSheetsVisibilityVM vm =
-                new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.CARE_PLAN_AND_GOALS);
+        DepartmentMedicalSheetsVisibility entity = new DepartmentMedicalSheetsVisibility();
+        entity.setDepartmentId(1L);
+        entity.setMedicalSheet(MedicalSheets.CARE_PLAN_AND_GOALS);
 
         DepartmentMedicalSheetsVisibility savedEntity = new DepartmentMedicalSheetsVisibility();
         savedEntity.setId(10L);
@@ -36,10 +37,10 @@ class DepartmentMedicalSheetsVisibilityServiceTest {
 
         when(repository.save(any())).thenReturn(savedEntity);
 
-        DepartmentMedicalSheetsVisibilityVM result = service.create(vm);
+        DepartmentMedicalSheetsVisibility result = service.create(entity);
 
-        assertThat(result.departmentId()).isEqualTo(1L);
-        assertThat(result.medicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
+        assertThat(result.getDepartmentId()).isEqualTo(1L);
+        assertThat(result.getMedicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
         verify(repository, times(1)).save(any(DepartmentMedicalSheetsVisibility.class));
     }
 
@@ -52,7 +53,7 @@ class DepartmentMedicalSheetsVisibilityServiceTest {
         var result = service.findAll();
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).medicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
+        assertThat(result.get(0).getMedicalSheet()).isEqualTo(MedicalSheets.CARE_PLAN_AND_GOALS);
         verify(repository).findAll();
     }
 
@@ -64,7 +65,7 @@ class DepartmentMedicalSheetsVisibilityServiceTest {
         var result = service.findByDepartmentId(5L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).departmentId()).isEqualTo(5L);
+        assertThat(result.get(0).getDepartmentId()).isEqualTo(5L);
         verify(repository).findByDepartmentId(5L);
     }
 
@@ -76,30 +77,26 @@ class DepartmentMedicalSheetsVisibilityServiceTest {
 
     @Test
     void testBulkSave() {
-        var vm1 = new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.ALLERGIES);
-        var vm2 = new DepartmentMedicalSheetsVisibilityVM(1L, MedicalSheets.CARDIOLOGY);
-        List<DepartmentMedicalSheetsVisibilityVM> list = List.of(vm1, vm2);
-
         DepartmentMedicalSheetsVisibility e1 = new DepartmentMedicalSheetsVisibility(11L, 1L, MedicalSheets.ALLERGIES);
         DepartmentMedicalSheetsVisibility e2 = new DepartmentMedicalSheetsVisibility(12L, 1L, MedicalSheets.CARDIOLOGY);
+        List<DepartmentMedicalSheetsVisibility> list = List.of(e1, e2);
 
-        when(repository.saveAll(any())).thenReturn(List.of(e1, e2));
+        when(repository.saveAll(any())).thenReturn(list);
 
         var result = service.bulkSave(list);
 
         verify(repository).deleteByDepartmentId(1L);
         verify(repository).saveAll(any());
-
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).medicalSheet()).isEqualTo(MedicalSheets.ALLERGIES);
-        assertThat(result.get(1).medicalSheet()).isEqualTo(MedicalSheets.CARDIOLOGY);
+        assertThat(result.get(0).getMedicalSheet()).isEqualTo(MedicalSheets.ALLERGIES);
+        assertThat(result.get(1).getMedicalSheet()).isEqualTo(MedicalSheets.CARDIOLOGY);
     }
 
-
     @Test
-    void testBulkSaveEmptyList() {
-        var result = service.bulkSave(List.of());
-        assertThat(result).isEmpty();
+    void testBulkSaveEmptyListThrowsBadRequest() {
+        assertThatThrownBy(() -> service.bulkSave(List.of()))
+                .isInstanceOf(BadRequestAlertException.class)
+                .hasMessageContaining("Bulk save list cannot be empty");
         verify(repository, never()).saveAll(any());
         verify(repository, never()).deleteByDepartmentId(any());
     }
