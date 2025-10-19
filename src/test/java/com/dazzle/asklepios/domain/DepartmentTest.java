@@ -1,13 +1,15 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.Department;
-import com.dazzle.asklepios.domain.Facility;
+
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.time.LocalDateTime;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,11 +24,7 @@ class DepartmentTest {
                 .id(5004L)
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
-                .createdDate(LocalDateTime.now())
                 .departmentType(DepartmentType.INPATIENT_WARD)
-                .lastModifiedBy("admin")
-                .lastModifiedDate(LocalDateTime.now())
                 .appointable(true)
                 .departmentCode("CARD01")
                 .phoneNumber("123456789")
@@ -52,7 +50,6 @@ class DepartmentTest {
                 .id(5003L)
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
                 .departmentType(DepartmentType.OUTPATIENT_CLINIC)
                 .departmentCode("CARD01")
                 .build();
@@ -61,7 +58,6 @@ class DepartmentTest {
                 .id(5003L) // same id → should be equal
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
                 .departmentType(DepartmentType.OUTPATIENT_CLINIC)
                 .departmentCode("CARD01")
                 .build();
@@ -75,7 +71,6 @@ class DepartmentTest {
         Department dept = Department.builder()
                 .id(5005L)
                 .name("Radiology")
-                .createdBy("tester")
                 .departmentType(DepartmentType.OUTPATIENT_CLINIC)
                 .departmentCode("RAD01")
                 .build();

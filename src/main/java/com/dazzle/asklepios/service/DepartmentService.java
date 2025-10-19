@@ -6,9 +6,8 @@ import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -18,12 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class DepartmentService {
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentService.class);
     private final DepartmentsRepository departmentRepository;
@@ -53,8 +50,8 @@ public class DepartmentService {
                 .email(departmentVM.email())
                 .encounterType(departmentVM.encounterType())
                 .isActive(departmentVM.isActive())
-                .createdBy(departmentVM.createdBy())
                 .build();
+        LOG.debug("Created department: {}", department);
 
         return departmentRepository.save(department);
     }
@@ -84,69 +81,41 @@ public class DepartmentService {
         if (departmentVM.email() != null) department.setEmail(departmentVM.email());
         if (departmentVM.encounterType() != null) department.setEncounterType(departmentVM.encounterType());
         if (departmentVM.isActive() != null) department.setIsActive(departmentVM.isActive());
-        if (departmentVM.lastModifiedBy() != null) department.setLastModifiedBy(departmentVM.lastModifiedBy());
 
-        department.setLastModifiedDate(LocalDateTime.now());
         Department updated = departmentRepository.save(department);
+        LOG.debug("Updated department: {}", updated);
 
         return Optional.of(updated);
     }
 
     @Transactional(readOnly = true)
-    public List<DepartmentResponseVM> findAll() {
-        LOG.debug("Request to get all Departments (no pagination)");
-        return departmentRepository.findAll()
-                .stream()
-                .map(DepartmentResponseVM::ofEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Transactional(readOnly = true)
-    public Page<DepartmentResponseVM> findAll(Pageable pageable) {
+    public Page<Department> findAll(Pageable pageable) {
         LOG.debug("Request to get Departments with pagination: {}", pageable);
-        return departmentRepository.findAll(pageable).map(DepartmentResponseVM::ofEntity);
+        return departmentRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DepartmentResponseVM> findByFacilityId(Long facilityId, Pageable pageable) {
+    public Page<Department> findByFacilityId(Long facilityId, Pageable pageable) {
         LOG.debug("Request to get Departments by Facility with pagination facilityId={} pageable={}", facilityId, pageable);
-        return departmentRepository.findByFacilityId(facilityId, pageable).map(DepartmentResponseVM::ofEntity);
+        return departmentRepository.findByFacilityId(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DepartmentResponseVM> findByDepartmentType(DepartmentType type, Pageable pageable) {
+    public Page<Department> findByDepartmentType(DepartmentType type, Pageable pageable) {
         LOG.debug("Request to get Departments by Type with pagination type={} pageable={}", type, pageable);
-        return departmentRepository.findByDepartmentType(type, pageable).map(DepartmentResponseVM::ofEntity);
+        return departmentRepository.findByDepartmentType(type, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DepartmentResponseVM> findByDepartmentName(String name, Pageable pageable) {
+    public Page<Department> findByDepartmentName(String name, Pageable pageable) {
         LOG.debug("Request to get Departments by Name with pagination name='{}' pageable={}", name, pageable);
-        return departmentRepository.findByNameContainingIgnoreCase(name, pageable).map(DepartmentResponseVM::ofEntity);
+        return departmentRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
     @Transactional(readOnly = true)
     public Optional<Department> findOne(Long id) {
         LOG.debug("Request to get Department : {}", id);
         return departmentRepository.findById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Department> findByFacilityId(Long facilityId) {
-        LOG.debug("Request to get Departments by Facility facility_id={}", facilityId);
-        return departmentRepository.findByFacilityId(facilityId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Department> findByDepartmentType(DepartmentType departmentType) {
-        LOG.debug("Request to get Departments by Department Type department_type={}", departmentType);
-        return departmentRepository.findByDepartmentType(departmentType);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Department> findByDepartmentName(String name) {
-        LOG.debug("Request to get Departments by Name name={}", name);
-        return departmentRepository.findByNameContainingIgnoreCase(name);
     }
 
     public Optional<Department> toggleIsActive(Long id) {
