@@ -3,20 +3,23 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.Service;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ServiceCreateVM(
         @NotNull String name,
         String abbreviation,
         @NotNull String code,
-        ServiceCategory category,
+        @NotNull ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,
-        @NotNull Boolean isActive,
-        @NotNull String createdBy
+        Boolean isActive,
+        String createdBy,
+        @NotNull Long facilityId   // ✅ جديد
 ) implements Serializable {
 
     public static ServiceCreateVM ofEntity(Service service) {
@@ -28,7 +31,8 @@ public record ServiceCreateVM(
                 service.getPrice(),
                 service.getCurrency(),
                 service.getIsActive(),
-                service.getCreatedBy()
+                service.getCreatedBy(),
+                service.getFacility() != null ? service.getFacility().getId() : null
         );
     }
 }

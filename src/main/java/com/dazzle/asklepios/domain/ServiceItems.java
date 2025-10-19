@@ -31,14 +31,19 @@ public class ServiceItems implements Serializable {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
-    private ServiceItemsType type;   // enum for type field
+    private ServiceItemsType type;
 
     @NotNull
     @Column(name = "source_id", nullable = false)
     private Long sourceId;
 
-    @Column(name = "service_id")
-    private Long serviceId;
+    @ManyToOne(optional = true)
+    @JoinColumn(
+            name = "service_id",
+            referencedColumnName = "id",
+            foreignKey = @ForeignKey(name = "fk_service_items_service")
+    )
+    private Service service;
 
     @NotNull
     @Column(name = "created_by", nullable = false, length = 50)

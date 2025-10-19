@@ -39,6 +39,8 @@ class ServiceControllerTest {
     @MockitoBean
     private ServiceService serviceService;
 
+    private static final long FACILITY_ID = 1L;
+
     private Service sampleService() {
         return Service.builder()
                 .id(100L)
@@ -60,9 +62,10 @@ class ServiceControllerTest {
         Page<ServiceResponseVM> page =
                 new PageImpl<>(List.of(ServiceResponseVM.ofEntity(svc)), pageable, 1);
 
-        when(serviceService.findAll(any(Pageable.class))).thenReturn(page);
+        when(serviceService.findAll(eq(FACILITY_ID), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/setup/service")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -74,9 +77,10 @@ class ServiceControllerTest {
     @Test
     void testGetServiceById() throws Exception {
         var svc = sampleService();
-        when(serviceService.findOne(100L)).thenReturn(Optional.of(svc));
+        when(serviceService.findOne(100L, FACILITY_ID)).thenReturn(Optional.of(svc));
 
-        mockMvc.perform(get("/api/setup/service/100"))
+        mockMvc.perform(get("/api/setup/service/100")
+                        .param("facilityId", String.valueOf(FACILITY_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("MRI Scan"))
                 .andExpect(jsonPath("$.code").value("MRI-01"));
@@ -84,81 +88,88 @@ class ServiceControllerTest {
 
     @Test
     void testGetServiceById_NotFound() throws Exception {
-        when(serviceService.findOne(9999L)).thenReturn(Optional.empty());
+        when(serviceService.findOne(9999L, FACILITY_ID)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/setup/service/9999"))
+        mockMvc.perform(get("/api/setup/service/9999")
+                        .param("facilityId", String.valueOf(FACILITY_ID)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void testCreateService_Success() throws Exception {
         var created = sampleService();
-        when(serviceService.existsByNameIgnoreCase("MRI Scan")).thenReturn(false);
-        when(serviceService.create(any())).thenReturn(created);
+        when(serviceService.existsByNameIgnoreCase(FACILITY_ID, "MRI Scan")).thenReturn(false);
+        when(serviceService.create(eq(FACILITY_ID), any())).thenReturn(created);
 
         mockMvc.perform(post("/api/setup/service")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                              "name": "MRI Scan",
-                              "abbreviation": "MRI",
-                              "code": "MRI-01",
-                              "category": "CONSULTATION",
-                              "price": 199.99,
-                              "currency": "USD",
-                              "isActive": true,
-                              "createdBy": "tester"
-                            }
-                            """))
+                    {
+                      "name": "MRI Scan",
+                      "abbreviation": "MRI",
+                      "code": "MRI-01",
+                      "category": "CONSULTATION",
+                      "price": 199.99,
+                      "currency": "USD",
+                      "isActive": true,
+                      "createdBy": "tester",
+                      "facilityId": 1
+                    }
+                    """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/setup/service/100"))
+                .andExpect(header().string("Location", "/api/setup/service/100?facilityId=1"))
                 .andExpect(jsonPath("$.name").value("MRI Scan"))
                 .andExpect(jsonPath("$.code").value("MRI-01"));
     }
 
     @Test
     void testCreateService_ConflictOnName() throws Exception {
-        when(serviceService.existsByNameIgnoreCase("MRI Scan")).thenReturn(true);
+        when(serviceService.existsByNameIgnoreCase(FACILITY_ID, "MRI Scan")).thenReturn(true);
 
         mockMvc.perform(post("/api/setup/service")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                              "name": "MRI Scan",
-                              "abbreviation": "MRI",
-                              "code": "MRI-01",
-                              "category": "CONSULTATION",
-                              "price": 199.99,
-                              "currency": "USD",
-                              "isActive": true,
-                              "createdBy": "tester"
-                            }
-                            """))
+                    {
+                      "name": "MRI Scan",
+                      "abbreviation": "MRI",
+                      "code": "MRI-01",
+                      "category": "CONSULTATION",
+                      "price": 199.99,
+                      "currency": "USD",
+                      "isActive": true,
+                      "createdBy": "tester",
+                      "facilityId": 1
+                    }
+                    """))
                 .andExpect(status().isConflict());
 
-        verify(serviceService, never()).create(any());
+        verify(serviceService, never()).create(anyLong(), any());
     }
 
     @Test
     void testUpdateService_Success() throws Exception {
         var svc = sampleService();
-        when(serviceService.update(eq(100L), any())).thenReturn(Optional.of(svc));
+        when(serviceService.update(eq(100L), eq(FACILITY_ID), any())).thenReturn(Optional.of(svc));
 
         mockMvc.perform(put("/api/setup/service/100")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                              "id": 100,
-                              "name": "MRI Scan",
-                              "abbreviation": "MRI",
-                              "code": "MRI-01",
-                              "category": "CONSULTATION",
-                              "price": 199.99,
-                              "currency": "USD",
-                              "isActive": true,
-                              "lastModifiedBy": "admin"
-                            }
-                            """))
+                    {
+                      "id": 100,
+                      "name": "MRI Scan",
+                      "abbreviation": "MRI",
+                      "code": "MRI-01",
+                      "category": "CONSULTATION",
+                      "price": 199.99,
+                      "currency": "USD",
+                      "isActive": true,
+                      "lastModifiedBy": "admin",
+                      "facilityId": 1
+                    }
+                    """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("MRI Scan"))
                 .andExpect(jsonPath("$.code").value("MRI-01"));
@@ -166,23 +177,25 @@ class ServiceControllerTest {
 
     @Test
     void testUpdateService_NotFound() throws Exception {
-        when(serviceService.update(eq(9999L), any())).thenReturn(Optional.empty());
+        when(serviceService.update(eq(9999L), eq(FACILITY_ID), any())).thenReturn(Optional.empty());
 
         mockMvc.perform(put("/api/setup/service/9999")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                              "id": 9999,
-                              "name": "Unknown",
-                              "abbreviation": "UNK",
-                              "code": "UNK-01",
-                              "category": "CONSUMABLE",
-                              "price": 10.00,
-                              "currency": "USD",
-                              "isActive": false,
-                              "lastModifiedBy": "admin"
-                            }
-                            """))
+                    {
+                      "id": 9999,
+                      "name": "Unknown",
+                      "abbreviation": "UNK",
+                      "code": "UNK-01",
+                      "category": "CONSUMABLE",
+                      "price": 10.00,
+                      "currency": "USD",
+                      "isActive": false,
+                      "lastModifiedBy": "admin",
+                      "facilityId": 1
+                    }
+                    """))
                 .andExpect(status().isNotFound());
     }
 
@@ -193,10 +206,11 @@ class ServiceControllerTest {
         Page<ServiceResponseVM> page =
                 new PageImpl<>(List.of(ServiceResponseVM.ofEntity(svc)), pageable, 1);
 
-        when(serviceService.findByCategory(eq(ServiceCategory.CONSULTATION), any(Pageable.class)))
+        when(serviceService.findByCategory(eq(FACILITY_ID), eq(ServiceCategory.CONSULTATION), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/setup/service/service-list-by-category")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .param("category", ServiceCategory.CONSULTATION.name())
                         .param("page", "0")
                         .param("size", "10"))
@@ -212,10 +226,11 @@ class ServiceControllerTest {
         Page<ServiceResponseVM> page =
                 new PageImpl<>(List.of(ServiceResponseVM.ofEntity(svc)), pageable, 1);
 
-        when(serviceService.findByCodeContainingIgnoreCase(eq("MRI-01"), any(Pageable.class)))
+        when(serviceService.findByCodeContainingIgnoreCase(eq(FACILITY_ID), eq("MRI-01"), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/setup/service/service-list-by-code")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .param("code", "MRI-01")
                         .param("page", "0")
                         .param("size", "10"))
@@ -231,10 +246,11 @@ class ServiceControllerTest {
         Page<ServiceResponseVM> page =
                 new PageImpl<>(List.of(ServiceResponseVM.ofEntity(svc)), pageable, 1);
 
-        when(serviceService.findByNameContainingIgnoreCase(eq("MRI"), any(Pageable.class)))
+        when(serviceService.findByNameContainingIgnoreCase(eq(FACILITY_ID), eq("MRI"), any(Pageable.class)))
                 .thenReturn(page);
 
         mockMvc.perform(get("/api/setup/service/service-list-by-name")
+                        .param("facilityId", String.valueOf(FACILITY_ID))
                         .param("name", "MRI")
                         .param("page", "0")
                         .param("size", "10"))
@@ -246,21 +262,23 @@ class ServiceControllerTest {
     @Test
     void testToggleServiceActiveStatus() throws Exception {
         var svc = sampleService();
-        when(serviceService.toggleIsActive(100L)).thenReturn(Optional.of(svc));
+        when(serviceService.toggleIsActive(100L, FACILITY_ID)).thenReturn(Optional.of(svc));
 
-        mockMvc.perform(patch("/api/setup/service/100/toggle-active"))
+        mockMvc.perform(patch("/api/setup/service/100/toggle-active")
+                        .param("facilityId", String.valueOf(FACILITY_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("MRI Scan"))
                 .andExpect(jsonPath("$.isActive").value(true));
 
-        verify(serviceService, times(1)).toggleIsActive(100L);
+        verify(serviceService, times(1)).toggleIsActive(100L, FACILITY_ID);
     }
 
     @Test
     void testToggleServiceActiveStatus_NotFound() throws Exception {
-        when(serviceService.toggleIsActive(9999L)).thenReturn(Optional.empty());
+        when(serviceService.toggleIsActive(9999L, FACILITY_ID)).thenReturn(Optional.empty());
 
-        mockMvc.perform(patch("/api/setup/service/9999/toggle-active"))
+        mockMvc.perform(patch("/api/setup/service/9999/toggle-active")
+                        .param("facilityId", String.valueOf(FACILITY_ID)))
                 .andExpect(status().isNotFound());
     }
 }

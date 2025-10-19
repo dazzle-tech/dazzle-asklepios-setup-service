@@ -7,7 +7,7 @@ public enum ServiceItemsType {
     OPERATIONS,
     ROOMS,
     BEDS,
-    SURGICALKITS,
+    SURGICAL_KITS,
     DEPARTMENTS,
     RESOURCES,
     MEDICATIONS,
