@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.EncounterAttachments;
+import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,11 +15,11 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 
 @Service
 @RequiredArgsConstructor
 public class EncounterAttachmentsService {
+
     private final EncounterAttachementsRepository repo;
     private final AttachmentProperties props;
     private final AttachmentStorageService storage;
@@ -29,7 +30,8 @@ public class EncounterAttachmentsService {
     public record UploadTicket(Long id, String objectKey, String putUrl) {}
     public record DownloadTicket(String url, int expiresInSeconds) {}
 
-    public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy) {
+    /** Create upload ticket and persist record including source column. */
+    public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy, String source) {
         if (!props.getAllowed().contains(mime)) throw new IllegalArgumentException("unsupported_type");
         if (size > props.getMaxBytes()) throw new IllegalArgumentException("too_large");
 
@@ -38,13 +40,26 @@ public class EncounterAttachmentsService {
         String key = "encounters/" + encounterId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + id + "-" + safe;
 
         EncounterAttachments a = EncounterAttachments.builder()
-                .id(id).encounterId(encounterId).createdBy(createdBy)
-                .spaceKey(key).filename(filename).mimeType(mime)
-                .sizeBytes(size).createdAt(now).build();
+                .id(id)
+                .encounterId(encounterId)
+                .createdBy(createdBy)
+                .spaceKey(key)
+                .filename(filename)
+                .mimeType(mime)
+                .sizeBytes(size)
+                .source(source)        // NEW FIELD
+                .createdAt(now)
+                .build();
+
         repo.save(a);
 
         PresignedPutObjectRequest put = storage.presignPut(key, mime, size);
         return new UploadTicket(id, key, put.url().toString());
+    }
+
+    /** Overload for backward compatibility if source is not passed. */
+    public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy) {
+        return createUpload(id, encounterId, filename, mime, size, createdBy, null);
     }
 
     @Transactional
@@ -78,4 +93,3 @@ public class EncounterAttachmentsService {
         }
     }
 }
-

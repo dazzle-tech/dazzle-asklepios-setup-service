@@ -42,12 +42,9 @@ public class PatientAttachmentsController {
 
     private static final String ENTITY_NAME = "patientAttachments";
 
-    public record UploadResponse(Long id, String filename, String mimeType, long sizeBytes, String downloadUrl) {}
+    public record UploadResponse( Long id, String filename, String mimeType, long sizeBytes, String type, String details,String downloadUrl) {}
 
-    public PatientAttachmentsController(PatientAttachmentsRepository repo,
-                                        AttachmentStorageService storage,
-                                        AttachmentProperties props,
-                                        PatientAttachmentsService service) {
+    public PatientAttachmentsController(PatientAttachmentsRepository repo, AttachmentStorageService storage, AttachmentProperties props, PatientAttachmentsService service) {
         this.repo = repo;
         this.storage = storage;
         this.props = props;
@@ -59,6 +56,8 @@ public class PatientAttachmentsController {
     public List<UploadResponse> upload(
             @PathVariable Long patientId,
             @RequestParam @NotBlank String createdBy,
+            @RequestParam(required = false) String type,     // NEW optional
+            @RequestParam(required = false) String details,  // NEW optional
             @RequestPart("files") @NotNull List<MultipartFile> files
     ) {
         Instant now = Instant.now();
@@ -105,13 +104,23 @@ public class PatientAttachmentsController {
                     .filename(originalName)
                     .mimeType(mime)
                     .sizeBytes(size)
+                    .type(type)           // NEW
+                    .details(details)     // NEW
                     .createdAt(now)
                     .build();
 
             entity = repo.save(entity);
             String downloadUrl = storage.presignGet(key, safeFileName).url().toString();
 
-            return new UploadResponse(entity.getId(), originalName, mime, size, downloadUrl);
+            return new UploadResponse(
+                    entity.getId(),
+                    originalName,
+                    mime,
+                    size,
+                    entity.getType(),
+                    entity.getDetails(),
+                    downloadUrl
+            );
         }).toList();
     }
 

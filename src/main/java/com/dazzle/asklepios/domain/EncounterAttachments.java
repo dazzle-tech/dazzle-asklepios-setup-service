@@ -54,7 +54,8 @@ public class EncounterAttachments {
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
-
+    @Column(name = "source", length = 50)
+    private String source;
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = Instant.now();

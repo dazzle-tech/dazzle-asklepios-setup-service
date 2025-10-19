@@ -43,10 +43,14 @@ public class PatientAttachmentsService {
         return new UploadTicket(key, put.url().toString());
     }
 
-    /** Step 2: Finalize. Verify object exists, then insert row. */
     @Transactional
     public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy) {
-        // HEAD the object
+        return finalizeUpload(patientId, objectKey, createdBy, null, null);
+    }
+
+    /** Step 2: Finalize. Verify object exists, then insert row with type/details. */
+    @Transactional
+    public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy, String type, String details) {
         HeadObjectResponse head = storage.head(objectKey);
         String mime = head.contentType();
         Long size   = head.contentLength();
@@ -54,25 +58,24 @@ public class PatientAttachmentsService {
         if (mime == null || size == null) throw new IllegalStateException("object_missing_metadata");
         validateTypeAndSize(mime, size);
 
-        // Derive filename from key path
         String filename = objectKey.substring(objectKey.lastIndexOf('/') + 1);
 
-        // Prevent duplicate link
         if (repo.existsByPatientIdAndSpaceKey(patientId, objectKey)) {
             return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedAtDesc(patientId, Pageable.ofSize(1))
                     .stream().filter(a -> a.getSpaceKey().equals(objectKey)).findFirst()
-                    .orElseThrow(); // already persisted
+                    .orElseThrow();
         }
 
-        // Persist now
         PatientAttachments a = PatientAttachments.builder()
-                .id(null) // if DB generates; else supply your id here
+                .id(null)
                 .patientId(patientId)
                 .createdBy(createdBy)
                 .spaceKey(objectKey)
                 .filename(filename)
                 .mimeType(mime)
                 .sizeBytes(size)
+                .type(type)           // NEW
+                .details(details)     // NEW
                 .createdAt(Instant.now())
                 .build();
 
