@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Department implements Serializable {
+public class Department  extends  AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -34,22 +34,9 @@ public class Department implements Serializable {
     private String name;
 
     @NotNull
-    @Column(name = "created_by", nullable = false, length = 50)
-    private String createdBy;
-
-    @Column(name = "created_date")
-    private LocalDateTime createdDate;
-
-    @NotNull
     @Column(name = "type", nullable = false, length = 50)
     @Convert(converter = DepartmentTypeConverter.class)
     private DepartmentType departmentType;
-
-    @Column(name = "last_modified_by", length = 50)
-    private String lastModifiedBy;
-
-    @Column(name = "last_modified_date")
-    private LocalDateTime lastModifiedDate;
 
     @Column
     private Boolean appointable;

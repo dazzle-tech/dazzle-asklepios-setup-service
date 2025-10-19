@@ -1,8 +1,9 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.department;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+
 import java.io.Serializable;
 
 /**
@@ -19,7 +20,6 @@ public record DepartmentResponseVM(
         String email,
         EncounterType encounterType,
         Boolean isActive
-
 
 ) implements Serializable {
 
