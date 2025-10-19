@@ -64,6 +64,11 @@ public class PatientAttachments {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(name = "type", length = 100)
+    private String type;
+
+    @Column(name = "details", columnDefinition = "text")
+    private String details;
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = Instant.now();
