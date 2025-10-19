@@ -93,4 +93,5 @@ class DepartmentTest {
         assertThat(deserialized.getName()).isEqualTo("Radiology");
         assertThat(deserialized.getDepartmentCode()).isEqualTo("RAD01");
     }
+
 }
