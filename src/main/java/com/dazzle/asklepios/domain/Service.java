@@ -19,6 +19,7 @@ import java.time.Instant;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Service implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -52,6 +53,10 @@ public class Service implements Serializable {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "facility_id", nullable = false)
+    private Facility facility;
+
     @NotNull
     @Column(name = "created_by", nullable = false, length = 50)
     private String createdBy;
@@ -65,4 +70,3 @@ public class Service implements Serializable {
     @Column(name = "last_modified_date")
     private Instant lastModifiedDate;
 }
-

@@ -14,7 +14,8 @@ public record ServiceResponseVM(
         ServiceCategory category,
         BigDecimal price,
         Currency currency,
-        Boolean isActive
+        Boolean isActive,
+        Long facilityId   // ✅ جديد
 ) implements Serializable {
 
     public static ServiceResponseVM ofEntity(Service service) {
@@ -26,7 +27,8 @@ public record ServiceResponseVM(
                 service.getCategory(),
                 service.getPrice(),
                 service.getCurrency(),
-                service.getIsActive()
+                service.getIsActive(),
+                service.getFacility() != null ? service.getFacility().getId() : null
         );
     }
 }
