@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -38,8 +39,8 @@ public class FacilityService {
         Facility facility = new Facility();
         facility.setName(vm.name());
         facility.setType(vm.type());
-        facility.setCode(vm.code());
-        facility.setEmailAddress(vm.emailAddress());
+         facility.setCode(vm.code());
+         facility.setEmailAddress(vm.emailAddress());
         facility.setPhone1(vm.phone1());
         facility.setPhone2(vm.phone2());
         facility.setFax(vm.fax());
@@ -64,11 +65,23 @@ public class FacilityService {
             if (vm.fax() != null) existing.setFax(vm.fax());
             if (vm.addressId() != null) existing.setAddressId(vm.addressId());
             if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
+            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+            if (vm.roolId() != null) {
+
+                DuplicationCandidate candidate = new DuplicationCandidate();
+                candidate.setId(vm.roolId());
+                existing.setRoolId(candidate.getId());
+            } else {
+
+                existing.setRoolId(null);
+            }
 
             Facility updated = facilityRepository.save(existing);
+            LOG.debug("Facility updated successfully: {}", updated);
             return updated;
         });
     }
+
 
     @Transactional(readOnly = true)
     public List<FacilityResponseVM> findAll() {

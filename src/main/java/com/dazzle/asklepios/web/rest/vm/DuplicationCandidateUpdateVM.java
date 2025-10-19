@@ -1,19 +1,14 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.io.Serializable;
+import java.util.Map;
 
+/**
+ * ViewModel for updating a DuplicationCandidate.
+ * Fields are stored as a JSON object.
+ */
 public record DuplicationCandidateUpdateVM(
-
-        Boolean dob,
-        Boolean lastName,
-        Boolean documentNo,
-        Boolean mobileNumber,
-        Boolean gender,
-        Boolean isActive
-,
-        String role
-) implements Serializable {}
-
+        @JsonProperty("fields") Map<String, Boolean> fields,
+        @JsonProperty("isActive") Boolean isActive
+) implements Serializable { }

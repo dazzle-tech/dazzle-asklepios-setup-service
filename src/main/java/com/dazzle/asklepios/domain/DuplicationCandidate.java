@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.vladmihalcea.hibernate.type.json.JsonType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,8 +14,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Type;
 
 import java.io.Serializable;
+import java.util.Map;
 
 @Entity
 @Getter
@@ -32,28 +35,17 @@ public class DuplicationCandidate extends AbstractAuditingEntity implements Seri
     private Long id;
 
     @NotNull
+    @Column(name = "role", length = 50)
     private String role;
 
-    @Column(nullable = false)
-    private Boolean dob = false;
-
-    @Column(name = "last_name", nullable = false)
-    private Boolean lastName = false;
-
-    @Column(name = "document_no", nullable = false)
-    private Boolean documentNo = false;
-
-    @Column(name = "mobile_number", nullable = false)
-    private Boolean mobileNumber = false;
-
-    @Column(nullable = false)
-    private Boolean gender = false;
+    /** Proper jsonb mapping */
+    @Type(JsonType.class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private Map<String, Boolean> fields;
 
     @NotNull
-    @Column(nullable = false, length = 10)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
 }
-
-
 
