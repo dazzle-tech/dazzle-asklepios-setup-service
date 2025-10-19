@@ -2,6 +2,8 @@ package com.dazzle.asklepios.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
@@ -26,7 +28,8 @@ public class EncounterAttachments {
 
     @Id
     @Column(name = "id", nullable = false)
-    private Long id;                       // app-assigned
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "encounter_id", nullable = false)
     private Long encounterId;

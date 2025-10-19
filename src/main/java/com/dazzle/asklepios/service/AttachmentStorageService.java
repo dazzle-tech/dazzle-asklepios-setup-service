@@ -68,8 +68,4 @@ public class AttachmentStorageService {
         s3.deleteObject(DeleteObjectRequest.builder()
                 .bucket(props.getBucket()).key(key).build());
     }
-
-    public Map<String, String> defaultPutHeaders(String mime, long size) {
-        return Map.of("Content-Type", mime, "Content-Length", String.valueOf(size));
-    }
 }
