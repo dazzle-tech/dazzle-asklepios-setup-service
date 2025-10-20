@@ -4,9 +4,7 @@ import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.DuplicationCandidateService;
 import com.dazzle.asklepios.service.FacilityService;
-import com.dazzle.asklepios.web.rest.vm.DuplicationCandidateCreateVM;
 import com.dazzle.asklepios.web.rest.vm.DuplicationCandidateResponseVM;
-import com.dazzle.asklepios.web.rest.vm.DuplicationCandidateUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,11 +74,15 @@ public class DuplicationCandidateController {
             @RequestParam(required = false) String role
     ) {
         LOG.debug("REST request to get DuplicationCandidates (filter role={})", role);
-        var list = (role != null && !role.isBlank())
-                ? service.findByRoleFilter(role.trim())
-                : service.findAll();
 
-        var result = list.stream()
+        List<DuplicationCandidate> list;
+        if (role != null && !role.isBlank()) {
+            list = service.findByRoleFilter(role.trim());
+        } else {
+            list = service.findAll();
+        }
+
+        List<DuplicationCandidateResponseVM> result = list.stream()
                 .map(DuplicationCandidateResponseVM::ofEntity)
                 .toList();
 
@@ -127,7 +129,7 @@ public class DuplicationCandidateController {
     @GetMapping("/available-for-role/{roleId}")
     public ResponseEntity<List<FacilityResponseVM>> getAvailableForRole(@PathVariable Long roleId) {
         LOG.debug("REST request to get facilities for roleId={}", roleId);
-        var list = facilityService.findUnlinkedOrLinkedToRole(roleId);
+        List<FacilityResponseVM> list = facilityService.findUnlinkedOrLinkedToRole(roleId);
         return ResponseEntity.ok(list);
     }
 }

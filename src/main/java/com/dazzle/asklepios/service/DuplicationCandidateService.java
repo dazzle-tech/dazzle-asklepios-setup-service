@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,9 +41,6 @@ public class DuplicationCandidateService {
             entity.setRole(String.format("R%03d", lastNumber + 1));
         }
 
-        // Audit fields
-        entity.setCreatedBy(user != null ? user : "system");
-        entity.setCreatedDate(Instant.now());
 
         if (entity.getIsActive() == null) entity.setIsActive(true);
         if (entity.getFields() == null) entity.setFields(Map.of());
@@ -61,8 +57,6 @@ public class DuplicationCandidateService {
 
             if (updateData.getFields() != null) existing.setFields(updateData.getFields());
             if (updateData.getIsActive() != null) existing.setIsActive(updateData.getIsActive());
-            existing.setLastModifiedBy(user != null ? user : "system");
-            existing.setLastModifiedDate(Instant.now());
             return repository.save(existing);
         });
     }
@@ -86,8 +80,6 @@ public class DuplicationCandidateService {
         LOG.debug("Request to deactivate DuplicationCandidate: {}", id);
         return repository.findById(id).map(existing -> {
             existing.setIsActive(false);
-            existing.setLastModifiedBy(user != null ? user : "system");
-            existing.setLastModifiedDate(Instant.now());
             repository.save(existing);
             return true;
         }).orElse(false);
@@ -98,8 +90,6 @@ public class DuplicationCandidateService {
         LOG.debug("Request to reactivate DuplicationCandidate: {}", id);
         return repository.findById(id).map(existing -> {
             existing.setIsActive(true);
-            existing.setLastModifiedBy(user != null ? user : "system");
-            existing.setLastModifiedDate(Instant.now());
             repository.save(existing);
             return true;
         }).orElse(false);
@@ -115,8 +105,6 @@ public class DuplicationCandidateService {
     public Optional<DuplicationCandidate> updateFields(Long id, Map<String, Boolean> fields, String user) {
         return repository.findById(id).map(existing -> {
             existing.setFields(fields);
-            existing.setLastModifiedBy(user != null ? user : "system");
-            existing.setLastModifiedDate(Instant.now());
             return repository.save(existing);
         });
     }
