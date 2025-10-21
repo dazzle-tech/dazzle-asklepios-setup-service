@@ -37,7 +37,7 @@ public class PatientAttachments {
     @Column(name = "created_by", nullable = false, length = 50)
     private String createdBy;
 
-    @Column(name = "space_key", nullable = false, columnDefinition = "text")
+    @Column(name = "space_key", nullable = false)
     private String spaceKey;
 
     @Column(name = "filename", nullable = false, columnDefinition = "text")
