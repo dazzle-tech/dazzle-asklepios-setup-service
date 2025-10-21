@@ -15,7 +15,7 @@ public record ServiceUpdateVM(
         @NotNull Long id,
         @NotEmpty String name,
         String abbreviation,
-        @NotNull String code,
+        @NotEmpty String code,
         ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,
