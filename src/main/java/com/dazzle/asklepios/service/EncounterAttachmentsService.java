@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +33,10 @@ public class EncounterAttachmentsService {
 
     /** Create upload ticket and persist record including source column. */
     public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy, String source) {
-        if (!props.getAllowed().contains(mime)) throw new IllegalArgumentException("unsupported_type");
-        if (size > props.getMaxBytes()) throw new IllegalArgumentException("too_large");
+        if (!props.getAllowed().contains(mime))
+            throw new BadRequestAlertException("unsupported_type", "EncounterAttachments", "unsupportedType");
+        if (size > props.getMaxBytes())
+            throw new BadRequestAlertException("too_large", "EncounterAttachments", "tooLarge");
 
         Instant now = Instant.now();
         String safe = filename.replaceAll("[^\\w.\\- ]", "_");
@@ -64,13 +67,13 @@ public class EncounterAttachmentsService {
 
     @Transactional
     public EncounterAttachments finalizeUpload(Long id) {
-        EncounterAttachments a = repo.findById(id).orElseThrow();
-        HeadObjectResponse head = storage.head(a.getSpaceKey());
-        if (head.contentLength() == null || head.contentLength() != a.getSizeBytes())
+        EncounterAttachments encounterAttachments = repo.findById(id).orElseThrow();
+        HeadObjectResponse head = storage.head(encounterAttachments.getSpaceKey());
+        if (head.contentLength() == null || head.contentLength() != encounterAttachments.getSizeBytes())
             throw new IllegalStateException("size_mismatch");
-        if (head.contentType() == null || !head.contentType().equals(a.getMimeType()))
+        if (head.contentType() == null || !head.contentType().equals(encounterAttachments.getMimeType()))
             throw new IllegalStateException("type_mismatch");
-        return a;
+        return encounterAttachments;
     }
 
     public Page<EncounterAttachments> list(Long encounterId, Pageable pageable) {

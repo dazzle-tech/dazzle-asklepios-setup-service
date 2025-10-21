@@ -18,16 +18,7 @@ import lombok.Setter;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "patient_attachments",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uq_pa_space_key", columnNames = {"space_key"}),
-                @UniqueConstraint(name = "uq_pa_patient_space", columnNames = {"patient_id", "space_key"})
-        },
-        indexes = {
-                @Index(name = "idx_pa_patient", columnList = "patient_id")
-        }
-)
+@Table(name = "patient_attachments")
 @Getter
 @Setter
 @NoArgsConstructor
