@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.repository.LanguageRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -44,10 +45,9 @@ public class LanguageService {
         try {
             return languageRepository.save(entity);
         } catch (DataIntegrityViolationException ex) {
-            // In case DB constraint throws (unique, not null, etc.)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid LanguageMaster data", ex);
-        }
-    }
+             throw new BadRequestAlertException("Invalid Language data" ,  "language", "notfound");
+                     }
+                      }
 
     public Optional<Language> update(Long id, Language vm) {
         LOG.debug("Request to update LanguageMaster id={} with data: {}", id, vm);
