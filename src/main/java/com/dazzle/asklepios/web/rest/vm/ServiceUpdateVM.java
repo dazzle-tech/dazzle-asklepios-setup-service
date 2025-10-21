@@ -13,7 +13,7 @@ import java.math.BigDecimal;
  */
 public record ServiceUpdateVM(
         @NotNull Long id,
-        @NotNull String name,
+        @NotEmpty String name,
         String abbreviation,
         @NotNull String code,
         ServiceCategory category,
