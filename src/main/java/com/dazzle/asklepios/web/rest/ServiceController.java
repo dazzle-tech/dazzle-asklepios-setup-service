@@ -1,187 +1,140 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.service.ServiceService;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.ServiceCreateVM;
 import com.dazzle.asklepios.web.rest.vm.ServiceResponseVM;
 import com.dazzle.asklepios.web.rest.vm.ServiceUpdateVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
 
-/**
- * REST controller for managing Service entities using VMs (scoped by facility).
- */
 @RestController
-@RequestMapping("/api/setup/service")
+@RequestMapping("/api/setup")
 public class ServiceController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
-    private static final String TOTAL_COUNT = "X-Total-Count";
-
     private final ServiceService serviceService;
 
     public ServiceController(ServiceService serviceService) {
         this.serviceService = serviceService;
     }
 
-    /**
-     * POST /api/setup/service?facilityId= : Create a new Service for a facility.
-     */
-    @PostMapping
+    // ====================== CREATE ======================
+    @PostMapping("/service")
     public ResponseEntity<ServiceResponseVM> createService(
             @RequestParam Long facilityId,
             @Valid @RequestBody ServiceCreateVM vm
     ) {
         LOG.debug("REST create Service facilityId={} payload={}", facilityId, vm);
 
-        if (vm.name() != null && serviceService.existsByNameIgnoreCase(facilityId, vm.name())) {
-            return ResponseEntity.status(409).build();
-        }
+        ServiceSetup created = serviceService.createWithDuplicateCheck(facilityId, vm);
+        ServiceResponseVM body = ServiceResponseVM.ofEntity(created);
 
-        var created = serviceService.create(facilityId, vm);
-
-        // نحافظ على نفس الـ base path ونمرّر الـ facilityId كـ query param في Location
         return ResponseEntity
-                .created(URI.create("/api/setup/service/" + created.getId() + "?facilityId=" + facilityId))
-                .body(ServiceResponseVM.ofEntity(created));
+                .created(URI.create("/setup/api/service/" + created.getId() + "?facilityId=" + facilityId))
+                .body(body);
     }
 
-    /**
-     * PUT /api/setup/service/{id}?facilityId= : Update an existing Service for a facility.
-     */
-    @PutMapping("/{id}")
+    // ====================== UPDATE ======================
+    @PutMapping("/service/{id}")
     public ResponseEntity<ServiceResponseVM> updateService(
             @PathVariable Long id,
             @RequestParam Long facilityId,
             @Valid @RequestBody ServiceUpdateVM vm
     ) {
         LOG.debug("REST update Service id={} facilityId={} payload={}", id, facilityId, vm);
-        return serviceService.update(id, facilityId, vm)
+
+        return serviceService.updateWithDuplicateCheck(id, facilityId, vm)
                 .map(ServiceResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /**
-     * GET /api/setup/service?facilityId=&page=&size=&sort=
-     * Get all services for a facility (paginated).
-     */
-    @GetMapping
+    // ====================== READ ALL ======================
+    @GetMapping("/service")
     public ResponseEntity<List<ServiceResponseVM>> getAllServices(
             @RequestParam Long facilityId,
-            @RequestParam Integer page,
-            @RequestParam Integer size,
-            @RequestParam(required = false, defaultValue = "id,asc") String sort
+            @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services facilityId={} page={} size={} sort={}", facilityId, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = serviceService.findAll(facilityId, pageable);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
+        LOG.debug("REST list Services facilityId={} pageable={}", facilityId, pageable);
+        final Page<ServiceSetup> page = serviceService.findAll(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
-    /**
-     * GET /api/setup/service/{id}?facilityId= : Get a single service for a facility.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ServiceResponseVM> getService(
-            @PathVariable Long id,
-            @RequestParam Long facilityId
-    ) {
-        LOG.debug("REST get Service id={} facilityId={}", id, facilityId);
-        return serviceService.findOne(id, facilityId)
-                .map(ServiceResponseVM::ofEntity)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /**
-     * GET /api/setup/service/service-list-by-category?facilityId=&category=&page=&size=&sort=
-     */
-    @GetMapping("/service-list-by-category")
-    public ResponseEntity<List<ServiceResponseVM>> getServicesByCategory(
+    // ====================== FILTERS ======================
+    @GetMapping("/service/by-category/{category}")
+    public ResponseEntity<List<ServiceResponseVM>> getByCategory(
+            @PathVariable ServiceCategory category,
             @RequestParam Long facilityId,
-            @RequestParam ServiceCategory category,
-            @RequestParam Integer page,
-            @RequestParam Integer size,
-            @RequestParam(required = false, defaultValue = "id,asc") String sort
+            @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by category facilityId={} category={} page={} size={} sort={}",
-                facilityId, category, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = serviceService.findByCategory(facilityId, category, pageable);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
+        LOG.debug("REST list Services by category={} facilityId={} pageable={}", category, facilityId, pageable);
+        Page<ServiceSetup> page = serviceService.findByCategory(facilityId, category, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
-    /**
-     * GET /api/setup/service/service-list-by-code?facilityId=&code=&page=&size=&sort=
-     */
-    @GetMapping("/service-list-by-code")
-    public ResponseEntity<List<ServiceResponseVM>> getServicesByCode(
+    @GetMapping("/service/by-code/{code}")
+    public ResponseEntity<List<ServiceResponseVM>> getByCode(
+            @PathVariable String code,
             @RequestParam Long facilityId,
-            @RequestParam String code,
-            @RequestParam Integer page,
-            @RequestParam Integer size,
-            @RequestParam(required = false, defaultValue = "id,asc") String sort
+            @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by code facilityId={} code='{}' page={} size={} sort={}",
-                facilityId, code, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = serviceService.findByCodeContainingIgnoreCase(facilityId, code, pageable);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
+        LOG.debug("REST list Services by code='{}' facilityId={} pageable={}", code, facilityId, pageable);
+        Page<ServiceSetup> page = serviceService.findByCodeContainingIgnoreCase(facilityId, code, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
-    /**
-     * GET /api/setup/service/service-list-by-name?facilityId=&name=&page=&size=&sort=
-     */
-    @GetMapping("/service-list-by-name")
-    public ResponseEntity<List<ServiceResponseVM>> getServicesByName(
+    @GetMapping("/service/by-name/{name}")
+    public ResponseEntity<List<ServiceResponseVM>> getByName(
+            @PathVariable String name,
             @RequestParam Long facilityId,
-            @RequestParam String name,
-            @RequestParam Integer page,
-            @RequestParam Integer size,
-            @RequestParam(required = false, defaultValue = "id,asc") String sort
+            @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by name facilityId={} name='{}' page={} size={} sort={}",
-                facilityId, name, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = serviceService.findByNameContainingIgnoreCase(facilityId, name, pageable);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
+        LOG.debug("REST list Services by name='{}' facilityId={} pageable={}", name, facilityId, pageable);
+        Page<ServiceSetup> page = serviceService.findByNameContainingIgnoreCase(facilityId, name, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
-    /**
-     * PATCH /api/setup/service/{id}/toggle-active?facilityId=
-     */
-    @PatchMapping("/{id}/toggle-active")
+    // ====================== TOGGLE ACTIVE ======================
+    @PatchMapping("/service/{id}/toggle-active")
     public ResponseEntity<ServiceResponseVM> toggleServiceActiveStatus(
             @PathVariable Long id,
             @RequestParam Long facilityId
@@ -191,19 +144,5 @@ public class ServiceController {
                 .map(ServiceResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // -------------------------
-    // Helpers
-    // -------------------------
-    private Pageable buildPageable(Integer page, Integer size, String sort) {
-        LOG.debug("Build pageable page={} size={} sort={}", page, size, sort);
-        int p = Math.max(0, page);
-        int s = Math.max(1, size);
-        String[] parts = sort.split(",", 2);
-        String prop = parts[0];
-        Sort.Direction dir = (parts.length > 1 && "desc".equalsIgnoreCase(parts[1]))
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-        return PageRequest.of(p, s, Sort.by(dir, prop));
     }
 }

@@ -5,7 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.ForeignKey;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,7 +31,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class ServiceItems implements Serializable {
+public class ServiceItems extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -50,13 +50,10 @@ public class ServiceItems implements Serializable {
     @Column(name = "source_id", nullable = false)
     private Long sourceId;
 
-    @ManyToOne(optional = true)
-    @JoinColumn(
-            name = "service_id",
-            referencedColumnName = "id",
-            foreignKey = @ForeignKey(name = "fk_service_items_service")
-    )
-    private Service service;
+
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id", nullable = false)
+    private ServiceSetup service;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

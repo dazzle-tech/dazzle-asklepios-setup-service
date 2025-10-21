@@ -12,7 +12,7 @@ import java.time.Instant;
 public record ServiceItemsCreateVM(
         @NotNull ServiceItemsType type,
         @NotNull Long sourceId,
-        @NotNull Long serviceId,  // 🚨 required field
+        @NotNull Long serviceId,
         String createdBy,
         Boolean isActive,
         boolean b) implements Serializable {
