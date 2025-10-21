@@ -1,6 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.Service;
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,10 +19,10 @@ public record ServiceCreateVM(
         @NotNull Currency currency,
         Boolean isActive,
         String createdBy,
-        @NotNull Long facilityId   // ✅ جديد
+        @NotNull Long facilityId
 ) implements Serializable {
 
-    public static ServiceCreateVM ofEntity(Service service) {
+    public static ServiceCreateVM ofEntity(ServiceSetup service) {
         return new ServiceCreateVM(
                 service.getName(),
                 service.getAbbreviation(),

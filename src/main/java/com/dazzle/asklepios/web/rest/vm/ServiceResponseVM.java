@@ -1,6 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm;
 
-import com.dazzle.asklepios.domain.Service;
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import java.io.Serializable;
@@ -15,10 +15,10 @@ public record ServiceResponseVM(
         BigDecimal price,
         Currency currency,
         Boolean isActive,
-        Long facilityId   // ✅ جديد
+        Long facilityId
 ) implements Serializable {
 
-    public static ServiceResponseVM ofEntity(Service service) {
+    public static ServiceResponseVM ofEntity(ServiceSetup service) {
         return new ServiceResponseVM(
                 service.getId(),
                 service.getName(),
