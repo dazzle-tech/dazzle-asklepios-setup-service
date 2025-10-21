@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.PatientAttachments;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,8 +75,8 @@ public class PatientAttachmentsService {
                 .filename(filename)
                 .mimeType(mime)
                 .sizeBytes(size)
-                .type(type)           // NEW
-                .details(details)     // NEW
+                .type(type)
+                .details(details)
                 .createdAt(Instant.now())
                 .build();
 
@@ -87,14 +88,14 @@ public class PatientAttachmentsService {
     }
 
     public DownloadTicket downloadUrl(Long id) {
-        var a = repo.findActiveById(id).orElseThrow();
+        PatientAttachments a = repo.findActiveById(id).orElseThrow();
         PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
         return new DownloadTicket(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        var a = repo.findById(id).orElseThrow();
+        PatientAttachments a = repo.findById(id).orElseThrow();
         if (a.getDeletedAt() == null) {
             storage.delete(a.getSpaceKey());
             a.setDeletedAt(Instant.now());
@@ -104,7 +105,9 @@ public class PatientAttachmentsService {
 
     private void validateTypeAndSize(String mime, long size) {
         Set<String> allowed = props.getAllowed();
-        if (allowed == null || !allowed.contains(mime)) throw new IllegalArgumentException("unsupported_type");
-        if (size > props.getMaxBytes()) throw new IllegalArgumentException("too_large");
+        if (allowed == null || !allowed.contains(mime))
+            throw new BadRequestAlertException("unsupported_type", "PatientAttachments", "unsupportedType");
+        if (size > props.getMaxBytes())
+            throw new BadRequestAlertException("too_large", "PatientAttachments", "tooLarge");
     }
 }

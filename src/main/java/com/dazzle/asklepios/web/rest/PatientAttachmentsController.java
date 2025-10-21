@@ -131,7 +131,7 @@ public class PatientAttachmentsController {
     }
 
     /** Presigned download URL. */
-    @PostMapping("attachments/{id}:downloadUrl")
+    @PostMapping("attachmentDownloadUrl/{id}")
     public PatientAttachmentsService.DownloadTicket downloadUrl(@PathVariable Long id) {
         PatientAttachmentsService.DownloadTicket t = service.downloadUrl(id);
         return new PatientAttachmentsService.DownloadTicket(t.url(), t.expiresInSeconds());
