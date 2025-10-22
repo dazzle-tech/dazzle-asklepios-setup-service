@@ -19,8 +19,8 @@ public class LinkHeaderUtil {
             link.append(prepareLink(uriBuilder, pageNumber - 1, pageSize, "prev")).append(",");
         }
         link.append(prepareLink(uriBuilder, page.getTotalPages() - 1, pageSize, "last"))
-            .append(",")
-            .append(prepareLink(uriBuilder, 0, pageSize, "first"));
+                .append(",")
+                .append(prepareLink(uriBuilder, 0, pageSize, "first"));
         return link.toString();
     }
 

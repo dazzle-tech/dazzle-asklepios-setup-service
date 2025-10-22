@@ -40,9 +40,10 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+//    @NotNull
     @ManyToOne(optional = false)
     @JoinColumn(name = "facility_id", nullable = false)
+    @NotNull(message = "Facility cannot be null")
     private Facility facility;
 
     @NotNull
@@ -82,9 +83,9 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     @Column
     private Boolean appointable;
 
-    @NotNull
+
     @ManyToOne(optional = true)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @Column(name = "default_license_valid_until")
