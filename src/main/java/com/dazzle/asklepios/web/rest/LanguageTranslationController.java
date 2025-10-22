@@ -63,6 +63,11 @@ public class LanguageTranslationController {
                 .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/by-lang/{langKey}")
+    public ResponseEntity<List<LanguageTranslation>> findByLangKey(@PathVariable String langKey) {
+        return ResponseEntity.ok(translationService.findByLangKey(langKey));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.debug("REST request to delete LanguageTranslation id={}", id);

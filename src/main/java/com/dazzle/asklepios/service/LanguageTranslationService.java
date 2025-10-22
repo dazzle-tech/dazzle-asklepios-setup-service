@@ -84,6 +84,11 @@ public class LanguageTranslationService {
         return translationRepository.findByLangKeyAndTranslationKey(langKey, translationKey);
     }
 
+    @Transactional(readOnly = true)
+    public List<LanguageTranslation> findByLangKey(String langKey) {
+        return translationRepository.findAllByLangKey(langKey);
+    }
+
     public boolean delete(Long id) {
         LOG.debug("Request to delete LanguageTranslation : {}", id);
         if (!translationRepository.existsById(id)) {
