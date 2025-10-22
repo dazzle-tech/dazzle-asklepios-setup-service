@@ -17,6 +17,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -70,7 +71,7 @@ public class PatientAttachmentsService {
         String filename = objectKey.substring(objectKey.lastIndexOf('/') + 1);
 
         if (repo.existsByPatientIdAndSpaceKey(patientId, objectKey)) {
-            return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, Pageable.ofSize(1))
+            return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId)
                     .stream().filter(a -> a.getSpaceKey().equals(objectKey)).findFirst()
                     .orElseThrow();
         }
@@ -90,8 +91,8 @@ public class PatientAttachmentsService {
         return repo.save(patientAttachments);
     }
 
-    public Page<PatientAttachments> list(Long patientId, Pageable pageable) {
-        return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, pageable);
+    public List<PatientAttachments> list(Long patientId) {
+        return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
     }
 
     public DownloadTicket downloadUrl(Long id) {
