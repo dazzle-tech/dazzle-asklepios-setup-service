@@ -1,20 +1,22 @@
 package com.dazzle.asklepios.domain;
 
+
+import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
@@ -24,7 +26,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PatientAttachments {
+public class PatientAttachments  extends  AbstractAuditingEntity<Long>  implements Serializable {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -33,9 +35,6 @@ public class PatientAttachments {
 
     @Column(name = "patient_id", nullable = false)
     private Long patientId;
-
-    @Column(name = "created_by", nullable = false, length = 50)
-    private String createdBy;
 
     @Column(name = "space_key", nullable = false)
     private String spaceKey;
@@ -49,9 +48,6 @@ public class PatientAttachments {
     @Column(name = "size_bytes", nullable = false)
     private Long sizeBytes;
 
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
@@ -60,9 +56,11 @@ public class PatientAttachments {
 
     @Column(name = "details", columnDefinition = "text")
     private String details;
-    @PrePersist
-    void prePersist() {
-        if (createdAt == null) createdAt = Instant.now();
-    }
+
+    @Column(name = "source", length = 50)
+    @Enumerated(EnumType.STRING)
+    private PatientAttachmentSource source;
+
+
 }
 

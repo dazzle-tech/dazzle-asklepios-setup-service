@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 @Repository
 public interface EncounterAttachementsRepository extends JpaRepository<EncounterAttachments,Long> {
-    Page<EncounterAttachments> findByEncounterIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long encounterId, Pageable pageable);
+    Page<EncounterAttachments> findByEncounterIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, Pageable pageable);
 
     @Query("select e from EncounterAttachments e where e.id = :id and e.deletedAt is null")
     Optional<EncounterAttachments> findActiveById(@Param("id") Long id);
