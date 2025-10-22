@@ -22,5 +22,4 @@ public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
 
     Page<ServiceSetup> findByFacility_IdAndCodeContainingIgnoreCase(Long facilityId, String code, Pageable pageable);
 
-    boolean existsByFacility_IdAndNameIgnoreCase(Long facilityId, String name);
 }

@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
@@ -17,9 +18,7 @@ public record ServiceCreateVM(
         @NotNull ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,
-        Boolean isActive,
-        String createdBy,
-        @NotNull Long facilityId
+        Boolean isActive
 ) implements Serializable {
 
     public static ServiceCreateVM ofEntity(ServiceSetup service) {
@@ -30,9 +29,7 @@ public record ServiceCreateVM(
                 service.getCategory(),
                 service.getPrice(),
                 service.getCurrency(),
-                service.getIsActive(),
-                service.getCreatedBy(),
-                service.getFacility() != null ? service.getFacility().getId() : null
+                service.getIsActive()
         );
     }
 }

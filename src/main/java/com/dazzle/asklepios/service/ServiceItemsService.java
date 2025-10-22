@@ -13,14 +13,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
 @Transactional
@@ -43,7 +47,6 @@ public class ServiceItemsService {
         this.departmentsRepository = departmentsRepository;
     }
 
-
     @CacheEvict(cacheNames = SERVICE_ITEMS, key = "'byService:' + #serviceId")
     public ServiceItems create(Long serviceId, ServiceItems input) {
         LOG.debug("Request to create ServiceItems for serviceId={} payload={}", serviceId, input);
@@ -59,35 +62,45 @@ public class ServiceItemsService {
                 .orElseThrow(() -> new NotFoundAlertException(
                         "Service not found with id " + serviceId, "service", "notfound"));
 
-        if (input.getType() != null && input.getSourceId() != null) {
-            boolean duplicate = serviceItemsRepository.existsByServiceIdAndTypeAndSourceId(
-                    serviceId, input.getType(), input.getSourceId()
-            );
-            if (duplicate) {
-                throw new BadRequestAlertException(
-                        "ServiceItem already exists for this service (type + sourceId must be unique per service).",
-                        "serviceItems",
-                        "duplicate"
-                );
-            }
-        }
-
         ServiceItems entity = ServiceItems.builder()
                 .type(input.getType())
                 .sourceId(input.getSourceId())
                 .isActive(input.getIsActive() != null ? input.getIsActive() : Boolean.TRUE)
                 .build();
-
         entity.setService(service);
 
-        ServiceItems saved = serviceItemsRepository.save(entity);
-        LOG.debug("Created ServiceItems: {}", saved);
-        return saved;
+        try {
+            ServiceItems saved = serviceItemsRepository.saveAndFlush(entity);
+            LOG.debug("Created ServiceItems: {}", saved);
+            return saved;
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+            Throwable root = getRootCause(ex);
+            String msg = (root != null && root.getMessage() != null ? root.getMessage() : ex.getMessage()).toLowerCase();
+
+            LOG.warn("DB constraint violation while creating ServiceItems (serviceId={}, type={}, sourceId={}): {}",
+                    serviceId, input.getType(), input.getSourceId(), msg, ex);
+
+            if (msg.contains("uk_service_items_service_type_source")
+                    || msg.contains("unique constraint")
+                    || msg.contains("duplicate key")
+                    || msg.contains("duplicate entry")) {
+                throw new BadRequestAlertException(
+                        "A ServiceItem with the same (type, sourceId) already exists for this service.",
+                        "serviceItems",
+                        "unique.serviceitem"
+                );
+            }
+            throw new BadRequestAlertException(
+                    "Database constraint violated while creating ServiceItem (check unique/type/source/service).",
+                    "serviceItems",
+                    "db.constraint"
+            );
+        }
     }
 
     @CacheEvict(
             cacheNames = SERVICE_ITEMS,
-            key = "'byService:' + (#serviceId != null ? #serviceId : (#patch != null && #patch.service != null ? #patch.service.id : 'unknown'))",
+            key = "'byService:' + (#serviceId != null ? #serviceId : (#patch != null && #patch.getService() != null ? #patch.getService().getId() : 'unknown'))",
             allEntries = false
     )
     public Optional<ServiceItems> update(Long id, Long serviceId, ServiceItems patch) {
@@ -97,13 +110,6 @@ public class ServiceItemsService {
                 .orElseThrow(() -> new NotFoundAlertException(
                         "ServiceItems not found with id " + id, "serviceItems", "notfound"));
 
-        Long targetServiceId = (serviceId != null) ? serviceId
-                : (existing.getService() != null ? existing.getService().getId() : null);
-
-        if (targetServiceId == null) {
-            throw new BadRequestAlertException("Service ID is required", "serviceItems", "serviceid.required");
-        }
-
         if (serviceId != null) {
             ServiceSetup service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new NotFoundAlertException(
@@ -111,39 +117,40 @@ public class ServiceItemsService {
             existing.setService(service);
         }
 
-        ServiceItemsType targetType = (patch != null && patch.getType() != null)
-                ? patch.getType()
-                : existing.getType();
+        try {
+            ServiceItems updated = serviceItemsRepository.saveAndFlush(existing);
+            LOG.debug("Updated ServiceItems: {}", updated);
+            return Optional.of(updated);
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+            Throwable root = getRootCause(ex);
+            String msg = (root != null && root.getMessage() != null ? root.getMessage() : ex.getMessage()).toLowerCase();
 
-        Long targetSourceId = (patch != null && patch.getSourceId() != null)
-                ? patch.getSourceId()
-                : existing.getSourceId();
-
-        if (targetType != null && targetSourceId != null) {
-            boolean duplicate = serviceItemsRepository.existsByServiceIdAndTypeAndSourceIdAndIdNot(
-                    targetServiceId, targetType, targetSourceId, id
+            LOG.warn("DB constraint violation while updating ServiceItems id={} (serviceId={}, type={}, sourceId={}): {}",
+                    id,
+                    existing.getService() != null ? existing.getService().getId() : null,
+                    existing.getType(),
+                    existing.getSourceId(),
+                    msg,
+                    ex
             );
-            if (duplicate) {
+
+            if (msg.contains("uk_service_items_service_type_source")
+                    || msg.contains("unique constraint")
+                    || msg.contains("duplicate key")
+                    || msg.contains("duplicate entry")) {
                 throw new BadRequestAlertException(
                         "Another ServiceItem with the same (type, sourceId) already exists for this service.",
                         "serviceItems",
-                        "duplicate"
+                        "unique.serviceitem"
                 );
             }
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating ServiceItem (check unique/type/source/service).",
+                    "serviceItems",
+                    "db.constraint"
+            );
         }
-
-        if (patch != null) {
-            if (patch.getType() != null) existing.setType(patch.getType());
-            if (patch.getSourceId() != null) existing.setSourceId(patch.getSourceId());
-            if (patch.getIsActive() != null) existing.setIsActive(patch.getIsActive());
-            if (patch.getLastModifiedBy() != null) existing.setLastModifiedBy(patch.getLastModifiedBy());
-        }
-
-        existing.setLastModifiedDate(Instant.now());
-
-        ServiceItems updated = serviceItemsRepository.save(existing);
-        LOG.debug("Updated ServiceItems: {}", updated);
-        return Optional.of(updated);
     }
 
     @Transactional(readOnly = true)
@@ -161,7 +168,6 @@ public class ServiceItemsService {
         if (serviceId == null) {
             throw new BadRequestAlertException("Service ID is required", "serviceItems", "serviceid.required");
         }
-
         return serviceItemsRepository.findByServiceId(serviceId);
     }
 
@@ -178,7 +184,6 @@ public class ServiceItemsService {
         if (serviceId == null) {
             throw new BadRequestAlertException("Service ID is required", "serviceItems", "serviceid.required");
         }
-
         return serviceItemsRepository.findByServiceId(serviceId, pageable);
     }
 
@@ -215,6 +220,9 @@ public class ServiceItemsService {
         serviceItemsRepository.deleteById(id);
         LOG.debug("Deleted ServiceItems id={}", id);
     }
+// TODO (TEST-ONLY):
+// This logic is temporary and intended for testing purposes only.
+// It will be replaced after the "user-departments" feature is merged.
 
     @Transactional(readOnly = true)
     public List<Department> findSourcesByTypeAndFacility(ServiceItemsType type, Long facilityId) {

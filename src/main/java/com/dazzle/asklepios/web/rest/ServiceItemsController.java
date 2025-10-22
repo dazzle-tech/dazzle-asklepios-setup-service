@@ -139,6 +139,10 @@ public class ServiceItemsController {
     }
 
 
+// TODO (TEST-ONLY):
+// This logic is temporary and intended for testing purposes only.
+// It will be replaced after the "user-departments" feature is merged.
+
     @GetMapping("/service-items/sources/by-facility")
     public ResponseEntity<List<DepartmentResponseVM>> listSourcesByTypeAndFacility(
             @RequestParam ServiceItemsType type,
@@ -148,7 +152,6 @@ public class ServiceItemsController {
 
         List<Department> departments = serviceItemsService.findSourcesByTypeAndFacility(type, facilityId);
 
-        // Convert domain entities to response VMs
         List<DepartmentResponseVM> response = departments.stream()
                 .map(DepartmentResponseVM::ofEntity)
                 .toList();
