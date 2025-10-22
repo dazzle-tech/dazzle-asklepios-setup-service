@@ -1,10 +1,8 @@
 package com.dazzle.asklepios.domain;
 
-
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import org.junit.jupiter.api.Test;
-
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
