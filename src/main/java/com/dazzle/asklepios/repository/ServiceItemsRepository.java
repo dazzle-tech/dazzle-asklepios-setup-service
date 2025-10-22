@@ -11,8 +11,6 @@ import java.util.List;
 
 @Repository
 public interface ServiceItemsRepository extends JpaRepository<ServiceItems, Long> {
-    boolean existsByServiceIdAndTypeAndSourceId(Long serviceId, ServiceItemsType type, Long sourceId);
-    boolean existsByServiceIdAndTypeAndSourceIdAndIdNot(Long serviceId, ServiceItemsType type, Long sourceId, Long id);
     Page<ServiceItems> findAll(Pageable pageable);
     Page<ServiceItems> findByServiceId(Long serviceId, Pageable pageable);
     List<ServiceItems> findByServiceId(Long serviceId);

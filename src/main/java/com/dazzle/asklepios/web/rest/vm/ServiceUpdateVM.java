@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
@@ -13,9 +14,9 @@ import java.math.BigDecimal;
  */
 public record ServiceUpdateVM(
         @NotNull Long id,
-        @NotNull String name,
+        @NotEmpty String name,
         String abbreviation,
-        @NotNull String code,
+        @NotEmpty String code,
         ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,

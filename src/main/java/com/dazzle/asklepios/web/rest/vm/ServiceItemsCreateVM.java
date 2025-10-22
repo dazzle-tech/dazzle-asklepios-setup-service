@@ -14,8 +14,8 @@ public record ServiceItemsCreateVM(
         @NotNull Long sourceId,
         @NotNull Long serviceId,
         String createdBy,
-        Boolean isActive,
-        boolean b) implements Serializable {
+        Boolean isActive
+        ) implements Serializable {
 
     /**
      * Convert entity -> ViewModel (for reading from DB)
@@ -26,8 +26,8 @@ public record ServiceItemsCreateVM(
                 serviceItems.getSourceId(),
                 serviceItems.getService() != null ? serviceItems.getService().getId() : null,
                 serviceItems.getCreatedBy(),
-                serviceItems.getIsActive(),
-                true);
+                serviceItems.getIsActive()
+                );
     }
 
 }
