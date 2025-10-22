@@ -92,6 +92,10 @@ out/
 
 ######################
 # Gradle
+# Gradle
+.gradle/
+gradle/
+
 ######################
 .gradle/
 /build/
