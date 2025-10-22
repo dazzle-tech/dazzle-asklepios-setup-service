@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/setup/user-departments")
+@RequestMapping("/api/setup")
 public class UserDepartmentController {
 
     private final Logger log = LoggerFactory.getLogger(UserDepartmentController.class);
@@ -33,7 +33,7 @@ public class UserDepartmentController {
     /**
      * POST  /api/user-departments : Create a new UserFacilityDepartment.
      */
-    @PostMapping
+    @PostMapping("/user-departments")
     public ResponseEntity<UserDepartmentResponseVM> createUserFacilityDepartment(@RequestBody UserDepartmentCreateVM vm) throws URISyntaxException {
         log.debug("REST request to create UserFacilityDepartment : {}", vm);
         UserDepartmentResponseVM result = userDepartmentService.createUserDepartment(vm);
@@ -43,7 +43,7 @@ public class UserDepartmentController {
     /**
      * PATCH  /api/user-departments/{id}/toggle : Toggle active status.
      */
-    @PatchMapping("/{id}/toggle")
+    @PatchMapping("/user-departments/{id}/toggle")
     public ResponseEntity<Void> toggleActiveStatus(@PathVariable Long id) {
         log.debug("REST request to toggle active status for UserFacilityDepartment : {}", id);
         userDepartmentService.toggleActiveStatus(id);
@@ -53,7 +53,7 @@ public class UserDepartmentController {
     /**
      * GET  /api/user-departments/user/{userId} : Get all departments linked to a user.
      */
-    @GetMapping("/user/{userId}")
+    @GetMapping("/user-departments/user/{userId}")
     public ResponseEntity<List<UserDepartmentResponseVM>> getByUser(@PathVariable Long userId) {
         log.debug("REST request to get UserFacilityDepartments by userId : {}", userId);
         List<UserDepartmentResponseVM> result = userDepartmentService.getUserDepartmentsByUser(userId);
@@ -63,7 +63,7 @@ public class UserDepartmentController {
     /**
      * GET  /api/user-departments/exists : Check if a link exists.
      */
-    @GetMapping("/exists")
+    @GetMapping("/user-departments/exists")
     public ResponseEntity<Boolean> exists( @RequestParam Long userId, @RequestParam Long departmentId) {
         log.debug("REST request to check existence of UserFacilityDepartment ( userId={}, departmentId={})",userId, departmentId);
         boolean exists = userDepartmentService.exists(userId, departmentId);
