@@ -12,9 +12,9 @@ import java.math.BigDecimal;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ServiceCreateVM(
-        @NotNull String name,
+        @NotEmpty String name,
         String abbreviation,
-        @NotNull String code,
+        @NotEmpty String code,
         @NotNull ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,
