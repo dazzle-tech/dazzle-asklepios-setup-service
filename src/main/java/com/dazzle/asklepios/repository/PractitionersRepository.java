@@ -19,11 +19,5 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
 
     Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable);
 
-    Page<Practitioner> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(String firstName, String lastName, Pageable pageable);
 
-    List<Practitioner> findByIsActiveTrue();
-
-    List<Practitioner> findByDobBetween(LocalDate startDate, LocalDate endDate);
-
-    boolean existsByEmailIgnoreCase(String email);
 }
