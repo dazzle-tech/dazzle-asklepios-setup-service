@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.EncounterAttachments;
+import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
@@ -31,8 +32,7 @@ public class EncounterAttachmentsService {
     public record UploadTicket(Long id, String objectKey, String putUrl) {}
     public record DownloadTicket(String url, int expiresInSeconds) {}
 
-    /** Create upload ticket and persist record including source column. */
-    public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy, String source) {
+    public UploadTicket createUpload(Long id, Long encounterId, String filename, String mime, long size, String createdBy, PatientAttachmentSource source) {
         if (!props.getAllowed().contains(mime))
             throw new BadRequestAlertException("unsupported_type", "EncounterAttachments", "unsupportedType");
         if (size > props.getMaxBytes())
@@ -45,13 +45,11 @@ public class EncounterAttachmentsService {
         EncounterAttachments a = EncounterAttachments.builder()
                 .id(id)
                 .encounterId(encounterId)
-                .createdBy(createdBy)
                 .spaceKey(key)
                 .filename(filename)
                 .mimeType(mime)
                 .sizeBytes(size)
-                .source(source)        // NEW FIELD
-                .createdAt(now)
+                .source(source)
                 .build();
 
         repo.save(a);
@@ -77,7 +75,7 @@ public class EncounterAttachmentsService {
     }
 
     public Page<EncounterAttachments> list(Long encounterId, Pageable pageable) {
-        return repo.findByEncounterIdAndDeletedAtIsNullOrderByCreatedAtDesc(encounterId, pageable);
+        return repo.findByEncounterIdAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId, pageable);
     }
 
     public DownloadTicket downloadUrl(Long id) {

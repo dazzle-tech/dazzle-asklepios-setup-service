@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.PatientAttachments;
+import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
@@ -27,18 +28,23 @@ public class PatientAttachmentsService {
     private final AttachmentStorageService storage;
 
     private static final DateTimeFormatter YYYY = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC);
-    private static final DateTimeFormatter MM   = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter MM = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
 
-    public record UploadTicket(String objectKey, String putUrl) {}
-    public record DownloadTicket(String url, int expiresInSeconds) {}
+    public record UploadTicket(String objectKey, String putUrl) {
+    }
 
-    /** Step 1: Create presigned PUT. Nothing saved to DB here. */
+    public record DownloadTicket(String url, int expiresInSeconds) {
+    }
+
+    /**
+     * Step 1: Create presigned PUT. Nothing saved to DB here.
+     */
     public UploadTicket presignUpload(Long patientId, String filename, String mime, long size) {
         validateTypeAndSize(mime, size);
 
         Instant now = Instant.now();
         String safe = filename.replaceAll("[^\\w.\\- ]", "_");
-        String key  = "patients/" + patientId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safe;
+        String key = "patients/" + patientId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safe;
 
         PresignedPutObjectRequest put = storage.presignPut(key, mime, size);
         return new UploadTicket(key, put.url().toString());
@@ -46,15 +52,17 @@ public class PatientAttachmentsService {
 
     @Transactional
     public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy) {
-        return finalizeUpload(patientId, objectKey, createdBy, null, null);
+        return finalizeUpload(patientId, objectKey, createdBy, null, null, null);
     }
 
-    /** Step 2: Finalize. Verify object exists, then insert row with type/details. */
+    /**
+     * Step 2: Finalize. Verify object exists, then insert row with type/details.
+     */
     @Transactional
-    public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy, String type, String details) {
+    public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy, String type, String details, PatientAttachmentSource source) {
         HeadObjectResponse head = storage.head(objectKey);
         String mime = head.contentType();
-        Long size   = head.contentLength();
+        Long size = head.contentLength();
 
         if (mime == null || size == null) throw new IllegalStateException("object_missing_metadata");
         validateTypeAndSize(mime, size);
@@ -62,44 +70,42 @@ public class PatientAttachmentsService {
         String filename = objectKey.substring(objectKey.lastIndexOf('/') + 1);
 
         if (repo.existsByPatientIdAndSpaceKey(patientId, objectKey)) {
-            return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedAtDesc(patientId, Pageable.ofSize(1))
+            return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, Pageable.ofSize(1))
                     .stream().filter(a -> a.getSpaceKey().equals(objectKey)).findFirst()
                     .orElseThrow();
         }
 
-        PatientAttachments a = PatientAttachments.builder()
+        PatientAttachments patientAttachments = PatientAttachments.builder()
                 .id(null)
                 .patientId(patientId)
-                .createdBy(createdBy)
                 .spaceKey(objectKey)
                 .filename(filename)
                 .mimeType(mime)
                 .sizeBytes(size)
                 .type(type)
                 .details(details)
-                .createdAt(Instant.now())
+                .source(source)
                 .build();
 
-        return repo.save(a);
+        return repo.save(patientAttachments);
     }
 
     public Page<PatientAttachments> list(Long patientId, Pageable pageable) {
-        return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedAtDesc(patientId, pageable);
+        return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, pageable);
     }
 
     public DownloadTicket downloadUrl(Long id) {
-        PatientAttachments a = repo.findActiveById(id).orElseThrow();
-        PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
+        PatientAttachments patientAttachments = repo.findActiveById(id).orElseThrow();
+        PresignedGetObjectRequest get = storage.presignGet(patientAttachments.getSpaceKey(), patientAttachments.getFilename());
         return new DownloadTicket(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        PatientAttachments a = repo.findById(id).orElseThrow();
-        if (a.getDeletedAt() == null) {
-            storage.delete(a.getSpaceKey());
-            a.setDeletedAt(Instant.now());
-            repo.save(a);
+        PatientAttachments patientAttachments = repo.findById(id).orElseThrow();
+        if (patientAttachments.getDeletedAt() == null) {
+            patientAttachments.setDeletedAt(Instant.now());
+            repo.save(patientAttachments);
         }
     }
 
