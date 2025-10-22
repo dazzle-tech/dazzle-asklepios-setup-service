@@ -10,11 +10,12 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface PatientAttachmentsRepository extends JpaRepository<PatientAttachments,Long> {
-    Page<PatientAttachments> findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long patientId, Pageable pageable);
+    List<PatientAttachments> findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long patientId);
 
     @Query("select p from PatientAttachments p where p.id = :id and p.deletedAt is null")
     Optional<PatientAttachments> findActiveById(@Param("id") Long id);
