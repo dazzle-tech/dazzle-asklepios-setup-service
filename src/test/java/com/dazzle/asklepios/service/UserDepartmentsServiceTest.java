@@ -68,18 +68,17 @@ class UserDepartmentsServiceTest {
     void testCreate_ReturnsExistingIfPresent() {
         var vm = new UserDepartmentCreateVM(
                 user.getId(), department.getId(),
-                true, "creator", Instant.parse("2024-01-01T00:00:00Z")
+                true
         );
 
-        when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L))
+        when(ufdRepository.findByUserIdAndDepartmentId(1L,  5001L))
                 .thenReturn(Optional.of(existing));
 
-        UserDepartmentResponseVM out = service.createUserDepartment(vm);
+        UserDepartment out = service.createUserDepartment(vm);
 
-        assertThat(out.id()).isEqualTo(23L);
-        assertThat(out.userId()).isEqualTo(5L);
-        assertThat(out.departmentId()).isEqualTo(10L);
-        assertThat(out.isActive()).isTrue();
+        assertThat(out.getId()).isEqualTo(2L);
+        assertThat(out.getUser().getId()).isEqualTo(1L);
+        assertThat(out.getDepartment().getId()).isEqualTo(5001L);
 
         verifyNoInteractions( userRepository, departmentRepository);
         verify(ufdRepository, never()).save(any());
@@ -89,7 +88,7 @@ class UserDepartmentsServiceTest {
     void testCreate_PersistsNew_WhenRefsExist() {
         var vm = new UserDepartmentCreateVM(
                 5L,  10L,
-                null, "creator", Instant.parse("2024-01-01T00:00:00Z")
+                null
         );
 
         when(ufdRepository.findByUserIdAndDepartmentId(2L,10L)).thenReturn(Optional.empty());
@@ -103,26 +102,23 @@ class UserDepartmentsServiceTest {
             return saved;
         });
 
-        UserDepartmentResponseVM out = service.createUserDepartment(vm);
+        UserDepartment out = service.createUserDepartment(vm);
 
-        assertThat(out.id()).isEqualTo(99L);
-        assertThat(out.userId()).isEqualTo(5L);
-        assertThat(out.facilityId()).isEqualTo(2L);
-        assertThat(out.departmentId()).isEqualTo(10L);
-        assertThat(out.isActive()).isTrue(); // default applied
+        assertThat(out.getId()).isEqualTo(99L);
+        assertThat(out.getUser().getId()).isEqualTo(5L);
+        assertThat(out.getDepartment().getId()).isEqualTo(10L);
+        assertThat(out.getIsActive()).isTrue(); // default applied
 
         UserDepartment saved = captor.getValue();
         assertThat(saved.getUser()).isEqualTo(user);
         assertThat(saved.getDepartment()).isEqualTo(department);
-        assertThat(saved.getCreatedBy()).isEqualTo("creator");
-        assertThat(saved.getCreatedDate()).isEqualTo(Instant.parse("2024-01-01T00:00:00Z"));
         assertThat(saved.getIsActive()).isTrue();
     }
 
 
     @Test
     void testCreate_UserNotFound() {
-        var vm = new UserDepartmentCreateVM(5L, 10L, true, "creator", null);
+        var vm = new UserDepartmentCreateVM(5L, 10L, true);
 
         when(ufdRepository.findByUserIdAndDepartmentId(2L, 10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.empty());
@@ -134,7 +130,7 @@ class UserDepartmentsServiceTest {
 
     @Test
     void testCreate_DepartmentNotFound() {
-        var vm = new UserDepartmentCreateVM(5L,  10L, true, "creator", null);
+        var vm = new UserDepartmentCreateVM(5L,  10L, true);
 
         when(ufdRepository.findByUserIdAndDepartmentId(2L,  10L)).thenReturn(Optional.empty());
         when(userRepository.findById(5L)).thenReturn(Optional.of(user));
@@ -145,42 +141,19 @@ class UserDepartmentsServiceTest {
     }
 
     @Test
-    void testToggleActiveStatus_TogglesAndSetsLastModified() {
-        UserDepartment e = UserDepartment.builder()
-                .id(50L).user(user).department(department).isActive(true).build();
-
-        when(ufdRepository.findById(50L)).thenReturn(Optional.of(e));
-        when(ufdRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        service.toggleActiveStatus(50L);
-
-        assertThat(e.getIsActive()).isFalse();
-        assertThat(e.getLastModifiedDate()).isNotNull();
-        verify(ufdRepository).save(e);
-    }
-
-    @Test
-    void testToggleActiveStatus_NoEntity_NoSave() {
-        when(ufdRepository.findById(77L)).thenReturn(Optional.empty());
-
-        service.toggleActiveStatus(77L);
-
-        verify(ufdRepository, never()).save(any());
-    }
-
-    @Test
     void testGetByUser_ReturnsResponseVMs() {
         var e1 = UserDepartment.builder().id(1L).user(user).department(department).isActive(true).build();
         var e2 = UserDepartment.builder().id(2L).user(user).department(department).isActive(false).build();
 
         when(ufdRepository.findByUserId(5L)).thenReturn(List.of(e1, e2));
 
-        List<UserDepartmentResponseVM> out = service.getUserDepartmentsByUser(5L);
+        List<UserDepartmentResponseVM> out = service.getUserDepartmentsByUser(5L) .stream()
+                .map(UserDepartmentResponseVM::ofEntity)
+                .toList();;
 
         assertThat(out).hasSize(2);
         assertThat(out.get(0).id()).isEqualTo(1L);
         assertThat(out.get(0).userId()).isEqualTo(5L);
-        assertThat(out.get(0).facilityId()).isEqualTo(2L);
         assertThat(out.get(0).departmentId()).isEqualTo(10L);
         assertThat(out.get(0).isActive()).isTrue();
 

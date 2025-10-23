@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
@@ -26,10 +27,12 @@ public class DepartmentService {
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentService.class);
     private final DepartmentsRepository departmentRepository;
     private final FacilityRepository facilityRepository;
+    private final UserDepartmentRepository userDepartmentRepository;
 
-    public DepartmentService(DepartmentsRepository departmentRepository, FacilityRepository facilityRepository) {
+    public DepartmentService(DepartmentsRepository departmentRepository, FacilityRepository facilityRepository, UserDepartmentRepository userDepartmentRepository) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
+        this.userDepartmentRepository = userDepartmentRepository;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -124,7 +127,10 @@ public class DepartmentService {
         LOG.debug("Request to toggle Department isActive id={}", id);
         return departmentRepository.findById(id)
                 .map(department -> {
-                    department.setIsActive(!Boolean.TRUE.equals(department.getIsActive()));
+                    boolean isActive = !Boolean.TRUE.equals(department.getIsActive());
+                    department.setIsActive(isActive);
+                    userDepartmentRepository.updateActiveByDepartmentId(department.getId(), isActive);
+
                     return departmentRepository.save(department);
                 });
     }

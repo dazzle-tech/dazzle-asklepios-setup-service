@@ -7,11 +7,9 @@ import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.vm.UserDepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.UserDepartmentResponseVM;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,21 +25,23 @@ public class UserDepartmentService {
     private final UserDepartmentRepository UserDepartmentsRepository;
     private final UserRepository userRepository;
     private final DepartmentsRepository departmentRepository;
+    private final UserDepartmentRepository userDepartmentRepository;
 
-    public UserDepartmentService(UserDepartmentRepository repository, UserRepository userRepository, DepartmentsRepository departmentRepository) {
+    public UserDepartmentService(UserDepartmentRepository repository, UserRepository userRepository, DepartmentsRepository departmentRepository, UserDepartmentRepository userDepartmentRepository) {
         this.UserDepartmentsRepository = repository;
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
+        this.userDepartmentRepository = userDepartmentRepository;
     }
 
-    public UserDepartmentResponseVM createUserDepartment(UserDepartmentCreateVM vm) {
+    public UserDepartment createUserDepartment(UserDepartmentCreateVM vm) {
         LOG.debug("Create UFD request vm={}", vm);
         Long userId = vm.userId();
         Long departmentId = vm.departmentId();
 
         Optional<UserDepartment> existing = UserDepartmentsRepository.findByUserIdAndDepartmentId(userId, departmentId);
         if (existing.isPresent()) {
-            return UserDepartmentResponseVM.ofEntity(existing.get());
+            return existing.get();
         }
 
         User userRef = userRepository.findById(userId)
@@ -55,31 +55,22 @@ public class UserDepartmentService {
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .build();
 
-        return UserDepartmentResponseVM.ofEntity(UserDepartmentsRepository.save(ufd));
-    }
-
-
-    public void toggleActiveStatus(Long id) {
-        LOG.debug("Toggle UFD isActive id={}", id);
-        UserDepartmentsRepository.findById(id).ifPresent(ufd -> {
-            ufd.setIsActive(!Boolean.TRUE.equals(ufd.getIsActive()));
-            ufd.setLastModifiedDate(Instant.now());
-            UserDepartmentsRepository.save(ufd);
-        });
+        return UserDepartmentsRepository.save(ufd);
     }
 
     @Transactional(readOnly = true)
-    public List<UserDepartmentResponseVM> getUserDepartmentsByUser(Long userId) {
+    public List<UserDepartment> getUserDepartmentsByUser(Long userId) {
         LOG.debug("List UFDs by userId={}", userId);
-        return UserDepartmentsRepository.findByUserId(userId)
-                .stream()
-                .map(UserDepartmentResponseVM::ofEntity)
-                .toList();
+        return UserDepartmentsRepository.findByUserId(userId);
     }
 
     @Transactional(readOnly = true)
     public boolean exists(Long userId, Long departmentId) {
         LOG.debug("Check UFD exists  userId={} departmentId={}", userId, departmentId);
         return UserDepartmentsRepository.findByUserIdAndDepartmentId(userId, departmentId).isPresent();
+    }
+    @Transactional
+    public void hardDelete(Long id) {
+        userDepartmentRepository.deleteById(id);
     }
 }
