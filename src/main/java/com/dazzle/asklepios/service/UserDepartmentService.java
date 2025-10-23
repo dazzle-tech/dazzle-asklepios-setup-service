@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -37,7 +39,7 @@ public class UserDepartmentService {
         Long userId = vm.userId();
         Long departmentId = vm.departmentId();
 
-        var existing = UserDepartmentsRepository.findByUserIdAndDepartmentId( userId, departmentId);
+        Optional<UserDepartment> existing = UserDepartmentsRepository.findByUserIdAndDepartmentId(userId, departmentId);
         if (existing.isPresent()) {
             return UserDepartmentResponseVM.ofEntity(existing.get());
         }
@@ -55,6 +57,7 @@ public class UserDepartmentService {
 
         return UserDepartmentResponseVM.ofEntity(UserDepartmentsRepository.save(ufd));
     }
+
 
     public void toggleActiveStatus(Long id) {
         LOG.debug("Toggle UFD isActive id={}", id);

@@ -31,7 +31,7 @@ public class UserDepartmentController {
     }
 
     /**
-     * POST  /api/user-departments : Create a new UserFacilityDepartment.
+     * POST  /api/setup/user-departments : Create a new UserFacilityDepartment.
      */
     @PostMapping("/user-departments")
     public ResponseEntity<UserDepartmentResponseVM> createUserFacilityDepartment(@RequestBody UserDepartmentCreateVM vm) throws URISyntaxException {
@@ -41,7 +41,7 @@ public class UserDepartmentController {
     }
 
     /**
-     * PATCH  /api/user-departments/{id}/toggle : Toggle active status.
+     * PATCH  /api/setup/user-departments/{id}/toggle : Toggle active status.
      */
     @PatchMapping("/user-departments/{id}/toggle")
     public ResponseEntity<Void> toggleActiveStatus(@PathVariable Long id) {
@@ -51,7 +51,7 @@ public class UserDepartmentController {
     }
 
     /**
-     * GET  /api/user-departments/user/{userId} : Get all departments linked to a user.
+     * GET  /api/setup/user-departments/user/{userId} : Get all departments linked to a user.
      */
     @GetMapping("/user-departments/user/{userId}")
     public ResponseEntity<List<UserDepartmentResponseVM>> getByUser(@PathVariable Long userId) {
@@ -61,7 +61,7 @@ public class UserDepartmentController {
     }
 
     /**
-     * GET  /api/user-departments/exists : Check if a link exists.
+     * GET  /api/setup/user-departments/exists : Check if a link exists.
      */
     @GetMapping("/user-departments/exists")
     public ResponseEntity<Boolean> exists( @RequestParam Long userId, @RequestParam Long departmentId) {
