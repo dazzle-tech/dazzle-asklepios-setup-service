@@ -198,8 +198,8 @@ public class DepartmentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/facility/{facilityId}/active/list")
-    public ResponseEntity<List<DepartmentResponseVM>> getActiveDepartmentsByFacilityIdList(
+    @GetMapping("/department/facility/{facilityId}/active/list")
+    public ResponseEntity<List<Department>> getActiveDepartmentsByFacilityIdList(
             @PathVariable Long facilityId
     ) {
         return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId));
