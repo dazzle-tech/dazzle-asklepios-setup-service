@@ -1,9 +1,12 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.department;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 
@@ -11,12 +14,14 @@ import java.io.Serializable;
  * View Model for creating a Department via REST.
  **/
 public record DepartmentCreateVM(
-        @NotNull String name,
+        @NotEmpty String name,
         @NotNull Long facilityId,
         @NotNull DepartmentType departmentType,
         Boolean appointable,
         String departmentCode,
         String phoneNumber,
+        @Email
+        @Size(min = 5, max = 254)
         String email,
         EncounterType encounterType,
         Boolean isActive,
@@ -27,9 +32,9 @@ public record DepartmentCreateVM(
                 return new DepartmentCreateVM(
                         department.getName(),
                         department.getFacility() != null ? department.getFacility().getId() : null,
-                        department.getDepartmentType(),
+                        department.getType(),
                         department.getAppointable(),
-                        department.getDepartmentCode(),
+                        department.getCode(),
                         department.getPhoneNumber(),
                         department.getEmail(),
                         department.getEncounterType(),

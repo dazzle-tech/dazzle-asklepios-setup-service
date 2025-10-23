@@ -1,17 +1,20 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.service.DepartmentService;
-import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.PageRequest;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,18 +23,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/setup/department")
+@RequestMapping("/api/setup")
 public class DepartmentController {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
-    private static final String TOTAL_COUNT = "X-Total-Count";
 
     private final DepartmentService departmentService;
 
@@ -39,36 +41,136 @@ public class DepartmentController {
         this.departmentService = departmentService;
     }
 
-    @PostMapping
+    /**
+     * {@code POST /department} : Create a new Department.
+     *
+     * <p>Validates the payload, persists the entity, and returns a response model.</p>
+     *
+     * @param departmentVM the creation payload.
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the created department,
+     *         with a {@code Location} header pointing to the new resource;
+     *         or {@code 400 (Bad Request)} if the payload is invalid.
+     */
+    @PostMapping("/department")
     public ResponseEntity<DepartmentResponseVM> createDepartment(@Valid @RequestBody DepartmentCreateVM departmentVM) {
         LOG.debug("REST create Department payload={}", departmentVM);
-        var result = departmentService.create(departmentVM);
+        Department department = departmentService.create(departmentVM);
+        DepartmentResponseVM departmentResponseVM = DepartmentResponseVM.ofEntity(department);
+        LOG.debug("REST create Department Response={}", departmentResponseVM);
+
         return ResponseEntity
-                .created(URI.create("/setup/api/department/" + result.getId()))
-                .body(DepartmentResponseVM.ofEntity(result));
+                .created(URI.create("/setup/api/department/" + department.getId()))
+                .body(departmentResponseVM);
     }
 
-    @PutMapping("/{id}")
+    /**
+     * {@code PUT /department/{id}} : Update an existing Department.
+     *
+     * <p>Updates mutable fields of the department identified by {@code id}.</p>
+     *
+     * @param id the identifier of the department to update.
+     * @param departmentUpdateVM the update payload.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated department in the body,
+     *         or {@code 404 (Not Found)} if no department exists with the given {@code id}.
+     */
+    @PutMapping("/department/{id}")
     public ResponseEntity<DepartmentResponseVM> updateDepartment(@PathVariable Long id,@Valid @RequestBody DepartmentUpdateVM departmentUpdateVM) {
         LOG.debug("REST update Department id={} payload={}", id, departmentUpdateVM);
         return departmentService.update(id, departmentUpdateVM)
-                .map(DepartmentResponseVM::ofEntity)
-                .map(ResponseEntity::ok)
+                .map(dept -> ResponseEntity.ok(DepartmentResponseVM.ofEntity(dept)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping
-    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments(@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
-        LOG.debug("REST list Departments page={} size={} sort={}", page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = departmentService.findAll(pageable);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
+    /**
+     * {@code GET /department} : Get a paginated list of all Departments.
+     *
+     * <p>Supports standard Spring pagination parameters:
+     * {@code page}, {@code size}, and {@code sort} (e.g. {@code sort=name,asc}).</p>
+     *
+     * <p>Response includes pagination headers generated by {@link PaginationUtil}:
+     * {@code X-Total-Count} and {@code Link} for navigation.</p>
+     *
+     * @param pageable the pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of department view models in the body,
+     *         and pagination headers.
+     */
+    @GetMapping("/department")
+    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list Departments page={}", pageable);
+        final Page<Department> page = departmentService.findAll(pageable);
+        LOG.debug("REST list Departments page={}", page.getContent());
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
-    @GetMapping("/{id}")
+    /**
+     * {@code GET /department/by-facility/{facilityId}} : Get departments for a facility (paginated).
+     *
+     * <p>Returns departments that belong to the facility with id {@code facilityId}.</p>
+     *
+     * <p>Includes pagination headers {@code X-Total-Count} and {@code Link}.</p>
+     *
+     * @param facilityId the facility identifier.
+     * @param pageable   pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of department view models,
+     *         plus pagination headers. Returns an empty list if none found.
+     */
+    @GetMapping("/department/by-facility/{facilityId:\\d+}")
+    public ResponseEntity<List<DepartmentResponseVM>> getByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Departments by facilityId={} page={}", facilityId, pageable);
+        Page<Department> page = departmentService.findByFacilityId(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/department/by-type/{type}")
+    public ResponseEntity<List<DepartmentResponseVM>> getByType(
+            @PathVariable DepartmentType type,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Departments by type={} page={}", type, pageable);
+        Page<Department> page = departmentService.findByDepartmentType(type, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/department/by-name/{name}")
+    public ResponseEntity<List<DepartmentResponseVM>> searchByName(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Departments by name='{}' page={}", name, pageable);
+        Page<Department> page = departmentService.findByDepartmentName(name, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    /**
+     * {@code GET /department/{id}} : Get a single Department by id.
+     *
+     * @param id the identifier of the department to retrieve.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the department view model,
+     *         or {@code 404 (Not Found)} if the department does not exist.
+     */
+    @GetMapping("/department/{id}")
     public ResponseEntity<DepartmentResponseVM> getDepartment(@PathVariable Long id) {
         LOG.debug("REST get Department id={}", id);
         return departmentService.findOne(id)
@@ -77,40 +179,16 @@ public class DepartmentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/facility/{facilityId}")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByFacility(@PathVariable("facilityId") Long facilityId,@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
-        LOG.debug("REST list Departments by facilityId={} page={} size={} sort={}", facilityId, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = departmentService.findByFacilityId(facilityId, pageable);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
-    }
-
-    @GetMapping("/department-list-by-type")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByType(@RequestParam DepartmentType type, @RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
-        LOG.debug("REST list Departments by type={} page={} size={} sort={}", type, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = departmentService.findByDepartmentType(type, pageable);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
-    }
-
-    @GetMapping("/department-list-by-name")
-    public ResponseEntity<List<DepartmentResponseVM>> getDepartmentByName(@RequestParam String name,@RequestParam Integer page,@RequestParam Integer size,@RequestParam(required = false, defaultValue = "id,asc") String sort) {
-        LOG.debug("REST list Departments by name='{}' page={} size={} sort={}", name, page, size, sort);
-        Pageable pageable = buildPageable(page, size, sort);
-        var pageResult = departmentService.findByDepartmentName(name, pageable);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(TOTAL_COUNT, String.valueOf(pageResult.getTotalElements()));
-        headers.add(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, TOTAL_COUNT);
-        return ResponseEntity.ok().headers(headers).body(pageResult.getContent());
-    }
-
-    @PatchMapping("/{id}/toggle-active")
+    /**
+     * {@code PATCH /department/{id}/toggle-active} : Toggle the {@code isActive} status of a Department.
+     *
+     * <p>Flips the active flag for the department identified by {@code id} and returns the updated resource.</p>
+     *
+     * @param id the identifier of the department to toggle.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated department view model,
+     *         or {@code 404 (Not Found)} if the department does not exist.
+     */
+    @PatchMapping("/department/{id}/toggle-active")
     public ResponseEntity<DepartmentResponseVM> toggleDepartmentActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle Department isActive id={}", id);
         return departmentService.toggleIsActive(id)
@@ -119,14 +197,5 @@ public class DepartmentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Pageable buildPageable(Integer page, Integer size, String sort) {
-        LOG.debug("Build pageable page={} size={} sort={}", page, size, sort);
-        int p = Math.max(0, page);
-        int s = Math.max(1, size);
-        String[] parts = sort.split(",", 2);
-        String prop = parts[0];
-        Sort.Direction dir = (parts.length > 1 && "desc".equalsIgnoreCase(parts[1]))
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-        return PageRequest.of(p, s, Sort.by(dir, prop));
-    }
+
 }
