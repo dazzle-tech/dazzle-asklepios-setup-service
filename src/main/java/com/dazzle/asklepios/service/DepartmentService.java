@@ -35,9 +35,10 @@ public class DepartmentService {
         LOG.debug("Request to create Department : {}", departmentVM);
 
         Facility facility = facilityRepository.findById(departmentVM.facilityId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Facility not found with id " + departmentVM.facilityId()
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Facility not found with id " + departmentVM.facilityId(),
+                        "facility",
+                        "notfound"
                 ));
 
         Department department = Department.builder()
@@ -125,5 +126,10 @@ public class DepartmentService {
                     department.setIsActive(!Boolean.TRUE.equals(department.getIsActive()));
                     return departmentRepository.save(department);
                 });
+    }
+    @Transactional(readOnly = true)
+    public List<Department> findActiveByFacilityId(Long facilityId) {
+        LOG.debug("Request to get ACTIVE Departments by Facility facility_id={}", facilityId);
+        return departmentRepository.findByFacilityIdAndIsActiveTrue(facilityId);
     }
 }
