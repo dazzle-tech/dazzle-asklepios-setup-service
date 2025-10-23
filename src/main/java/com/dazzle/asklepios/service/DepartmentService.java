@@ -43,9 +43,9 @@ public class DepartmentService {
         Department department = Department.builder()
                 .name(departmentVM.name())
                 .facility(facility)
-                .departmentType(departmentVM.departmentType())
+                .type(departmentVM.departmentType())
                 .appointable(departmentVM.appointable())
-                .departmentCode(departmentVM.departmentCode())
+                .code(departmentVM.departmentCode())
                 .phoneNumber(departmentVM.phoneNumber())
                 .email(departmentVM.email())
                 .encounterType(departmentVM.encounterType())
@@ -74,9 +74,9 @@ public class DepartmentService {
                 ));
         if (departmentVM.name() != null) department.setName(departmentVM.name());
         if (facility != null) department.setFacility(facility);
-        if (departmentVM.departmentType() != null) department.setDepartmentType(departmentVM.departmentType());
+        if (departmentVM.departmentType() != null) department.setType(departmentVM.departmentType());
         if (departmentVM.appointable() != null) department.setAppointable(departmentVM.appointable());
-        if (departmentVM.departmentCode() != null) department.setDepartmentCode(departmentVM.departmentCode());
+        if (departmentVM.departmentCode() != null) department.setCode(departmentVM.departmentCode());
         if (departmentVM.phoneNumber() != null) department.setPhoneNumber(departmentVM.phoneNumber());
         if (departmentVM.email() != null) department.setEmail(departmentVM.email());
         if (departmentVM.encounterType() != null) department.setEncounterType(departmentVM.encounterType());
@@ -103,7 +103,7 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public Page<Department> findByDepartmentType(DepartmentType type, Pageable pageable) {
         LOG.debug("Request to get Departments by Type with pagination type={} pageable={}", type, pageable);
-        return departmentRepository.findByDepartmentType(type, pageable);
+        return departmentRepository.findByType(type, pageable);
     }
 
     @Transactional(readOnly = true)
