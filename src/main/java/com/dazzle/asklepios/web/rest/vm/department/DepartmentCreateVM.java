@@ -32,9 +32,9 @@ public record DepartmentCreateVM(
                 return new DepartmentCreateVM(
                         department.getName(),
                         department.getFacility() != null ? department.getFacility().getId() : null,
-                        department.getDepartmentType(),
+                        department.getType(),
                         department.getAppointable(),
-                        department.getDepartmentCode(),
+                        department.getCode(),
                         department.getPhoneNumber(),
                         department.getEmail(),
                         department.getEncounterType(),

@@ -115,7 +115,6 @@ public class DepartmentController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of department view models,
      *         plus pagination headers. Returns an empty list if none found.
      */
-    //TODO: Do we need Pageable here?
     @GetMapping("/department/by-facility/{facilityId:\\d+}")
     public ResponseEntity<List<DepartmentResponseVM>> getByFacility(
             @PathVariable Long facilityId,
@@ -132,7 +131,6 @@ public class DepartmentController {
         );
     }
 
-    //TODO: no facility filtration and do we need Pageable here? should we delete this?
     @GetMapping("/department/by-type/{type}")
     public ResponseEntity<List<DepartmentResponseVM>> getByType(
             @PathVariable DepartmentType type,
@@ -149,7 +147,6 @@ public class DepartmentController {
         );
     }
 
-    //TODO: no facility filtration and do we need Pageable here? should we delete this?
     @GetMapping("/department/by-name/{name}")
     public ResponseEntity<List<DepartmentResponseVM>> searchByName(
             @PathVariable String name,

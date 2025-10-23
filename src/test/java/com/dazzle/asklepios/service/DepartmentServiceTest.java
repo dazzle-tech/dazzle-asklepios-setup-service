@@ -59,8 +59,8 @@ class DepartmentServiceTest {
                 .id(1L)
                 .name("Cardiology")
                 .facility(facility)
-                .departmentType(DepartmentType.OUTPATIENT_CLINIC)
-                .departmentCode("CARD01")
+                .type(DepartmentType.OUTPATIENT_CLINIC)
+                .code("CARD01")
                 .isActive(true)
                 .build();
     }
@@ -136,7 +136,7 @@ class DepartmentServiceTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
-        assertThat(result.getContent().get(0).getDepartmentCode()).isEqualTo("CARD01");
+        assertThat(result.getContent().get(0).getCode()).isEqualTo("CARD01");
         verify(departmentRepository).findAll(pageable);
     }
 
@@ -159,14 +159,14 @@ class DepartmentServiceTest {
         var pageable = PageRequest.of(0, 5);
         Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
 
-        when(departmentRepository.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable))
+        when(departmentRepository.findByType(DepartmentType.OUTPATIENT_CLINIC, pageable))
                 .thenReturn(page);
 
         Page<Department> result = departmentService.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
-        verify(departmentRepository).findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
+        verify(departmentRepository).findByType(DepartmentType.OUTPATIENT_CLINIC, pageable);
     }
 
     @Test
