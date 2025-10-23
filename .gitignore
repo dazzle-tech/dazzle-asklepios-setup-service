@@ -7,22 +7,6 @@ node_modules/
 npm-debug.log.*
 /.awcache/*
 /.cache-loader/*
-# Ignore Gradle build and cache files
-.gradle/
-gradle/caches/
-gradle/wrapper/gradle-wrapper.properties
-gradle/wrapper/gradle-wrapper.jar
-
-# Ignore build outputs
-build/
-out/
-
-# Ignore IDE files
-.idea/
-*.iml
-*.ipr
-*.iws
-.vscode/
 
 ######################
 # SASS
@@ -92,10 +76,6 @@ out/
 
 ######################
 # Gradle
-# Gradle
-.gradle/
-gradle/
-
 ######################
 .gradle/
 /build/
