@@ -63,6 +63,7 @@ public enum Screen {
     USER_NEW,
     TEST_REPORT_TEMPLATE_SETUP,
     PRODUCTS_SETUP,
+    LANGUAGE_SETUP,
 
     // Front Desk Office
     QUICK_APPOINTMENT,
