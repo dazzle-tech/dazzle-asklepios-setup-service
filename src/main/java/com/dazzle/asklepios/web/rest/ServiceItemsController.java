@@ -5,7 +5,7 @@ import com.dazzle.asklepios.domain.ServiceItems;
 import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
 import com.dazzle.asklepios.service.ServiceItemsService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.ServiceItemsCreateVM;
 import com.dazzle.asklepios.web.rest.vm.ServiceItemsResponseVM;
 import com.dazzle.asklepios.web.rest.vm.ServiceItemsUpdateVM;
@@ -137,12 +137,6 @@ public class ServiceItemsController {
         serviceItemsService.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-
-// TODO (TEST-ONLY):
-// This logic is temporary and intended for testing purposes only.
-// It will be replaced after the "user-departments" feature is merged.
-
     @GetMapping("/service-items/sources/by-facility")
     public ResponseEntity<List<DepartmentResponseVM>> listSourcesByTypeAndFacility(
             @RequestParam ServiceItemsType type,

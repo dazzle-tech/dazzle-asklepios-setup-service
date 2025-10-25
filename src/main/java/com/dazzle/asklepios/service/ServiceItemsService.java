@@ -11,8 +11,6 @@ import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,8 +29,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class ServiceItemsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceItemsService.class);
-    public static final String SERVICE_ITEMS = "serviceItems";
-
     private final ServiceItemsRepository serviceItemsRepository;
     private final ServiceRepository serviceRepository;
     private final DepartmentsRepository departmentsRepository;
@@ -46,8 +42,6 @@ public class ServiceItemsService {
         this.serviceRepository = serviceRepository;
         this.departmentsRepository = departmentsRepository;
     }
-
-    @CacheEvict(cacheNames = SERVICE_ITEMS, key = "'byService:' + #serviceId")
     public ServiceItems create(Long serviceId, ServiceItems input) {
         LOG.debug("Request to create ServiceItems for serviceId={} payload={}", serviceId, input);
 
@@ -98,11 +92,6 @@ public class ServiceItemsService {
         }
     }
 
-    @CacheEvict(
-            cacheNames = SERVICE_ITEMS,
-            key = "'byService:' + (#serviceId != null ? #serviceId : (#patch != null && #patch.getService() != null ? #patch.getService().getId() : 'unknown'))",
-            allEntries = false
-    )
     public Optional<ServiceItems> update(Long id, Long serviceId, ServiceItems patch) {
         LOG.debug("Request to update ServiceItems id={} serviceId={} with {}", id, serviceId, patch);
 
@@ -154,14 +143,12 @@ public class ServiceItemsService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = SERVICE_ITEMS, key = "'all'")
     public List<ServiceItems> findAll() {
         LOG.debug("Request to get all ServiceItems (no pagination)");
         return serviceItemsRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = SERVICE_ITEMS, key = "'byService:' + #serviceId")
     public List<ServiceItems> findByServiceId(Long serviceId) {
         LOG.debug("Request to get ServiceItems by serviceId={} (no pagination)", serviceId);
 
@@ -193,7 +180,6 @@ public class ServiceItemsService {
         return serviceItemsRepository.findById(id);
     }
 
-    @CacheEvict(cacheNames = SERVICE_ITEMS, key = "'all'")
     public Optional<ServiceItems> toggleIsActive(Long id) {
         LOG.debug("Request to toggle ServiceItems isActive id={}", id);
 
@@ -209,7 +195,6 @@ public class ServiceItemsService {
         return Optional.of(saved);
     }
 
-    @CacheEvict(cacheNames = SERVICE_ITEMS, key = "'all'")
     public void delete(Long id) {
         LOG.debug("Request to delete ServiceItems : {}", id);
 
@@ -220,9 +205,6 @@ public class ServiceItemsService {
         serviceItemsRepository.deleteById(id);
         LOG.debug("Deleted ServiceItems id={}", id);
     }
-// TODO (TEST-ONLY):
-// This logic is temporary and intended for testing purposes only.
-// It will be replaced after the "user-departments" feature is merged.
 
     @Transactional(readOnly = true)
     public List<Department> findSourcesByTypeAndFacility(ServiceItemsType type, Long facilityId) {
@@ -233,7 +215,7 @@ public class ServiceItemsService {
         }
 
         if (type == ServiceItemsType.DEPARTMENTS) {
-            return departmentsRepository.findByFacilityId(facilityId);
+            return departmentsRepository.findByFacilityIdAndIsActiveTrue(facilityId);
         }
 
         LOG.info("Source lookup for type {} is not implemented yet. Returning an empty list.", type);

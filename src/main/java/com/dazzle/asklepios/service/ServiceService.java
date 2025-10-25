@@ -9,8 +9,6 @@ import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
@@ -29,8 +27,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class ServiceService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
-    public static final String SERVICES = "services";
-
     private final ServiceRepository serviceRepository;
     private final EntityManager em;
 
@@ -40,8 +36,6 @@ public class ServiceService {
     }
 
     // ====================== CREATE  ======================
-
-    @CacheEvict(cacheNames = SERVICES, key = "'all:' + #facilityId")
     public ServiceSetup create(Long facilityId, ServiceSetup incoming) {
         LOG.info("[CREATE] Request to create Service for facilityId={} payload={}", facilityId, incoming);
 
@@ -60,11 +54,8 @@ public class ServiceService {
                 .price(incoming.getPrice())
                 .currency(incoming.getCurrency())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
+                .facility(refFacility(facilityId))
                 .build();
-
-        entity.setId(null);
-        entity.setFacility(refFacility(facilityId));
-
         try {
             ServiceSetup saved = serviceRepository.saveAndFlush(entity);
             LOG.info("Successfully created service id={} name='{}' for facilityId={}", saved.getId(), saved.getName(), facilityId);
@@ -94,7 +85,6 @@ public class ServiceService {
 
     }
 
-    @CacheEvict(cacheNames = SERVICES, key = "'all:' + #facilityId")
     public Optional<ServiceSetup> update(Long id, Long facilityId, ServiceSetup incoming) {
         LOG.info("[UPDATE] Request to update Service id={} facilityId={} payload={}", id, facilityId, incoming);
 
@@ -104,8 +94,6 @@ public class ServiceService {
 
         ServiceSetup existing = serviceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Service not found with id " + id, "service", "notfound"));
-
-        ensureSameFacility(existing, facilityId);
 
         existing.setName(incoming.getName());
         existing.setAbbreviation(incoming.getAbbreviation());
@@ -119,7 +107,7 @@ public class ServiceService {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        }catch (DataIntegrityViolationException | JpaSystemException ex) {
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
 
@@ -146,7 +134,6 @@ public class ServiceService {
 
     // ====================== READ ======================
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = SERVICES, key = "'all:' + #facilityId")
     public List<ServiceSetup> findAll(Long facilityId) {
         LOG.debug("Fetching all Services for facilityId={}", facilityId);
         return serviceRepository.findByFacility_Id(facilityId);
@@ -182,7 +169,6 @@ public class ServiceService {
         return serviceRepository.findById(id);
     }
 
-    @CacheEvict(cacheNames = SERVICES, key = "'all:' + #facilityId")
     public Optional<ServiceSetup> toggleIsActive(Long id, Long facilityId) {
         LOG.info("Toggling isActive for Service id={} facilityId={}", id, facilityId);
         return serviceRepository.findById(id)
@@ -201,19 +187,4 @@ public class ServiceService {
         return em.getReference(Facility.class, facilityId);
     }
 
-    private void ensureSameFacility(ServiceSetup existing, Long facilityId) {
-        if (facilityId == null) {
-            LOG.error("Facility id is null during facility check");
-            throw new BadRequestAlertException("Facility id is required", "service", "facilityrequired");
-        }
-        if (existing.getFacility() == null || !existing.getFacility().getId().equals(facilityId)) {
-            LOG.error("Facility mismatch: existingServiceFacilityId={}, providedFacilityId={}",
-                    existing.getFacility() != null ? existing.getFacility().getId() : null, facilityId);
-            throw new BadRequestAlertException(
-                    "Service does not belong to facility id " + facilityId,
-                    "service",
-                    "facility.mismatch"
-            );
-        }
-    }
 }

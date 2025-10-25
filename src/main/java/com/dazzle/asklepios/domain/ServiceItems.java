@@ -30,7 +30,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(callSuper = false)
 public class ServiceItems extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
@@ -38,7 +38,6 @@ public class ServiceItems extends AbstractAuditingEntity<Long> implements Serial
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @NotNull
