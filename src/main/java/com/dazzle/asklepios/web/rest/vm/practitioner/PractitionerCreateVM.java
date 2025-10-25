@@ -18,6 +18,7 @@ import java.time.LocalDate;
  * View Model for creating a Practitioner via REST.
  */
 public record PractitionerCreateVM(
+        @NotNull(message = "Facility ID cannot be null")
         Long facilityId,
         @NotBlank(message = "First name cannot be blank")
         @Size(max = 100, message = "First name cannot exceed 100 characters")
