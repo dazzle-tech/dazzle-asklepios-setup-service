@@ -74,7 +74,7 @@ public class PractitionerController {
      *         or {@code 404 (Not Found)} if no practitioner exists with the given {@code id}.
      */
     @PutMapping("/practitioner/{id}")
-    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
+    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@Valid@PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
         LOG.debug("REST update Practitioner id={} payload={}", id, practitionerUpdateVM);
         return practitionerService.update(id, practitionerUpdateVM)
                 .map(p -> ResponseEntity.ok(PractitionerResponseVM.ofEntity(p)))

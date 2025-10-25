@@ -15,13 +15,6 @@ import java.util.List;
 @Repository
 public interface PractitionerDepartmentRepository extends JpaRepository<PractitionerDepartment, Long> {
 
-    @Query("""
-    SELECT pd FROM PractitionerDepartment pd
-    JOIN FETCH pd.department
-    WHERE pd.practitioner.id = :practitionerId
-""")
-    List<PractitionerDepartment> findByPractitionerIdWithDepartment(@Param("practitionerId") Long practitionerId);
-
 
     Page<PractitionerDepartment> findAll(Pageable pageable);
 

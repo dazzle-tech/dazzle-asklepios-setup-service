@@ -41,14 +41,12 @@ public class PractitionerService {
     public Practitioner create(PractitionerCreateVM vm) {
         LOG.debug("Request to create Practitioner: {}", vm);
 
-
         Facility facility = facilityRepository.findById(vm.facilityId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "Facility cannot be null or invalid. Facility not found with id " + vm.facilityId()
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Facility cannot be null or invalid. Facility not found with id " + vm.facilityId(),
+                        "facility",
+                        "notfound"
                 ));
-
-
         User user = null;
         if (vm.userId() != null && vm.userId() > 0) {
             user = userRepository.findById(vm.userId())

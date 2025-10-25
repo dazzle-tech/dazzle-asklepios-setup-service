@@ -4,8 +4,11 @@ import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
@@ -16,8 +19,13 @@ import java.time.LocalDate;
  */
 public record PractitionerCreateVM(
         Long facilityId,
-        @NotEmpty String firstName,
-        @NotEmpty String lastName,
+        @NotBlank(message = "First name cannot be blank")
+        @Size(max = 100, message = "First name cannot exceed 100 characters")
+        String firstName,
+
+        @NotBlank(message = "Last name cannot be blank")
+        @Size(max = 100, message = "Last name cannot exceed 100 characters")
+        String lastName,
         @Email  String email,
         String phoneNumber,
         @NotNull Specialty specialty,
@@ -27,8 +35,13 @@ public record PractitionerCreateVM(
         String educationalLevel,
         Boolean appointable,
        Long userId,
+        @FutureOrPresent(message = "Default license valid until date must be in the present or future")
         LocalDate defaultLicenseValidUntil,
+
+        @FutureOrPresent(message = "Secondary license valid until date must be in the present or future")
         LocalDate secondaryLicenseValidUntil,
+
+        @Past(message = "Date of birth must be in the past")
         LocalDate dateOfBirth,
         String jobRole,
         Gender gender,

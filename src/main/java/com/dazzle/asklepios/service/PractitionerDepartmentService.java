@@ -58,7 +58,7 @@ public class PractitionerDepartmentService {
     @Transactional
     public void delete(Long practitionerId, Long departmentId) {
         LOG.debug("Deleting link Practitioner {} – Department {}", practitionerId, departmentId);
-        repo.findByPractitionerIdWithDepartment(practitionerId).stream()
+        repo.findByPractitionerId(practitionerId).stream()
                 .filter(pd -> departmentId.equals(pd.getDepartment().getId()))
                 .findFirst()
                 .ifPresent(repo::delete);
