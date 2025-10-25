@@ -94,7 +94,6 @@ public class ServiceService {
 
         ServiceSetup existing = serviceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Service not found with id " + id, "service", "notfound"));
-
         existing.setName(incoming.getName());
         existing.setAbbreviation(incoming.getAbbreviation());
         existing.setCode(incoming.getCode());
@@ -107,7 +106,7 @@ public class ServiceService {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+        }catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
 
@@ -186,5 +185,4 @@ public class ServiceService {
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
     }
-
 }

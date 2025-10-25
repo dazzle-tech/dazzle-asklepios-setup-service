@@ -32,7 +32,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = false)
 public class ServiceSetup extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial

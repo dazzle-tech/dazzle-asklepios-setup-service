@@ -194,7 +194,6 @@ public class ServiceItemsService {
         LOG.debug("Toggled ServiceItems isActive for id={}", id);
         return Optional.of(saved);
     }
-
     public void delete(Long id) {
         LOG.debug("Request to delete ServiceItems : {}", id);
 
@@ -205,7 +204,6 @@ public class ServiceItemsService {
         serviceItemsRepository.deleteById(id);
         LOG.debug("Deleted ServiceItems id={}", id);
     }
-
     @Transactional(readOnly = true)
     public List<Department> findSourcesByTypeAndFacility(ServiceItemsType type, Long facilityId) {
         LOG.debug("Request(findSourcesByTypeAndFacility) type={} facilityId={}", type, facilityId);
