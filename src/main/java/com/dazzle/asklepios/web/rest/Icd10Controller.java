@@ -25,20 +25,20 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/setup/icd10")
+@RequestMapping("/api/setup")
 @RequiredArgsConstructor
 public class Icd10Controller {
     private static final Logger LOG = LoggerFactory.getLogger(Icd10Controller.class);
     private final Icd10Service icd10Service;
 
-    @PostMapping("/import")
+    @PostMapping("/icd10/import")
     public ResponseEntity<String> importIcd10(@RequestParam("file") MultipartFile file) {
         icd10Service.importCsv(file);
         return ResponseEntity.ok("ICD-10 import completed successfully");
     }
 
 
-    @GetMapping("/all")
+    @GetMapping("/icd10/all")
     public ResponseEntity<List<Icd10Code>> getAllIcd10(@ParameterObject Pageable pageable) {
         LOG.debug("REST list ICD_10 page={}", pageable);
         final Page<Icd10Code> list = icd10Service.findAll(pageable);
