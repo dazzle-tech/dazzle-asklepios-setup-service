@@ -11,16 +11,12 @@ import java.util.Set;
 @Data
 @ConfigurationProperties(prefix = "setup.attachments")
 public class AttachmentProperties {
-    private String bucket = "asklepios";
-    private Region region = Region.US_EAST_1;
-    private String endpoint = "https://sfo3.digitaloceanspaces.com";
-    private int presignExpirySeconds = 300;
-    private long maxBytes = 52_428_800L;
-    private java.util.Set<String> allowed = Set.of(
-            "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "image/jpeg", "image/png", "text/plain");
+    private String bucket;
+    private Region region;
+    private String endpoint;
+    private int presignExpirySeconds;
+    private long maxBytes;
+    private java.util.Set<String> allowed;
     private String accessKeyId;
     private String secretAccessKey;
 }
