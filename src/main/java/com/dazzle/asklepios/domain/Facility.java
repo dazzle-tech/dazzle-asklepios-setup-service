@@ -3,14 +3,8 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.domain.enumeration.FacilityTypeConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,6 +16,7 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
