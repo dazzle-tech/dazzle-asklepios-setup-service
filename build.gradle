@@ -5,7 +5,7 @@ plugins {
     id "eclipse"
     id "com.gorylenko.gradle-git-properties"
     alias(libs.plugins.spring.boot)
-  id "openapi-generator-conventions"
+    id "openapi-generator-conventions"
 //    id "gatling-conventions"
 //    id "code-quality-conventions"
 }
@@ -112,6 +112,9 @@ configurations {
 }
 
 dependencies {
+    // --- AWS SDK v2 for DigitalOcean Spaces ---
+    implementation platform("software.amazon.awssdk:bom:2.25.40")
+    implementation "software.amazon.awssdk:s3"
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-hppc"
