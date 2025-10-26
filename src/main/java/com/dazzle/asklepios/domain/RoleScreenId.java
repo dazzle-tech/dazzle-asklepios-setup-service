@@ -6,15 +6,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.io.Serializable;
 
-
+@Builder
 @Embeddable
 @Getter
 @Setter
@@ -34,4 +30,3 @@ public class RoleScreenId implements Serializable {
     @Column(name = "operation", nullable = false, length = 50)
     private Operation operation;
 }
-

@@ -3,6 +3,8 @@ package com.dazzle.asklepios.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Entity
 @Getter
 @Setter
@@ -11,7 +13,7 @@ import lombok.*;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Table(name = "role_authority")
-public class RoleAuthority {
+public class RoleAuthority implements Serializable {
 
     @EmbeddedId
     @EqualsAndHashCode.Include

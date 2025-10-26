@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.EmbeddedId;
 
+import java.io.Serializable;
+
 @Entity
 @Getter
 @Setter
@@ -20,7 +22,7 @@ import jakarta.persistence.EmbeddedId;
 @AllArgsConstructor
 @Builder
 @Table(name = "role_screen")
-public class RoleScreen {
+public class RoleScreen implements Serializable {
 
     @EmbeddedId
     private RoleScreenId id;

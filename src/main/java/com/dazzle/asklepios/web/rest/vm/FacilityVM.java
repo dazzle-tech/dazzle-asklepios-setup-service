@@ -25,6 +25,7 @@ public record FacilityVM(
                 return new FacilityVM(
                         facility.getName(),
                         facility.getType(),
+                        facility.getCode(),
                         facility.getEmailAddress(),
                         facility.getPhone1(),
                         facility.getPhone2(),
