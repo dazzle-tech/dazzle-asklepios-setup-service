@@ -35,10 +35,10 @@ public class DuplicationCandidateService {
         // Generate role code automatically
         String lastRole = repository.findMaxRole();
         if (lastRole == null || lastRole.isEmpty()) {
-            entity.setRole("R001");
+            entity.setRule("R001");
         } else {
             int lastNumber = Integer.parseInt(lastRole.substring(1));
-            entity.setRole(String.format("R%03d", lastNumber + 1));
+            entity.setRule(String.format("R%03d", lastNumber + 1));
         }
 
 

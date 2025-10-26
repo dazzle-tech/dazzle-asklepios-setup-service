@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public record DuplicationCandidateResponseVM(
         Long id,
-        String role,
+        String rule,
         @JsonProperty("fields") Map<String, Boolean> fields,
         String createdBy,
         Instant createdDate,
@@ -27,7 +27,7 @@ public record DuplicationCandidateResponseVM(
     public static DuplicationCandidateResponseVM ofEntity(DuplicationCandidate entity) {
         return new DuplicationCandidateResponseVM(
                 entity.getId(),
-                entity.getRole(),
+                entity.getRule(),
                 entity.getFields(), // assumes entity has a method getFieldsMap() returning Map<String, Boolean>
                 entity.getCreatedBy(),
                 entity.getCreatedDate(),

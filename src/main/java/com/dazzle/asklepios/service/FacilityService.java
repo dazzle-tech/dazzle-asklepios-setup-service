@@ -66,14 +66,14 @@ public class FacilityService {
             if (vm.addressId() != null) existing.setAddressId(vm.addressId());
             if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
             if (vm.isActive() != null) existing.setIsActive(vm.isActive());
-            if (vm.roolId() != null) {
+            if (vm.ruleId() != null) {
 
                 DuplicationCandidate candidate = new DuplicationCandidate();
-                candidate.setId(vm.roolId());
-                existing.setRoolId(candidate.getId());
+                candidate.setId(vm.ruleId());
+                existing.setRuleId(candidate.getId());
             } else {
 
-                existing.setRoolId(null);
+                existing.setRuleId(null);
             }
 
             Facility updated = facilityRepository.save(existing);

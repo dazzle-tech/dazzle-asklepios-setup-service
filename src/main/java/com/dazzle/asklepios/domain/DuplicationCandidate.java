@@ -35,8 +35,8 @@ public class DuplicationCandidate extends AbstractAuditingEntity implements Seri
     private Long id;
 
     @NotNull
-    @Column(name = "role", length = 50)
-    private String role;
+    @Column(name = "rule", length = 50)
+    private String rule;
 
     /** Proper jsonb mapping */
     @JdbcTypeCode(SqlTypes.JSON)

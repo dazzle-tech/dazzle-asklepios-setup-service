@@ -77,8 +77,8 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(nullable = false, length = 10)
     private Boolean isActive = true;
 
-    @Column(name = "rool_id")
-    private Long roolId;
+    @Column(name = "rule_id")
+    private Long ruleId;
 
 
 
