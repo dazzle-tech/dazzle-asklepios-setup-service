@@ -3,7 +3,8 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import jakarta.validation.constraints.NotNull;
+import org.wildfly.common.annotation.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -20,7 +21,8 @@ public record FacilityUpdateVM(
         String fax,
         String addressId,
         Currency defaultCurrency,
-        Boolean isActive
+        Boolean isActive,
+        Long ruleId
 ) implements Serializable {
 
         public static FacilityUpdateVM ofEntity(Facility facility) {
@@ -35,7 +37,9 @@ public record FacilityUpdateVM(
                         facility.getFax(),
                         facility.getAddressId(),
                         facility.getDefaultCurrency(),
-                        facility.getIsActive()
+                        facility.getIsActive(),
+                        facility.getRuleId()
+
                 );
         }
 }
