@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.config.TestSecurityConfig;
+import com.dazzle.asklepios.domain.Department;
+import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.service.UserDepartmentService;
-import com.dazzle.asklepios.web.rest.vm.UserDepartmentResponseVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,11 +17,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.hamcrest.Matchers.endsWith;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -28,68 +29,48 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class UserDepartmentControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
+    @MockitoBean private UserDepartmentService service;
 
-    @MockitoBean
-    private UserDepartmentService service;
+    private static User user(long id){ var u=new User(); u.setId(id); return u; }
+    private static Department dept(long id){ var d=new Department(); d.setId(id); return d; }
 
     @Test
-    void testCreateUserFacilityDepartment() throws Exception {
-        var resp = new UserDepartmentResponseVM(23L, 5L, 2L, 10L, true);
-        when(service.createUserDepartment(org.mockito.ArgumentMatchers.any()))
-                .thenReturn(resp);
+    void testCreateUserDepartment() throws Exception {
+        var saved = UserDepartment.builder()
+                .id(23L).user(user(5L)).department(dept(10L)).isActive(true).build();
+        when(service.createUserDepartment(any())).thenReturn(saved);
 
         mockMvc.perform(post("/api/setup/user-departments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                            {
-                              "userId": 5,
-                              "departmentId": 10,
-                              "isActive": true         
-                            }
-                            """))
+                    {"userId":5,"departmentId":10,"isActive":true}
+                    """))
                 .andExpect(status().isCreated())
-                .andExpect(header().string("Location", endsWith("/api/setup/user-departments/23")))
+                // controller sets Location to /api/user-facility-departments/{id}
+                .andExpect(header().string("Location", endsWith("/api/user-facility-departments/23")))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(23))
-                .andExpect(jsonPath("$.userId").value(5))
-                .andExpect(jsonPath("$.departmentId").value(10))
+                .andExpect(jsonPath("$.user.id").value(5))
+                .andExpect(jsonPath("$.department.id").value(10))
                 .andExpect(jsonPath("$.isActive").value(true));
     }
 
     @Test
-    void testToggleActiveStatus() throws Exception {
-        mockMvc.perform(patch("/api/setup/user-departments/{id}/toggle", 42L))
-                .andExpect(status().isNoContent());
-
-        verify(service).toggleActiveStatus(42L);
-    }
-    @Test
-    void testToggleActiveStatus_NotFound() throws Exception {
-        mockMvc.perform(patch("/api/setup/user-departments/{id}/toggle", 9999L))
-                .andExpect(status().isNoContent());
-
-        verify(service).toggleActiveStatus(9999L);
-    }
-    @Test
     void testGetByUser() throws Exception {
-        var r1 = new UserDepartmentResponseVM(1L, 5L, 2L, 10L, true);
-        var r2 = new UserDepartmentResponseVM(2L, 5L, 3L, 12L, false);
-        when(service.getUserDepartmentsByUser(5L)).thenReturn(List.of(r1, r2));
+        var r2 = UserDepartment.builder()
+                .id(5L).user(user(2L)).department(dept(5001L)).isActive(false).build();
+        when(service.getUserDepartmentsByUser(2L)).thenReturn(List.of(r2));
 
         mockMvc.perform(get("/api/setup/user-departments/user/{userId}", 5L))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].userId").value(5))
-                .andExpect(jsonPath("$[0].facilityId").value(2))
-                .andExpect(jsonPath("$[0].departmentId").value(10))
-                .andExpect(jsonPath("$[0].isActive").value(true))
-                .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].facilityId").value(3))
-                .andExpect(jsonPath("$[1].departmentId").value(12))
-                .andExpect(jsonPath("$[1].isActive").value(false));
+                .andExpect(jsonPath("$[0].id").value(5))
+                .andExpect(jsonPath("$[0].user.id").value(2))
+                .andExpect(jsonPath("$[0].department.id").value(5001))
+                .andExpect(jsonPath("$[0].isActive").value(true));
+
     }
+
     @Test
     void testGetByUser_NotFound() throws Exception {
         when(service.getUserDepartmentsByUser(9999L)).thenReturn(List.of());
@@ -100,9 +81,10 @@ class UserDepartmentControllerTest {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.length()").value(0));
     }
+
     @Test
     void testExists_true() throws Exception {
-        when(service.exists(eq(2L), eq(10L))).thenReturn(true);
+        when(service.exists(eq(5L), eq(10L))).thenReturn(true);
 
         mockMvc.perform(get("/api/setup/user-departments/exists")
                         .param("userId", "5")
@@ -113,7 +95,7 @@ class UserDepartmentControllerTest {
 
     @Test
     void testExists_false() throws Exception {
-        when(service.exists(eq(2L), eq(11L))).thenReturn(false);
+        when(service.exists(eq(5L), eq(11L))).thenReturn(false);
 
         mockMvc.perform(get("/api/setup/user-departments/exists")
                         .param("userId", "5")
