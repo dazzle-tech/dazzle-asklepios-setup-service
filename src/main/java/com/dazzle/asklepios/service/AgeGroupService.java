@@ -1,0 +1,178 @@
+package com.dazzle.asklepios.service;
+
+import com.dazzle.asklepios.domain.AgeGroup;
+import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.repository.AgeGroupRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import jakarta.persistence.EntityManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
+
+@Service
+@Transactional
+public class AgeGroupService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AgeGroupService.class);
+    private final AgeGroupRepository ageGroupRepository;
+    private final EntityManager em;
+
+    public AgeGroupService(AgeGroupRepository ageGroupRepository, EntityManager em) {
+        this.ageGroupRepository = ageGroupRepository;
+        this.em = em;
+    }
+
+    public AgeGroup create(Long facilityId, AgeGroup incoming) {
+        LOG.info("[CREATE] Request to create AgeGroup for facilityId={} payload={}", facilityId, incoming);
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "ageGroup", "facility.required");
+        }
+        if (incoming == null) {
+            throw new BadRequestAlertException("AgeGroup payload is required", "ageGroup", "payload.required");
+        }
+        AgeGroup entity = AgeGroup.builder()
+                .ageGroup(incoming.getAgeGroup())
+                .fromAge(incoming.getFromAge())
+                .toAge(incoming.getToAge())
+                .fromAgeUnit(incoming.getFromAgeUnit())
+                .toAgeUnit(incoming.getToAgeUnit())
+                .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
+                .facility(refFacility(facilityId))
+                .build();
+        try {
+            AgeGroup saved = ageGroupRepository.saveAndFlush(entity);
+            LOG.info("Successfully created AgeGroup id={} label='{}' for facilityId={}", saved.getId(), saved.getAgeGroup(), facilityId);
+            return saved;
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+            Throwable root = getRootCause(ex);
+            String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
+            LOG.error("Database constraint violation while creating AgeGroup: {}", message, ex);
+            if (message.contains("uq_facility_age_range") ||
+                    message.contains("uq_facility_age_group_label") ||
+                    message.contains("unique constraint") ||
+                    message.contains("duplicate key") ||
+                    message.contains("duplicate entry")) {
+                throw new BadRequestAlertException(
+                        "An age group with the same name or age range already exists in this facility.",
+                        "ageGroup",
+                        "unique.facility.ageGroup"
+                );
+            }
+            throw new BadRequestAlertException(
+                    "Database constraint violated while creating age group (check facility, unique name, or required fields).",
+                    "ageGroup",
+                    "db.constraint"
+            );
+        }
+    }
+
+    public Optional<AgeGroup> update(Long id, Long facilityId, AgeGroup incoming) {
+        LOG.info("[UPDATE] Request to update AgeGroup id={} facilityId={} payload={}", id, facilityId, incoming);
+        if (incoming == null) {
+            throw new BadRequestAlertException("AgeGroup payload is required", "ageGroup", "payload.required");
+        }
+        AgeGroup existing = ageGroupRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("AgeGroup not found with id " + id, "ageGroup", "notfound"));
+        if (facilityId != null && (existing.getFacility() == null || !facilityId.equals(existing.getFacility().getId()))) {
+            throw new BadRequestAlertException("AgeGroup does not belong to the provided facility", "ageGroup", "facility.mismatch");
+        }
+        existing.setAgeGroup(incoming.getAgeGroup());
+        existing.setFromAge(incoming.getFromAge());
+        existing.setToAge(incoming.getToAge());
+        existing.setFromAgeUnit(incoming.getFromAgeUnit());
+        existing.setToAgeUnit(incoming.getToAgeUnit());
+        existing.setIsActive(incoming.getIsActive());
+        try {
+            AgeGroup updated = ageGroupRepository.saveAndFlush(existing);
+            LOG.info("Successfully updated AgeGroup id={} (label='{}')", updated.getId(), updated.getAgeGroup());
+            return Optional.of(updated);
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+            Throwable root = getRootCause(ex);
+            String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
+            LOG.error("Database constraint violation while updating AgeGroup: {}", message, ex);
+            if (message.contains("uq_facility_age_range") ||
+                    message.contains("uq_facility_age_group_label") ||
+                    message.contains("unique constraint") ||
+                    message.contains("duplicate key") ||
+                    message.contains("duplicate entry")) {
+                throw new BadRequestAlertException(
+                        "An age group with the same name or age range already exists in this facility.",
+                        "ageGroup",
+                        "unique.facility.ageGroup"
+                );
+            }
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating age group (check facility, unique name, or required fields).",
+                    "ageGroup",
+                    "db.constraint"
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<AgeGroup> findAll(Long facilityId) {
+        LOG.debug("Fetching all AgeGroups for facilityId={}", facilityId);
+        return ageGroupRepository.findByFacility_Id(facilityId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AgeGroup> findAll(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching paged AgeGroups for facilityId={} pageable={}", facilityId, pageable);
+        return ageGroupRepository.findByFacility_Id(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AgeGroup> findByAgeGroup(Long facilityId, AgeGroupType label, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by label='{}' facilityId={}", label, facilityId);
+        return ageGroupRepository.findByFacility_IdAndAgeGroup(facilityId, label, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AgeGroup> findByFromAge(Long facilityId, BigDecimal fromAge, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by fromAge='{}' facilityId={}", fromAge, facilityId);
+        return ageGroupRepository.findByFacility_IdAndFromAge(facilityId, fromAge, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AgeGroup> findByToAge(Long facilityId, BigDecimal toAge, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by toAge='{}' facilityId={}", toAge, facilityId);
+        return ageGroupRepository.findByFacility_IdAndToAge(facilityId, toAge, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<AgeGroup> findOne(Long id) {
+        LOG.debug("Fetching single AgeGroup by id={}", id);
+        return ageGroupRepository.findById(id);
+    }
+
+    public Optional<AgeGroup> toggleIsActive(Long id, Long facilityId) {
+        LOG.info("Toggling isActive for AgeGroup id={} facilityId={}", id, facilityId);
+        return ageGroupRepository.findById(id)
+                .filter(ag -> ag.getFacility() != null && ag.getFacility().getId().equals(facilityId))
+                .map(entity -> {
+                    entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
+                    entity.setLastModifiedDate(Instant.now());
+                    AgeGroup saved = ageGroupRepository.save(entity);
+                    LOG.info("AgeGroup id={} active status changed to {}", id, saved.getIsActive());
+                    return saved;
+                });
+    }
+
+    private Facility refFacility(Long facilityId) {
+        return em.getReference(Facility.class, facilityId);
+    }
+}
