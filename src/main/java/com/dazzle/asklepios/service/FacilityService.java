@@ -110,15 +110,15 @@ public class FacilityService {
         return true;
     }
     @Transactional(readOnly = true)
-    public List<FacilityResponseVM> findUnlinkedOrLinkedToRole(Long roleId) {
-        LOG.debug("Request to get all Facilities unlinked or linked to roleId={}", roleId);
+    public List<FacilityResponseVM> findUnlinkedOrLinkedToRule(Long ruleId) {
+        LOG.debug("Request to get all Facilities unlinked or linked to roleId={}", ruleId);
 
-        if (!duplicationCandidateRepository.existsById(roleId)) {
-            LOG.info("Role with id {} not found, returning empty list", roleId);
+        if (!duplicationCandidateRepository.existsById(ruleId)) {
+            LOG.info("Role with id {} not found, returning empty list", ruleId);
             return List.of();
         }
 
-        return facilityRepository.findUnlinkedOrLinkedToRole(roleId)
+        return facilityRepository.findUnlinkedOrLinkedToRule(ruleId)
                 .stream()
                 .map(FacilityResponseVM::ofEntity)
                 .toList();

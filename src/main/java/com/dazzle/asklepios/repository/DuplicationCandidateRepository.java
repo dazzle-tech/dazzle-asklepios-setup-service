@@ -11,11 +11,11 @@ import java.util.Optional;
 public interface DuplicationCandidateRepository extends JpaRepository<DuplicationCandidate, Long> {
 
 
-    @Query("SELECT MAX(dc.role) FROM DuplicationCandidate dc")
+    @Query("SELECT MAX(dc.rule) FROM DuplicationCandidate dc")
     String findMaxRole();
 
     boolean existsById(Long id);
 
-    List<DuplicationCandidate> findByRoleContaining(String text);
+    List<DuplicationCandidate> findByRuleContaining(String text);
 
 }

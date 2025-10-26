@@ -129,7 +129,7 @@ public class DuplicationCandidateController {
     @GetMapping("/available-for-role/{roleId}")
     public ResponseEntity<List<FacilityResponseVM>> getAvailableForRole(@PathVariable Long roleId) {
         LOG.debug("REST request to get facilities for roleId={}", roleId);
-        List<FacilityResponseVM> list = facilityService.findUnlinkedOrLinkedToRole(roleId);
+        List<FacilityResponseVM> list = facilityService.findUnlinkedOrLinkedToRule(roleId);
         return ResponseEntity.ok(list);
     }
 }

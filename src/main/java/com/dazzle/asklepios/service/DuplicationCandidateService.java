@@ -98,7 +98,7 @@ public class DuplicationCandidateService {
     /** Search by role fragment */
     @Transactional(readOnly = true)
     public List<DuplicationCandidate> findByRoleFilter(String roleFilter) {
-        return repository.findByRoleContaining(roleFilter);
+        return repository.findByRuleContaining(roleFilter);
     }
 
     /** Update fields JSON from Map directly */
