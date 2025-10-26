@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -84,8 +85,8 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     private Boolean appointable;
 
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "user_id", nullable = true)
+    @OneToOne(optional = true)
+    @JoinColumn(name = "user_id", nullable = true )
     private User user;
 
     @Column(name = "default_license_valid_until")

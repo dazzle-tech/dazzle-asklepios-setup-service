@@ -19,5 +19,6 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
 
     Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable);
 
+    boolean existsByUserId(Long userId);
 
 }

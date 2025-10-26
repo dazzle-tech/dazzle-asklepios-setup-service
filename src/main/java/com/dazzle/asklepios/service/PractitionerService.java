@@ -47,10 +47,24 @@ public class PractitionerService {
                         "facility",
                         "notfound"
                 ));
+
         User user = null;
         if (vm.userId() != null && vm.userId() > 0) {
+
+            if (practitionerRepository.existsByUserId(vm.userId())) {
+                throw new BadRequestAlertException(
+                        "User already linked to another practitioner",
+                        "practitioner",
+                        "userexists"
+                );
+            }
+
             user = userRepository.findById(vm.userId())
-                    .orElse(null);
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "User not found with id " + vm.userId(),
+                            "user",
+                            "notfound"
+                    ));
         }
 
         Practitioner practitioner = Practitioner.builder()
@@ -76,6 +90,7 @@ public class PractitionerService {
 
         return practitionerRepository.save(practitioner);
     }
+
 
 
     @Transactional
