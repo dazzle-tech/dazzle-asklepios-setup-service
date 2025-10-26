@@ -145,9 +145,4 @@ public class RoleController {
         List<RoleScreenVM> screens = rolePermissionService.getRoleScreens(roleId);
         return ResponseEntity.ok(screens);
     }
-
-
-
-
-
 }

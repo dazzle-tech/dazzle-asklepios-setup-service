@@ -6,9 +6,9 @@ import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
+
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -59,9 +59,8 @@ class DepartmentServiceTest {
                 .id(1L)
                 .name("Cardiology")
                 .facility(facility)
-                .departmentType(DepartmentType.OUTPATIENT_CLINIC)
-                .createdBy("tester")
-                .departmentCode("CARD01")
+                .type(DepartmentType.OUTPATIENT_CLINIC)
+                .code("CARD01")
                 .isActive(true)
                 .build();
     }
@@ -101,7 +100,7 @@ class DepartmentServiceTest {
     void testUpdateDepartment_Success() {
         var vm = new DepartmentUpdateVM(
                 5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "NEW01", "111", "new@test.com", null, false, "modifier"
+                true, "NEW01", "111", "new@test.com", null, false
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
@@ -112,7 +111,6 @@ class DepartmentServiceTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get().getName()).isEqualTo("Updated Name");
-        assertThat(updated.get().getLastModifiedBy()).isEqualTo("modifier");
     }
 
     @Test
@@ -133,12 +131,12 @@ class DepartmentServiceTest {
 
         when(departmentRepository.findAll(pageable)).thenReturn(page);
 
-        Page<DepartmentResponseVM> result = departmentService.findAll(pageable);
+        Page<Department> result = departmentService.findAll(pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
-        assertThat(result.getContent().get(0).departmentCode()).isEqualTo("CARD01");
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
+        assertThat(result.getContent().get(0).getCode()).isEqualTo("CARD01");
         verify(departmentRepository).findAll(pageable);
     }
 
@@ -149,10 +147,10 @@ class DepartmentServiceTest {
 
         when(departmentRepository.findByFacilityId(facility.getId(), pageable)).thenReturn(page);
 
-        Page<DepartmentResponseVM> result = departmentService.findByFacilityId(facility.getId(), pageable);
+        Page<Department> result = departmentService.findByFacilityId(facility.getId(), pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
         verify(departmentRepository).findByFacilityId(facility.getId(), pageable);
     }
 
@@ -161,15 +159,14 @@ class DepartmentServiceTest {
         var pageable = PageRequest.of(0, 5);
         Page<Department> page = new PageImpl<>(List.of(department), pageable, 1);
 
-        when(departmentRepository.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable))
+        when(departmentRepository.findByType(DepartmentType.OUTPATIENT_CLINIC, pageable))
                 .thenReturn(page);
 
-        Page<DepartmentResponseVM> result =
-                departmentService.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
+        Page<Department> result = departmentService.findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
-        verify(departmentRepository).findByDepartmentType(DepartmentType.OUTPATIENT_CLINIC, pageable);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
+        verify(departmentRepository).findByType(DepartmentType.OUTPATIENT_CLINIC, pageable);
     }
 
     @Test
@@ -180,10 +177,10 @@ class DepartmentServiceTest {
         when(departmentRepository.findByNameContainingIgnoreCase("Card", pageable))
                 .thenReturn(page);
 
-        Page<DepartmentResponseVM> result = departmentService.findByDepartmentName("Card", pageable);
+        Page<Department> result = departmentService.findByDepartmentName("Card", pageable);
 
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().get(0).name()).isEqualTo("Cardiology");
+        assertThat(result.getContent().get(0).getName()).isEqualTo("Cardiology");
         verify(departmentRepository).findByNameContainingIgnoreCase("Card", pageable);
     }
 

@@ -1,13 +1,13 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.Department;
-import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import org.junit.jupiter.api.Test;
 
-import java.io.*;
-import java.time.LocalDateTime;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,13 +22,9 @@ class DepartmentTest {
                 .id(5004L)
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
-                .createdDate(LocalDateTime.now())
-                .departmentType(DepartmentType.INPATIENT_WARD)
-                .lastModifiedBy("admin")
-                .lastModifiedDate(LocalDateTime.now())
+                .type(DepartmentType.INPATIENT_WARD)
                 .appointable(true)
-                .departmentCode("CARD01")
+                .code("CARD01")
                 .phoneNumber("123456789")
                 .email("cardio@hospital.com")
                 .encounterType(EncounterType.INPATIENT)
@@ -37,7 +33,7 @@ class DepartmentTest {
 
         assertThat(dept.getId()).isEqualTo(5004L);
         assertThat(dept.getName()).isEqualTo("Cardiology");
-        assertThat(dept.getDepartmentType()).isEqualTo(DepartmentType.INPATIENT_WARD);
+        assertThat(dept.getType()).isEqualTo(DepartmentType.INPATIENT_WARD);
         assertThat(dept.getEncounterType()).isEqualTo(EncounterType.INPATIENT);
         assertThat(dept.getIsActive()).isTrue();
         assertThat(dept.getFacility().getId()).isEqualTo(1L);
@@ -52,18 +48,16 @@ class DepartmentTest {
                 .id(5003L)
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
-                .departmentType(DepartmentType.OUTPATIENT_CLINIC)
-                .departmentCode("CARD01")
+                .type(DepartmentType.OUTPATIENT_CLINIC)
+                .code("CARD01")
                 .build();
 
         Department dept2 = Department.builder()
                 .id(5003L) // same id → should be equal
                 .facility(facility)
                 .name("Cardiology")
-                .createdBy("tester")
-                .departmentType(DepartmentType.OUTPATIENT_CLINIC)
-                .departmentCode("CARD01")
+                .type(DepartmentType.OUTPATIENT_CLINIC)
+                .code("CARD01")
                 .build();
 
         assertThat(dept1).isEqualTo(dept2);
@@ -75,9 +69,8 @@ class DepartmentTest {
         Department dept = Department.builder()
                 .id(5005L)
                 .name("Radiology")
-                .createdBy("tester")
-                .departmentType(DepartmentType.OUTPATIENT_CLINIC)
-                .departmentCode("RAD01")
+                .type(DepartmentType.OUTPATIENT_CLINIC)
+                .code("RAD01")
                 .build();
 
         // Serialize
@@ -91,6 +84,7 @@ class DepartmentTest {
         Department deserialized = (Department) in.readObject();
 
         assertThat(deserialized.getName()).isEqualTo("Radiology");
-        assertThat(deserialized.getDepartmentCode()).isEqualTo("RAD01");
+        assertThat(deserialized.getCode()).isEqualTo("RAD01");
     }
+
 }

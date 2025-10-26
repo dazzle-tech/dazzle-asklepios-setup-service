@@ -2,7 +2,6 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import com.dazzle.asklepios.domain.enumeration.FacilityTypeConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -43,8 +42,8 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     private String name;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    @Convert(converter = FacilityTypeConverter.class)
     private FacilityType type;
 
     @NotNull

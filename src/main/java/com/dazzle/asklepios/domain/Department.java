@@ -1,12 +1,28 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.*;
-import jakarta.persistence.*;
+
+import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -14,8 +30,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Department implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class Department  extends  AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -34,29 +50,16 @@ public class Department implements Serializable {
     private String name;
 
     @NotNull
-    @Column(name = "created_by", nullable = false, length = 50)
-    private String createdBy;
-
-    @Column(name = "created_date")
-    private LocalDateTime createdDate;
-
-    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)
-    @Convert(converter = DepartmentTypeConverter.class)
-    private DepartmentType departmentType;
-
-    @Column(name = "last_modified_by", length = 50)
-    private String lastModifiedBy;
-
-    @Column(name = "last_modified_date")
-    private LocalDateTime lastModifiedDate;
+    private DepartmentType type;
 
     @Column
     private Boolean appointable;
 
     @NotNull
     @Column(name = "code", nullable = false, length = 50)
-    private String departmentCode;
+    private String code;
 
     @Column(name = "phone_number", length = 50)
     private String phoneNumber;
@@ -64,8 +67,8 @@ public class Department implements Serializable {
     @Column(length = 100)
     private String email;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "encounter_type", length = 50)
-    @Convert(converter = EncounterTypeConverter.class)
     private EncounterType encounterType;
 
     @Column(name = "is_active")
