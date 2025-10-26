@@ -41,6 +41,7 @@ public class UserDepartmentService {
 
         Optional<UserDepartment> existing = UserDepartmentsRepository.findByUserIdAndDepartmentId(userId, departmentId);
         if (existing.isPresent()) {
+            LOG.debug("Existing UFD  exist={}", existing.get());
             return existing.get();
         }
 
