@@ -141,7 +141,6 @@ public class AllergensService {
 
 
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = ALLERGENS, key = "'all'")
     public List<Allergens> findAll() {
         LOG.debug("Fetching all Allergens");
         return allergenRepository.findAll();
