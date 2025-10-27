@@ -111,4 +111,8 @@ public class Icd10Service {
         return repository.findAll(pageable);
     }
 
+    public Page<Icd10Code> searchByCodeOrDescription(String keyword, Pageable pageable) {
+        return repository.findByCodeContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable);
+    }
+
 }
