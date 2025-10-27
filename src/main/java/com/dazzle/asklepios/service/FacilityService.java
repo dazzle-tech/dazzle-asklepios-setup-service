@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
 import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
@@ -24,9 +26,10 @@ public class FacilityService {
     private static final Logger LOG = LoggerFactory.getLogger(FacilityService.class);
 
     private final FacilityRepository facilityRepository;
-
-    public FacilityService(FacilityRepository facilityRepository) {
+    private final DuplicationCandidateRepository duplicationCandidateRepository;
+    public FacilityService(FacilityRepository facilityRepository, DuplicationCandidateRepository duplicationCandidateRepository) {
         this.facilityRepository = facilityRepository;
+        this.duplicationCandidateRepository = duplicationCandidateRepository;
     }
 
      @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
@@ -36,8 +39,8 @@ public class FacilityService {
         Facility facility = new Facility();
         facility.setName(vm.name());
         facility.setType(vm.type());
-        facility.setCode(vm.code());
-        facility.setEmailAddress(vm.emailAddress());
+         facility.setCode(vm.code());
+         facility.setEmailAddress(vm.emailAddress());
         facility.setPhone1(vm.phone1());
         facility.setPhone2(vm.phone2());
         facility.setFax(vm.fax());
@@ -62,11 +65,23 @@ public class FacilityService {
             if (vm.fax() != null) existing.setFax(vm.fax());
             if (vm.addressId() != null) existing.setAddressId(vm.addressId());
             if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
+            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+            if (vm.ruleId() != null) {
+
+                DuplicationCandidate candidate = new DuplicationCandidate();
+                candidate.setId(vm.ruleId());
+                existing.setRuleId(candidate.getId());
+            } else {
+
+                existing.setRuleId(null);
+            }
 
             Facility updated = facilityRepository.save(existing);
+            LOG.debug("Facility updated successfully: {}", updated);
             return updated;
         });
     }
+
 
     @Transactional(readOnly = true)
     public List<FacilityResponseVM> findAll() {
@@ -94,4 +109,21 @@ public class FacilityService {
         facilityRepository.deleteById(id);
         return true;
     }
+    @Transactional(readOnly = true)
+    public List<FacilityResponseVM> findUnlinkedOrLinkedToRule(Long ruleId) {
+        LOG.debug("Request to get all Facilities unlinked or linked to roleId={}", ruleId);
+
+        if (!duplicationCandidateRepository.existsById(ruleId)) {
+            LOG.info("Role with id {} not found, returning empty list", ruleId);
+            return List.of();
+        }
+
+        return facilityRepository.findUnlinkedOrLinkedToRule(ruleId)
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .toList();
+    }
+
+
+
 }

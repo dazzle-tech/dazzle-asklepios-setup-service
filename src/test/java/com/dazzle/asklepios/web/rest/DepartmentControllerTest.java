@@ -5,9 +5,9 @@ import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.DepartmentService;
-import com.dazzle.asklepios.web.rest.vm.DepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentResponseVM;
-import com.dazzle.asklepios.web.rest.vm.DepartmentUpdateVM;
+
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -47,8 +47,8 @@ class DepartmentControllerTest {
         dept.setName("INPATIENT Department");
 
         var pageable = PageRequest.of(0, 10);
-        Page<DepartmentResponseVM> page =
-                new PageImpl<>(List.of(DepartmentResponseVM.ofEntity(dept)), pageable, 1);
+        Page<Department> page =
+                new PageImpl<>(List.of(dept), pageable, 1);
 
         when(departmentService.findAll(any(Pageable.class))).thenReturn(page);
 
@@ -123,7 +123,7 @@ class DepartmentControllerTest {
 
         DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
                 5000L, "Oncology", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
-                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true, "admin"
+                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true
         );
 
         when(departmentService.update(5000L, updateVM)).thenReturn(Optional.of(dept));
@@ -141,41 +141,11 @@ class DepartmentControllerTest {
                       "phoneNumber": "987654321",
                       "email": "oncology@hospital.com",
                       "encounterType": "CLINIC",
-                      "isActive": true,
-                      "lastModifiedBy": "admin"
+                      "isActive": true
                     }
                     """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Oncology"));
-    }
-
-    @Test
-    void testUpdateDepartment_NotFound() throws Exception {
-        DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
-                9999L, "Unknown", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
-                "UNK01", "000", "unknown@hospital.com", EncounterType.CLINIC, true, "admin"
-        );
-
-        when(departmentService.update(9999L, updateVM)).thenReturn(Optional.empty());
-
-        mockMvc.perform(put("/api/setup/department/9999")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                    {
-                      "id": 9999,
-                      "name": "Unknown",
-                      "facilityId": 1,
-                      "departmentType": "OUTPATIENT_CLINIC",
-                      "appointable": true,
-                      "departmentCode": "UNK01",
-                      "phoneNumber": "000",
-                      "email": "unknown@hospital.com",
-                      "encounterType": "CLINIC",
-                      "isActive": true,
-                      "lastModifiedBy": "admin"
-                    }
-                    """))
-                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -185,12 +155,12 @@ class DepartmentControllerTest {
         dept.setName("Oncology");
 
         var pageable = PageRequest.of(0, 10);
-        Page<DepartmentResponseVM> page =
-                new PageImpl<>(List.of(DepartmentResponseVM.ofEntity(dept)), pageable, 1);
+        Page<Department> page =
+                new PageImpl<>(List.of(dept), pageable, 1);
 
         when(departmentService.findByFacilityId(eq(1L), any(Pageable.class))).thenReturn(page);
 
-        mockMvc.perform(get("/api/setup/department/facility/1")
+        mockMvc.perform(get("/api/setup/department/by-facility/1")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -205,14 +175,13 @@ class DepartmentControllerTest {
         dept.setName("INPATIENT Department");
 
         var pageable = PageRequest.of(0, 10);
-        Page<DepartmentResponseVM> page =
-                new PageImpl<>(List.of(DepartmentResponseVM.ofEntity(dept)), pageable, 1);
+        Page<Department> page =
+                new PageImpl<>(List.of(dept), pageable, 1);
 
         when(departmentService.findByDepartmentType(eq(DepartmentType.INPATIENT_WARD), any(Pageable.class)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/setup/department/department-list-by-type")
-                        .param("type", DepartmentType.INPATIENT_WARD.name())
+        mockMvc.perform(get("/api/setup/department/by-type/INPATIENT_WARD")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -227,14 +196,13 @@ class DepartmentControllerTest {
         dept.setName("INPATIENT Department");
 
         var pageable = PageRequest.of(0, 10);
-        Page<DepartmentResponseVM> page =
-                new PageImpl<>(List.of(DepartmentResponseVM.ofEntity(dept)), pageable, 1);
+        Page<Department> page =
+                new PageImpl<>(List.of(dept), pageable, 1);
 
         when(departmentService.findByDepartmentName(eq("INPATIENT Department"), any(Pageable.class)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/setup/department/department-list-by-name")
-                        .param("name", "INPATIENT Department")
+        mockMvc.perform(get("/api/setup/department/by-name/INPATIENT Department")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())

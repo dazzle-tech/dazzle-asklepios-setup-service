@@ -1,8 +1,9 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.department;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+
 import java.io.Serializable;
 
 /**
@@ -20,7 +21,6 @@ public record DepartmentResponseVM(
         EncounterType encounterType,
         Boolean isActive
 
-
 ) implements Serializable {
 
         public static DepartmentResponseVM ofEntity(Department department) {
@@ -29,9 +29,9 @@ public record DepartmentResponseVM(
                         department.getId(),
                         department.getFacility()!=null? department.getFacility().getId():null ,
                         department.getName(),
-                        department.getDepartmentType(),
+                        department.getType(),
                         department.getAppointable(),
-                        department.getDepartmentCode(),
+                        department.getCode(),
                         department.getPhoneNumber(),
                         department.getEmail(),
                         department.getEncounterType(),
