@@ -48,7 +48,19 @@ public class Icd10Controller {
         return new ResponseEntity<>(list.getContent(), headers, HttpStatus.OK);
     }
 
+    @GetMapping("/icd10/search")
+    public ResponseEntity<List<Icd10Code>> searchIcd10(
+            @RequestParam String keyword,
+            @ParameterObject Pageable pageable) {
 
+        LOG.debug("REST search ICD10 keyword='{}', page={}", keyword, pageable);
+
+        Page<Icd10Code> result = icd10Service.searchByCodeOrDescription(keyword, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), result
+        );
+        return new ResponseEntity<>(result.getContent(), headers, HttpStatus.OK);
+    }
 
 
 }
