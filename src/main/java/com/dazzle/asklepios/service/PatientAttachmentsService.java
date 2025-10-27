@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
+import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.PatientAttachments;
 import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
@@ -17,6 +18,8 @@ import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequ
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +33,7 @@ public class PatientAttachmentsService {
 
     private static final DateTimeFormatter YYYY = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter MM = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
+    private final EncounterAttachmentsService encounterAttachmentsService;
 
     public record UploadTicket(String objectKey, String putUrl) {
     }
@@ -93,6 +97,35 @@ public class PatientAttachmentsService {
 
     public List<PatientAttachments> list(Long patientId) {
         return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
+    }
+    public List<PatientAttachments> list(Long patientId,List<Long> encounterId) {
+       // LOG.debug("list patient attachments for patientId={}", patientId);
+
+        // 1. Get patient-level attachments
+        List<PatientAttachments> patientAttachments = repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
+        // 2. Get encounter-level attachments from EncounterAttachmentsService
+        List<EncounterAttachments> encounterAttachments = encounterAttachmentsService.list(encounterId);
+        // 3. Map EncounterAttachments → PatientAttachments
+        List<PatientAttachments> encounterAsPatientAttachments = encounterAttachments.stream()
+                .map(ea -> PatientAttachments.builder()
+                        .patientId(patientId)
+                        .filename(ea.getFilename())
+                        .mimeType(ea.getMimeType())
+                        .sizeBytes(ea.getSizeBytes())
+                        .type(ea.getType())
+                        .details(ea.getDetails())
+                        .spaceKey(ea.getSpaceKey())
+                       // .source(ea.getSource() != null ? ea.getSource().name() : null)
+                        .build()
+                ).toList();
+
+        // 5. Merge both lists
+        List<PatientAttachments> combined = new ArrayList<>(patientAttachments);
+        combined.addAll(encounterAsPatientAttachments);
+        // 6. Sort by createdDate desc (if needed)
+        combined.sort(Comparator.comparing(PatientAttachments::getCreatedDate).reversed());
+
+        return combined;
     }
 
     public DownloadTicket downloadUrl(Long id) {

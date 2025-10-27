@@ -92,10 +92,10 @@ public class EncounterAttachmentsService {
         return name.replaceAll("[^\\w.\\- ]", "_");
     }
 
-    /* Get List of all attachments for encounter => will use in patient attachment list*/
-    public List<EncounterAttachments> list(Long encounterId) {
-     LOG.debug("list encounter attachments", encounterId);
-        return repo.findByEncounterIdAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId);
+    /* Get List of all attachments for all patient encounters => will use in patient attachment list*/
+    public List<EncounterAttachments> list(List<Long> encounterId) {
+     LOG.debug("list encounter attachments {}", encounterId);
+        return repo.findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId);
     }
     public List<EncounterAttachments> listByEncounterIdAndSource(Long encounterId,EncounterAttachmentSource source) {
         return repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId,source);

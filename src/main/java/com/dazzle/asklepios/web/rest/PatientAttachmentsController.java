@@ -13,6 +13,7 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,12 +44,16 @@ public class PatientAttachmentsController {
     private final AttachmentProperties props;
 
     private static final DateTimeFormatter YYYY = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC);
-    private static final DateTimeFormatter MM   = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter MM = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
 
     private static final String ENTITY_NAME = "patientAttachments";
 
-    public record UploadResponse( Long id, String filename, String mimeType, long sizeBytes, String type, String details,String downloadUrl) {}
-    public record UpdateAttachmentRequest(String type, String details) {}
+    public record UploadResponse(Long id, String filename, String mimeType, long sizeBytes, String type, String details,
+                                 String downloadUrl) {
+    }
+
+    public record UpdateAttachmentRequest(String type, String details) {
+    }
 
     public PatientAttachmentsController(PatientAttachmentsRepository repo, AttachmentStorageService storage, AttachmentProperties props, PatientAttachmentsService service) {
         this.repo = repo;
@@ -57,7 +62,9 @@ public class PatientAttachmentsController {
         this.service = service;
     }
 
-    /** One call: receive file(s) → upload to Spaces → verify → insert row(s) → return presigned download URL(s). */
+    /**
+     * One call: receive file(s) → upload to Spaces → verify → insert row(s) → return presigned download URL(s).
+     */
     @PostMapping(value = "/patients/{patientId}/attachments", consumes = "multipart/form-data")
     public List<UploadResponse> upload(@PathVariable Long patientId, @RequestParam(required = false) String type, @RequestParam(required = false) String details, @RequestParam(required = false) PatientAttachmentSource source, @RequestPart("files") @NotNull List<MultipartFile> files) {
         Instant now = Instant.now();
@@ -123,32 +130,40 @@ public class PatientAttachmentsController {
         }).toList();
     }
 
-    /** List active attachments for a patient. */
+    /**
+     * List active attachments for a patient.
+     */
     @GetMapping("/patients/attachments-list-by-patientId/{patientId}")
     public List<PatientAttachments> list(@PathVariable Long patientId) {
         return service.list(patientId);
     }
 
-    /** Presigned download URL. */
+    /**
+     * Presigned download URL.
+     */
     @PostMapping("/patients/attachmentDownloadUrl/{id}")
     public PatientAttachmentsService.DownloadTicket downloadUrl(@PathVariable Long id) {
         PatientAttachmentsService.DownloadTicket downloadTicket = service.downloadUrl(id);
         return new PatientAttachmentsService.DownloadTicket(downloadTicket.url(), downloadTicket.expiresInSeconds());
     }
 
-    /** Soft delete */
+    /**
+     * Soft delete
+     */
     @DeleteMapping("/patients/attachments/{id}")
     public void delete(@PathVariable Long id) {
         service.softDelete(id);
     }
 
-    /** update type/details for attachments **/
+    /**
+     * update type/details for attachments
+     **/
     @PutMapping("/patients/attachments/{id}")
-    public PatientAttachments updateTypeAndDetails(@PathVariable Long id,@RequestBody UpdateAttachmentRequest updateAttachmentRequest) {
+    public PatientAttachments updateTypeAndDetails(@PathVariable Long id, @RequestBody UpdateAttachmentRequest updateAttachmentRequest) {
         PatientAttachments patientAttachments = repo.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Not found", ENTITY_NAME, "not_found"));
 
-        if (updateAttachmentRequest.type() != null)    patientAttachments.setType(updateAttachmentRequest.type());
+        if (updateAttachmentRequest.type() != null) patientAttachments.setType(updateAttachmentRequest.type());
         if (updateAttachmentRequest.details() != null) patientAttachments.setDetails(updateAttachmentRequest.details());
 
         return repo.save(patientAttachments);
@@ -163,5 +178,19 @@ public class PatientAttachmentsController {
                 ).orElseThrow(() -> new BadRequestAlertException("No profile picture", ENTITY_NAME, "not_found"));
         PatientAttachmentsService.DownloadTicket downloadTicket = service.downloadUrl(patientAttachments.getId());
         return new PatientAttachmentsService.DownloadTicket(downloadTicket.url(), downloadTicket.expiresInSeconds());
+    }
+    /**
+     * {@code: GET /patients/attachments-list-by-PatientIdAndEncounterId/{patientId}}: List active attachments for patient and related encounter .}
+     * recieve all files related to the patient's encounters and patient
+     * @param encounterId  to get attachments by list of encounters
+     * @param patientId to get attachments by patientId
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of patientAttachment view models in the body,
+     * @apiNote /api/setup/patients/123/attachments?encounterId=1,2,3 or /api/setup/patients/123/attachments?encounterId=1&encounterId=2&encounterId=3
+     **/
+    @GetMapping("/patients/attachments-list-by-PatientIdAndEncounterId/{patientId}")
+    public List<PatientAttachments> listPatientAttachments(@PathVariable Long patientId, @RequestParam(required = false) List<Long> encounterId) {
+
+        //LOG.debug("Listing attachments for patientId={} and encounterIds={}", patientId, encounterId);
+        return service.list(patientId, encounterId);
     }
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @Repository
 public interface EncounterAttachementsRepository extends JpaRepository<EncounterAttachments, Long> {
-    List<EncounterAttachments> findByEncounterIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId);
+    List<EncounterAttachments> findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(List<Long> encounterId);
 
     List<EncounterAttachments> findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source);
 
