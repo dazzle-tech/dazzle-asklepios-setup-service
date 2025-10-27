@@ -1,0 +1,11 @@
+package com.dazzle.asklepios.domain.enumeration;
+public enum EncounterAttachmentSource {
+    NURSE_STATION_ATTACHMENT,
+    PRESCRIPTION_ATTACHMENT,
+    MEDICATION_ORDER_ATTACHMENT,
+    DIAGNOSTIC_ORDER_ATTACHMENT,
+    CONSULTATION_ATTACHMENT,
+    OPERATION_REQUEST_ATTACHMENT
+    ;
+
+}
