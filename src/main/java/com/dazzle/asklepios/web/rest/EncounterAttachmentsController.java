@@ -76,7 +76,7 @@ public class EncounterAttachmentsController {
      **/
     @GetMapping("/encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}")
     public List<EncounterAttachments> list(@PathVariable Long encounterId, @PathVariable EncounterAttachmentSource source) {
-        LOG.debug("Listing encounter attachments by encounterId and source: {0} {1}", encounterId,source);
+        LOG.debug("Listing encounter attachments by encounterId: {} and source : {}", encounterId,source);
         return service.listByEncounterIdAndSource(encounterId, source);
     }
 
