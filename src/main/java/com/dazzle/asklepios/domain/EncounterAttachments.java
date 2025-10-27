@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
+import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +25,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EncounterAttachments  extends  AbstractAuditingEntity<Long> implements Serializable {
+public class EncounterAttachments extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -47,7 +49,15 @@ public class EncounterAttachments  extends  AbstractAuditingEntity<Long> impleme
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
+
+    @Column(name = "type", length = 100)
+    private String type;
+
+    @Column(name = "details", columnDefinition = "text")
+    private String details;
+
     @Column(name = "source", length = 50)
-    private PatientAttachmentSource source;
+    @Enumerated(EnumType.STRING)
+    private EncounterAttachmentSource source;
 
 }

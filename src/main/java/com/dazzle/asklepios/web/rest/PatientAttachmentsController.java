@@ -136,7 +136,7 @@ public class PatientAttachmentsController {
         return new PatientAttachmentsService.DownloadTicket(downloadTicket.url(), downloadTicket.expiresInSeconds());
     }
 
-    /** Soft delete + remove from Spaces. */
+    /** Soft delete */
     @DeleteMapping("/patients/attachments/{id}")
     public void delete(@PathVariable Long id) {
         service.softDelete(id);
