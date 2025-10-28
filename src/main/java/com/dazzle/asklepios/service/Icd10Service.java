@@ -159,7 +159,7 @@ public class Icd10Service {
         LOG.debug("Fetching all ICD10 codes with pagination: {}", pageable);
         return repository.findAll(pageable);
     }
-
+    
     /**
      * Find ICD10 code by its code value.
      */
@@ -172,4 +172,10 @@ public class Icd10Service {
                         "notfound"
                 ));
     }
+
+    public Page<Icd10Code> searchByCodeOrDescription(String keyword, Pageable pageable) {
+        return repository.findByCodeContainingIgnoreCaseOrDescriptionContainingIgnoreCase(keyword, keyword, pageable);
+    }
+
+
 }
