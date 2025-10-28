@@ -2,8 +2,9 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Icd10Code;
 import com.dazzle.asklepios.repository.Icd10Repository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class Icd10Service {
+
     private static final Logger LOG = LoggerFactory.getLogger(Icd10Service.class);
     private final Icd10Repository repository;
 
@@ -37,7 +39,9 @@ public class Icd10Service {
         this.repository = repository;
     }
 
-
+    /**
+     * Import ICD10 codes from a CSV file.
+     */
     @Transactional
     public void importCsv(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
@@ -48,9 +52,9 @@ public class Icd10Service {
                      .withTrim())) {
 
             List<CSVRecord> records = parser.getRecords();
-            LOG.info("Starting CSV import. Records found: {}", records.size());
+            LOG.info("Starting ICD10 CSV import. Total records: {}", records.size());
 
-            // 1. check duplicates
+            // 1. تحقق من التكرارات
             Map<String, Long> codeCounts = records.stream()
                     .map(r -> r.get("code"))
                     .filter(Objects::nonNull)
@@ -60,18 +64,27 @@ public class Icd10Service {
                     .filter(e -> e.getValue() > 1)
                     .map(Map.Entry::getKey)
                     .toList();
+
             if (!duplicates.isEmpty()) {
-                throw new IllegalStateException("Duplicate record(s): " + String.join(", ", duplicates));
+                throw new BadRequestAlertException(
+                        "Duplicate ICD10 code(s): " + String.join(", ", duplicates),
+                        "icd10",
+                        "duplicate"
+                );
             }
 
-            // 2. process records
+            // 2. المعالجة والحفظ
             Set<String> csvCodes = new HashSet<>();
             List<Icd10Code> toSave = new ArrayList<>();
 
             for (CSVRecord record : records) {
                 String code = record.get("code");
                 if (code == null || code.isBlank()) {
-                    throw new IllegalArgumentException("Missing code at line " + record.getRecordNumber());
+                    throw new BadRequestAlertException(
+                            "Missing code at line " + record.getRecordNumber(),
+                            "icd10",
+                            "missingcode"
+                    );
                 }
 
                 csvCodes.add(code);
@@ -82,15 +95,15 @@ public class Icd10Service {
                 Optional<Icd10Code> existing = repository.findByCode(code);
 
                 if (existing.isPresent()) {
-                    Icd10Code e = existing.get();
-                    if (!Objects.equals(e.getDescription(), description)
-                            || !Objects.equals(e.getVersion(), version)
-                            || !Objects.equals(e.getIsActive(), isActive)) {
-                        e.setDescription(description);
-                        e.setVersion(version);
-                        e.setIsActive(isActive);
-                        e.setLastUpdated(Instant.now());
-                        toSave.add(e);
+                    Icd10Code entity = existing.get();
+                    if (!Objects.equals(entity.getDescription(), description)
+                            || !Objects.equals(entity.getVersion(), version)
+                            || !Objects.equals(entity.getIsActive(), isActive)) {
+                        entity.setDescription(description);
+                        entity.setVersion(version);
+                        entity.setIsActive(isActive);
+                        entity.setLastUpdated(Instant.now());
+                        toSave.add(entity);
                     }
                 } else {
                     toSave.add(Icd10Code.builder()
@@ -105,7 +118,7 @@ public class Icd10Service {
 
             repository.saveAll(toSave);
 
-            // 3. deactivate missing
+            // 3. تعطيل الأكواد غير الموجودة في CSV
             List<Icd10Code> toDeactivate = repository.findAll().stream()
                     .filter(c -> !csvCodes.contains(c.getCode()) && Boolean.TRUE.equals(c.getIsActive()))
                     .peek(c -> {
@@ -115,19 +128,48 @@ public class Icd10Service {
                     .toList();
 
             repository.saveAll(toDeactivate);
-            LOG.info("Import complete. {} updated/inserted, {} deactivated.", toSave.size(), toDeactivate.size());
+
+            LOG.info("ICD10 import complete. {} inserted/updated, {} deactivated.",
+                    toSave.size(), toDeactivate.size());
 
         } catch (IOException e) {
-            throw new RuntimeException("Error reading CSV file", e);
+            LOG.error("Error reading ICD10 CSV file: {}", e.getMessage(), e);
+            throw new BadRequestAlertException(
+                    "Error reading CSV file: " + e.getMessage(),
+                    "icd10",
+                    "filereaderror"
+            );
+        } catch (BadRequestAlertException e) {
+            LOG.warn("ICD10 CSV import validation failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            LOG.error("Unexpected error during ICD10 import: {}", e.getMessage(), e);
+            throw new BadRequestAlertException(
+                    "Unexpected error during import: " + e.getMessage(),
+                    "icd10",
+                    "unexpected"
+            );
         }
     }
 
-
-
-
+    /**
+     * Get paginated ICD10 codes.
+     */
     public Page<Icd10Code> findAll(Pageable pageable) {
+        LOG.debug("Fetching all ICD10 codes with pagination: {}", pageable);
         return repository.findAll(pageable);
     }
 
-
+    /**
+     * Find ICD10 code by its code value.
+     */
+    public Icd10Code findByCode(String code) {
+        LOG.debug("Fetching ICD10 code: {}", code);
+        return repository.findByCode(code)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "ICD10 code not found: " + code,
+                        "icd10",
+                        "notfound"
+                ));
+    }
 }
