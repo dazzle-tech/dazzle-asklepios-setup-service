@@ -122,7 +122,7 @@ public class PatientAttachmentsService {
         // 5. Merge both lists
         List<PatientAttachments> combined = new ArrayList<>(patientAttachments);
         combined.addAll(encounterAsPatientAttachments);
-        // 6. Sort by createdDate desc (if needed)
+        // 6. Sort by createdDate desc
         combined.sort(Comparator.comparing(PatientAttachments::getCreatedDate).reversed());
 
         return combined;
