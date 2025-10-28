@@ -89,7 +89,7 @@ class EncounterAttachmentsControllerTest {
         when(service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.NURSE_STATION_ATTACHMENT))
                 .thenReturn(List.of(e));
 
-        mockMvc.perform(get("/api/setup/encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}", 77L, "NURSE_STATION_ATTACHMENT"))
+        mockMvc.perform(get("/api/setup/encounters/attachments/by-encounterIdAndSource/{encounterId}/{source}", 77L, "NURSE_STATION_ATTACHMENT"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(5L))
                 .andExpect(jsonPath("$[0].filename").value("a.pdf"));

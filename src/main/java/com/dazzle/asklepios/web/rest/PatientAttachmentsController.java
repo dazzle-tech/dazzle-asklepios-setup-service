@@ -133,7 +133,7 @@ public class PatientAttachmentsController {
     /**
      * List active attachments for a patient.
      */
-    @GetMapping("/patients/attachments-list-by-patientId/{patientId}")
+    @GetMapping("/patients/attachments/by-patientId/{patientId}")
     public List<PatientAttachments> list(@PathVariable Long patientId) {
         return service.list(patientId);
     }

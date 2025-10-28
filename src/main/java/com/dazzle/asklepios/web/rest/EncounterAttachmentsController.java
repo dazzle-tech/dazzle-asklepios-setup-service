@@ -69,12 +69,12 @@ public class EncounterAttachmentsController {
         return i >= 0 ? key.substring(i + 1) : key;
     }
     /**
-     * {@Code: GET/ encounters/attachments-list-by-encounterId?enounterId=1,2: List active attachments for encounters.}
+     * {@Code: GET/ encounters/attachments/by-encounterId?enounterId=1,2: List active attachments for encounters.}
      * recieve all files related to the encounter
      * @param encounterId to get attachments by encounter
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,
      **/
-    @GetMapping("/enounters/attachments-list-by-encounterId")
+    @GetMapping("/encounters/attachments/by-encounterId")
     public List<EncounterAttachments> list(@RequestParam List<Long> encounterId) {
         return service.list(encounterId);
     }
@@ -85,7 +85,7 @@ public class EncounterAttachmentsController {
      * @param encounterId to get attachments by encounter
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,
      **/
-    @GetMapping("/encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}")
+    @GetMapping("/encounters/attachments/by-encounterIdAndSource/{encounterId}/{source}")
     public List<EncounterAttachments> list(@PathVariable Long encounterId, @PathVariable EncounterAttachmentSource source) {
         LOG.debug("Listing encounter attachments by encounterId: {} and source : {}", encounterId,source);
         return service.listByEncounterIdAndSource(encounterId, source);
