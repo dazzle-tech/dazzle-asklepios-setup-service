@@ -92,7 +92,6 @@ public class EncounterAttachmentsService {
         return name.replaceAll("[^\\w.\\- ]", "_");
     }
 
-    /* Get List of all attachments for all patient encounters => will use in patient attachment list*/
     public List<EncounterAttachments> list(List<Long> encounterId) {
      LOG.debug("list encounter attachments {}", encounterId);
         return repo.findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId);

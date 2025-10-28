@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -66,6 +67,16 @@ public class EncounterAttachmentsController {
     private static String getSafeFileName(String key) {
         int i = key.lastIndexOf('/');
         return i >= 0 ? key.substring(i + 1) : key;
+    }
+    /**
+     * {@Code: GET/ encounters/attachments-list-by-encounterId?enounterId=1,2: List active attachments for encounters.}
+     * recieve all files related to the encounter
+     * @param encounterId to get attachments by encounter
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,
+     **/
+    @GetMapping("/enounters/attachments-list-by-encounterId")
+    public List<EncounterAttachments> list(@RequestParam List<Long> encounterId) {
+        return service.list(encounterId);
     }
 
     /**

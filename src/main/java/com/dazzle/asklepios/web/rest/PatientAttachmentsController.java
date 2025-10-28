@@ -179,18 +179,4 @@ public class PatientAttachmentsController {
         PatientAttachmentsService.DownloadTicket downloadTicket = service.downloadUrl(patientAttachments.getId());
         return new PatientAttachmentsService.DownloadTicket(downloadTicket.url(), downloadTicket.expiresInSeconds());
     }
-    /**
-     * {@code: GET /patients/attachments-list-by-PatientIdAndEncounterId/{patientId}}: List active attachments for patient and related encounter .}
-     * recieve all files related to the patient's encounters and patient
-     * @param encounterId  to get attachments by list of encounters
-     * @param patientId to get attachments by patientId
-     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of patientAttachment view models in the body,
-     * @apiNote /api/setup/patients/123/attachments?encounterId=1,2,3 or /api/setup/patients/123/attachments?encounterId=1&encounterId=2&encounterId=3
-     **/
-    @GetMapping("/patients/attachments-list-by-PatientIdAndEncounterId/{patientId}")
-    public List<PatientAttachments> listPatientAttachments(@PathVariable Long patientId, @RequestParam(required = false) List<Long> encounterId) {
-
-        //LOG.debug("Listing attachments for patientId={} and encounterIds={}", patientId, encounterId);
-        return service.list(patientId, encounterId);
-    }
 }

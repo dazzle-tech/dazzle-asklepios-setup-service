@@ -98,35 +98,6 @@ public class PatientAttachmentsService {
     public List<PatientAttachments> list(Long patientId) {
         return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
     }
-    public List<PatientAttachments> list(Long patientId,List<Long> encounterId) {
-       // LOG.debug("list patient attachments for patientId={}", patientId);
-
-        // 1. Get patient-level attachments
-        List<PatientAttachments> patientAttachments = repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
-        // 2. Get encounter-level attachments from EncounterAttachmentsService
-        List<EncounterAttachments> encounterAttachments = encounterAttachmentsService.list(encounterId);
-        // 3. Map EncounterAttachments → PatientAttachments
-        List<PatientAttachments> encounterAsPatientAttachments = encounterAttachments.stream()
-                .map(ea -> PatientAttachments.builder()
-                        .patientId(patientId)
-                        .filename(ea.getFilename())
-                        .mimeType(ea.getMimeType())
-                        .sizeBytes(ea.getSizeBytes())
-                        .type(ea.getType())
-                        .details(ea.getDetails())
-                        .spaceKey(ea.getSpaceKey())
-                       // .source(ea.getSource() != null ? ea.getSource().name() : null)
-                        .build()
-                ).toList();
-
-        // 5. Merge both lists
-        List<PatientAttachments> combined = new ArrayList<>(patientAttachments);
-        combined.addAll(encounterAsPatientAttachments);
-        // 6. Sort by createdDate desc
-        combined.sort(Comparator.comparing(PatientAttachments::getCreatedDate).reversed());
-
-        return combined;
-    }
 
     public DownloadTicket downloadUrl(Long id) {
         PatientAttachments patientAttachments = repo.findActiveById(id).orElseThrow();
