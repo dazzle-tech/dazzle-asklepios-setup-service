@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.web.rest.vm.attachment.Encounter;
+package com.dazzle.asklepios.web.rest.vm.attachment.encounter;
 
 import com.dazzle.asklepios.domain.EncounterAttachments;
 import jakarta.validation.constraints.Size;

@@ -5,7 +5,7 @@ import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.attachment.Encounter.UploadEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -13,7 +13,6 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.ByteArrayInputStream;
-import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collections;

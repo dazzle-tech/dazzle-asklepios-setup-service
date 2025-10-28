@@ -6,7 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.attachment.Encounter.UploadEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

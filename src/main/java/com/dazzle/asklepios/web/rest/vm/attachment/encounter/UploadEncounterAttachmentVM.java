@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.web.rest.vm.attachment.Encounter;
+package com.dazzle.asklepios.web.rest.vm.attachment.encounter;
 import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import jakarta.validation.constraints.NotNull;

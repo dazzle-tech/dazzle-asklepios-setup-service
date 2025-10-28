@@ -6,9 +6,9 @@ import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.service.AttachmentStorageService;
 import com.dazzle.asklepios.service.EncounterAttachmentsService;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.attachment.Encounter.UploadEncounterAttachmentResponseVM;
-import com.dazzle.asklepios.web.rest.vm.attachment.Encounter.UpdateEncounterAttachmentVM;
-import com.dazzle.asklepios.web.rest.vm.attachment.Encounter.UploadEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UpdateEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
