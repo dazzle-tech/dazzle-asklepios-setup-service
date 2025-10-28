@@ -68,10 +68,6 @@ public class AgeGroup extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name = "to_age_unit")
     private AgeUnit toAgeUnit;
 
-    @NotNull
-    @Column(name = "is_active")
-    private Boolean isActive;
-
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;

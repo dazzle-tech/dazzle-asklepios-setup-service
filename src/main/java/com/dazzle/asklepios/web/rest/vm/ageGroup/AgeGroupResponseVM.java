@@ -14,7 +14,6 @@ public record AgeGroupResponseVM(
         BigDecimal toAge,
         AgeUnit fromAgeUnit,
         AgeUnit toAgeUnit,
-        Boolean isActive,
         Long facilityId
 ) implements Serializable {
 
@@ -26,7 +25,6 @@ public record AgeGroupResponseVM(
                 entity.getToAge(),
                 entity.getFromAgeUnit(),
                 entity.getToAgeUnit(),
-                entity.getIsActive(),
                 entity.getFacility() != null ? entity.getFacility().getId() : null
         );
     }

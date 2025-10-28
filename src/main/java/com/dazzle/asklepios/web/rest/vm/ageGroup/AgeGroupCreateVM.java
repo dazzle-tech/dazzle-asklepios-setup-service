@@ -16,8 +16,7 @@ public record AgeGroupCreateVM(
         @NotNull @PositiveOrZero BigDecimal fromAge,
         @NotNull @PositiveOrZero BigDecimal toAge,
         @NotNull AgeUnit fromAgeUnit,
-        @NotNull AgeUnit toAgeUnit,
-        Boolean isActive
+        @NotNull AgeUnit toAgeUnit
 ) implements Serializable {
 
     public static AgeGroupCreateVM ofEntity(AgeGroup entity) {
@@ -26,8 +25,7 @@ public record AgeGroupCreateVM(
                 entity.getFromAge(),
                 entity.getToAge(),
                 entity.getFromAgeUnit(),
-                entity.getToAgeUnit(),
-                entity.getIsActive()
+                entity.getToAgeUnit()
         );
     }
 }

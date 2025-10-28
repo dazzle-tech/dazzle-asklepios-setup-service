@@ -29,11 +29,11 @@ public class AgeGroupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AgeGroupService.class);
     private final AgeGroupRepository ageGroupRepository;
-    private final EntityManager em;
+    private final EntityManager entityManager;
 
-    public AgeGroupService(AgeGroupRepository ageGroupRepository, EntityManager em) {
+    public AgeGroupService(AgeGroupRepository ageGroupRepository, EntityManager entityManager) {
         this.ageGroupRepository = ageGroupRepository;
-        this.em = em;
+        this.entityManager = entityManager;
     }
 
     public AgeGroup create(Long facilityId, AgeGroup incoming) {
@@ -50,7 +50,6 @@ public class AgeGroupService {
                 .toAge(incoming.getToAge())
                 .fromAgeUnit(incoming.getFromAgeUnit())
                 .toAgeUnit(incoming.getToAgeUnit())
-                .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .facility(refFacility(facilityId))
                 .build();
         try {
@@ -95,7 +94,6 @@ public class AgeGroupService {
         existing.setToAge(incoming.getToAge());
         existing.setFromAgeUnit(incoming.getFromAgeUnit());
         existing.setToAgeUnit(incoming.getToAgeUnit());
-        existing.setIsActive(incoming.getIsActive());
         try {
             AgeGroup updated = ageGroupRepository.saveAndFlush(existing);
             LOG.info("Successfully updated AgeGroup id={} (label='{}')", updated.getId(), updated.getAgeGroup());
@@ -159,20 +157,35 @@ public class AgeGroupService {
         return ageGroupRepository.findById(id);
     }
 
-    public Optional<AgeGroup> toggleIsActive(Long id, Long facilityId) {
-        LOG.info("Toggling isActive for AgeGroup id={} facilityId={}", id, facilityId);
-        return ageGroupRepository.findById(id)
-                .filter(ag -> ag.getFacility() != null && ag.getFacility().getId().equals(facilityId))
-                .map(entity -> {
-                    entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
-                    entity.setLastModifiedDate(Instant.now());
-                    AgeGroup saved = ageGroupRepository.save(entity);
-                    LOG.info("AgeGroup id={} active status changed to {}", id, saved.getIsActive());
-                    return saved;
-                });
+    public boolean delete(Long id) {
+        LOG.debug("Request to delete AgeGroup : {}", id);
+
+        if (id == null) {
+            LOG.warn("Delete request failed — AgeGroup id is null");
+            return false;
+        }
+
+        if (!ageGroupRepository.existsById(id)) {
+            LOG.warn("Delete request failed — AgeGroup not found with id={}", id);
+            return false;
+        }
+
+        try {
+            ageGroupRepository.deleteById(id);
+            LOG.info("Successfully deleted AgeGroup with id={}", id);
+            return true;
+        } catch (DataIntegrityViolationException | JpaSystemException ex) {
+            Throwable root = getRootCause(ex);
+            String message = (root != null ? root.getMessage() : ex.getMessage());
+            LOG.error("Database constraint violation while deleting AgeGroup id={}: {}", id, message, ex);
+            return false;
+        } catch (Exception ex) {
+            LOG.error("Unexpected error occurred while deleting AgeGroup id={}: {}", id, ex.getMessage(), ex);
+            return false;
+        }
     }
 
     private Facility refFacility(Long facilityId) {
-        return em.getReference(Facility.class, facilityId);
+        return entityManager.getReference(Facility.class, facilityId);
     }
 }

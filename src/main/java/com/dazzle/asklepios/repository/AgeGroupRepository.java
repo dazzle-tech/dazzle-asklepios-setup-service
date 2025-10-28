@@ -21,4 +21,5 @@ public interface AgeGroupRepository extends JpaRepository<AgeGroup, Long> {
 
     Page<AgeGroup> findByFacility_IdAndFromAge(Long facilityId, BigDecimal fromAge, Pageable pageable);
 
-    Page<AgeGroup> findByFacility_IdAndToAge(Long facilityId, BigDecimal toAge, Pageable pageable);}
+    Page<AgeGroup> findByFacility_IdAndToAge(Long facilityId, BigDecimal toAge, Pageable pageable);
+     }

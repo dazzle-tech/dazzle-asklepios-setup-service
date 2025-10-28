@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -56,7 +57,6 @@ public class AgeGroupController {
                 .toAge(vm.toAge())
                 .fromAgeUnit(vm.fromAgeUnit())
                 .toAgeUnit(vm.toAgeUnit())
-                .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
         AgeGroup created = ageGroupService.create(facilityId, toCreate);
@@ -82,7 +82,6 @@ public class AgeGroupController {
         patch.setToAge(vm.toAge());
         patch.setFromAgeUnit(vm.fromAgeUnit());
         patch.setToAgeUnit(vm.toAgeUnit());
-        patch.setIsActive(vm.isActive());
         patch.setLastModifiedBy(vm.lastModifiedBy());
 
         return ageGroupService.update(id, facilityId, patch)
@@ -159,17 +158,20 @@ public class AgeGroupController {
                 HttpStatus.OK
         );
     }
+    @DeleteMapping("/age-group/{id}")
+    public ResponseEntity<Void> deleteAgeGroup(@PathVariable Long id) {
+        LOG.debug("REST request to delete AgeGroup id={}", id);
 
-    // ====================== TOGGLE ACTIVE ======================
-    @PatchMapping("/age-group/{id}/toggle-active")
-    public ResponseEntity<AgeGroupResponseVM> toggleAgeGroupActiveStatus(
-            @PathVariable Long id,
-            @RequestParam Long facilityId
-    ) {
-        LOG.debug("REST toggle AgeGroup isActive id={} facilityId={}", id, facilityId);
-        return ageGroupService.toggleIsActive(id, facilityId)
-                .map(AgeGroupResponseVM::ofEntity)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        boolean deleted = ageGroupService.delete(id);
+
+        if (deleted) {
+            LOG.info("Successfully deleted AgeGroup id={}", id);
+            return ResponseEntity.noContent().build(); 
+        } else {
+            LOG.warn("Failed to delete AgeGroup id={}, not found or constraint violation", id);
+            return ResponseEntity.notFound().build();
+        }
     }
+
+
 }

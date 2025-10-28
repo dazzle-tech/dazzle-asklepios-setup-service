@@ -16,7 +16,6 @@ public record AgeGroupUpdateVM(
         @NotNull @PositiveOrZero BigDecimal toAge,
         @NotNull AgeUnit fromAgeUnit,
         @NotNull AgeUnit toAgeUnit,
-        @NotNull Boolean isActive,
         String lastModifiedBy,
         @NotNull Long facilityId
 ) implements Serializable {
@@ -29,7 +28,6 @@ public record AgeGroupUpdateVM(
                 entity.getToAge(),
                 entity.getFromAgeUnit(),
                 entity.getToAgeUnit(),
-                entity.getIsActive(),
                 entity.getLastModifiedBy(),
                 entity.getFacility() != null ? entity.getFacility().getId() : null
         );
