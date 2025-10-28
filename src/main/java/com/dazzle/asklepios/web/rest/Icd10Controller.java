@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -48,7 +49,19 @@ public class Icd10Controller {
         return new ResponseEntity<>(list.getContent(), headers, HttpStatus.OK);
     }
 
+    @GetMapping("/icd10/search/{keyword}")
+    public ResponseEntity<List<Icd10Code>> searchIcd10(
+            @PathVariable String keyword,
+            @ParameterObject Pageable pageable) {
 
+        LOG.debug("REST search ICD10 keyword='{}', page={}", keyword, pageable);
+
+        Page<Icd10Code> result = icd10Service.searchByCodeOrDescription(keyword, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), result
+        );
+        return new ResponseEntity<>(result.getContent(), headers, HttpStatus.OK);
+    }
 
 
 }
