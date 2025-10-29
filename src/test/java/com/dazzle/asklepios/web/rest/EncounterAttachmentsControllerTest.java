@@ -87,7 +87,7 @@ class EncounterAttachmentsControllerTest {
         e.setId(5L);
         e.setEncounterId(77L);
         e.setFilename("a.pdf");
-        when(service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.NURSE_STATION_ATTACHMENT))
+        when(service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.NURSE_STATION_ATTACHMENT,null))
                 .thenReturn(List.of(e));
 
         mockMvc.perform(get("/api/setup/encounters/attachments/by-encounterIdAndSource/{encounterId}/{source}", 77L, "NURSE_STATION_ATTACHMENT"))
