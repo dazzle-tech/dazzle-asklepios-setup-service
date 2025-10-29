@@ -93,9 +93,13 @@ public class EncounterAttachmentsService {
      LOG.debug("list encounter attachments {}", encounterId);
         return repo.findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId);
     }
-    public List<EncounterAttachments> listByEncounterIdAndSource(Long encounterId,EncounterAttachmentSource source) {
-        return repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId,source);
+    public List<EncounterAttachments> listByEncounterIdAndSource(Long encounterId, EncounterAttachmentSource source, Long sourceId) {
+        if (sourceId == null) {
+            return repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId, source);
+        }
+        return repo.findByEncounterIdAndSourceAndSourceIdAndDeletedAtIsNullOrderByCreatedDateDesc(encounterId, source, sourceId);
     }
+
 
     public DownloadTicket downloadUrl(Long id) {
         LOG.debug("download encounter attachments", id);

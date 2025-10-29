@@ -79,15 +79,15 @@ public class EncounterAttachmentsController {
     }
 
     /**
-     * {@Code: GET/ encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}: List active attachments for an encounter by source.}
-     * recieve all files related to the encounter and source
+     * {@Code: GET/ encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}: List active attachments for an encounter by source and sourceId.}
+     * recieve all files related to the encounter and source and source Id
      * @param encounterId to get attachments by encounter
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,
      **/
     @GetMapping("/encounters/attachments/by-encounterIdAndSource/{encounterId}/{source}")
-    public List<EncounterAttachments> list(@PathVariable Long encounterId, @PathVariable EncounterAttachmentSource source) {
-        LOG.debug("Listing encounter attachments by encounterId: {} and source : {}", encounterId,source);
-        return service.listByEncounterIdAndSource(encounterId, source);
+    public List<EncounterAttachments> list(@PathVariable Long encounterId, @PathVariable EncounterAttachmentSource source, @RequestParam(required = false) Long sourceId) {
+        LOG.debug("Listing encounter attachments by encounterId: {} and source : {} and source Id: {}", encounterId,source,sourceId);
+        return service.listByEncounterIdAndSource(encounterId, source,sourceId);
     }
 
     /**

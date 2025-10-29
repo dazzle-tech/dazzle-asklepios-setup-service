@@ -14,8 +14,8 @@ import java.util.Optional;
 @Repository
 public interface EncounterAttachementsRepository extends JpaRepository<EncounterAttachments, Long> {
     List<EncounterAttachments> findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(List<Long> encounterId);
-
     List<EncounterAttachments> findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source);
+    List<EncounterAttachments> findByEncounterIdAndSourceAndSourceIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source, Long sourceId);
 
     @Query("select e from EncounterAttachments e where e.id = :id and e.deletedAt is null")
     Optional<EncounterAttachments> findActiveById(@Param("id") Long id);
