@@ -214,7 +214,7 @@ when(vm.sourceId()).thenReturn(734845L);
         when(repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT))
                 .thenReturn(List.of());
 
-        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT,null);
 
         assertThat(out).isEmpty();
         verify(repo).findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
