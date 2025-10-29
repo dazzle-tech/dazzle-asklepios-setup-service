@@ -1,7 +1,9 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Language;
+import com.dazzle.asklepios.domain.LanguageTranslation;
 import com.dazzle.asklepios.repository.LanguageRepository;
+import com.dazzle.asklepios.repository.LanguageTranslationRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +23,11 @@ public class LanguageService {
     private static final Logger LOG = LoggerFactory.getLogger(LanguageService.class);
 
     private final LanguageRepository languageRepository;
+    private final LanguageTranslationRepository languageTranslationRepository;
 
-    public LanguageService(LanguageRepository languageRepository) {
+    public LanguageService(LanguageRepository languageRepository, LanguageTranslationRepository languageTranslationRepository) {
         this.languageRepository = languageRepository;
+        this.languageTranslationRepository = languageTranslationRepository;
     }
 
     public Language create(Language vm) {
@@ -43,7 +47,9 @@ public class LanguageService {
         entity.setDetails(vm.getDetails());
 
         try {
-            return languageRepository.save(entity);
+            Language saved = languageRepository.save(entity);
+            addDefaultDictionary(saved);
+            return saved;
         } catch (DataIntegrityViolationException ex) {
              throw new BadRequestAlertException("Invalid Language data" ,  "language", "notfound");
                      }
@@ -89,5 +95,26 @@ public class LanguageService {
         // NOTE: if translations reference this language via FK, the DB may block deletes unless ON DELETE CASCADE.
         languageRepository.deleteById(id);
         return true;
+    }
+
+    public void addDefaultDictionary(Language vm){
+        List<LanguageTranslation> en = languageTranslationRepository.findAllByLangKey("en");
+        if (en.isEmpty()) {
+            LOG.warn("No EN translations found; nothing to clone for {}", vm);
+            return;
+        }
+
+        List<LanguageTranslation> clones = new java.util.ArrayList<>(en.size());
+        for (LanguageTranslation src : en) {
+            LanguageTranslation t = new LanguageTranslation();
+            t.setLangKey(vm.getLangKey());
+            t.setTranslationKey(src.getTranslationKey());
+            t.setTranslationText(src.getTranslationText());
+            clones.add(t);
+        }
+
+        languageTranslationRepository.saveAll(clones);
+        LOG.info("Cloned {} translations from EN to {}", clones.size(), vm.getLangKey());
+
     }
 }

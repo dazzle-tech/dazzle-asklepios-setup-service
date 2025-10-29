@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Repository
     public interface Icd10Repository extends JpaRepository<Icd10Code, Long> {
-        Optional<Icd10Code> findByCode(String code);
+    Optional<Icd10Code> findByCode(String code);
     Page<Icd10Code> findByCodeContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String code, String description, Pageable pageable);
 
 }

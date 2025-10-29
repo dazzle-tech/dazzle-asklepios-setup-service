@@ -12,6 +12,4 @@ public interface LanguageRepository extends JpaRepository<Language, Long> {
     Optional<Language> findByLangKey(String langKey);
 
     boolean existsByLangKey(String langKey);
-
-    void deleteByLangKey(String langKey);
 }
