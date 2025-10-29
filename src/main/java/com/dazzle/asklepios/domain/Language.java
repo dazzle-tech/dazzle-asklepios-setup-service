@@ -1,18 +1,15 @@
 package com.dazzle.asklepios.domain;
 
-import jakarta.persistence.Entity;
+import com.dazzle.asklepios.domain.enumeration.Direction;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import jakarta.persistence.Column;
 
 @Entity
 @Getter
@@ -37,11 +34,10 @@ public class Language {
     @Column(name = "lang_name", length = 100, nullable = false)
     private String langName;
 
-    // Use string to match your Liquibase varchar(10). Accepts values like "LTR" / "RTL".
-    @NotBlank
-    @Size(max = 10)
-    @Column(name = "direction", length = 10, nullable = false)
-    private String direction;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "direction")
+    private Direction direction;
 
     @Size(max = 255)
     @Column(name = "details", length = 255)

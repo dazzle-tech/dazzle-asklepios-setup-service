@@ -65,5 +65,6 @@ public enum MedicalSheets {
     SOFA,
     MEDICAL_CALCULATORS,
     CPOE_RESULTS_MANAGER,
-    ICU
+    ICU,
+
 }
