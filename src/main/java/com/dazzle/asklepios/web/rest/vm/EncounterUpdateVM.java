@@ -16,10 +16,10 @@ import java.util.function.Function;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EncounterUpdateVM(
-        @NotNull Long     id,           // الـID ضروري للتحديث
+        @NotNull Long     id,
         @NotNull Long     patientId,
-        @NotNull Resource resource,
-        @NotNull Visit    visit,
+        @NotNull Resource resourceType,
+        @NotNull Visit    visitType,
         String            age,
         Status            status
 ) implements Serializable {
@@ -29,35 +29,11 @@ public record EncounterUpdateVM(
         return new EncounterUpdateVM(
                 encounter.getId(),                                               // إضافة الـID
                 encounter.getPatient() != null ? encounter.getPatient().getId() : null,
-                encounter.getResource(),
-                encounter.getVisit(),
+                encounter.getResourceType(),
+                encounter.getVisitType(),
                 encounter.getAge(),
                 encounter.getStatus()
         );
     }
 
-//    /**
-//     * يطبّق قيم الـVM على Entity موجود (أو جديد) باستثناء ربط الـPatient.
-//     * ربط الـPatient يتم عبر الـloader (عادةً: patientRepository::getReferenceById).
-//     */
-//    public Encounter applyTo(Encounter target, Function<Long, Patient> patientLoader) {
-//        if (target == null) target = new Encounter();
-//
-//        // اربط الـID إذا كان الـtarget جديد
-//        if (target.getId() == null) {
-//            target.setId(id);
-//        }
-//
-//        // اربط الـPatient عبر الـloader لتجنب SELECT إضافي
-//        if (patientId != null) {
-//            target.setPatient(patientLoader.apply(patientId));
-//        }
-//
-//        target.setAge(age);
-//        target.setStatus(status);
-//        target.setResource(resource);
-//        target.setVisit(visit);
-//
-//        return target;
-//    }
 }

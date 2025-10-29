@@ -19,10 +19,11 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
     List<Patient> findByLastNameContainingIgnoreCase(String lastName);
     List<Patient> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
             String firstName, String lastName, String email);
-
     Optional<Patient> findByEmail(String email);
     boolean existsByEmail(String email);
 
     List<Patient> findByDateOfBirth(LocalDate date);
     List<Patient> findByDateOfBirthBetween(LocalDate from, LocalDate to);
+
+    Long id(Long id);
 }

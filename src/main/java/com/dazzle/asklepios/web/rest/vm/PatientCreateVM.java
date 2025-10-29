@@ -18,7 +18,7 @@ public record PatientCreateVM(
         @NotEmpty String    firstName,
         @NotEmpty String    lastName,
         LocalDate           dateOfBirth,
-        @NotEmpty Gender gender,
+        @NotNull Gender gender,
         @NotEmpty @Email String email
 ) implements Serializable {
 
@@ -33,23 +33,4 @@ public record PatientCreateVM(
         );
     }
 
-//    /**
-//     * يطبّق قيم الـVM على Entity موجود (أو جديد).
-//     */
-//    public Patient applyTo(Patient target) {
-//        if (target == null) target = new Patient();
-//
-//        target.setFirstName(firstName);
-//        target.setLastName(lastName);
-//        target.setDateOfBirth(dateOfBirth);
-//        target.setGender(gender);
-//        target.setEmail(email);
-//
-//        return target;
-//    }
-//
-//    /** تحويل مباشر إلى Entity جديد */
-//    public Patient toEntity() {
-//        return applyTo(null);
-//    }
 }

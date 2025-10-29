@@ -12,5 +12,5 @@ public interface EncounterRepository extends JpaRepository<Encounter, Long> {
 
     List<Encounter> findByStatus(Status status);
     List<Encounter> findByPatient_Id(Long patientId);
-    List<Encounter> findByResource(Resource resource);
+    List<Encounter> findByResourceType(Resource resource);
 }

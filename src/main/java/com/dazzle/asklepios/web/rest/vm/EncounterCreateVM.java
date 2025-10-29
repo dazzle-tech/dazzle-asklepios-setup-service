@@ -7,9 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.Status;
 import com.dazzle.asklepios.domain.enumeration.Visit;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
-
 import java.io.Serializable;
-import java.util.function.Function;
 
 /**
  * View Model for creating an Encounter via REST.
@@ -17,9 +15,9 @@ import java.util.function.Function;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record EncounterCreateVM(
-        @NotNull Long     patientId,
-        @NotNull Resource resource,
-        @NotNull Visit    visit,
+
+        @NotNull Resource resourceType,
+        @NotNull Visit    visitType,
         String            age,
         Status            status
 ) implements Serializable {
@@ -27,30 +25,12 @@ public record EncounterCreateVM(
     /** تحويل من Entity إلى VM (للاستخدام في الردود لو حبيت) */
     public static EncounterCreateVM ofEntity(Encounter encounter) {
         return new EncounterCreateVM(
-                encounter.getPatient() != null ? encounter.getPatient().getId() : null,
-                encounter.getResource(),
-                encounter.getVisit(),
+
+                encounter.getResourceType(),
+                encounter.getVisitType(),
                 encounter.getAge(),
                 encounter.getStatus()
         );
     }
 
-//    /**
-//     * يطبّق قيم الـVM على Entity موجود (أو جديد) باستثناء ربط الـPatient.
-//     * ربط الـPatient يتم عبر الـloader (عادةً: patientRepository::getReferenceById).
-//     */
-//    public Encounter applyTo(Encounter target, Function<Long, Patient> patientLoader) {
-//        if (target == null) target = new Encounter();
-//
-//        // اربط الـPatient عبر الـloader لتجنب SELECT إضافي
-//        if (patientId != null) {
-//            target.setPatient(patientLoader.apply(patientId));
-//        }
-//
-//        target.setAge(age);
-//        target.setStatus(status);
-//        target.setResource(resource);
-//        target.setVisit(visit);
-//        return target;
-//    }
 }

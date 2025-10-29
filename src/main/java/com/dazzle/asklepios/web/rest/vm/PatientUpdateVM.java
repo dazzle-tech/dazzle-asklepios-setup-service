@@ -34,21 +34,4 @@ public record PatientUpdateVM(
                 patient.getEmail()
         );
     }
-//
-//    /** تطبيق التحديثات على Entity موجود */
-//    public Patient applyTo(Patient target) {
-//        if (target == null) target = new Patient();
-//
-//        if (target.getId() == null) {
-//            target.setId(id);
-//        }
-//
-//        target.setFirstName(firstName);
-//        target.setLastName(lastName);
-//        target.setDateOfBirth(dateOfBirth);
-//        target.setGender(gender);
-//        target.setEmail(email);
-//
-//        return target;
-//    }
 }

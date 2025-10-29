@@ -45,9 +45,9 @@ public class Encounter extends AbstractAuditingEntity<Long> implements Serializa
 
     @Enumerated(EnumType.STRING)
     @Column(name = "resource_type", length = 80)
-    private Resource resource;
+    private Resource resourceType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "visit_type", length = 80)
-    private Visit visit;
+    private Visit visitType;
 }

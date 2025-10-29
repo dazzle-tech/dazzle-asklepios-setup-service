@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Patient;
 import com.dazzle.asklepios.repository.PatientRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -11,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,24 +21,36 @@ import java.util.Optional;
 public class PatientService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PatientService.class);
+
     private final PatientRepository patientRepository;
 
     public PatientService(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
 
-    public Patient create(Patient patient) {
-        LOG.debug("Request to create Patient : {}", patient);
+    public Patient create(Patient incoming) {
+        LOG.debug("Request to create Patient : {}", incoming);
 
-        if (patient.getEmail() == null || patient.getEmail().isBlank()) {
+        if (incoming == null) {
+            throw new BadRequestAlertException("Patient payload is required", "patient", "patient.required");
+        }
+        if (incoming.getEmail() == null || incoming.getEmail().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
         }
-        if (patientRepository.existsByEmail(patient.getEmail())) {
-            throw new BadRequestAlertException("Email already in use: " + patient.getEmail(), "patient", "emailexists");
+        if (patientRepository.existsByEmail(incoming.getEmail())) {
+            throw new BadRequestAlertException("Email already in use: " + incoming.getEmail(), "patient", "emailexists");
         }
-
+        Patient patientToSave = Patient.builder()
+                .firstName(incoming.getFirstName())
+                .lastName(incoming.getLastName())
+                .email(incoming.getEmail())
+                .dateOfBirth(incoming.getDateOfBirth())
+                .gender(incoming.getGender())
+                    .build();
         try {
-            return patientRepository.saveAndFlush(patient);
+            Patient saved = patientRepository.saveAndFlush(patientToSave);
+            LOG.info("Successfully created Patient id={} email='{}'", saved.getId(), saved.getEmail());
+            return saved;
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage());
@@ -44,13 +58,13 @@ public class PatientService {
 
             LOG.error("DB constraint violation while creating patient: {}", message, ex);
 
-            if (msg.contains("uk_encounter_patient_visit") ||        // اسم القيد اللي أضفته على patient.email
+            if (msg.contains("uk_encounter_patient_visit") ||
                     msg.contains("unique") ||
                     msg.contains("duplicate key") ||
                     msg.contains("duplicate entry")) {
 
                 throw new BadRequestAlertException(
-                        "Email already in use: " + patient.getEmail(),
+                        "Email already in use: " + incoming.getEmail(),
                         "patient",
                         "emailexists"
                 );
@@ -64,43 +78,38 @@ public class PatientService {
         }
     }
 
-    /** تحديث جزئي/كامل بناءً على الحقول غير-null */
     public Optional<Patient> update(Long id, Patient patch) {
         LOG.debug("Request to update Patient id={} with {}", id, patch);
 
-        Patient existing = patientRepository.findById(id)
-                .orElseThrow(() -> new BadRequestAlertException(
-                        "Patient not found with id " + id, "patient", "notfound"));
-
-        if (patch.getEmail() != null && !patch.getEmail().equalsIgnoreCase(existing.getEmail())) {
-            if (patientRepository.existsByEmail(patch.getEmail())) {
-                throw new BadRequestAlertException("Email already in use: " + patch.getEmail(), "patient", "emailexists");
-            }
-            existing.setEmail(patch.getEmail());
+        if (patch == null) {
+            throw new BadRequestAlertException("Patient payload is required", "patient", "patient.required");
         }
 
-        if (patch.getFirstName()     != null) existing.setFirstName(patch.getFirstName());
-        if (patch.getLastName()      != null) existing.setLastName(patch.getLastName());
-        if (patch.getDateOfBirth()   != null) existing.setDateOfBirth(patch.getDateOfBirth());
-        if (patch.getGender()        != null) existing.setGender(patch.getGender());
-        if (patch.getLastModifiedBy()!= null) existing.setLastModifiedBy(patch.getLastModifiedBy());
-
+        Patient existing = patientRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Patient not found with id " + id, "patient", "notfound"));
+        existing.setFirstName(patch.getFirstName());
+        existing.setLastName(patch.getLastName());
+        existing.setEmail(patch.getEmail());
+        existing.setDateOfBirth(patch.getDateOfBirth());
+        existing.setGender(patch.getGender());
         try {
-            return Optional.of(patientRepository.saveAndFlush(existing));
+            Patient updated = patientRepository.saveAndFlush(existing);
+            LOG.info("Successfully updated patient id={} (email='{}')", updated.getId(), updated.getEmail());
+            return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage());
             String msg = (message == null ? "" : message).toLowerCase();
 
-            LOG.error("DB constraint violation while updating patient id={}: {}", id, message, ex);
+            LOG.error("Database constraint violation while updating patient id={}: {}", id, message, ex);
 
-            if (msg.contains("uk_encounter_patient_visit") ||
-                    msg.contains("unique") ||
-                    msg.contains("duplicate key") ||
-                    msg.contains("duplicate entry")) {
-
+            if (msg.contains("uk_patient_email")
+                    || msg.contains("unique")
+                    || msg.contains("duplicate key")
+                    || msg.contains("duplicate entry")) {
                 throw new BadRequestAlertException(
-                        "Email already in use: " + existing.getEmail(),
+                        "Email already in use: " + (patch.getEmail() != null ? patch.getEmail() : existing.getEmail()),
                         "patient",
                         "emailexists"
                 );
@@ -139,15 +148,5 @@ public class PatientService {
     public Optional<Patient> findByEmail(String email) {
         LOG.debug("Request to get Patient by email : {}", email);
         return patientRepository.findByEmail(email);
-    }
-
-    /* ================= Helpers ================= */
-
-    private static Throwable getRootCause(Throwable t) {
-        Throwable result = t;
-        while (result != null && result.getCause() != null && result.getCause() != result) {
-            result = result.getCause();
-        }
-        return result;
     }
 }
