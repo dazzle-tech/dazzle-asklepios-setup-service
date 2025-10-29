@@ -62,4 +62,7 @@ public class EncounterAttachments extends AbstractAuditingEntity<Long> implement
     @Enumerated(EnumType.STRING)
     private EncounterAttachmentSource source;
 
+    @Column(name = "source_id", nullable = false)
+    private long sourceId;
+
 }

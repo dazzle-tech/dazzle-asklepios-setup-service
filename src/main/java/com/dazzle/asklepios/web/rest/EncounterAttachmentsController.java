@@ -55,14 +55,13 @@ public class EncounterAttachmentsController {
      *         or {@code 400 (Bad Request)} if the payload is invalid (mismatch size and type).
      **/
     @PostMapping(value = "/encounters/{encounterId}/attachments", consumes = "multipart/form-data")
-    public List<UploadEncounterAttachmentResponseVM> upload(@PathVariable Long encounterId, @ModelAttribute @Valid UploadEncounterAttachmentVM uploadEncounterAttachmentVM) {
+    public UploadEncounterAttachmentResponseVM upload(@PathVariable Long encounterId, @ModelAttribute @Valid UploadEncounterAttachmentVM uploadEncounterAttachmentVM) {
        LOG.debug("Uploading encounter attachment: {}", uploadEncounterAttachmentVM);
-        List<EncounterAttachments> saved = service.upload(encounterId, uploadEncounterAttachmentVM);
-        return saved.stream().map(entity -> {
-            String safeFileName = getSafeFileName(entity.getSpaceKey());
-            String downloadUrl = storage.presignGet(entity.getSpaceKey(), safeFileName).url().toString();
-            return UploadEncounterAttachmentResponseVM.ofEntity(entity, downloadUrl);
-        }).toList();
+       EncounterAttachments saved = service.upload(encounterId, uploadEncounterAttachmentVM);
+        String safeFileName = getSafeFileName(saved.getSpaceKey());
+        String downloadUrl = storage.presignGet(saved.getSpaceKey(), safeFileName).url().toString();
+
+        return UploadEncounterAttachmentResponseVM.ofEntity(saved, downloadUrl);
     }
     private static String getSafeFileName(String key) {
         int i = key.lastIndexOf('/');

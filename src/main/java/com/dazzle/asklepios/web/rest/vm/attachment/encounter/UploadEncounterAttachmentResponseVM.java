@@ -15,7 +15,9 @@ public record UploadEncounterAttachmentResponseVM(
         String type,
         String details,
         EncounterAttachmentSource source,
+        long sourceId,
         String downloadUrl
+
 ) implements Serializable {
 
     public static UploadEncounterAttachmentResponseVM ofEntity(EncounterAttachments attachment, String downloadUrl) {
@@ -27,6 +29,7 @@ public record UploadEncounterAttachmentResponseVM(
                 attachment.getType(),
                 attachment.getDetails(),
                 attachment.getSource(),
+                attachment.getSourceId(),
                 downloadUrl
         );
     }

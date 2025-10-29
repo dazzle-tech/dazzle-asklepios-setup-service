@@ -39,46 +39,50 @@ public class EncounterAttachmentsService {
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
     public record DownloadTicket(String url, int expiresInSeconds) {}
-    public List<EncounterAttachments> upload(Long encounterId, UploadEncounterAttachmentVM uploadEncounterAttachmentVM) {
-        LOG.debug("upload encounter attachments {}", uploadEncounterAttachmentVM);
+    public EncounterAttachments upload(Long encounterId, UploadEncounterAttachmentVM vm) {
+        LOG.debug("upload encounter attachment {}", vm);
+
+        MultipartFile f = vm.file();
+        if (f == null || f.isEmpty()) {
+            throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
+        }
+
         Instant now = Instant.now();
-        return uploadEncounterAttachmentVM.files().stream().map(f -> {
-            String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
-            long size = f.getSize();
+        String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
+        long size = f.getSize();
 
-            if (!props.getAllowed().contains(mime)) {
-                throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
-            }
-            if (size > props.getMaxBytes()) {
-                throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
-            }
+        if (!props.getAllowed().contains(mime)) {
+            throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
+        }
+        if (size > props.getMaxBytes()) {
+            throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
+        }
 
-            String originalName = getOriginalName(f);
-            String safeFileName = UUID.randomUUID() + "_" + originalName;
-            String key = "encounters/" + encounterId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
+        String originalName = getOriginalName(f);
+        String safeFileName = UUID.randomUUID() + "_" + originalName;
+        String key = "encounters/" + encounterId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
 
-            try {
-                LOG.debug("store encounter attachments to spaces");
-                storage.put(key, mime, size, f.getInputStream());
-            } catch (Exception e) {
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
+        try {
+            LOG.debug("store encounter attachment to spaces");
+            storage.put(key, mime, size, f.getInputStream());
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
+        }
 
-            }
+        EncounterAttachments entity = EncounterAttachments.builder()
+                .encounterId(encounterId)
+                .spaceKey(key)
+                .filename(originalName)
+                .mimeType(mime)
+                .sizeBytes(size)
+                .type(vm.type())
+                .details(vm.details())
+                .source(vm.source())
+                .sourceId(vm.sourceId())
+                .build();
 
-            EncounterAttachments entity = EncounterAttachments.builder()
-                    .encounterId(encounterId)
-                    .spaceKey(key)
-                    .filename(originalName)
-                    .mimeType(mime)
-                    .sizeBytes(size)
-                    .type(uploadEncounterAttachmentVM.type())
-                    .details(uploadEncounterAttachmentVM.details())
-                    .source(uploadEncounterAttachmentVM.source())
-                    .build();
-
-            return repo.save(entity);
-        }).toList();}
-
+        return repo.save(entity);
+    }
     private static String getOriginalName(MultipartFile f) {
         String name = f.getOriginalFilename();
         if (name == null || name.isBlank()) return "file";

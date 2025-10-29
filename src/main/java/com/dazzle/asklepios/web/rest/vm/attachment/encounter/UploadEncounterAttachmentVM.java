@@ -15,15 +15,17 @@ public record UploadEncounterAttachmentVM(
         String type,
         String details,
         @NotNull EncounterAttachmentSource source,
-        @NotEmpty List<MultipartFile> files
+        @NotNull long sourceId,
+        @NotNull MultipartFile file
 ) implements Serializable {
 
-    public static UploadEncounterAttachmentVM ofEntity(EncounterAttachments attachment, List<MultipartFile> files) {
+    public static UploadEncounterAttachmentVM ofEntity(EncounterAttachments attachment, MultipartFile file) {
         return new UploadEncounterAttachmentVM(
                 attachment.getType(),
                 attachment.getDetails(),
                 attachment.getSource(),
-                files
+                attachment.getSourceId(),
+                file
         );
     }
 }

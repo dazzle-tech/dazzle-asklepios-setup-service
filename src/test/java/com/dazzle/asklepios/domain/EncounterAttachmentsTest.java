@@ -28,6 +28,7 @@ class EncounterAttachmentsTest {
                 .type("3154545")
                 .details("{\"note\":\"ok\"}")
                 .source(EncounterAttachmentSource.values()[0])
+                .sourceId(734845)
                 .build();
 
         assertThat(att.getId()).isEqualTo(9001L);
@@ -40,6 +41,7 @@ class EncounterAttachmentsTest {
         assertThat(att.getType()).isEqualTo("3154545");
         assertThat(att.getDetails()).isEqualTo("{\"note\":\"ok\"}");
         assertThat(att.getSource()).isNotNull();
+        assertThat(att.getSourceId()).isEqualTo(734845L);
     }
 
     @Test
@@ -52,6 +54,7 @@ class EncounterAttachmentsTest {
                 .mimeType("text/plain")
                 .sizeBytes(1L)
                 .source(EncounterAttachmentSource.values()[0])
+                .sourceId(734845)
                 .build();
 
         EncounterAttachments a2 = EncounterAttachments.builder()
@@ -62,6 +65,7 @@ class EncounterAttachmentsTest {
                 .mimeType("text/plain")
                 .sizeBytes(1L)
                 .source(EncounterAttachmentSource.values()[0])
+                .sourceId(734845)
                 .build();
 
         assertThat(a1).isEqualTo(a2);
@@ -80,6 +84,7 @@ class EncounterAttachmentsTest {
                 .type("3154545")
                 .details("scan")
                 .source(EncounterAttachmentSource.values()[0])
+                .sourceId(734845)
                 .build();
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -96,5 +101,6 @@ class EncounterAttachmentsTest {
         assertThat(copy.getType()).isEqualTo("3154545");
         assertThat(copy.getDetails()).isEqualTo("scan");
         assertThat(copy.getSource()).isNotNull();
+        assertThat(copy.getSourceId()).isEqualTo(734845L);
     }
 }

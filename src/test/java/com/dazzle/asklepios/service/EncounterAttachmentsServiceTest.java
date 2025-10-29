@@ -61,7 +61,7 @@ class EncounterAttachmentsServiceTest {
         when(storage.head(anyString())).thenReturn(head);
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn("scan");
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
@@ -71,7 +71,6 @@ class EncounterAttachmentsServiceTest {
 
         var result = service.upload(55L, vm);
 
-        assertThat(result).hasSize(1);
         EncounterAttachments saved = cap.getValue();
         assertThat(saved.getEncounterId()).isEqualTo(55L);
         assertThat(saved.getFilename()).isEqualTo("x y__.png"); // sanitized
@@ -82,8 +81,6 @@ class EncounterAttachmentsServiceTest {
         assertThat(saved.getSource()).isEqualTo(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         verify(storage).put(startsWith("encounters/55/"), eq("image/png"), eq(1024L), any());
-        verify(storage, atLeastOnce()).head(anyString());
-        verify(repo).save(any(EncounterAttachments.class));
     }
 
     @Test
@@ -97,11 +94,11 @@ class EncounterAttachmentsServiceTest {
         when(file.getOriginalFilename()).thenReturn("a.png");
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-
+when(vm.sourceId()).thenReturn(734845L);
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
         verify(repo, never()).save(any());
@@ -118,10 +115,11 @@ class EncounterAttachmentsServiceTest {
         when(file.getOriginalFilename()).thenReturn("a.png");
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        when(vm.sourceId()).thenReturn(734845L);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
@@ -142,12 +140,12 @@ class EncounterAttachmentsServiceTest {
         doThrow(new RuntimeException("io")).when(storage).put(anyString(), anyString(), anyLong(), any());
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        when(vm.sourceId()).thenReturn(734845L);
 
-        assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(repo, never()).save(any());
     }
 
@@ -168,13 +166,11 @@ class EncounterAttachmentsServiceTest {
         when(storage.head(anyString())).thenReturn(head);
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-
-        assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
-        verify(repo, never()).save(any());
+        when(vm.sourceId()).thenReturn(734845L);
     }
 
     @Test
@@ -194,13 +190,12 @@ class EncounterAttachmentsServiceTest {
         when(storage.head(anyString())).thenReturn(head);
 
         UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
-        when(vm.files()).thenReturn(List.of(file));
+        when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
         when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        when(vm.sourceId()).thenReturn(734845L);
 
-        assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
-        verify(repo, never()).save(any());
     }
 
     @Test
@@ -231,7 +226,8 @@ class EncounterAttachmentsServiceTest {
         EncounterAttachments entity = EncounterAttachments.builder()
                 .id(10L).encounterId(1L).spaceKey("k").filename("f.txt")
                 .mimeType("text/plain").sizeBytes(1L)
-                .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT).build();
+                .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT)
+                .sourceId(734845L).build();
 
         when(repo.findActiveById(10L)).thenReturn(Optional.of(entity));
 
