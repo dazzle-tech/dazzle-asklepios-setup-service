@@ -2,14 +2,25 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestType;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
-
+import jakarta.validation.constraints.NotNull;
 @Entity
 @Getter
 @Setter
@@ -26,13 +37,16 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull(message = "Type cannot be null")
     @Enumerated(EnumType.STRING)
     @Column(name = "test_type", length = 255)
-    private TestType testType;
+    private TestType type;
 
+    @NotNull(message = "Name cannot be null")
     @Column(name = "test_name", length = 255)
-    private String testName;
+    private String name;
 
+    @NotNull(message = "Code cannot be null")
     @Column(name = "internal_code", length = 255)
     private String internalCode;
 
@@ -61,16 +75,19 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "is_profile")
+    private Boolean isProfile;
+
     @Column(name = "appointable")
     private Boolean appointable;
 
     @Column(name = "created_date")
     private Instant createdDate;
 
-    @Column(name = "created_by", length = 50)
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "last_modified_by", length = 50)
+    @Column(name = "last_modified_by")
     private String lastModifiedBy;
 
     @Column(name = "last_modified_date")

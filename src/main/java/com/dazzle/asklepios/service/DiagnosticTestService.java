@@ -28,8 +28,8 @@ public class DiagnosticTestService {
     public DiagnosticTest create(DiagnosticTestCreateVM vm) {
         LOG.debug("Create DiagnosticTest: {}", vm);
         DiagnosticTest test = DiagnosticTest.builder()
-                .testType(vm.testType())
-                .testName(vm.testName())
+                .type(vm.type())
+                .name(vm.name())
                 .internalCode(vm.internalCode())
                 .ageSpecific(vm.ageSpecific())
                 .genderSpecific(vm.genderSpecific())
@@ -39,6 +39,7 @@ public class DiagnosticTestService {
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
                 .isActive(vm.isActive())
+                .isProfile(vm.isProfile())
                 .appointable(vm.appointable())
                 .createdBy(vm.createdBy())
                 .build();
@@ -47,8 +48,8 @@ public class DiagnosticTestService {
 
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
         return repository.findById(id).map(existing -> {
-            existing.setTestType(vm.testType());
-            existing.setTestName(vm.testName());
+            existing.setType(vm.type());
+            existing.setName(vm.name());
             existing.setInternalCode(vm.internalCode());
             existing.setAgeSpecific(vm.ageSpecific());
             existing.setGenderSpecific(vm.genderSpecific());
@@ -59,6 +60,7 @@ public class DiagnosticTestService {
             existing.setSpecialNotes(vm.specialNotes());
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
+            existing.setIsProfile(vm.isProfile());
             return repository.save(existing);
         });
     }

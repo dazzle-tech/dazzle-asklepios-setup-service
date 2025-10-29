@@ -2,14 +2,16 @@ package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import jakarta.validation.constraints.NotEmpty;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 
 public record DiagnosticTestUpdateVM(
-        Long id,
-        TestType testType,
-        String testName,
-        String internalCode,
+        @NotEmpty Long id,
+        @NotEmpty TestType type,
+        @NotEmpty String name,
+        @NotEmpty String internalCode,
         Boolean ageSpecific,
         Boolean genderSpecific,
         String gender,
@@ -18,5 +20,6 @@ public record DiagnosticTestUpdateVM(
         Currency currency,
         String specialNotes,
         Boolean isActive,
+        Boolean isProfile,
         Boolean appointable
 ) implements Serializable {}

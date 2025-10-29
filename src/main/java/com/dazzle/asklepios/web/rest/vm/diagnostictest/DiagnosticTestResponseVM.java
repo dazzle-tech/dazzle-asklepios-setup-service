@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 
 public record DiagnosticTestResponseVM(
         Long id,
-        TestType testType,
-        String testName,
+        TestType type,
+        String name,
         String internalCode,
         Boolean ageSpecific,
         Boolean genderSpecific,
@@ -19,13 +19,14 @@ public record DiagnosticTestResponseVM(
         Currency currency,
         String specialNotes,
         Boolean isActive,
-        Boolean appointable
+        Boolean appointable,
+        Boolean isProfile
 ) implements Serializable {
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
         return new DiagnosticTestResponseVM(
                 test.getId(),
-                test.getTestType(),
-                test.getTestName(),
+                test.getType(),
+                test.getName(),
                 test.getInternalCode(),
                 test.getAgeSpecific(),
                 test.getGenderSpecific(),
@@ -35,7 +36,8 @@ public record DiagnosticTestResponseVM(
                 test.getCurrency(),
                 test.getSpecialNotes(),
                 test.getIsActive(),
-                test.getAppointable()
+                test.getAppointable(),
+                test.getIsProfile()
         );
     }
 }
