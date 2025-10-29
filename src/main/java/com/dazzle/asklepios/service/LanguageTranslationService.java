@@ -39,7 +39,6 @@ public class LanguageTranslationService {
         LanguageTranslation entity = new LanguageTranslation();
         entity.setLangKey(vm.getLangKey());
         entity.setTranslationKey(vm.getTranslationKey());
-        entity.setOriginalText(vm.getOriginalText());
         entity.setTranslationText(vm.getTranslationText());
         entity.setVerified(Boolean.TRUE.equals(vm.getVerified()));
         entity.setTranslated(Boolean.TRUE.equals(vm.getTranslated()));
@@ -56,7 +55,6 @@ public class LanguageTranslationService {
 
         return translationRepository.findById(id).map(existing -> {
             // langKey & translationKey are identity — don’t change here
-            existing.setOriginalText(vm.getOriginalText());
             existing.setTranslationText(vm.getTranslationText());
             if (vm.getVerified() != null) existing.setVerified(vm.getVerified());
             if (vm.getTranslated() != null) existing.setTranslated(vm.getTranslated());

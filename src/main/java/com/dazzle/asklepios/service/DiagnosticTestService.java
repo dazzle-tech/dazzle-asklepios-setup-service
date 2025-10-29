@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
@@ -41,7 +42,7 @@ public class DiagnosticTestService {
                 .isActive(vm.isActive())
                 .isProfile(vm.isProfile())
                 .appointable(vm.appointable())
-                .createdBy(vm.createdBy())
+
                 .build();
         return repository.save(test);
     }
@@ -72,16 +73,25 @@ public class DiagnosticTestService {
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
-        return repository.findByTestType(type, pageable);
+        return repository.findByType(type, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByName(String name, Pageable pageable) {
-        return repository.findByTestNameContainingIgnoreCase(name, pageable);
+        return repository.findByNameContainingIgnoreCase(name, pageable);
     }
 
     @Transactional(readOnly = true)
     public Optional<DiagnosticTest> findOne(Long id) {
         return repository.findById(id);
+    }
+
+
+    public Optional<DiagnosticTest> toggleIsActive(Long id) {
+        return repository.findById(id)
+                .map(p -> {
+                    p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
+                    return repository.save(p);
+                });
     }
 }

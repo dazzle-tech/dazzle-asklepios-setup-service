@@ -22,6 +22,6 @@ public record DiagnosticTestCreateVM(
         String specialNotes,
         Boolean isActive,
         Boolean isProfile,
-        Boolean appointable,
-        String createdBy
+        Boolean appointable
+
 ) implements Serializable {}

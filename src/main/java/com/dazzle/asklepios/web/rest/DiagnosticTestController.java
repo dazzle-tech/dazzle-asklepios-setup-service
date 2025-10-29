@@ -7,6 +7,7 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -112,5 +113,13 @@ public class DiagnosticTestController {
                     LOG.debug("REST DiagnosticTest not found id={}", id);
                     return ResponseEntity.notFound().build();
                 });
+    }
+    @PatchMapping("/diagnostic-test/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
+        LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
+        return service.toggleIsActive(id)
+                .map(DiagnosticTestResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

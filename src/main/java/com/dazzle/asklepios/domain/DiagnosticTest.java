@@ -39,11 +39,11 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
 
     @NotNull(message = "Type cannot be null")
     @Enumerated(EnumType.STRING)
-    @Column(name = "test_type", length = 255)
+    @Column(name = "type", length = 255)
     private TestType type;
 
     @NotNull(message = "Name cannot be null")
-    @Column(name = "test_name", length = 255)
+    @Column(name = "name", length = 255)
     private String name;
 
     @NotNull(message = "Code cannot be null")
@@ -81,15 +81,5 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "appointable")
     private Boolean appointable;
 
-    @Column(name = "created_date")
-    private Instant createdDate;
 
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "last_modified_by")
-    private String lastModifiedBy;
-
-    @Column(name = "last_modified_date")
-    private Instant lastModifiedDate;
 }

@@ -30,9 +30,6 @@ public class LanguageTranslation {
     @NotBlank
     private String translationKey;
 
-    @Column(name = "original_text", columnDefinition = "text", nullable = false)
-    @NotBlank
-    private String originalText;
 
     @Column(name = "translation_text", columnDefinition = "text")
     private String translationText;

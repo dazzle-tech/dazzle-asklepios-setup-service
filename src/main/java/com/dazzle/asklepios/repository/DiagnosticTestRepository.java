@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, Long> {
 
-    Page<DiagnosticTest> findByTestType(TestType type, Pageable pageable);
+    Page<DiagnosticTest> findByType(TestType type, Pageable pageable);
 
-    Page<DiagnosticTest> findByTestNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<DiagnosticTest> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }
