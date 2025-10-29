@@ -58,7 +58,7 @@ public class EncounterAttachments extends AbstractAuditingEntity<Long> implement
     @Column(name = "details", columnDefinition = "text")
     private String details;
 
-    @Column(name = "source", length = 50)
+    @Column(name = "source", length = 50, nullable = false)
     @Enumerated(EnumType.STRING)
     private EncounterAttachmentSource source;
 

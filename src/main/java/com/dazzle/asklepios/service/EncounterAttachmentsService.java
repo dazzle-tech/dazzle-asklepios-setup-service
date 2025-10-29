@@ -10,9 +10,11 @@ import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAtta
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.time.Instant;
@@ -38,7 +40,7 @@ public class EncounterAttachmentsService {
 
     public record DownloadTicket(String url, int expiresInSeconds) {}
     public List<EncounterAttachments> upload(Long encounterId, UploadEncounterAttachmentVM uploadEncounterAttachmentVM) {
-        LOG.debug("upload encounter attachments", uploadEncounterAttachmentVM);
+        LOG.debug("upload encounter attachments {}", uploadEncounterAttachmentVM);
         Instant now = Instant.now();
         return uploadEncounterAttachmentVM.files().stream().map(f -> {
             String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
@@ -59,17 +61,8 @@ public class EncounterAttachmentsService {
                 LOG.debug("store encounter attachments to spaces");
                 storage.put(key, mime, size, f.getInputStream());
             } catch (Exception e) {
-                throw new BadRequestAlertException("Upload failed", ENTITY_NAME, "upload_failed");
-            }
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
 
-            Long contentLength = storage.head(key).contentLength();
-            if (contentLength == null || contentLength != size) {
-                throw new BadRequestAlertException("Size mismatch", ENTITY_NAME, "size_mismatch");
-            }
-
-            String contentType = storage.head(key).contentType();
-            if (contentType == null || !contentType.equals(mime)) {
-                throw new BadRequestAlertException("Type mismatch", ENTITY_NAME, "type_mismatch");
             }
 
             EncounterAttachments entity = EncounterAttachments.builder()

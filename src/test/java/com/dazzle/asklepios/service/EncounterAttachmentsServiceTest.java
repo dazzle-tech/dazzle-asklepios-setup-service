@@ -64,7 +64,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn("scan");
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         ArgumentCaptor<EncounterAttachments> cap = ArgumentCaptor.forClass(EncounterAttachments.class);
         when(repo.save(cap.capture())).thenAnswer(inv -> inv.getArgument(0));
@@ -79,7 +79,7 @@ class EncounterAttachmentsServiceTest {
         assertThat(saved.getSizeBytes()).isEqualTo(1024L);
         assertThat(saved.getType()).isEqualTo("3154545");
         assertThat(saved.getDetails()).isEqualTo("scan");
-        assertThat(saved.getSource()).isEqualTo(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        assertThat(saved.getSource()).isEqualTo(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         verify(storage).put(startsWith("encounters/55/"), eq("image/png"), eq(1024L), any());
         verify(storage, atLeastOnce()).head(anyString());
@@ -100,7 +100,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
@@ -121,7 +121,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
@@ -145,7 +145,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(repo, never()).save(any());
@@ -171,7 +171,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(repo, never()).save(any());
@@ -197,7 +197,7 @@ class EncounterAttachmentsServiceTest {
         when(vm.files()).thenReturn(List.of(file));
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(repo, never()).save(any());
@@ -216,13 +216,13 @@ class EncounterAttachmentsServiceTest {
 
     @Test
     void listByEncounterIdAndSource_ReturnsFromRepo() {
-        when(repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ATTACHMENT))
+        when(repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT))
                 .thenReturn(List.of());
 
-        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
         assertThat(out).isEmpty();
-        verify(repo).findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ATTACHMENT);
+        verify(repo).findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
     }
 
 
@@ -231,7 +231,7 @@ class EncounterAttachmentsServiceTest {
         EncounterAttachments entity = EncounterAttachments.builder()
                 .id(10L).encounterId(1L).spaceKey("k").filename("f.txt")
                 .mimeType("text/plain").sizeBytes(1L)
-                .source(EncounterAttachmentSource.CONSULTATION_ATTACHMENT).build();
+                .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT).build();
 
         when(repo.findActiveById(10L)).thenReturn(Optional.of(entity));
 
