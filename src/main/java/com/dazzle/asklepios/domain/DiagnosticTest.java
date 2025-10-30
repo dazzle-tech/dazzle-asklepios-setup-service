@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import jakarta.persistence.Column;
@@ -9,6 +10,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -20,6 +25,10 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import jakarta.validation.constraints.NotNull;
 @Entity
 @Getter
@@ -53,14 +62,27 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "age_specific")
     private Boolean ageSpecific;
 
+    @Column(name = "age-group", columnDefinition = "text")
+    private String ageGroup;
+
+    @Transient
+    private List<AgeGroupType> ageGroupList;
+
     @Column(name = "gender_specific")
     private Boolean genderSpecific;
+
+
 
     @Column(name = "gender", length = 50)
     private String gender;
 
     @Column(name = "special_population")
     private Boolean specialPopulation;
+    @Column(name = "special_population_values", columnDefinition = "text")
+    private String specialPopulationValuesRaw;
+
+    @Transient
+    private List<String> specialPopulationValues;
 
     @Column(name = "price", precision = 7, scale = 2)
     private BigDecimal price;
@@ -82,4 +104,30 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     private Boolean appointable;
 
 
+    @PostLoad
+    private void fillListFromRaw() {
+        if (specialPopulationValues != null && !specialPopulationValuesRaw.isBlank()) {
+            this.specialPopulationValues =
+                    Arrays.asList(specialPopulationValuesRaw.split(","));
+        } else {
+            this.specialPopulationValues = new ArrayList<>();
+        }
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void fillRawFromList() {
+        if (specialPopulationValues != null && !specialPopulationValues.isEmpty()) {
+            this.specialPopulationValues =
+                    this.specialPopulationValues.stream()
+                            .map(String::trim)
+                            .filter(s -> !s.isEmpty())
+                            .toList();
+            this.specialPopulationValuesRaw =
+                    String.join(",", this.specialPopulationValues);
+        } else {
+            this.specialPopulationValuesRaw = null;
+        }
+    }
 }
+

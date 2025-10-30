@@ -1,10 +1,13 @@
 package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
 
 public record DiagnosticTestResponseVM(
         Long id,
@@ -12,15 +15,19 @@ public record DiagnosticTestResponseVM(
         String name,
         String internalCode,
         Boolean ageSpecific,
+        List<AgeGroupType> ageGroupList,           // ✅ جديد
         Boolean genderSpecific,
         String gender,
         Boolean specialPopulation,
+        List<String> specialPopulationValues,      // ✅ جديد
         BigDecimal price,
         Currency currency,
         String specialNotes,
         Boolean isActive,
+        Boolean isProfile,
         Boolean appointable,
-        Boolean isProfile
+        Instant createdDate,
+        Instant lastModifiedDate
 ) implements Serializable {
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
         return new DiagnosticTestResponseVM(
@@ -29,15 +36,19 @@ public record DiagnosticTestResponseVM(
                 test.getName(),
                 test.getInternalCode(),
                 test.getAgeSpecific(),
+                test.getAgeGroupList(),
                 test.getGenderSpecific(),
                 test.getGender(),
                 test.getSpecialPopulation(),
+                test.getSpecialPopulationValues(),     
                 test.getPrice(),
                 test.getCurrency(),
                 test.getSpecialNotes(),
                 test.getIsActive(),
+                test.getIsProfile(),
                 test.getAppointable(),
-                test.getIsProfile()
+                test.getCreatedDate(),
+                test.getLastModifiedDate()
         );
     }
 }

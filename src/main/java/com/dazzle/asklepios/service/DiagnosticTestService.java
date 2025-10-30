@@ -13,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -33,17 +35,19 @@ public class DiagnosticTestService {
                 .name(vm.name())
                 .internalCode(vm.internalCode())
                 .ageSpecific(vm.ageSpecific())
+                .ageGroupList(vm.ageGroupList())                   // ✅ جديد
                 .genderSpecific(vm.genderSpecific())
                 .gender(vm.gender())
                 .specialPopulation(vm.specialPopulation())
+                .specialPopulationValues(vm.specialPopulationValues()) // ✅ جديد
                 .price(vm.price())
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
                 .isActive(vm.isActive())
                 .isProfile(vm.isProfile())
                 .appointable(vm.appointable())
-
                 .build();
+
         return repository.save(test);
     }
 
@@ -53,18 +57,23 @@ public class DiagnosticTestService {
             existing.setName(vm.name());
             existing.setInternalCode(vm.internalCode());
             existing.setAgeSpecific(vm.ageSpecific());
+            existing.setAgeGroupList(vm.ageGroupList());                 // ✅ جديد
             existing.setGenderSpecific(vm.genderSpecific());
             existing.setGender(vm.gender());
             existing.setSpecialPopulation(vm.specialPopulation());
+            existing.setSpecialPopulationValues(vm.specialPopulationValues()); // ✅ جديد
             existing.setPrice(vm.price());
             existing.setCurrency(vm.currency());
             existing.setSpecialNotes(vm.specialNotes());
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
             existing.setIsProfile(vm.isProfile());
+            existing.setLastModifiedBy(vm.lastModifiedBy());
+            existing.setLastModifiedDate(Instant.now());
             return repository.save(existing);
         });
     }
+
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAll(Pageable pageable) {
