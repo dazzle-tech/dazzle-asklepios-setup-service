@@ -7,14 +7,22 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.*;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -71,6 +79,15 @@ public class DiagnosticTestController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         LOG.debug("REST found {} DiagnosticTests", page.getTotalElements());
         return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
+    @GetMapping("/diagnostic-test/active")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getAllActiveTests(Pageable pageable) {
+        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
+        Page<DiagnosticTest> page = service.findAllActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        LOG.debug("REST found {} DiagnosticTests", page.getTotalElements());
+        return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+
     }
 
     /**
