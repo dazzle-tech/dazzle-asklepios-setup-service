@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import jakarta.persistence.Column;
@@ -14,6 +13,7 @@ import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,12 +24,9 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import jakarta.validation.constraints.NotNull;
 @Entity
 @Getter
 @Setter
@@ -62,11 +59,12 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "age_specific")
     private Boolean ageSpecific;
 
-    @Column(name = "age-group", columnDefinition = "text")
+    @Column(name = "age_group", columnDefinition = "text")
     private String ageGroup;
 
     @Transient
-    private List<AgeGroupType> ageGroupList;
+    private List<String> ageGroupList;
+
 
     @Column(name = "gender_specific")
     private Boolean genderSpecific;
@@ -105,10 +103,21 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
 
 
     @PostLoad
-    private void fillListFromRaw() {
-        if (specialPopulationValues != null && !specialPopulationValuesRaw.isBlank()) {
-            this.specialPopulationValues =
-                    Arrays.asList(specialPopulationValuesRaw.split(","));
+    private void fillListsFromRaw() {
+        if (ageGroup != null && !ageGroup.isBlank()) {
+            this.ageGroupList = Arrays.stream(ageGroup.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
+        } else {
+            this.ageGroupList = new ArrayList<>();
+        }
+
+        if (specialPopulationValuesRaw != null && !specialPopulationValuesRaw.isBlank()) {
+            this.specialPopulationValues = Arrays.stream(specialPopulationValuesRaw.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .toList();
         } else {
             this.specialPopulationValues = new ArrayList<>();
         }
@@ -118,16 +127,18 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @PreUpdate
     private void fillRawFromList() {
         if (specialPopulationValues != null && !specialPopulationValues.isEmpty()) {
-            this.specialPopulationValues =
-                    this.specialPopulationValues.stream()
-                            .map(String::trim)
-                            .filter(s -> !s.isEmpty())
-                            .toList();
-            this.specialPopulationValuesRaw =
-                    String.join(",", this.specialPopulationValues);
+            this.specialPopulationValuesRaw = String.join(",", specialPopulationValues);
         } else {
             this.specialPopulationValuesRaw = null;
         }
+
+        if (ageGroupList != null && !ageGroupList.isEmpty()) {
+            this.ageGroup = String.join(",", ageGroupList);
+        } else {
+            this.ageGroup = null;
+        }
     }
+
+
 }
 

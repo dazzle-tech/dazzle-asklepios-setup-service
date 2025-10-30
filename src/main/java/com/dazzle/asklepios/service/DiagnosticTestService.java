@@ -35,11 +35,11 @@ public class DiagnosticTestService {
                 .name(vm.name())
                 .internalCode(vm.internalCode())
                 .ageSpecific(vm.ageSpecific())
-                .ageGroupList(vm.ageGroupList())                   // ✅ جديد
+                .ageGroupList(vm.ageGroupList())
                 .genderSpecific(vm.genderSpecific())
                 .gender(vm.gender())
                 .specialPopulation(vm.specialPopulation())
-                .specialPopulationValues(vm.specialPopulationValues()) // ✅ جديد
+                .specialPopulationValues(vm.specialPopulationValues())
                 .price(vm.price())
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
@@ -57,19 +57,18 @@ public class DiagnosticTestService {
             existing.setName(vm.name());
             existing.setInternalCode(vm.internalCode());
             existing.setAgeSpecific(vm.ageSpecific());
-            existing.setAgeGroupList(vm.ageGroupList());                 // ✅ جديد
+            existing.setAgeGroupList(vm.ageGroupList());
             existing.setGenderSpecific(vm.genderSpecific());
             existing.setGender(vm.gender());
             existing.setSpecialPopulation(vm.specialPopulation());
-            existing.setSpecialPopulationValues(vm.specialPopulationValues()); // ✅ جديد
+            existing.setSpecialPopulationValues(vm.specialPopulationValues());
             existing.setPrice(vm.price());
             existing.setCurrency(vm.currency());
             existing.setSpecialNotes(vm.specialNotes());
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
             existing.setIsProfile(vm.isProfile());
-            existing.setLastModifiedBy(vm.lastModifiedBy());
-            existing.setLastModifiedDate(Instant.now());
+
             return repository.save(existing);
         });
     }
@@ -103,4 +102,10 @@ public class DiagnosticTestService {
                     return repository.save(p);
                 });
     }
+
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findAllActive(Pageable pageable) {
+        return repository.findByIsActiveTrue(pageable);
+    }
+
 }
