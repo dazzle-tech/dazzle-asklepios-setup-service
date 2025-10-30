@@ -7,8 +7,8 @@ import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.UserDepartmentCreateVM;
-import com.dazzle.asklepios.web.rest.vm.UserDepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,7 +16,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 

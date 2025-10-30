@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.DownloadEncounterAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -38,7 +39,6 @@ public class EncounterAttachmentsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
-    public record DownloadTicket(String url, int expiresInSeconds) {}
     public EncounterAttachments upload(Long encounterId, UploadEncounterAttachmentVM vm) {
         LOG.debug("upload encounter attachment {}", vm);
 
@@ -101,11 +101,11 @@ public class EncounterAttachmentsService {
     }
 
 
-    public DownloadTicket downloadUrl(Long id) {
+    public DownloadEncounterAttachmentVM downloadUrl(Long id) {
         LOG.debug("download encounter attachments", id);
         EncounterAttachments a = repo.findActiveById(id).orElseThrow();
         PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
-        return new DownloadTicket(get.url().toString(), props.getPresignExpirySeconds());
+        return new DownloadEncounterAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional

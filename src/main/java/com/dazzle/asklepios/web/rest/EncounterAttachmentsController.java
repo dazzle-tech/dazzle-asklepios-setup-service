@@ -6,6 +6,7 @@ import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.service.AttachmentStorageService;
 import com.dazzle.asklepios.service.EncounterAttachmentsService;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.DownloadEncounterAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UpdateEncounterAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
@@ -79,8 +80,8 @@ public class EncounterAttachmentsController {
     }
 
     /**
-     * {@Code: GET/ encounters/attachments-list-by-encounterIdAndSource/{encounterId}/{source}: List active attachments for an encounter by source and sourceId.}
-     * recieve all files related to the encounter and source and source Id
+     * {@Code: GET/ encounters/attachments/by-encounterIdAndSource/{encounterId}/{source}: List active attachments for an encounter by source and sourceId.}
+     * recieve all files related to the encounter and source and sourceId
      * @param encounterId to get attachments by encounter
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,
      **/
@@ -94,13 +95,13 @@ public class EncounterAttachmentsController {
      * {@code : POST/ encounters/attachmentDownloadUrl/{id} } Presigned download URL.
      * return download url to download attachment
      * @param id of attachment needs to download it
-     * @return the {@link com.dazzle.asklepios.service.EncounterAttachmentsService.DownloadTicket} with status {@code 200 (OK)}, an url and expires In seconds response
+     * @return the {@link DownloadEncounterAttachmentVM} with status {@code 200 (OK)}, an url and expires In seconds response
      * */
     @PostMapping("/encounters/attachmentDownloadUrl/{id}")
-    public EncounterAttachmentsService.DownloadTicket downloadUrl(@PathVariable Long id) {
+    public DownloadEncounterAttachmentVM downloadUrl(@PathVariable Long id) {
         LOG.debug("Downloading encounter attachment: {}", id);
-        EncounterAttachmentsService.DownloadTicket downloadTicket = service.downloadUrl(id);
-        return new EncounterAttachmentsService.DownloadTicket(downloadTicket.url(), downloadTicket.expiresInSeconds());
+        DownloadEncounterAttachmentVM downloadTicket = service.downloadUrl(id);
+        return new DownloadEncounterAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds());
     }
 
     /**

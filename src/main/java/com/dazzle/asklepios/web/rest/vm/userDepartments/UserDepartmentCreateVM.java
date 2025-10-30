@@ -1,9 +1,8 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.userDepartments;
 
 import com.dazzle.asklepios.domain.UserDepartment;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.time.Instant;
 
 /**
  * View Model for creating a UserFacilityDepartment via REST.

@@ -2,21 +2,27 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.PatientAttachments;
-import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
+import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.attachment.patient.UploadPatientAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.patient.DownloadPatientAttachmentVM; // <-- add
+
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,93 +32,80 @@ public class PatientAttachmentsService {
     private final AttachmentProperties props;
     private final AttachmentStorageService storage;
 
+    private static final String ENTITY_NAME = "PatientAttachments";
+
     private static final DateTimeFormatter YYYY = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter MM = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
 
-    public record UploadTicket(String objectKey, String putUrl) {
-    }
+    private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
-    public record DownloadTicket(String url, int expiresInSeconds) {
-    }
-
-    /**
-     * Step 1: Create presigned PUT. Nothing saved to DB here.
-     */
-    public UploadTicket presignUpload(Long patientId, String filename, String mime, long size) {
-        validateTypeAndSize(mime, size);
-
+    public PatientAttachments upload(Long patientId, UploadPatientAttachmentVM vm) {
+        LOG.debug("upload patient attachment {}", vm);
+        MultipartFile f = vm.file();
+        if (f == null || f.isEmpty()) {
+            throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
+        }
         Instant now = Instant.now();
-        String safe = filename.replaceAll("[^\\w.\\- ]", "_");
-        String key = "patients/" + patientId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safe;
+        String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
+        long size = f.getSize();
 
-        PresignedPutObjectRequest put = storage.presignPut(key, mime, size);
-        return new UploadTicket(key, put.url().toString());
-    }
-
-    @Transactional
-    public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy) {
-        return finalizeUpload(patientId, objectKey, createdBy, null, null, null);
-    }
-
-    /**
-     * Step 2: Finalize. Verify object exists, then insert row with type/details.
-     */
-    @Transactional
-    public PatientAttachments finalizeUpload(Long patientId, String objectKey, String createdBy, String type, String details, PatientAttachmentSource source) {
-        HeadObjectResponse head = storage.head(objectKey);
-        String mime = head.contentType();
-        Long size = head.contentLength();
-
-        if (mime == null || size == null) throw new IllegalStateException("object_missing_metadata");
-        validateTypeAndSize(mime, size);
-
-        String filename = objectKey.substring(objectKey.lastIndexOf('/') + 1);
-
-        if (repo.existsByPatientIdAndSpaceKey(patientId, objectKey)) {
-            return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId)
-                    .stream().filter(a -> a.getSpaceKey().equals(objectKey)).findFirst()
-                    .orElseThrow();
+        if (!props.getAllowed().contains(mime)) {
+            throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
+        }
+        if (size > props.getMaxBytes()) {
+            throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
         }
 
-        PatientAttachments patientAttachments = PatientAttachments.builder()
-                .id(null)
+        String originalName = getOriginalName(f);
+        String safeFileName = UUID.randomUUID() + "_" + originalName;
+        String key = "patients/" + patientId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
+
+        try {
+            LOG.debug("store patient attachment to spaces");
+            storage.put(key, mime, size, f.getInputStream());
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
+        }
+
+        PatientAttachments entity = new PatientAttachments().builder()
                 .patientId(patientId)
-                .spaceKey(objectKey)
-                .filename(filename)
+                .spaceKey(key)
+                .filename(originalName)
                 .mimeType(mime)
                 .sizeBytes(size)
-                .type(type)
-                .details(details)
-                .source(source)
+                .type(vm.type())
+                .details(vm.details())
+                .source(vm.source())
                 .build();
 
-        return repo.save(patientAttachments);
+        return repo.save(entity);
+    }
+
+    private static String getOriginalName(MultipartFile f) {
+        String name = f.getOriginalFilename();
+        if (name == null || name.isBlank()) return "file";
+        return name.replaceAll("[^\\w.\\- ]", "_");
     }
 
     public List<PatientAttachments> list(Long patientId) {
+        LOG.debug("list patient attachments {}", patientId);
         return repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(patientId);
     }
 
-    public DownloadTicket downloadUrl(Long id) {
-        PatientAttachments patientAttachments = repo.findActiveById(id).orElseThrow();
-        PresignedGetObjectRequest get = storage.presignGet(patientAttachments.getSpaceKey(), patientAttachments.getFilename());
-        return new DownloadTicket(get.url().toString(), props.getPresignExpirySeconds());
+    public DownloadPatientAttachmentVM downloadUrl(Long id) {
+        LOG.debug("download patient attachments {}", id);
+        PatientAttachments pa = repo.findActiveById(id).orElseThrow();
+        PresignedGetObjectRequest get = storage.presignGet(pa.getSpaceKey(), pa.getFilename());
+        return new DownloadPatientAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        PatientAttachments patientAttachments = repo.findById(id).orElseThrow();
-        if (patientAttachments.getDeletedAt() == null) {
-            patientAttachments.setDeletedAt(Instant.now());
-            repo.save(patientAttachments);
+        LOG.debug("delete patient attachments {}", id);
+        PatientAttachments pa = repo.findById(id).orElseThrow();
+        if (pa.getDeletedAt() == null) {
+            pa.setDeletedAt(Instant.now());
+            repo.save(pa);
         }
-    }
-
-    private void validateTypeAndSize(String mime, long size) {
-        Set<String> allowed = props.getAllowed();
-        if (allowed == null || !allowed.contains(mime))
-            throw new BadRequestAlertException("unsupported_type", "PatientAttachments", "unsupportedType");
-        if (size > props.getMaxBytes())
-            throw new BadRequestAlertException("too_large", "PatientAttachments", "tooLarge");
     }
 }

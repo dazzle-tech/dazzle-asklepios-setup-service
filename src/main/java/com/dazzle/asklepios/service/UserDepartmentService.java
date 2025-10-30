@@ -6,7 +6,7 @@ import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
-import com.dazzle.asklepios.web.rest.vm.UserDepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
