@@ -81,7 +81,11 @@ out/
 /build/
 /buildSrc/.gradle/
 /buildSrc/build/
-
+gradle/caches/
+gradle/daemon/
+gradle/native/
+!gradle/wrapper/
+!gradle/wrapper/**
 ######################
 # Package Files
 ######################
