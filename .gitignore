@@ -84,7 +84,8 @@ out/
 gradle/caches/
 gradle/daemon/
 gradle/native/
-gradle/wrapper/dists/
+gradle/wrapper/dists
+gradle/wrapper/dists/**
 build/
 !gradle/wrapper/
 !gradle/wrapper/**
