@@ -25,7 +25,9 @@ public record DepartmentUpdateVM(
         @Size(min = 5, max = 254)
         String email,
         EncounterType encounterType,
-        Boolean isActive
+        Boolean isActive,
+        Boolean hasMedicalSheets,
+        Boolean hasNurseMedicalSheets
 ) implements Serializable {
 
         public static DepartmentUpdateVM ofEntity(Department department) {
@@ -39,7 +41,9 @@ public record DepartmentUpdateVM(
                         department.getPhoneNumber(),
                         department.getEmail(),
                         department.getEncounterType(),
-                        department.getIsActive()
+                        department.getIsActive(),
+                        department.getHasMedicalSheets(),
+                        department.getHasNurseMedicalSheets()
                 );
         }
 }

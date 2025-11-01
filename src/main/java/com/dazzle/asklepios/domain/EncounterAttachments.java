@@ -1,14 +1,17 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
+import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,7 +26,8 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EncounterAttachments  extends  AbstractAuditingEntity<Long> implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class EncounterAttachments extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
     @Column(name = "id", nullable = false)
@@ -47,7 +51,18 @@ public class EncounterAttachments  extends  AbstractAuditingEntity<Long> impleme
 
     @Column(name = "deleted_at")
     private Instant deletedAt;
-    @Column(name = "source", length = 50)
-    private PatientAttachmentSource source;
+
+    @Column(name = "type", length = 100)
+    private String type;
+
+    @Column(name = "details", columnDefinition = "text")
+    private String details;
+
+    @Column(name = "source", length = 50, nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EncounterAttachmentSource source;
+
+    @Column(name = "source_id", nullable = false)
+    private long sourceId;
 
 }
