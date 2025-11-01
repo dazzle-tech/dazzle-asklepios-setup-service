@@ -25,7 +25,9 @@ public record DepartmentCreateVM(
         String email,
         EncounterType encounterType,
         Boolean isActive,
-        String createdBy
+        String createdBy,
+        Boolean hasMedicalSheets,
+        Boolean hasNurseMedicalSheets
 ) implements Serializable {
 
         public static DepartmentCreateVM ofEntity(Department department) {
@@ -39,7 +41,9 @@ public record DepartmentCreateVM(
                         department.getEmail(),
                         department.getEncounterType(),
                         department.getIsActive(),
-                        department.getCreatedBy()
+                        department.getCreatedBy(),
+                        department.getHasMedicalSheets(),
+                        department.getHasNurseMedicalSheets()
                 );
         }
 }

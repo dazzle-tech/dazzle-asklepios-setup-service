@@ -73,4 +73,12 @@ public class Department  extends  AbstractAuditingEntity<Long> implements Serial
 
     @Column(name = "is_active")
     private Boolean isActive;
+
+    @Column(name = "has_medical_sheets")
+    private  Boolean hasMedicalSheets=false;
+
+    @Column(name = "has_nurse_medical_sheets")
+    private  Boolean hasNurseMedicalSheets=false;
+
+
 }

@@ -19,7 +19,9 @@ public record DepartmentResponseVM(
         String phoneNumber,
         String email,
         EncounterType encounterType,
-        Boolean isActive
+        Boolean isActive,
+        Boolean hasMedicalSheets,
+        Boolean hasNurseMedicalSheets
 
 ) implements Serializable {
 
@@ -35,7 +37,9 @@ public record DepartmentResponseVM(
                         department.getPhoneNumber(),
                         department.getEmail(),
                         department.getEncounterType(),
-                        department.getIsActive()
+                        department.getIsActive(),
+                        department.getHasMedicalSheets(),
+                        department.getHasNurseMedicalSheets()
                 );
         }
 }
