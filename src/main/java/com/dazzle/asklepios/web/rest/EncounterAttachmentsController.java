@@ -7,16 +7,17 @@ import com.dazzle.asklepios.service.AttachmentStorageService;
 import com.dazzle.asklepios.service.EncounterAttachmentsService;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.DownloadEncounterAttachmentVM;
-import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UpdateEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
-
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,9 +27,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-
-import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
 
 @RestController
@@ -41,7 +39,7 @@ public class EncounterAttachmentsController {
 
     private static final String ENTITY_NAME = "EncounterAttachments";
 
-    private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EncounterAttachmentsController.class);
 
     public EncounterAttachmentsController(EncounterAttachmentsService service, EncounterAttachementsRepository repo, AttachmentStorageService storage) {
         this.service = service;

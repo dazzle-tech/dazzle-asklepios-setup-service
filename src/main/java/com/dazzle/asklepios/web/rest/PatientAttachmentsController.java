@@ -40,7 +40,7 @@ public class PatientAttachmentsController {
     private final AttachmentStorageService storage;
 
     private static final String ENTITY_NAME = "patientAttachments";
-    private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PatientAttachmentsController.class);
 
 
     public PatientAttachmentsController(PatientAttachmentsRepository repo, AttachmentStorageService storage, PatientAttachmentsService service) {
