@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.practitioner;
 
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
@@ -29,7 +30,8 @@ public record PractitionerResponseVM(
         LocalDate dateOfBirth,
         String jobRole,
         Gender gender,
-        Boolean isActive
+        Boolean isActive,
+        Facility facility
 ) implements Serializable {
 
     public static PractitionerResponseVM ofEntity(Practitioner practitioner) {
@@ -52,7 +54,8 @@ public record PractitionerResponseVM(
                 practitioner.getDateOfBirth(),
                 practitioner.getJobRole(),
                 practitioner.getGender(),
-                practitioner.getIsActive()
+                practitioner.getIsActive(),
+                practitioner.getFacility()
         );
     }
 }
