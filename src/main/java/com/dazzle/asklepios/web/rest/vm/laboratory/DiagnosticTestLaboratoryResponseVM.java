@@ -5,8 +5,10 @@ import com.dazzle.asklepios.domain.enumeration.Method;
 import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
 import com.dazzle.asklepios.domain.enumeration.System;
+import com.dazzle.asklepios.domain.enumeration.Timing;
 
 import java.io.Serializable;
+import java.util.Timer;
 
 public record DiagnosticTestLaboratoryResponseVM(
         Long id,
@@ -33,5 +35,6 @@ public record DiagnosticTestLaboratoryResponseVM(
         String associatedRisks,
         String testInstructions,
         String category,
-        String tubeType
+        String tubeType,
+        Timing timing
 ) implements Serializable {}

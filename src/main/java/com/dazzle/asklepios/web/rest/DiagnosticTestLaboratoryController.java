@@ -132,6 +132,26 @@ public class DiagnosticTestLaboratoryController {
         LOG.info("Deleted DiagnosticTestLaboratory id={}", id);
         return ResponseEntity.noContent().build();
     }
+    /**
+     * {@code GET  /diagnostic-test-laboratories/by-test/:testId} : Get a DiagnosticTestLaboratory by the related testId.
+     *
+     * @param testId the id of the associated DiagnosticTest.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the found object,
+     *         or {@code 404 (Not Found)} if no laboratory is linked to this test.
+     */
+    @GetMapping("/by-test/{testId}")
+    public ResponseEntity<DiagnosticTestLaboratoryResponseVM> findByTestId(@PathVariable Long testId) {
+        LOG.debug("REST request to get DiagnosticTestLaboratory by testId={}", testId);
+
+        try {
+            DiagnosticTestLaboratory lab = service.getByTestId(testId);
+            LOG.info("Found DiagnosticTestLaboratory for testId={}", testId);
+            return ResponseEntity.ok(mapToResponse(lab));
+        } catch (Exception ex) {
+            LOG.warn("No DiagnosticTestLaboratory found for testId={}", testId);
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     // -----------------------------------------------------------------------
     // Mapping Helpers
@@ -163,6 +183,7 @@ public class DiagnosticTestLaboratoryController {
                 .testInstructions(vm.testInstructions())
                 .category(vm.category())
                 .tubeType(vm.tubeType())
+                .timing(vm.timing())
                 .build();
     }
 
@@ -173,7 +194,7 @@ public class DiagnosticTestLaboratoryController {
                 vm.sampleContainer(), vm.sampleVolume(), vm.sampleVolumeUnit(), vm.tubeColor(),
                 vm.testDescription(), vm.sampleHandling(), vm.turnaroundTime(), vm.turnaroundTimeUnit(),
                 vm.preparationRequirements(), vm.medicalIndications(), vm.associatedRisks(),
-                vm.testInstructions(), vm.category(), vm.tubeType()
+                vm.testInstructions(), vm.category(), vm.tubeType(),vm.timing()
         ));
         entity.setId(vm.id());
         return entity;
@@ -205,7 +226,8 @@ public class DiagnosticTestLaboratoryController {
                 e.getAssociatedRisks(),
                 e.getTestInstructions(),
                 e.getCategory(),
-                e.getTubeType()
+                e.getTubeType(),
+                e.getTiming()
         );
     }
 }

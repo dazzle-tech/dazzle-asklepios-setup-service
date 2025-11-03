@@ -4,11 +4,14 @@ import com.dazzle.asklepios.domain.enumeration.Method;
 import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
 import com.dazzle.asklepios.domain.enumeration.System;
+import com.dazzle.asklepios.domain.enumeration.Timing;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 
 public record DiagnosticTestLaboratoryUpdateVM(
-        Long id,
+        @NotNull Long id,
         Long testId,
         Property property,
         System system,
@@ -17,7 +20,7 @@ public record DiagnosticTestLaboratoryUpdateVM(
         Method method,
         Double testDurationTime,
         String timeUnit,
-        String resultUnit,
+        @NotBlank  String resultUnit,
         Boolean isProfile,
         String sampleContainer,
         Double sampleVolume,
@@ -31,6 +34,7 @@ public record DiagnosticTestLaboratoryUpdateVM(
         String medicalIndications,
         String associatedRisks,
         String testInstructions,
-        String category,
-        String tubeType
+        @NotBlank String category,
+        String tubeType,
+        Timing timing
 ) implements Serializable {}

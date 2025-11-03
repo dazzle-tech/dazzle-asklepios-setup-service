@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.Method;
 import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
 import com.dazzle.asklepios.domain.enumeration.System;
+import com.dazzle.asklepios.domain.enumeration.Timing;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -34,5 +35,6 @@ public record DiagnosticTestLaboratoryCreateVM(
         String associatedRisks,
         String testInstructions,
         @NotBlank String category,
-        String tubeType
+        String tubeType,
+        Timing timing
 ) implements Serializable {}

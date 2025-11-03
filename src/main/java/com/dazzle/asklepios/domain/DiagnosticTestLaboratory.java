@@ -18,8 +18,8 @@ public class DiagnosticTestLaboratory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "test_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "test_id", nullable = false, unique = true)
     private DiagnosticTest test;
 
     @Enumerated(EnumType.STRING)
