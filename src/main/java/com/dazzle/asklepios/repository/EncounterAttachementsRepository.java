@@ -17,10 +17,10 @@ public interface EncounterAttachementsRepository extends JpaRepository<Encounter
     List<EncounterAttachments> findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source);
     List<EncounterAttachments> findByEncounterIdAndSourceAndSourceIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source, Long sourceId);
 
-    @Query("select e from EncounterAttachments e where e.id = :id and e.deletedAt is null")
-    Optional<EncounterAttachments> findActiveById(@Param("id") Long id);
+    @Query("select e from EncounterAttachments e where e.id = ?1 and e.deletedAt is null")
+    Optional<EncounterAttachments> findActiveById(Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update EncounterAttachments e set e.deletedAt = CURRENT_TIMESTAMP where e.id = :id and e.deletedAt is null")
-    int softDelete(@Param("id") Long id);
+    @Query("update EncounterAttachments e set e.deletedAt = CURRENT_TIMESTAMP where e.id = ?1 and e.deletedAt is null")
+    int softDelete( Long id);
 }
