@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestLaboratory;
 import com.dazzle.asklepios.service.DiagnosticTestLaboratoryService;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.laboratory.DiagnosticTestLaboratoryCreateVM;
 import com.dazzle.asklepios.web.rest.vm.laboratory.DiagnosticTestLaboratoryResponseVM;
 import com.dazzle.asklepios.web.rest.vm.laboratory.DiagnosticTestLaboratoryUpdateVM;
@@ -11,6 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,10 +23,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
-
 /**
  * REST controller for managing {@link com.dazzle.asklepios.domain.DiagnosticTestLaboratory}.
  */
@@ -89,13 +93,23 @@ public class DiagnosticTestLaboratoryController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of results.
      */
     @GetMapping
-    public ResponseEntity<Page<DiagnosticTestLaboratoryResponseVM>> findAll(Pageable pageable) {
+    public ResponseEntity<List<DiagnosticTestLaboratoryResponseVM>> findAll(Pageable pageable) {
         LOG.debug("REST request to get all DiagnosticTestLaboratories");
 
-        Page<DiagnosticTestLaboratoryResponseVM> page = service.findAll(pageable).map(this::mapToResponse);
+        Page<DiagnosticTestLaboratory> page = service.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
         LOG.info("Returned {} DiagnosticTestLaboratory records", page.getTotalElements());
-        return ResponseEntity.ok(page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(this::mapToResponse).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
+
 
     /**
      * {@code GET  /diagnostic-test-laboratories/:id} : Get a specific DiagnosticTestLaboratory by id.
