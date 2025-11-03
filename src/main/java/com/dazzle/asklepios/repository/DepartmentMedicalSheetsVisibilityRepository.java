@@ -15,8 +15,9 @@ public interface DepartmentMedicalSheetsVisibilityRepository extends JpaReposito
     List<DepartmentMedicalSheetsVisibility> findByDepartmentId(Long departmentId);
 
     @Modifying
-    @Query(value = "DELETE FROM department_medical_sheets_visibility WHERE department_id = :departmentId", nativeQuery = true)
-    void deleteByDepartmentId(@Param("departmentId") Long departmentId);
+    @Query(value = "DELETE FROM department_medical_sheets_visibility WHERE department_id = ?1", nativeQuery = true)
+    void deleteByDepartmentId(Long departmentId);
+
 
 
 }
