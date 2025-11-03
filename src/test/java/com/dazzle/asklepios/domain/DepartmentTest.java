@@ -29,6 +29,8 @@ class DepartmentTest {
                 .email("cardio@hospital.com")
                 .encounterType(EncounterType.INPATIENT)
                 .isActive(true)
+                .hasMedicalSheets(true)
+                .hasNurseMedicalSheets(true)
                 .build();
 
         assertThat(dept.getId()).isEqualTo(5004L);
