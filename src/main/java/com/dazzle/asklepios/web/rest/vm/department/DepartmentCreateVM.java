@@ -21,7 +21,6 @@ public record DepartmentCreateVM(
         String departmentCode,
         String phoneNumber,
         @Email
-        @Size(min = 5, max = 254)
         String email,
         EncounterType encounterType,
         Boolean isActive,
