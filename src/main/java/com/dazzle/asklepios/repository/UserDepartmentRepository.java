@@ -14,7 +14,6 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
     Optional<UserDepartment> findByUserIdAndDepartmentId(Long userId, Long departmentId);
     List<UserDepartment> findByUserId(Long userId);
     @Modifying
-    @Query("update UserDepartment ud set ud.isActive = :active where ud.department.id = :departmentId")
-    int updateActiveByDepartmentId(@Param("departmentId") Long departmentId,
-                                   @Param("active") boolean active);
+    @Query("update UserDepartment ud set ud.isActive = ?2 where ud.department.id =?1")
+    int updateActiveByDepartmentId( Long departmentId, boolean active);
 }
