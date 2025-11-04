@@ -14,8 +14,7 @@ public interface InventoryTransactionAttachmentsRepository extends JpaRepository
 
     List<InventoryTransactionAttachments> findByTransactionIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long transactionId);
 
-    @Query("select i from InventoryTransactionAttachments i where i.id = :id and i.deletedAt is null")
-    Optional<InventoryTransactionAttachments> findActiveById(Long id);
+    Optional<InventoryTransactionAttachments> findByIdAndDeletedAtIsNull(Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update InventoryTransactionAttachments i set i.deletedAt = CURRENT_TIMESTAMP where i.id = :id and i.deletedAt is null")

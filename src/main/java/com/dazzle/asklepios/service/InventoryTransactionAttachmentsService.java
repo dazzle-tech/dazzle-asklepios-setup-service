@@ -4,6 +4,7 @@ import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.InventoryTransactionAttachments;
 import com.dazzle.asklepios.repository.InventoryTransactionAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.attachment.inventoryTransaction.DownloadInventoryTransactionAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.inventoryTransaction.UploadInventoryTransactionAttachmentVM;
 import lombok.RequiredArgsConstructor;
@@ -40,14 +41,14 @@ public class InventoryTransactionAttachmentsService {
     public InventoryTransactionAttachments upload(Long transactionId, UploadInventoryTransactionAttachmentVM vm) {
         LOG.debug("upload Inventory Transaction attachment {}", vm);
 
-        MultipartFile f = vm.file();
-        if (f == null || f.isEmpty()) {
+        MultipartFile file = vm.file();
+        if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
         }
 
         Instant now = Instant.now();
-        String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
-        long size = f.getSize();
+        String mime = file.getContentType() == null ? "application/octet-stream" : file.getContentType();
+        long size = file.getSize();
 
         if (!props.getAllowed().contains(mime)) {
             throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
@@ -56,13 +57,13 @@ public class InventoryTransactionAttachmentsService {
             throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
         }
 
-        String originalName = getOriginalName(f);
+        String originalName = getOriginalName(file);
         String safeFileName = UUID.randomUUID() + "_" + originalName;
         String key = "inventoryTransactions/" + transactionId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
 
         try {
             LOG.debug("store Inventory Transaction attachment to spaces");
-            storage.put(key, mime, size, f.getInputStream());
+            storage.put(key, mime, size, file.getInputStream());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
         }
@@ -90,18 +91,17 @@ public class InventoryTransactionAttachmentsService {
 
     public DownloadInventoryTransactionAttachmentVM downloadUrl(Long id) {
         LOG.debug("download Inventory Transaction attachments{}", id);
-        InventoryTransactionAttachments a = repo.findActiveById(id).orElseThrow();
+        InventoryTransactionAttachments a = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
         PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
         return new DownloadInventoryTransactionAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("delete Inventory Transaction attachments{}", id);
-        InventoryTransactionAttachments a = repo.findById(id).orElseThrow();
-        if (a.getDeletedAt() == null) {
-            a.setDeletedAt(Instant.now());
-            repo.save(a);
+        LOG.debug("delete inventory transaction attachments{}", id);
+        int updated = repo.softDelete(id);
+        if (updated == 0) {
+            throw new NotFoundAlertException("Inventory transaction attachment not found with id {" + id+"}", ENTITY_NAME, "notfound");
         }
     }
 }

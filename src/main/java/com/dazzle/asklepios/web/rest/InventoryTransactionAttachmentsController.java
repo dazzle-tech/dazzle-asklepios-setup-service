@@ -9,6 +9,7 @@ import com.dazzle.asklepios.web.rest.vm.attachment.inventoryTransaction.UploadIn
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,17 +41,20 @@ public class InventoryTransactionAttachmentsController {
      * {@code : POST/ inventoryTransaction/{transactionId}/attachments}: Upload new attachment for an inventory transaction
      *  One call: receive file(s) → upload to Spaces → verify → insert row(s) → return pre-signed download URL(s).
      * @param uploadInventoryTransactionAttachmentVM the upload payload.
-     * @return the {@link UploadInventoryTransactionAttachmentResponseVM} with status {@code 201 (Created)} and body of the uploaded attachment,
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the uploaded attachment,
      *         or {@code 400 (Bad Request)} if the payload is invalid (mismatch size and type).
      **/
     @PostMapping(value = "/inventoryTransaction/{transactionId}/attachments", consumes = "multipart/form-data")
-    public UploadInventoryTransactionAttachmentResponseVM upload(@PathVariable Long transactionId, @ModelAttribute @Valid UploadInventoryTransactionAttachmentVM uploadInventoryTransactionAttachmentVM) {
-       LOG.debug("Uploading inventory transaction attachment: {}", uploadInventoryTransactionAttachmentVM);
-       InventoryTransactionAttachments saved = service.upload(transactionId, uploadInventoryTransactionAttachmentVM);
+    public ResponseEntity<UploadInventoryTransactionAttachmentResponseVM> upload(@PathVariable Long transactionId, @ModelAttribute @Valid UploadInventoryTransactionAttachmentVM uploadInventoryTransactionAttachmentVM) {
+        LOG.debug("Uploading inventory transaction attachment: {}", uploadInventoryTransactionAttachmentVM);
+        InventoryTransactionAttachments saved = service.upload(transactionId, uploadInventoryTransactionAttachmentVM);
         String safeFileName = getSafeFileName(saved.getSpaceKey());
         String downloadUrl = storage.presignGet(saved.getSpaceKey(), safeFileName).url().toString();
 
-        return UploadInventoryTransactionAttachmentResponseVM.ofEntity(saved, downloadUrl);
+        UploadInventoryTransactionAttachmentResponseVM body =
+                UploadInventoryTransactionAttachmentResponseVM.ofEntity(saved, downloadUrl);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
     private static String getSafeFileName(String key) {
         int i = key.lastIndexOf('/');
@@ -63,32 +67,36 @@ public class InventoryTransactionAttachmentsController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of inventoryTransactionAttachment view models in the body,
      **/
     @GetMapping("/inventoryTransaction/attachments/by-transactionId")
-    public List<InventoryTransactionAttachments> list(@RequestParam Long transactionId) {
-        return service.list(transactionId);
+    public ResponseEntity<List<InventoryTransactionAttachments>> list(@RequestParam Long transactionId) {
+        LOG.debug("Listing inventory transaction attachments for transactionId: {}", transactionId);
+        List<InventoryTransactionAttachments> attachments = service.list(transactionId);
+        return ResponseEntity.ok(attachments);
     }
-    
+
+
 
     /**
      * {@code : POST/ inventoryTransaction/attachmentDownloadUrl/{id} } Pre-signed download URL.
      * return download url to download attachment
      * @param id of attachment needs to download it
-     * @return the {@link DownloadInventoryTransactionAttachmentVM} with status {@code 200 (OK)}, an url and expires In seconds response
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, an url and expires In seconds response
      * */
     @PostMapping("/inventoryTransaction/attachmentDownloadUrl/{id}")
-    public DownloadInventoryTransactionAttachmentVM downloadUrl(@PathVariable Long id) {
-        LOG.debug("Downloading inventory transaction attachment: {}", id);
-        DownloadInventoryTransactionAttachmentVM downloadTicket = service.downloadUrl(id);
-        return new DownloadInventoryTransactionAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds());
+    public ResponseEntity<DownloadInventoryTransactionAttachmentVM> downloadUrl(@PathVariable Long id) {
+        LOG.debug("Generating download URL for inventory transaction attachment: {}", id);
+        DownloadInventoryTransactionAttachmentVM ticket = service.downloadUrl(id);
+        return ResponseEntity.ok(new DownloadInventoryTransactionAttachmentVM(ticket.url(), ticket.expiresInSeconds()));
     }
 
     /**
-     * {@code DELETE/ inventoryTransaction/attachments/{id} }Soft delete for an attachment without remove it from spaces
+     * {@code DELETE/ inventoryTransaction/attachments/{id} }Soft delete for an attachment does not remove it from spaces
      * @param id of attachment needs to delete
      * */
     @DeleteMapping("/inventoryTransaction/attachments/{id}")
-    public void delete(@PathVariable Long id) {
-        LOG.debug("Deleting inventory transaction attachment: {}", id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        LOG.debug("Soft deleting inventory transaction attachment: {}", id);
         service.softDelete(id);
+        return ResponseEntity.noContent().build();
     }
     
 }
