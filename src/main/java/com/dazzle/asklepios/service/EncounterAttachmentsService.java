@@ -40,17 +40,17 @@ public class EncounterAttachmentsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
-    public EncounterAttachments upload(Long encounterId, UploadEncounterAttachmentVM vm) {
-        LOG.debug("upload encounter attachment {}", vm);
+    public EncounterAttachments upload(Long encounterId, UploadEncounterAttachmentVM uploadEncounterAttachmentVM) {
+        LOG.debug("upload encounter attachment {}", uploadEncounterAttachmentVM);
 
-        MultipartFile f = vm.file();
-        if (f == null || f.isEmpty()) {
+        MultipartFile file = uploadEncounterAttachmentVM.file();
+        if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
         }
 
         Instant now = Instant.now();
-        String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
-        long size = f.getSize();
+        String mime = file.getContentType() == null ? "application/octet-stream" : file.getContentType();
+        long size = file.getSize();
 
         if (!props.getAllowed().contains(mime)) {
             throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
@@ -59,33 +59,33 @@ public class EncounterAttachmentsService {
             throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
         }
 
-        String originalName = getOriginalName(f);
+        String originalName = getOriginalName(file);
         String safeFileName = UUID.randomUUID() + "_" + originalName;
         String key = "encounters/" + encounterId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
 
         try {
             LOG.debug("store encounter attachment to spaces");
-            storage.put(key, mime, size, f.getInputStream());
+            storage.put(key, mime, size, file.getInputStream());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
         }
 
-        EncounterAttachments entity = EncounterAttachments.builder()
+        EncounterAttachments encounterAttachments = EncounterAttachments.builder()
                 .encounterId(encounterId)
                 .spaceKey(key)
                 .filename(originalName)
                 .mimeType(mime)
                 .sizeBytes(size)
-                .type(vm.type())
-                .details(vm.details())
-                .source(vm.source())
-                .sourceId(vm.sourceId())
+                .type(uploadEncounterAttachmentVM.type())
+                .details(uploadEncounterAttachmentVM.details())
+                .source(uploadEncounterAttachmentVM.source())
+                .sourceId(uploadEncounterAttachmentVM.sourceId())
                 .build();
 
-        return repo.save(entity);
+        return repo.save(encounterAttachments);
     }
-    private static String getOriginalName(MultipartFile f) {
-        String name = f.getOriginalFilename();
+    private static String getOriginalName(MultipartFile file) {
+        String name = file.getOriginalFilename();
         if (name == null || name.isBlank()) return "file";
         return name.replaceAll("[^\\w.\\- ]", "_");
     }
@@ -104,9 +104,9 @@ public class EncounterAttachmentsService {
 
     public DownloadEncounterAttachmentVM downloadUrl(Long id) {
         LOG.debug("download encounter attachments {}", id);
-        EncounterAttachments a = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
-        PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
-        return new DownloadEncounterAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
+        EncounterAttachments encounterAttachments = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
+        PresignedGetObjectRequest getURL = storage.presignGet(encounterAttachments.getSpaceKey(), encounterAttachments.getFilename());
+        return new DownloadEncounterAttachmentVM(getURL.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional

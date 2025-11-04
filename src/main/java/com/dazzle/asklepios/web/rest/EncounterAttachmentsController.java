@@ -73,8 +73,8 @@ public class EncounterAttachmentsController {
     }
 
     /**
-     * {@code : GET/ encounters/attachments/by-encounterId?enounterId=1,2: List active attachments for encounters.}
-     * recieve all files related to the encounter
+     * {@code : GET/ encounters/attachments/by-encounterId?encounterId=1,2: List active attachments for encounters.}
+     * receive all files related to the encounter
      *
      * @param encounterId to get attachments by encounter
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of encounterAttachment view models in the body,

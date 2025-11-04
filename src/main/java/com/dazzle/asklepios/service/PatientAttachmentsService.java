@@ -40,15 +40,15 @@ public class PatientAttachmentsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
-    public PatientAttachments upload(Long patientId, UploadPatientAttachmentVM vm) {
-        LOG.debug("upload patient attachment {}", vm);
-        MultipartFile f = vm.file();
-        if (f == null || f.isEmpty()) {
+    public PatientAttachments upload(Long patientId, UploadPatientAttachmentVM uploadPatientAttachmentVM) {
+        LOG.debug("upload patient attachment {}", uploadPatientAttachmentVM);
+        MultipartFile file = uploadPatientAttachmentVM.file();
+        if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
         }
         Instant now = Instant.now();
-        String mime = f.getContentType() == null ? "application/octet-stream" : f.getContentType();
-        long size = f.getSize();
+        String mime = file.getContentType() == null ? "application/octet-stream" : file.getContentType();
+        long size = file.getSize();
 
         if (!props.getAllowed().contains(mime)) {
             throw new BadRequestAlertException("Unsupported file type", ENTITY_NAME, "unsupported_type");
@@ -57,13 +57,13 @@ public class PatientAttachmentsService {
             throw new BadRequestAlertException("File too large", ENTITY_NAME, "too_large");
         }
 
-        String originalName = getOriginalName(f);
+        String originalName = getOriginalName(file);
         String safeFileName = UUID.randomUUID() + "_" + originalName;
         String key = "patients/" + patientId + "/" + YYYY.format(now) + "/" + MM.format(now) + "/" + safeFileName;
 
         try {
             LOG.debug("store patient attachment to spaces");
-            storage.put(key, mime, size, f.getInputStream());
+            storage.put(key, mime, size, file.getInputStream());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
         }
@@ -74,16 +74,16 @@ public class PatientAttachmentsService {
                 .filename(originalName)
                 .mimeType(mime)
                 .sizeBytes(size)
-                .type(vm.type())
-                .details(vm.details())
-                .source(vm.source())
+                .type(uploadPatientAttachmentVM.type())
+                .details(uploadPatientAttachmentVM.details())
+                .source(uploadPatientAttachmentVM.source())
                 .build();
 
         return repo.save(entity);
     }
 
-    private static String getOriginalName(MultipartFile f) {
-        String name = f.getOriginalFilename();
+    private static String getOriginalName(MultipartFile file) {
+        String name = file.getOriginalFilename();
         if (name == null || name.isBlank()) return "file";
         return name.replaceAll("[^\\w.\\- ]", "_");
     }
@@ -96,8 +96,8 @@ public class PatientAttachmentsService {
     public DownloadPatientAttachmentVM downloadUrl(Long id) {
         LOG.debug("download patient attachments {}", id);
         PatientAttachments pa = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
-        PresignedGetObjectRequest get = storage.presignGet(pa.getSpaceKey(), pa.getFilename());
-        return new DownloadPatientAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
+        PresignedGetObjectRequest getURL = storage.presignGet(pa.getSpaceKey(), pa.getFilename());
+        return new DownloadPatientAttachmentVM(getURL.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
