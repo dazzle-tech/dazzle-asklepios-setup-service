@@ -43,7 +43,6 @@ public class DiagnosticTestRadiology {
     private String category;
 
     private Double imageDuration;
-    private String timeUnit;
     @Column(length = 1000)
     private String testInstructions;
     @Column(length = 1000)

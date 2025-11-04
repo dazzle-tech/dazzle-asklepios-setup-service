@@ -101,7 +101,7 @@ public class DiagnosticTestRadiologyController {
                 .test(DiagnosticTest.builder().id(vm.testId()).build())
                 .category(vm.category())
                 .imageDuration(vm.imageDuration())
-                .timeUnit(vm.timeUnit())
+                
                 .testInstructions(vm.testInstructions())
                 .medicalIndications(vm.medicalIndications())
                 .turnaroundTimeUnit(vm.turnaroundTimeUnit())
@@ -117,7 +117,7 @@ public class DiagnosticTestRadiologyController {
         entity.setTest(DiagnosticTest.builder().id(vm.testId()).build());
         entity.setCategory(vm.category());
         entity.setImageDuration(vm.imageDuration());
-        entity.setTimeUnit(vm.timeUnit());
+
         entity.setTestInstructions(vm.testInstructions());
         entity.setMedicalIndications(vm.medicalIndications());
         entity.setTurnaroundTimeUnit(vm.turnaroundTimeUnit());
@@ -132,7 +132,7 @@ public class DiagnosticTestRadiologyController {
                 e.getTest() != null ? e.getTest().getId() : null,
                 e.getCategory(),
                 e.getImageDuration(),
-                e.getTimeUnit(),
+
                 e.getTestInstructions(),
                 e.getMedicalIndications(),
                 e.getTurnaroundTimeUnit(),

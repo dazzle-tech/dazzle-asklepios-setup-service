@@ -8,7 +8,6 @@ public record DiagnosticTestRadiologyUpdateVM(
         @NotNull Long testId,
         @NotBlank String category,
         Double imageDuration,
-        String timeUnit,
         String testInstructions,
         String medicalIndications,
         String turnaroundTimeUnit,

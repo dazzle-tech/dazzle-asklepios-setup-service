@@ -5,7 +5,6 @@ public record DiagnosticTestRadiologyResponseVM(
         Long testId,
         String category,
         Double imageDuration,
-        String timeUnit,
         String testInstructions,
         String medicalIndications,
         String turnaroundTimeUnit,
