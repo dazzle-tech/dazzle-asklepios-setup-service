@@ -208,7 +208,7 @@ class InventoryTransferAttachmentsServiceTest {
                 .mimeType("text/plain").sizeBytes(1L)
                 .build();
 
-        when(repo.findActiveById(10L)).thenReturn(Optional.of(entity));
+        when(repo.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(entity));
 
         PresignedGetObjectRequest pre = mock(PresignedGetObjectRequest.class);
         when(pre.url()).thenReturn(new URL("https://files.example/k?sig=1"));
@@ -219,7 +219,7 @@ class InventoryTransferAttachmentsServiceTest {
 
         assertThat(ticket.url()).isEqualTo("https://files.example/k?sig=1");
         assertThat(ticket.expiresInSeconds()).isEqualTo(600);
-        verify(repo).findActiveById(10L);
+        verify(repo).findByIdAndDeletedAtIsNull(10L);
         verify(storage).presignGet("k", "f.txt");
     }
     @Test

@@ -9,6 +9,7 @@ import com.dazzle.asklepios.web.rest.vm.attachment.inventoryTransfer.UploadInven
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,17 +41,24 @@ public class InventoryTransferAttachmentsController {
      * {@code : POST/ inventoryTransfer/{transactionId}/attachments}: Upload new attachment for an inventory transfer
      *  One call: receive file(s) → upload to Spaces → verify → insert row(s) → return pre-signed download URL(s).
      * @param uploadInventoryTransferAttachmentVM the upload payload.
-     * @return the {@link UploadInventoryTransferAttachmentResponseVM} with status {@code 201 (Created)} and body of the uploaded attachment,
+     * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the uploaded attachment,
      *         or {@code 400 (Bad Request)} if the payload is invalid (mismatch size and type).
      **/
     @PostMapping(value = "/inventoryTransfer/{transactionId}/attachments", consumes = "multipart/form-data")
-    public UploadInventoryTransferAttachmentResponseVM upload(@PathVariable Long transactionId, @ModelAttribute @Valid UploadInventoryTransferAttachmentVM uploadInventoryTransferAttachmentVM) {
-       LOG.debug("Uploading inventory transfer attachment: {}", uploadInventoryTransferAttachmentVM);
-       InventoryTransferAttachments saved = service.upload(transactionId, uploadInventoryTransferAttachmentVM);
+    public ResponseEntity<UploadInventoryTransferAttachmentResponseVM> upload(
+            @PathVariable Long transactionId,
+            @ModelAttribute @Valid UploadInventoryTransferAttachmentVM uploadInventoryTransferAttachmentVM
+    ) {
+        LOG.debug("Uploading inventory transfer attachment: {}", uploadInventoryTransferAttachmentVM);
+        InventoryTransferAttachments saved = service.upload(transactionId, uploadInventoryTransferAttachmentVM);
+
         String safeFileName = getSafeFileName(saved.getSpaceKey());
         String downloadUrl = storage.presignGet(saved.getSpaceKey(), safeFileName).url().toString();
 
-        return UploadInventoryTransferAttachmentResponseVM.ofEntity(saved, downloadUrl);
+        UploadInventoryTransferAttachmentResponseVM body =
+                UploadInventoryTransferAttachmentResponseVM.ofEntity(saved, downloadUrl);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
     private static String getSafeFileName(String key) {
         int i = key.lastIndexOf('/');
@@ -58,27 +66,30 @@ public class InventoryTransferAttachmentsController {
     }
     /**
      * {@code : GET/ inventoryTransfer/attachments/by-transactionId?transactionId=1: List active attachments for inventoryTransfer.}
-     * recieve all files related to the inventory transfer
+     * receive all files related to the inventory transfer
      * @param transactionId to get attachments by inventory transfer
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of inventoryTransferAttachment view models in the body,
      **/
     @GetMapping("/inventoryTransfer/attachments/by-transactionId")
-    public List<InventoryTransferAttachments> list(@RequestParam Long transactionId) {
-        return service.list(transactionId);
+    public ResponseEntity<List<InventoryTransferAttachments>> list(@RequestParam Long transactionId) {
+        LOG.debug("Listing inventory transfer attachments for transactionId: {}", transactionId);
+        List<InventoryTransferAttachments> attachments = service.list(transactionId);
+        return ResponseEntity.ok(attachments);
     }
-    
+
+
 
     /**
      * {@code : POST/ inventoryTransfer/attachmentDownloadUrl/{id} } Pre-signed download URL.
      * return download url to download attachment
      * @param id of attachment needs to download it
-     * @return the {@link DownloadInventoryTransferAttachmentVM} with status {@code 200 (OK)}, an url and expires In seconds response
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, an url and expires In seconds response
      * */
     @PostMapping("/inventoryTransfer/attachmentDownloadUrl/{id}")
-    public DownloadInventoryTransferAttachmentVM downloadUrl(@PathVariable Long id) {
-        LOG.debug("Downloading inventory transfer attachment: {}", id);
-        DownloadInventoryTransferAttachmentVM downloadTicket = service.downloadUrl(id);
-        return new DownloadInventoryTransferAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds());
+    public ResponseEntity<DownloadInventoryTransferAttachmentVM> downloadUrl(@PathVariable Long id) {
+        LOG.debug("Generating download URL for inventory transfer attachment: {}", id);
+        DownloadInventoryTransferAttachmentVM ticket = service.downloadUrl(id);
+        return ResponseEntity.ok(new DownloadInventoryTransferAttachmentVM(ticket.url(), ticket.expiresInSeconds()));
     }
 
     /**
@@ -86,9 +97,9 @@ public class InventoryTransferAttachmentsController {
      * @param id of attachment needs to delete
      * */
     @DeleteMapping("/inventoryTransfer/attachments/{id}")
-    public void delete(@PathVariable Long id) {
-        LOG.debug("Deleting inventory transfer attachment: {}", id);
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        LOG.debug("Soft deleting inventory transfer attachment: {}", id);
         service.softDelete(id);
+        return ResponseEntity.noContent().build();
     }
-    
 }
