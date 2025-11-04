@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.PatientAttachments;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.attachment.patient.UploadPatientAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.patient.DownloadPatientAttachmentVM; // <-- add
 
@@ -94,18 +95,17 @@ public class PatientAttachmentsService {
 
     public DownloadPatientAttachmentVM downloadUrl(Long id) {
         LOG.debug("download patient attachments {}", id);
-        PatientAttachments pa = repo.findActiveById(id).orElseThrow();
+        PatientAttachments pa = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
         PresignedGetObjectRequest get = storage.presignGet(pa.getSpaceKey(), pa.getFilename());
         return new DownloadPatientAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("delete patient attachments {}", id);
-        PatientAttachments pa = repo.findById(id).orElseThrow();
-        if (pa.getDeletedAt() == null) {
-            pa.setDeletedAt(Instant.now());
-            repo.save(pa);
+        LOG.debug("Soft deleting patient attachment {}", id);
+        int updated = repo.softDelete(id);
+        if (updated==0) {
+            throw new NotFoundAlertException("Patient attachment not found with id {" + id+"}", ENTITY_NAME, "notfound");
         }
     }
 }

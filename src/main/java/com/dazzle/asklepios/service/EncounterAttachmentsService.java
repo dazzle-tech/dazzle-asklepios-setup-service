@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.DownloadEncounterAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
 import lombok.RequiredArgsConstructor;
@@ -102,19 +103,18 @@ public class EncounterAttachmentsService {
 
 
     public DownloadEncounterAttachmentVM downloadUrl(Long id) {
-        LOG.debug("download encounter attachments", id);
-        EncounterAttachments a = repo.findActiveById(id).orElseThrow();
+        LOG.debug("download encounter attachments {}", id);
+        EncounterAttachments a = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
         PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
         return new DownloadEncounterAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("delete encounter attachments", id);
-        EncounterAttachments a = repo.findById(id).orElseThrow();
-        if (a.getDeletedAt() == null) {
-            a.setDeletedAt(Instant.now());
-            repo.save(a);
+        LOG.debug("Soft deleting encounter attachment {}", id);
+        int updated = repo.softDelete(id);
+        if (updated==0) {
+            throw new NotFoundAlertException("Encounter attachment not found with id {" + id+"}", ENTITY_NAME, "notfound");
         }
     }
 }

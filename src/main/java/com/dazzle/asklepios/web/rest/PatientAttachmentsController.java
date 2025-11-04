@@ -51,91 +51,107 @@ public class PatientAttachmentsController {
 
     /**
      * {@code : POST/ patients/{patientId}/attachments}: Upload new attachment for a patient
-     *  One call: receive file(s) → upload to Spaces → verify → insert row(s) → return presigned download URL(s).
+     * One call: receive file(s) → upload to Spaces → verify → insert row(s) → return presigned download URL(s).
+     *
      * @param uploadPatientAttachmentVM the upload payload.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the uploaded attachment,
-     *         or {@code 400 (Bad Request)} if the payload is invalid (mismatch size and type).
+     * or {@code 400 (Bad Request)} if the payload is invalid (mismatch size and type).
      **/
     @PostMapping(value = "/patients/{patientId}/attachments", consumes = "multipart/form-data")
-    public UploadPatientAttachmentResponseVM upload(@PathVariable Long patientId, @ModelAttribute @Valid UploadPatientAttachmentVM uploadPatientAttachmentVM) {
+    public ResponseEntity<UploadPatientAttachmentResponseVM> upload(@PathVariable Long patientId, @ModelAttribute @Valid UploadPatientAttachmentVM uploadPatientAttachmentVM) {
         LOG.debug("Uploading patient attachment: {}", uploadPatientAttachmentVM);
         PatientAttachments saved = service.upload(patientId, uploadPatientAttachmentVM);
         String safeFileName = getSafeFileName(saved.getSpaceKey());
         String downloadUrl = storage.presignGet(saved.getSpaceKey(), safeFileName).url().toString();
 
-        return UploadPatientAttachmentResponseVM.ofEntity(saved, downloadUrl);
+        UploadPatientAttachmentResponseVM body = UploadPatientAttachmentResponseVM.ofEntity(saved, downloadUrl);
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
+
     private static String getSafeFileName(String key) {
         int i = key.lastIndexOf('/');
         return i >= 0 ? key.substring(i + 1) : key;
     }
+
     /**
      * {@code : GET/ patients/attachments/by-patientId/{patientId}: List active attachments for a patient.}
      * receive all files related to the patient
+     *
      * @param patientId to get attachments by patient
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of patientAttachments view models in the body,
      **/
     @GetMapping("/patients/attachments/by-patientId/{patientId}")
-    public List<PatientAttachments> list(@PathVariable Long patientId) {
+    public ResponseEntity<List<PatientAttachments>> list(@PathVariable Long patientId) {
         LOG.debug("Listing patient attachments by patientId: {}", patientId);
-        return service.list(patientId);
+        List<PatientAttachments> items = service.list(patientId);
+        return ResponseEntity.ok(items);
     }
 
     /**
      * {@code : POST/ patients/attachmentDownloadUrl/{id} } Presigned download URL.
      * return download url to download attachment
+     *
      * @param id of attachment needs to download it
-     * @return the {@link DownloadPatientAttachmentVM} with status {@code 200 (OK)}, an url and expires In seconds response
-     * */
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, an url and expires In seconds response
+     */
     @PostMapping("/patients/attachmentDownloadUrl/{id}")
-    public DownloadPatientAttachmentVM downloadUrl(@PathVariable Long id) {
+    public ResponseEntity<DownloadPatientAttachmentVM> downloadUrl(@PathVariable Long id) {
         LOG.debug("Downloading patient attachment: {}", id);
         DownloadPatientAttachmentVM downloadTicket = service.downloadUrl(id);
-        return new DownloadPatientAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds());
+        return ResponseEntity.ok(new DownloadPatientAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds()));
     }
 
     /**
      * {@code DELETE/ patients/attachments/{id} }Soft delete for an attachment without remove it from spaces
+     *
      * @param id of attachment needs to delete
-     * */
+     */
     @DeleteMapping("/patients/attachments/{id}")
-    public void delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.debug("Deleting patient attachment: {}", id);
         service.softDelete(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**
      * {@code PUT/ patients/attachments/{id} } update type/details for patient attachments
      * return updated patient attachment
+     *
      * @param id of attachment needs to update
-     * @return the {@link PatientAttachments with status {@code 200 (OK)} when success and bad reuqest {@code 400 (Bad Request)} when error id not found}
-     * **/
+     * @return the {@link ResponseEntity with status {@code 200 (OK)} when success and bad reuqest {@code 400 (Bad Request)} when error id not found}
+     **/
     @PutMapping("/patients/attachments/{id}")
-    public PatientAttachments updateTypeAndDetails(@PathVariable Long id, @Valid @RequestBody UpdatePatientAttachmentVM updatePatientAttachmentVM) {
+    public ResponseEntity<PatientAttachments> updateTypeAndDetails(@PathVariable Long id, @Valid @RequestBody UpdatePatientAttachmentVM updatePatientAttachmentVM) {
         LOG.debug("Updating patient attachment: {}", updatePatientAttachmentVM);
 
         PatientAttachments patientAttachments = repo.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Not found", ENTITY_NAME, "not_found"));
 
-        if (updatePatientAttachmentVM.type() != null) patientAttachments.setType(updatePatientAttachmentVM.type());
-        if (updatePatientAttachmentVM.details() != null) patientAttachments.setDetails(updatePatientAttachmentVM.details());
+        if (updatePatientAttachmentVM.type() != null) {
+            patientAttachments.setType(updatePatientAttachmentVM.type());
+        }
+        if (updatePatientAttachmentVM.details() != null) {
+            patientAttachments.setDetails(updatePatientAttachmentVM.details());
+        }
 
-        return repo.save(patientAttachments);
+        PatientAttachments saved = repo.save(patientAttachments);
+        return ResponseEntity.ok(saved);
     }
 
     /**
      * {@code : GET/ patients/{patientId}/profile-picture: last uploaded profile picture for a patient -> Presigned download URL.}
      * receive last profile picture related to the patient
+     *
      * @param patientId to get attachments by patient
-     * @return the {@link DownloadPatientAttachmentVM} with status {@code 200 (OK)}, an url and expires In seconds response
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)}, an url and expires In seconds response
      **/
     @GetMapping("/patients/{patientId}/profile-picture")
-    @ResponseStatus(HttpStatus.OK)
-    public DownloadPatientAttachmentVM getLatestProfilePicture(@PathVariable Long patientId) {
+    public ResponseEntity<DownloadPatientAttachmentVM> getLatestProfilePicture(@PathVariable Long patientId) {
         LOG.debug("last profile picture for patient: {}", patientId);
         PatientAttachments patientAttachments = repo.findFirstByPatientIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, PatientAttachmentSource.PATIENT_PROFILE_PICTURE)
                 .orElseThrow(() -> new BadRequestAlertException("No profile picture", ENTITY_NAME, "not_found"));
+
         DownloadPatientAttachmentVM downloadTicket = service.downloadUrl(patientAttachments.getId());
-        return new DownloadPatientAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds());
+        return ResponseEntity.ok(new DownloadPatientAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds()));
     }
 }

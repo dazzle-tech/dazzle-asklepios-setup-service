@@ -229,7 +229,7 @@ when(vm.sourceId()).thenReturn(734845L);
                 .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT)
                 .sourceId(734845L).build();
 
-        when(repo.findActiveById(10L)).thenReturn(Optional.of(entity));
+        when(repo.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(entity));
 
         PresignedGetObjectRequest pre = mock(PresignedGetObjectRequest.class);
         when(pre.url()).thenReturn(new URL("https://files.example/k?sig=1"));
@@ -240,7 +240,7 @@ when(vm.sourceId()).thenReturn(734845L);
 
         assertThat(ticket.url()).isEqualTo("https://files.example/k?sig=1");
         assertThat(ticket.expiresInSeconds()).isEqualTo(600);
-        verify(repo).findActiveById(10L);
+        verify(repo).findByIdAndDeletedAtIsNull(10L);
         verify(storage).presignGet("k", "f.txt");
     }
     @Test
