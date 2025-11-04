@@ -38,10 +38,10 @@ public class InventoryTransactionAttachmentsService {
 
     private static final Logger LOG = LoggerFactory.getLogger(InventoryTransactionAttachmentsService.class);
 
-    public InventoryTransactionAttachments upload(Long transactionId, UploadInventoryTransactionAttachmentVM vm) {
-        LOG.debug("upload Inventory Transaction attachment {}", vm);
+    public InventoryTransactionAttachments upload(Long transactionId, UploadInventoryTransactionAttachmentVM uploadInventoryTransactionAttachmentVM) {
+        LOG.debug("upload Inventory Transaction attachment {}", uploadInventoryTransactionAttachmentVM);
 
-        MultipartFile file = vm.file();
+        MultipartFile file = uploadInventoryTransactionAttachmentVM.file();
         if (file == null || file.isEmpty()) {
             throw new BadRequestAlertException("No file provided", ENTITY_NAME, "no_file");
         }
@@ -68,7 +68,7 @@ public class InventoryTransactionAttachmentsService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload failed", e);
         }
 
-        InventoryTransactionAttachments entity = InventoryTransactionAttachments.builder()
+        InventoryTransactionAttachments inventoryTransactionAttachments = InventoryTransactionAttachments.builder()
                 .transactionId(transactionId)
                 .spaceKey(key)
                 .filename(originalName)
@@ -76,10 +76,10 @@ public class InventoryTransactionAttachmentsService {
                 .sizeBytes(size)
                 .build();
 
-        return repo.save(entity);
+        return repo.save(inventoryTransactionAttachments);
     }
-    private static String getOriginalName(MultipartFile f) {
-        String name = f.getOriginalFilename();
+    private static String getOriginalName(MultipartFile file) {
+        String name = file.getOriginalFilename();
         if (name == null || name.isBlank()) return "file";
         return name.replaceAll("[^\\w.\\- ]", "_");
     }
@@ -91,9 +91,9 @@ public class InventoryTransactionAttachmentsService {
 
     public DownloadInventoryTransactionAttachmentVM downloadUrl(Long id) {
         LOG.debug("download Inventory Transaction attachments{}", id);
-        InventoryTransactionAttachments a = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
-        PresignedGetObjectRequest get = storage.presignGet(a.getSpaceKey(), a.getFilename());
-        return new DownloadInventoryTransactionAttachmentVM(get.url().toString(), props.getPresignExpirySeconds());
+        InventoryTransactionAttachments inventoryTransactionAttachments = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
+        PresignedGetObjectRequest getURL = storage.presignGet(inventoryTransactionAttachments.getSpaceKey(), inventoryTransactionAttachments.getFilename());
+        return new DownloadInventoryTransactionAttachmentVM(getURL.url().toString(), props.getPresignExpirySeconds());
     }
 
     @Transactional

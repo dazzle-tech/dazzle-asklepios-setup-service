@@ -62,7 +62,7 @@ public class InventoryTransactionAttachmentsController {
     }
     /**
      * {@code : GET/ inventoryTransaction/attachments/by-transactionId?transactionId=1: List active attachments for inventoryTransaction.}
-     * recieve all files related to the inventory transaction
+     * receive all files related to the inventory transaction
      * @param transactionId to get attachments by inventory transaction
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of inventoryTransactionAttachment view models in the body,
      **/
