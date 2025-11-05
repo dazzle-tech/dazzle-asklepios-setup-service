@@ -3,6 +3,8 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.LoincCategory;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
+import com.dazzle.asklepios.service.dto.LoincConflictDTO;
+import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -36,110 +38,114 @@ public class LoincCodeService {
     private static final Logger LOG = LoggerFactory.getLogger(LoincCodeService.class);
     private final LoincCodeRepository repository;
 
-    public record ImportResult(int totalRows, int inserted, int updated, List<Conflict> conflicts) {}
-    public record Conflict(String code, String incomingDescription, String incomingCategory, String existingDescription, String existingCategory) {}
-
     /** Import CSV file of LOINC codes with conflict handling */
     @Transactional
-    public ImportResult importCsv(MultipartFile file, boolean overwrite) {
+    public LoincImportResultDTO importCsv(MultipartFile file, boolean overwrite) {
         List<CSVRecord> records = readCsv(file);
         LOG.info("Starting LOINC CSV import (overwrite={}). Total records: {}", overwrite, records.size());
 
         // Detect duplicates in file
         Map<String, Long> codeCounts = records.stream()
-                .map(r -> val(r, "code"))
-                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+                .map(record -> val(record, "code"))
+                .collect(Collectors.groupingBy(code -> code, Collectors.counting()));
 
-        List<String> dupInFile = codeCounts.entrySet().stream()
-                .filter(e -> e.getValue() > 1)
+        List<String> duplicatesInFile = codeCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
                 .map(Map.Entry::getKey)
                 .toList();
 
-        if (!dupInFile.isEmpty()) {
-            throw new BadRequestAlertException("Duplicate LOINC code(s): " + String.join(", ", dupInFile), "loincode", "duplicate");
+        if (!duplicatesInFile.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Duplicate LOINC code(s): " + String.join(", ", duplicatesInFile),
+                    "loincode",
+                    "duplicate"
+            );
         }
 
         // Build row list
         List<CsvRow> rows = new ArrayList<>();
-        for (CSVRecord rec : records) {
+        for (CSVRecord record : records) {
             rows.add(new CsvRow(
-                    val(rec, "code").trim(),
-                    val(rec, "description").trim(),
-                    parseCategory(val(rec, "category"))
+                    val(record, "code").trim(),
+                    val(record, "description").trim(),
+                    parseCategory(val(record, "category"))
             ));
         }
+        Integer totalRows = rows.size();
 
-        Map<String, CsvRow> byCode = rows.stream().collect(Collectors.toMap(CsvRow::code, r -> r));
-        Map<String, LoincCode> existingMap = new HashMap<>();
-        byCode.keySet().forEach(code -> repository.findByCode(code).ifPresent(e -> existingMap.put(code, e)));
+        Map<String, CsvRow> rowsByCode = rows.stream().collect(Collectors.toMap(CsvRow::code, row -> row));
+        Map<String, LoincCode> existingByCode = new HashMap<>();
+        rowsByCode.keySet().forEach(code ->
+                repository.findByCode(code).ifPresent(existing -> existingByCode.put(code, existing))
+        );
 
         // Detect DB conflicts
-        List<Conflict> conflicts = new ArrayList<>();
-        for (Map.Entry<String, LoincCode> e : existingMap.entrySet()) {
-            CsvRow incoming = byCode.get(e.getKey());
-            LoincCode ex = e.getValue();
-            conflicts.add(new Conflict(
+        List<LoincConflictDTO> conflicts = new ArrayList<>();
+        for (Map.Entry<String, LoincCode> entry : existingByCode.entrySet()) {
+            CsvRow incoming = rowsByCode.get(entry.getKey());
+            LoincCode existing = entry.getValue();
+            conflicts.add(new LoincConflictDTO(
                     incoming.code(),
                     incoming.description(),
                     incoming.category().name(),
-                    ex.getDescription(),
-                    ex.getCategory().name()
+                    existing.getDescription(),
+                    existing.getCategory().name()
             ));
         }
 
         if (!overwrite && !conflicts.isEmpty()) {
-            return new ImportResult(rows.size(), 0, 0, conflicts);
+            LOG.info("LOINC import aborted due to {} conflict(s).", conflicts.size());
+            return new LoincImportResultDTO(totalRows, 0, 0, conflicts);
         }
 
         // Insert or update
-        int inserted = 0, updated = 0;
-        for (CsvRow r : rows) {
-            LoincCode ex = existingMap.get(r.code());
-            if (ex == null) {
+        Integer inserted = 0;
+        Integer updated = 0;
+        for (CsvRow row : rows) {
+            LoincCode existing = existingByCode.get(row.code());
+            if (existing == null) {
                 repository.save(LoincCode.builder()
-                        .code(r.code())
-                        .description(r.description())
-                        .category(r.category())
+                        .code(row.code())
+                        .description(row.description())
+                        .category(row.category())
                         .lastUpdated(Instant.now())
                         .build());
                 inserted++;
             } else if (overwrite) {
-                ex.setDescription(r.description());
-                ex.setCategory(r.category());
-                ex.setLastUpdated(Instant.now());
-                repository.save(ex);
+                existing.setDescription(row.description());
+                existing.setCategory(row.category());
+                existing.setLastUpdated(Instant.now());
+                repository.save(existing);
                 updated++;
             }
         }
 
-        return new ImportResult(rows.size(), inserted, updated, overwrite ? List.of() : conflicts);
+        LOG.info("LOINC import done. Inserted={}, Updated={}, Conflicts={}", inserted, updated, conflicts.size());
+        return new LoincImportResultDTO(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
     }
 
-    /** Get all LOINC codes (paged) */
+    // ====================== READ / FILTER ======================
+
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<LoincCode> findAll(Pageable pageable) {
         return repository.findAll(pageable);
     }
 
-    /** Filter by category */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<LoincCode> findByCategory(LoincCategory category, Pageable pageable) {
         return repository.findByCategory(category, pageable);
     }
 
-    /** Search by partial code */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<LoincCode> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
         return repository.findByCodeContainingIgnoreCase(code, pageable);
     }
 
-    /** Search by partial description */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<LoincCode> findByDescriptionContainingIgnoreCase(String description, Pageable pageable) {
         return repository.findByDescriptionContainingIgnoreCase(description, pageable);
     }
 
-    /** Apply flexible filtering */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<LoincCode> filter(String code, String description, LoincCategory category, Pageable pageable) {
         if (category != null) return findByCategory(category, pageable);
@@ -148,9 +154,10 @@ public class LoincCodeService {
         return findAll(pageable);
     }
 
+    // ====================== Internal helpers ======================
+
     private record CsvRow(String code, String description, LoincCategory category) {}
 
-    /** Read CSV file and parse records */
     private List<CSVRecord> readCsv(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
              CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT
@@ -159,48 +166,57 @@ public class LoincCodeService {
                      .withIgnoreHeaderCase()
                      .withTrim())) {
             return parser.getRecords();
-        } catch (IOException e) {
-            throw new BadRequestAlertException("Error reading CSV file: " + e.getMessage(), "loincode", "filereaderror");
+        } catch (IOException ex) {
+            throw new BadRequestAlertException("Error reading CSV file: " + ex.getMessage(), "loincode", "filereaderror");
         }
     }
 
-    /** Retrieve a column value with BOM/header cleanup */
-    private String val(CSVRecord r, String col) {
+    private String val(CSVRecord record, String column) {
         try {
-            String v = r.get(col);
-            if (v != null && !v.isBlank()) return v;
+            String value = record.get(column);
+            if (value != null && !value.isBlank()) return value;
         } catch (IllegalArgumentException ignore) {}
 
-        String bomCol = "\uFEFF" + col;
+        String bomColumn = "\uFEFF" + column;
         try {
-            String v = r.get(bomCol);
-            if (v != null && !v.isBlank()) return v;
+            String value = record.get(bomColumn);
+            if (value != null && !value.isBlank()) return value;
         } catch (IllegalArgumentException ignore) {}
 
-        Map<String, Integer> headerMap = r.getParser().getHeaderMap();
+        Map<String, Integer> headerMap = record.getParser().getHeaderMap();
         if (headerMap != null) {
-            String wanted = col.replace(" ", "").toLowerCase(Locale.ROOT);
-            for (String h : headerMap.keySet()) {
-                String norm = h.replace("\uFEFF", "").replace("\u200B", "").replace("\u00A0", " ").trim();
-                if (norm.replace(" ", "").equalsIgnoreCase(wanted)) {
-                    String v = r.get(h);
-                    if (v != null && !v.isBlank()) return v;
+            String wanted = column.replace(" ", "").toLowerCase(Locale.ROOT);
+            for (String header : headerMap.keySet()) {
+                String normalized = header.replace("\uFEFF", "")
+                        .replace("\u200B", "")
+                        .replace("\u00A0", " ")
+                        .trim();
+                if (normalized.replace(" ", "").equalsIgnoreCase(wanted)) {
+                    String value = record.get(header);
+                    if (value != null && !value.isBlank()) return value;
                 }
             }
             String seen = headerMap.keySet().stream()
                     .map(h -> "'" + h.replace("\uFEFF", "").trim() + "'")
                     .collect(Collectors.joining(", "));
-            throw new BadRequestAlertException("Mapping for '" + col + "' not found, expected one of [" + seen + "]", "loincode", "badheader");
+            throw new BadRequestAlertException(
+                    "Mapping for '" + column + "' not found, expected one of [" + seen + "]",
+                    "loincode",
+                    "badheader"
+            );
         }
 
-        throw new BadRequestAlertException("Missing '" + col + "' at line " + r.getRecordNumber(), "loincode", "missingfield");
+        throw new BadRequestAlertException(
+                "Missing '" + column + "' at line " + record.getRecordNumber(),
+                "loincode",
+                "missingfield"
+        );
     }
 
-    /** Parse string into LoincCategory enum */
     private LoincCategory parseCategory(String raw) {
         try {
             return LoincCategory.valueOf(raw.trim().toUpperCase().replace(' ', '_'));
-        } catch (Exception e) {
+        } catch (Exception ex) {
             throw new BadRequestAlertException("Invalid category: '" + raw + "'", "loincode", "badcategory");
         }
     }

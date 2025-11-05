@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.LoincCategory;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
 import com.dazzle.asklepios.service.LoincCodeService;
+import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -32,16 +33,18 @@ public class LoincCodeController {
     private final LoincCodeRepository repository;
 
     @PostMapping("/loinc/import")
-    public ResponseEntity<?> importLoinc(
+    public ResponseEntity<LoincImportResultDTO> importLoinc(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite
     ) {
-        LoincCodeService.ImportResult result = service.importCsv(file, overwrite);
+        LoincImportResultDTO result = service.importCsv(file, overwrite);
         if (!overwrite && !result.conflicts().isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
         return ResponseEntity.ok(result);
     }
+
+
 
     @GetMapping("/loinc/all")
     public ResponseEntity<List<LoincCode>> getAll(@ParameterObject Pageable pageable) {
