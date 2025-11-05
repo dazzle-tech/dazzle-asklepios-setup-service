@@ -17,16 +17,11 @@ import java.util.Optional;
 public interface PatientAttachmentsRepository extends JpaRepository<PatientAttachments,Long> {
     List<PatientAttachments> findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long patientId);
 
-    @Query("select p from PatientAttachments p where p.id = ?1 and p.deletedAt is null")
-    Optional<PatientAttachments> findActiveById( Long id);
-
-    boolean existsByPatientIdAndSpaceKey(Long patientId, String spaceKey);
+    Optional<PatientAttachments> findByIdAndDeletedAtIsNull(Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update PatientAttachments p set p.deletedAt = CURRENT_TIMESTAMP where p.id = ?1 and p.deletedAt is null")
+    @Query("update PatientAttachments p set p.deletedAt = CURRENT_TIMESTAMP where p.id = :id and p.deletedAt is null")
     int softDelete(Long id);
 
-    Optional<PatientAttachments> findFirstByPatientIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(
-            Long patientId, PatientAttachmentSource source
-    );
+    Optional<PatientAttachments> findFirstByPatientIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc( Long patientId, PatientAttachmentSource source);
 }

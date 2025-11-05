@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
 import com.dazzle.asklepios.service.AttachmentStorageService;
 import com.dazzle.asklepios.service.EncounterAttachmentsService;
+import com.dazzle.asklepios.web.rest.vm.attachment.encounter.DownloadEncounterAttachmentVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +99,7 @@ class EncounterAttachmentsControllerTest {
 
     @Test
     void downloadUrl_returnsTicket() throws Exception {
-        var ticket = new EncounterAttachmentsService.DownloadTicket("https://asklepios.sfo3.digitaloceanspaces.com/encounters/1/2025/10/fcc251ac-b0cd-4dbb-af05-362598ce3df1_patient%20_3_.png?response-content-disposition=attachment%3B%20filename%3D%22patient%20_3_.png%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251027T114008Z&X-Amz-SignedHeaders=host&X-Amz-Credential=DO00TRNC7U4TLLL6ZAN2%2F20251027%2Fsfo3%2Fs3%2Faws4_request&X-Amz-Expires=300&X-Amz-Signature=2b209fc00c0098c0b5d0da1eb2e0c076f7e28a638473d0e41fcb9ef15c7d0dcb", 300);
+        var ticket = new DownloadEncounterAttachmentVM("https://asklepios.sfo3.digitaloceanspaces.com/encounters/1/2025/10/fcc251ac-b0cd-4dbb-af05-362598ce3df1_patient%20_3_.png?response-content-disposition=attachment%3B%20filename%3D%22patient%20_3_.png%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20251027T114008Z&X-Amz-SignedHeaders=host&X-Amz-Credential=DO00TRNC7U4TLLL6ZAN2%2F20251027%2Fsfo3%2Fs3%2Faws4_request&X-Amz-Expires=300&X-Amz-Signature=2b209fc00c0098c0b5d0da1eb2e0c076f7e28a638473d0e41fcb9ef15c7d0dcb", 300);
         when(service.downloadUrl(5003L)).thenReturn(ticket);
 
         mockMvc.perform(post("/api/setup/encounters/attachmentDownloadUrl/{id}", 5003L))
