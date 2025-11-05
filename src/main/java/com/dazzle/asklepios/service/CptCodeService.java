@@ -3,6 +3,8 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.CptCode;
 import com.dazzle.asklepios.domain.enumeration.CptCategory;
 import com.dazzle.asklepios.repository.CptCodeRepository;
+import com.dazzle.asklepios.service.dto.CptConflictDTO;
+import com.dazzle.asklepios.service.dto.CptImportResultDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,103 +36,87 @@ public class CptCodeService {
     private static final Logger LOG = LoggerFactory.getLogger(CptCodeService.class);
     private final CptCodeRepository repository;
 
-    /** Response object returned to the client after an import attempt. */
-    public record ImportResult(
-            int totalRows,
-            int inserted,
-            int updated,
-            List<Conflict> conflicts
-    ) {}
-
-    /** A single conflict (same code already exists in DB). */
-    public record Conflict(
-            String code,
-            String incomingDescription,
-            String incomingCategory,
-            String existingDescription,
-            String existingCategory
-    ) {}
-
     @Transactional
-    public ImportResult importCsv(MultipartFile file, boolean overwrite) {
+    public CptImportResultDTO importCsv(MultipartFile file, boolean overwrite) {
         List<CSVRecord> records = readCsv(file);
         LOG.info("Starting CPT CSV import (overwrite={}). Total records: {}", overwrite, records.size());
 
         Map<String, Long> codeCounts = records.stream()
-                .map(r -> val(r, "code"))
-                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+                .map(record -> val(record, "code"))
+                .collect(Collectors.groupingBy(code -> code, Collectors.counting()));
 
-        List<String> dupInFile = codeCounts.entrySet().stream()
-                .filter(e -> e.getValue() > 1)
+        List<String> duplicatesInFile = codeCounts.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
                 .map(Map.Entry::getKey)
                 .toList();
 
-        if (!dupInFile.isEmpty()) {
+        if (!duplicatesInFile.isEmpty()) {
             throw new BadRequestAlertException(
-                    "Duplicate CPT code(s) in CSV: " + String.join(", ", dupInFile),
+                    "Duplicate CPT code(s) in CSV: " + String.join(", ", duplicatesInFile),
                     "cptcode",
                     "duplicate"
             );
         }
 
         List<CsvRow> rows = new ArrayList<>();
-        for (CSVRecord rec : records) {
+        for (CSVRecord record : records) {
             rows.add(new CsvRow(
-                    val(rec, "code").trim(),
-                    val(rec, "description").trim(),
-                    parseCategory(val(rec, "category"))
+                    val(record, "code").trim(),
+                    val(record, "description").trim(),
+                    parseCategory(val(record, "category"))
             ));
         }
         int totalRows = rows.size();
 
-        List<Conflict> conflicts = new ArrayList<>();
-        Map<String, CsvRow> byCode = rows.stream().collect(Collectors.toMap(CsvRow::code, r -> r));
+        List<CptConflictDTO> conflicts = new ArrayList<>();
+        Map<String, CsvRow> rowsByCode = rows.stream().collect(Collectors.toMap(CsvRow::code, row -> row));
 
-        Map<String, CptCode> existingMap = new HashMap<>();
-        for (String code : byCode.keySet()) {
-            repository.findByCode(code).ifPresent(e -> existingMap.put(code, e));
+        Map<String, CptCode> existingByCode = new HashMap<>();
+        for (String code : rowsByCode.keySet()) {
+            repository.findByCode(code).ifPresent(existing -> existingByCode.put(code, existing));
         }
 
-        for (Map.Entry<String, CptCode> e : existingMap.entrySet()) {
-            CsvRow incoming = byCode.get(e.getKey());
-            CptCode ex = e.getValue();
-            conflicts.add(new Conflict(
+        for (Map.Entry<String, CptCode> entry : existingByCode.entrySet()) {
+            CsvRow incoming = rowsByCode.get(entry.getKey());
+            CptCode existing = entry.getValue();
+            conflicts.add(new CptConflictDTO(
                     incoming.code(),
                     incoming.description(),
                     incoming.category().name(),
-                    ex.getDescription(),
-                    ex.getCategory().name()
+                    existing.getDescription(),
+                    existing.getCategory().name()
             ));
         }
 
         if (!overwrite && !conflicts.isEmpty()) {
             LOG.info("CPT import aborted due to {} conflict(s).", conflicts.size());
-            return new ImportResult(totalRows, 0, 0, conflicts);
+            return new CptImportResultDTO(totalRows, 0, 0, conflicts);
         }
 
-        int inserted = 0, updated = 0;
+        int inserted = 0;
+        int updated = 0;
 
-        for (CsvRow r : rows) {
-            CptCode ex = existingMap.get(r.code());
-            if (ex == null) {
+        for (CsvRow row : rows) {
+            CptCode existing = existingByCode.get(row.code());
+            if (existing == null) {
                 repository.save(CptCode.builder()
-                        .code(r.code())
-                        .description(r.description())
-                        .category(r.category())
+                        .code(row.code())
+                        .description(row.description())
+                        .category(row.category())
                         .lastUpdated(Instant.now())
                         .build());
                 inserted++;
             } else if (overwrite) {
-                ex.setDescription(r.description());
-                ex.setCategory(r.category());
-                ex.setLastUpdated(Instant.now());
-                repository.save(ex);
+                existing.setDescription(row.description());
+                existing.setCategory(row.category());
+                existing.setLastUpdated(Instant.now());
+                repository.save(existing);
                 updated++;
             }
         }
 
         LOG.info("CPT import done. Inserted={}, Updated={}, Conflicts={}", inserted, updated, conflicts.size());
-        return new ImportResult(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
+        return new CptImportResultDTO(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
     }
 
     // ====================== READ / FILTER ONLY ======================
@@ -159,14 +145,6 @@ public class CptCodeService {
         return repository.findByDescriptionContainingIgnoreCase(description, pageable);
     }
 
-    /**
-     * Flexible filter based on which parameter is provided.
-     * Priority:
-     *  - category -> filter by category
-     *  - code -> filter by code fragment
-     *  - description -> filter by description fragment
-     *  - else -> return all
-     */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<CptCode> filter(String code, String description, CptCategory category, Pageable pageable) {
         LOG.debug("CPT filter code='{}', description='{}', category='{}', pageable={}",
@@ -196,32 +174,32 @@ public class CptCodeService {
                      .withIgnoreHeaderCase()
                      .withTrim())) {
             return parser.getRecords();
-        } catch (IOException e) {
-            LOG.error("Error reading CPT CSV file: {}", e.getMessage(), e);
+        } catch (IOException ex) {
+            LOG.error("Error reading CPT CSV file: {}", ex.getMessage(), ex);
             throw new BadRequestAlertException(
-                    "Error reading CSV file: " + e.getMessage(),
+                    "Error reading CSV file: " + ex.getMessage(),
                     "cptcode",
                     "filereaderror"
             );
         }
     }
 
-    private String val(CSVRecord r, String col) {
-        String v = r.get(col);
-        if (v == null || v.isBlank()) {
+    private String val(CSVRecord record, String column) {
+        String value = record.get(column);
+        if (value == null || value.isBlank()) {
             throw new BadRequestAlertException(
-                    "Missing '" + col + "' at line " + r.getRecordNumber(),
+                    "Missing '" + column + "' at line " + record.getRecordNumber(),
                     "cptcode",
                     "missingfield"
             );
         }
-        return v;
+        return value;
     }
 
     private CptCategory parseCategory(String raw) {
         try {
             return CptCategory.valueOf(raw.trim().toUpperCase().replace(' ', '_'));
-        } catch (Exception e) {
+        } catch (Exception ex) {
             throw new BadRequestAlertException(
                     "Invalid category: '" + raw + "'",
                     "cptcode",

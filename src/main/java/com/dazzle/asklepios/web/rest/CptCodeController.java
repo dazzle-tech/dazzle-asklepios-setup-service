@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.CptCode;
 import com.dazzle.asklepios.domain.enumeration.CptCategory;
 import com.dazzle.asklepios.repository.CptCodeRepository;
 import com.dazzle.asklepios.service.CptCodeService;
+import com.dazzle.asklepios.service.dto.CptImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -31,18 +32,22 @@ public class CptCodeController {
     private final CptCodeService service;
     private final CptCodeRepository repository;
 
+    // ====================== IMPORT ======================
     @PostMapping("/cpt/import")
-    public ResponseEntity<?> importCpt(
+    public ResponseEntity<CptImportResultDTO> importCpt(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite
     ) {
-        CptCodeService.ImportResult result = service.importCsv(file, overwrite);
+        CptImportResultDTO result = service.importCsv(file, overwrite);
+
         if (!overwrite && !result.conflicts().isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
         }
+
         return ResponseEntity.ok(result);
     }
 
+    // ====================== FETCH ALL ======================
     @GetMapping("/cpt/all")
     public ResponseEntity<List<CptCode>> getAll(@ParameterObject Pageable pageable) {
         Page<CptCode> page = repository.findAll(pageable);
