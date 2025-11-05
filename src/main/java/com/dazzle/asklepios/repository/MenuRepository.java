@@ -19,14 +19,14 @@ public interface MenuRepository extends JpaRepository<Role, Long> {
     }
 
     @Query(value = """
-        select rs.screen   as screen,
-               rs.operation as operation
-          from role_screen rs
-          join role r       on r.id = rs.role_id
-          join user_role ur on ur.role_id = r.id
-         where ur.user_id = :userId
-           and r.facility_id = :facilityId
-        """, nativeQuery = true)
-    List<MenuRow> findScreensForUserAndFacility(@Param("userId") Long userId,
-                                                @Param("facilityId") Long facilityId);
+    select rs.screen   as screen,
+           rs.operation as operation
+      from role_screen rs
+      join role r       on r.id = rs.role_id
+      join user_role ur on ur.role_id = r.id
+     where ur.user_id = ?1
+       and r.facility_id = ?2
+    """, nativeQuery = true)
+    List<MenuRow> findScreensForUserAndFacility(Long userId, Long facilityId);
+
 }

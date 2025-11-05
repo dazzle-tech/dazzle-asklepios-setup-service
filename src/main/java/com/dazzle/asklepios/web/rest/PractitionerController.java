@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.PractitionerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
@@ -157,6 +159,19 @@ public class PractitionerController {
                 .map(PractitionerResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+    /**
+     * Search practitioner by name (case-insensitive).
+     */
+    @GetMapping("/practitioner/by-name/{name}")
+    public ResponseEntity<List<PractitionerResponseVM>> findByName(@PathVariable String name, @ParameterObject Pageable pageable) {
+        LOG.debug("REST request to search Practitioner by name='{}' page={}", name, pageable);
+        Page<Practitioner> page = practitionerService.findByFirstNameOrLastName(name,pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        LOG.debug("REST found {} Practitioner matching name='{}'", page.getTotalElements(), name);
+        return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
     /**

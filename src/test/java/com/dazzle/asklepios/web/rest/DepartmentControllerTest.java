@@ -89,7 +89,7 @@ class DepartmentControllerTest {
 
         DepartmentCreateVM createVM = new DepartmentCreateVM(
                 "Neurology", 1L, DepartmentType.INPATIENT_WARD, true, "NEU01",
-                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester"
+                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester",true,true
         );
 
         when(departmentService.create(createVM)).thenReturn(dept);
@@ -107,7 +107,9 @@ class DepartmentControllerTest {
                       "email": "neuro@hospital.com",
                       "encounterType": "INPATIENT",
                       "isActive": true,
-                      "createdBy": "tester"
+                      "createdBy": "tester",
+                      "hasMedicalSheets": true,
+                      "hasNurseMedicalSheets": true
                     }
                     """))
                 .andExpect(status().isCreated())
@@ -123,7 +125,7 @@ class DepartmentControllerTest {
 
         DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
                 5000L, "Oncology", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
-                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true
+                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true,true,true
         );
 
         when(departmentService.update(5000L, updateVM)).thenReturn(Optional.of(dept));
@@ -141,7 +143,9 @@ class DepartmentControllerTest {
                       "phoneNumber": "987654321",
                       "email": "oncology@hospital.com",
                       "encounterType": "CLINIC",
-                      "isActive": true
+                      "isActive": true,
+                      "hasMedicalSheets": true,
+                      "hasNurseMedicalSheets": true
                     }
                     """))
                 .andExpect(status().isOk())
