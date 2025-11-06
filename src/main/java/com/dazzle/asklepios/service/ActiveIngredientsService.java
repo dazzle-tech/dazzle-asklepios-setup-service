@@ -1,11 +1,9 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.ActiveIngredients;
-import com.dazzle.asklepios.domain.MedicationCategories;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
 import com.dazzle.asklepios.repository.MedicationCategoriesClassRepository;
-import com.dazzle.asklepios.repository.MedicationCategoriesRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsCreateVM;
@@ -28,19 +26,13 @@ public class ActiveIngredientsService {
     private static final Logger LOG = LoggerFactory.getLogger(ActiveIngredientsService.class);
 
     private final ActiveIngredientsRepository activeRepo;
-    private final MedicationCategoriesRepository categoryRepo;
     private final MedicationCategoriesClassRepository classRepo;
 
     private static final String ENTITY_NAME = "ActiveIngredients";
 
 
-    public ActiveIngredientsService(
-            ActiveIngredientsRepository activeRepo,
-            MedicationCategoriesRepository categoryRepo,
-            MedicationCategoriesClassRepository classRepo
-    ) {
+    public ActiveIngredientsService(ActiveIngredientsRepository activeRepo, MedicationCategoriesClassRepository classRepo) {
         this.activeRepo = activeRepo;
-        this.categoryRepo = categoryRepo;
         this.classRepo = classRepo;
     }
 
