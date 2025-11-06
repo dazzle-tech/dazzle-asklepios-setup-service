@@ -1,18 +1,27 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Status;
 import com.dazzle.asklepios.domain.enumeration.Resource;
 import com.dazzle.asklepios.domain.Encounter;
 import com.dazzle.asklepios.service.EncounterService;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.EncounterCreateVM;
 import com.dazzle.asklepios.web.rest.vm.EncounterResponseVM;
 import com.dazzle.asklepios.web.rest.vm.EncounterUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.ServiceResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -30,7 +39,10 @@ public class EncounterController {
     }
 
     @PostMapping("/encounter")
-    public ResponseEntity<EncounterResponseVM> create(@RequestParam Long patientId,@Valid @RequestBody EncounterCreateVM encounterVM) {
+    public ResponseEntity<EncounterResponseVM> create(
+            @RequestParam Long patientId,
+            @Valid @RequestBody EncounterCreateVM encounterVM
+    ) {
         LOG.debug("REST create Encounter patientId={}, payload={}", patientId, encounterVM);
 
         Encounter toCreate = Encounter.builder()
@@ -47,7 +59,11 @@ public class EncounterController {
     }
 
     @PutMapping("/encounter/{id}")
-    public ResponseEntity<EncounterResponseVM> updateEncounter(@PathVariable Long id, @RequestParam Long patientId ,@Valid @RequestBody EncounterUpdateVM encounterVM){
+    public ResponseEntity<EncounterResponseVM> updateEncounter(
+            @PathVariable Long id,
+            @RequestParam Long patientId ,
+            @Valid @RequestBody EncounterUpdateVM encounterVM
+    ){
         LOG.debug("REST update Encounter id={} patientId={} payload={}", id, patientId, encounterVM);
 
         Encounter toUpdate = Encounter.builder()
@@ -63,30 +79,66 @@ public class EncounterController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /** GET /api/setup/encounter — بدون فلاتر، يرجّع كل Encounter */
-    @GetMapping(value = "/encounter", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Encounter>> getAllEncounters() {
-        LOG.debug("REST list Encounters (no filters)");
-        List<Encounter> all = encounterService.findAll();
-        return ResponseEntity.ok(all);
+    @GetMapping(value = "/encounters", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<EncounterResponseVM>> getAllEncounters(@ParameterObject Pageable pageable) {
+        final Page<Encounter> page = encounterService.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        List<EncounterResponseVM> body = page.getContent()
+                .stream()
+                .map(EncounterResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+
     @GetMapping(value = "/encounter/status/{status}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Encounter>> getByStatus(@PathVariable Status status) {
-        LOG.debug("REST list Encounters by status={}", status);
-        return ResponseEntity.ok(encounterService.findByStatus(status));
+    public ResponseEntity<List<EncounterResponseVM>> getByStatus(
+            @PathVariable Status status,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Encounters by status={} pageable={}", status, pageable);
+        final Page<Encounter> page = encounterService.findByStatus( status, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(EncounterResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
     @GetMapping(value = "/encounter/resource/{resource}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Encounter>> findByResource(@PathVariable Resource resource){
-        LOG.debug("REST list Encounters by resource={}", resource);
-        return  ResponseEntity.ok(encounterService.findByResource(resource));
+    public ResponseEntity<List<EncounterResponseVM>> findByResource(
+            @PathVariable Resource resource,
+            @ParameterObject Pageable pageable
+    ){
+        LOG.debug("REST list Encounters by resource={} pageable={}", resource, pageable);
+        final Page<Encounter> page = encounterService.findByResource( resource, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(EncounterResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
     @GetMapping(value = "/encounter/patient/{patientId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<Encounter>> findByPatientId(@PathVariable Long patientId){
-        LOG.debug("REST list Encounters by patientId={}", patientId);
-        return  ResponseEntity.ok(encounterService.findByPatientId(patientId));
+    public ResponseEntity<List<EncounterResponseVM>> findByPatientId(
+            @PathVariable Long patientId,
+            @ParameterObject Pageable pageable
+    ){
+        LOG.debug("REST list Encounters by patientId={} pageable={}", patientId, pageable);
+        final Page<Encounter> page = encounterService.findByPatientId(patientId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(EncounterResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
     @GetMapping(value = "/encounter/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -1,18 +1,27 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Patient;
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.service.PatientService;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.PatientCreateVM;
 import com.dazzle.asklepios.web.rest.vm.PatientResponseVM;
 import com.dazzle.asklepios.web.rest.vm.PatientUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.ServiceResponseVM;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.*;
@@ -28,15 +37,6 @@ public class PatientController {
 
     public PatientController(PatientService patientService) {
         this.patientService = patientService;
-    }
-
-    // ================= Utilities =================
-    // لازم يتغير
-    private static String norm(String s) { return s == null ? null : s.trim(); }
-    private static boolean containsIgnoreCase(String value, String filter) {
-        if (filter == null || filter.isEmpty()) return true;   // لا فلترة
-        if (value == null) return false;
-        return value.toLowerCase().contains(filter.toLowerCase());
     }
 
     // =============================== Endpoints ===============================
@@ -91,14 +91,24 @@ public class PatientController {
      * GET /api/setup/patient
      */
     @GetMapping(value = "/patient", produces = MediaType.APPLICATION_JSON_VALUE)
-
-    public ResponseEntity<List<Patient>> getAllPatients(
-    ) {
+    public ResponseEntity<List<PatientResponseVM>> getAllPatients(
+            @ParameterObject Pageable pageable
+            ) {
         LOG.debug("REST list Patients filters:");
 
-        List<Patient> all = patientService.findAll();
+        final Page<Patient> page = patientService.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
-        return ResponseEntity.ok(all);
+        List<PatientResponseVM> body = page.getContent()
+                .stream()
+                .map(PatientResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(body);
+        
     }
 
     /**

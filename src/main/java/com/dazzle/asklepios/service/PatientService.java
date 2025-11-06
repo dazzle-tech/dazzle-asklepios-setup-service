@@ -4,6 +4,8 @@ import com.dazzle.asklepios.domain.Patient;
 import com.dazzle.asklepios.repository.PatientRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -12,12 +14,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
-
 import java.util.List;
 import java.util.Optional;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
+@Transactional
 public class PatientService {
 
     private static final Logger LOG = LoggerFactory.getLogger(PatientService.class);
@@ -123,27 +125,23 @@ public class PatientService {
         }
     }
 
-    /** حذف */
     public void delete(Long id) {
         LOG.debug("Request to delete Patient id={}", id);
         patientRepository.deleteById(id);
     }
 
-    /** جلب واحد */
     @Transactional(readOnly = true)
     public Optional<Patient> findOne(Long id) {
         LOG.debug("Request to get Patient : {}", id);
         return patientRepository.findById(id);
     }
 
-    /** جميع المرضى بدون ترقيم */
     @Transactional(readOnly = true)
-    public List<Patient> findAll() {
+    public Page<Patient> findAll( Pageable pageable) {
         LOG.debug("Request to get all Patients (no pagination)");
-        return patientRepository.findAll();
+        return patientRepository.findAll(pageable);
     }
 
-    /** بحسب الإيميل */
     @Transactional(readOnly = true)
     public Optional<Patient> findByEmail(String email) {
         LOG.debug("Request to get Patient by email : {}", email);

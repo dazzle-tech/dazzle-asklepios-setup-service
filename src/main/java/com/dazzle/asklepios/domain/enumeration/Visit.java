@@ -1,5 +1,7 @@
 package com.dazzle.asklepios.domain.enumeration;
 
 public enum Visit {
-    OUTPATIENT
+    OUTPATIENT,
+    INPATIENT,
+    VIRTUAL
 }

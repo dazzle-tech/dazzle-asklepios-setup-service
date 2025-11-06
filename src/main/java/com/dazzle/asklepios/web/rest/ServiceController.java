@@ -108,7 +108,6 @@ public class ServiceController {
         );
     }
 
-    // ====================== FILTERS ======================
     @GetMapping("/service/by-category/{category}")
     public ResponseEntity<List<ServiceResponseVM>> getByCategory(
             @PathVariable ServiceCategory category,

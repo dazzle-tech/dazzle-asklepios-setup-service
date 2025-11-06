@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.Encounter;
 import com.dazzle.asklepios.domain.Patient;
 import com.dazzle.asklepios.domain.enumeration.Resource;
 import com.dazzle.asklepios.domain.enumeration.Status;
-import com.dazzle.asklepios.domain.enumeration.Visit;
 import com.dazzle.asklepios.repository.EncounterRepository;
 import com.dazzle.asklepios.repository.PatientRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -12,20 +11,19 @@ import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
-import java.util.List;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
 public class EncounterService {
-
     private static final Logger LOG = LoggerFactory.getLogger(EncounterService.class);
-
     private final EncounterRepository encounterRepository;
     private final PatientRepository patientRepository;
     private final EntityManager em;
@@ -84,8 +82,6 @@ public class EncounterService {
 
 }
 
-
-
     public Optional<Encounter> update(Long id,Long patientId, Encounter patch) {
         LOG.debug("Request to update Encounter id={} with {}", id, patch);
 
@@ -139,29 +135,28 @@ public class EncounterService {
         LOG.debug("Request to get Encounter : {}", id);
         return encounterRepository.findById(id);
     }
-
+    
     @Transactional(readOnly = true)
-    public List<Encounter> findAll() {
+    public Page<Encounter> findAll(Pageable pageable) {
         LOG.debug("Request to get all Encounters");
-        return encounterRepository.findAll();
+        return encounterRepository.findAll(pageable);
     }
-
     @Transactional(readOnly = true)
-    public List<Encounter> findByStatus(Status status) {
+    public Page<Encounter> findByStatus(Status status, Pageable pageable) {
         LOG.debug("Request to get Encounters by status={}", status);
-        return encounterRepository.findByStatus(status);
+        return encounterRepository.findByStatus(status,pageable);
     }
 
     @Transactional(readOnly = true)
-    public List<Encounter> findByPatientId(Long patientId) {
+    public Page<Encounter> findByPatientId(Long patientId,Pageable pageable) {
         LOG.debug("Request to get Encounters by patientId={}", patientId);
-        return encounterRepository.findByPatient_Id(patientId);
+        return encounterRepository.findByPatient_Id(patientId,pageable);
     }
 
     @Transactional(readOnly = true)
-    public List<Encounter> findByResource(Resource resource) {
+    public Page<Encounter> findByResource(Resource resource,Pageable pageable) {
         LOG.debug("Request to get Encounters by resource={}", resource);
-        return encounterRepository.findByResourceType(resource);
+        return encounterRepository.findByResourceType(resource,pageable);
     }
 
     // ====================== Helpers ======================

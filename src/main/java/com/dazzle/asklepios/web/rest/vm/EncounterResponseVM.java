@@ -19,7 +19,9 @@ public record EncounterResponseVM(
         Resource resourceType,
         Visit    visitType,
         String   age,
-        Status   status
+        Status   status,
+        PatientResponseVM patient
+
 ) implements Serializable {
 
     /** تحويل من Entity إلى Response VM */
@@ -30,7 +32,9 @@ public record EncounterResponseVM(
                 encounter.getResourceType(),
                 encounter.getVisitType(),
                 encounter.getAge(),
-                encounter.getStatus()
+                encounter.getStatus(),
+                PatientResponseVM.ofEntity(encounter.getPatient())
+
         );
     }
 }

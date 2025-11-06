@@ -15,11 +15,9 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service

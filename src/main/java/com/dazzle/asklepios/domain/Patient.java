@@ -4,20 +4,19 @@ import com.dazzle.asklepios.domain.enumeration.Gender;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.hibernate.annotations.Formula;   // <-- أضِف هذا الاستيراد
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Entity
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-
 public class Patient extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
@@ -25,7 +24,7 @@ public class Patient extends AbstractAuditingEntity<Long> implements Serializabl
 
     @Id
     @EqualsAndHashCode.Include
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // يتوافق مع BIGINT AUTO_INCREMENT
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
@@ -50,4 +49,8 @@ public class Patient extends AbstractAuditingEntity<Long> implements Serializabl
     @Size(max = 255)
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
+
+    @Formula("concat(coalesce(first_name, ''), ' ', coalesce(last_name, ''))")
+    @Setter(AccessLevel.NONE)
+    private String fullName;
 }
