@@ -93,7 +93,7 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     @Column(name = "pharma_absorption", columnDefinition = "text")
     private String pharmaAbsorption;
 
-    @Column(name = "pharma_route_of_elimination", columnDefinition = "text")
+    @Column(name = "pharma_route_of_elimination", length = 50)
     private String pharmaRouteOfElimination;
 
     @Column(name = "pharma_volume_of_distribution", columnDefinition = "text")
@@ -126,28 +126,28 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     @Column(name = "dose_adjustment_renal")
     private Boolean doseAdjustmentRenal;
 
-    @Column(name = "dose_adj_renal_one", columnDefinition = "text")
+    @Column(name = "dose_adj_renal_one", length = 100)
     private String doseAdjustmentRenalOne;
 
-    @Column(name = "dose_adj_renal_two", columnDefinition = "text")
+    @Column(name = "dose_adj_renal_two", length = 100)
     private String doseAdjustmentRenalTwo;
 
-    @Column(name = "dose_adj_renal_three", columnDefinition = "text")
+    @Column(name = "dose_adj_renal_three", length = 100)
     private String doseAdjustmentRenalThree;
 
-    @Column(name = "dose_adj_renal_four", columnDefinition = "text")
+    @Column(name = "dose_adj_renal_four", length = 100)
     private String doseAdjustmentRenalFour;
 
     @Column(name = "dose_adjustment_hepatic")
     private Boolean doseAdjustmentHepatic;
 
-    @Column(name = "dose_adj_pug_a", columnDefinition = "text")
+    @Column(name = "dose_adj_pug_a", length = 100)
     private String doseAdjustmentPugA;
 
-    @Column(name = "dose_adj_pug_b", columnDefinition = "text")
+    @Column(name = "dose_adj_pug_b", length = 100)
     private String doseAdjustmentPugB;
 
-    @Column(name = "dose_adj_pug_c", columnDefinition = "text")
+    @Column(name = "dose_adj_pug_c", length = 100)
     private String doseAdjustmentPugC;
 
 }
