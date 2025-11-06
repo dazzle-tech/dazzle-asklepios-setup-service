@@ -38,7 +38,7 @@ public class ActiveIngredientContraindications extends AbstractAuditingEntity<Lo
         private ActiveIngredients activeIngredient;
 
         @ManyToOne(optional = false, fetch = FetchType.LAZY)
-        @JoinColumn(name = "icd_code_id", nullable = false, foreignKey = @ForeignKey(name = "fk_aiicd_icd_code"))
+        @JoinColumn(name = "icd_code_id", nullable = false, foreignKey = @ForeignKey(name = "fk_aic_icd_code"))
         private Icd10Code icd10Code;
 
 }
