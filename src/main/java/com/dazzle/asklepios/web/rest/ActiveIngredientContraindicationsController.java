@@ -82,7 +82,7 @@ public class ActiveIngredientContraindicationsController {
     /**
      * {@code DELETE /active-ingredient-contraindications/{id}} : Hard delete.
      *
-     * @param id the indication id.
+     * @param id the contraindication id.
      * @return {@link ResponseEntity} with status 204 (No Content).
      */
     @DeleteMapping("/active-ingredient-contraindications/{id}")
