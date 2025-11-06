@@ -111,10 +111,11 @@ public class EncounterAttachmentsService {
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("Soft deleting encounter attachment {}", id);
-        int updated = repo.softDelete(id);
-        if (updated==0) {
-            throw new NotFoundAlertException("Encounter attachment not found with id {" + id+"}", ENTITY_NAME, "notfound");
+        LOG.debug("delete encounter attachments {}", id);
+        EncounterAttachments a = repo.findById(id).orElseThrow(()-> new NotFoundAlertException(" Encounter attachment not found  id: "+id, ENTITY_NAME,"notfound"));
+        if (a.getDeletedAt() == null) {
+            a.setDeletedAt(Instant.now());
+            repo.save(a);
         }
     }
 }

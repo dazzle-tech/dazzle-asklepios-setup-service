@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
+import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.PatientAttachments;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
@@ -102,10 +103,11 @@ public class PatientAttachmentsService {
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("Soft deleting patient attachment {}", id);
-        int updated = repo.softDelete(id);
-        if (updated==0) {
-            throw new NotFoundAlertException("Patient attachment not found with id {" + id+"}", ENTITY_NAME, "notfound");
+        LOG.debug("delete patient attachments {}", id);
+        PatientAttachments a = repo.findById(id).orElseThrow(()-> new NotFoundAlertException(" Patient attachment not found  id: "+id, ENTITY_NAME,"notfound"));
+        if (a.getDeletedAt() == null) {
+            a.setDeletedAt(Instant.now());
+            repo.save(a);
         }
     }
 }

@@ -18,9 +18,4 @@ public interface EncounterAttachementsRepository extends JpaRepository<Encounter
     List<EncounterAttachments> findByEncounterIdAndSourceAndSourceIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source, Long sourceId);
 
     Optional<EncounterAttachments> findByIdAndDeletedAtIsNull(Long id);
-
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update EncounterAttachments e set e.deletedAt = CURRENT_TIMESTAMP where e.id = :id and e.deletedAt is null")
-    int softDelete(Long id);
-
-}
+    }
