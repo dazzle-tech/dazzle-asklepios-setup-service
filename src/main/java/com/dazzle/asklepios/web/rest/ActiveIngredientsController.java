@@ -175,7 +175,7 @@ public class ActiveIngredientsController {
     @PatchMapping("/active-ingredients/{id}/toggle-active")
     public ResponseEntity<ActiveIngredientsResponseVM> toggleActive(@PathVariable Long id) {
         LOG.debug("REST toggle ActiveIngredients isActive id={}", id);
-        ActiveIngredients updated = activeIngredientsService.toggleActive(id);
-        return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(updated));
+        ActiveIngredients activeIngredient = activeIngredientsService.toggleActive(id);
+        return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(activeIngredient));
     }
 }

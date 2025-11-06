@@ -45,13 +45,13 @@ public class ActiveIngredientsService {
     }
 
     // 1) create
-    public ActiveIngredients create(ActiveIngredientsCreateVM vm) {
-        LOG.debug("create active ingredient {}", vm);
-        ActiveIngredients entity = toEntityForCreate(vm);
+    public ActiveIngredients create(ActiveIngredientsCreateVM activeIngredientsCreateVM) {
+        LOG.debug("create active ingredient {}", activeIngredientsCreateVM);
+        ActiveIngredients entity = toEntityForCreate(activeIngredientsCreateVM);
         try {
-            ActiveIngredients saved = activeRepo.saveAndFlush(entity);
-            LOG.debug("create: saved id={}", saved.getId());
-            return saved;
+            ActiveIngredients activeIngredients = activeRepo.saveAndFlush(entity);
+            LOG.debug("create: saved id={}", activeIngredients.getId());
+            return activeIngredients;
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
@@ -75,11 +75,11 @@ public class ActiveIngredientsService {
     }
 
     // 2) update (partial, applies only non-null fields)
-    public ActiveIngredients update(ActiveIngredientsUpdateVM vm) {
-        LOG.debug("update active ingredients: {} ", vm);
-        ActiveIngredients entity = activeRepo.findById(vm.id())
-                .orElseThrow(() -> new NotFoundAlertException("ActiveIngredients not found: " + vm.id(), ENTITY_NAME, "notfound"));
-        applyUpdate(entity, vm);
+    public ActiveIngredients update(ActiveIngredientsUpdateVM activeIngredientsUpdateVM) {
+        LOG.debug("update active ingredients: {} ", activeIngredientsUpdateVM);
+        ActiveIngredients entity = activeRepo.findById(activeIngredientsUpdateVM.id())
+                .orElseThrow(() -> new NotFoundAlertException("ActiveIngredients not found: " + activeIngredientsUpdateVM.id(), ENTITY_NAME, "notfound"));
+        applyUpdate(entity, activeIngredientsUpdateVM);
        try{
            ActiveIngredients saved = activeRepo.save(entity);
         LOG.debug("update: saved id={}", saved.getId());
