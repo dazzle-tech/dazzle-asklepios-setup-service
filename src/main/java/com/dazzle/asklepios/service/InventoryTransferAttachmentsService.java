@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
+import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.InventoryTransferAttachments;
 import com.dazzle.asklepios.repository.InventoryTransferAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -98,10 +99,11 @@ public class InventoryTransferAttachmentsService {
 
     @Transactional
     public void softDelete(Long id) {
-        LOG.debug("delete Inventory Transfer attachments{}", id);
-        int updated = repo.softDelete(id);
-        if (updated == 0) {
-            throw new NotFoundAlertException("Inventory transfer not found with id {" + id+ "}", ENTITY_NAME, "notfound");
+        LOG.debug("delete inventory transfer attachments {}", id);
+        InventoryTransferAttachments a = repo.findById(id).orElseThrow(()-> new NotFoundAlertException(" Inventory Transfer attachment not found  id: "+id, ENTITY_NAME,"notfound"));
+        if (a.getDeletedAt() == null) {
+            a.setDeletedAt(Instant.now());
+            repo.save(a);
         }
     }
 }
