@@ -98,13 +98,13 @@ public class ActiveIngredientIndicationsService {
     }
 
     private ActiveIngredients getActiveIngredient(Long id) {
-        LOG.debug("resolveCategory for active ingredients: id={}", id);
+        LOG.debug("getActiveIngredient for active ingredients: id={}", id);
         return activeIngredientsRepo.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Active ingredient not found: " + id, "ActiveIngredients", "notfound"));
     }
 
     private Icd10Code getIcd10Code(Long id) {
-        LOG.debug("resolveClass for active ingredients: id={}", id);
+        LOG.debug("getIcd10Code for Icd 10 code: id={}", id);
         return icd10CodeRepo.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("ICD 10 code not found: " + id, "Icd10Code", "notfound"));
     }
