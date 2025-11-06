@@ -46,10 +46,29 @@ public class Icd10Service {
     public void importCsv(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
              CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT
-                     .withDelimiter(';')
+                     .withDelimiter(',')
                      .withFirstRecordAsHeader()
                      .withIgnoreHeaderCase()
                      .withTrim())) {
+
+            Set<String> requiredHeaders = Set.of("code", "description", "version", "is_active");
+            Set<String> fileHeaders = parser.getHeaderMap().keySet()
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+
+            List<String> missingHeaders = requiredHeaders.stream()
+                    .filter(h -> !fileHeaders.contains(h))
+                    .toList();
+
+            if (!missingHeaders.isEmpty()) {
+                throw new BadRequestAlertException(
+                        "icd10",
+                        "missingheaders",
+                        "Missing or incorrect column(s): " + String.join(", ", missingHeaders)
+                );
+            }
+
 
             List<CSVRecord> records = parser.getRecords();
             LOG.info("Starting ICD10 incremental CSV import. Total records: {}", records.size());

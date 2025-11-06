@@ -1,34 +1,44 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
-import com.dazzle.asklepios.domain.EncounterAttachments;
-import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
-import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
+import com.dazzle.asklepios.domain.PatientAttachments;
+import com.dazzle.asklepios.domain.enumeration.PatientAttachmentSource;
+import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.patient.UploadPatientAttachmentVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.ByteArrayInputStream;
 import java.net.URL;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-class EncounterAttachmentsServiceTest {
+class PatientAttachmentsServiceTest {
 
     @Mock
-    private EncounterAttachementsRepository repo;
+    private PatientAttachmentsRepository repo;
 
     @Mock
     private AttachmentProperties props;
@@ -37,7 +47,7 @@ class EncounterAttachmentsServiceTest {
     private AttachmentStorageService storage;
 
     @InjectMocks
-    private EncounterAttachmentsService service;
+    private PatientAttachmentsService service;
 
     @BeforeEach
     void setUp() {
@@ -60,27 +70,27 @@ class EncounterAttachmentsServiceTest {
         when(head.contentType()).thenReturn("image/png");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn("scan");
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
 
-        ArgumentCaptor<EncounterAttachments> cap = ArgumentCaptor.forClass(EncounterAttachments.class);
+        ArgumentCaptor<PatientAttachments> cap = ArgumentCaptor.forClass(PatientAttachments.class);
         when(repo.save(cap.capture())).thenAnswer(inv -> inv.getArgument(0));
 
         var result = service.upload(55L, vm);
 
-        EncounterAttachments saved = cap.getValue();
-        assertThat(saved.getEncounterId()).isEqualTo(55L);
+        PatientAttachments saved = cap.getValue();
+        assertThat(saved.getPatientId()).isEqualTo(55L);
         assertThat(saved.getFilename()).isEqualTo("x y__.png"); // sanitized
         assertThat(saved.getMimeType()).isEqualTo("image/png");
         assertThat(saved.getSizeBytes()).isEqualTo(1024L);
         assertThat(saved.getType()).isEqualTo("3154545");
         assertThat(saved.getDetails()).isEqualTo("scan");
-        assertThat(saved.getSource()).isEqualTo(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        assertThat(saved.getSource()).isEqualTo(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
 
-        verify(storage).put(startsWith("encounters/55/"), eq("image/png"), eq(1024L), any());
+        verify(storage).put(startsWith("patients/55/"), eq("image/png"), eq(1024L), any());
     }
 
     @Test
@@ -93,12 +103,12 @@ class EncounterAttachmentsServiceTest {
         when(file.getSize()).thenReturn(100L);
         when(file.getOriginalFilename()).thenReturn("a.png");
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-when(vm.sourceId()).thenReturn(734845L);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
+
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
         verify(repo, never()).save(any());
@@ -114,12 +124,11 @@ when(vm.sourceId()).thenReturn(734845L);
         when(file.getSize()).thenReturn(1_000000L);
         when(file.getOriginalFilename()).thenReturn("a.png");
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
@@ -139,12 +148,11 @@ when(vm.sourceId()).thenReturn(734845L);
 
         doThrow(new RuntimeException("io")).when(storage).put(anyString(), anyString(), anyLong(), any());
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
 
         verify(repo, never()).save(any());
     }
@@ -165,12 +173,11 @@ when(vm.sourceId()).thenReturn(734845L);
         when(head.contentType()).thenReturn("image/png");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
     }
 
     @Test
@@ -189,45 +196,32 @@ when(vm.sourceId()).thenReturn(734845L);
         when(head.contentType()).thenReturn("application/octet-stream");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadPatientAttachmentVM vm = mock(UploadPatientAttachmentVM.class);
         when(vm.file()).thenReturn(file);
         when(vm.type()).thenReturn("3154545");
         when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+        when(vm.source()).thenReturn(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT);
 
     }
 
     @Test
     void list_ReturnsFromRepo() {
-        when(repo.findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(Collections.singletonList(77L)))
-                .thenReturn(List.of(new EncounterAttachments()));
+        when(repo.findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(77L))
+                .thenReturn(List.of(new PatientAttachments()));
 
-        var out = service.list(Collections.singletonList(77L));
+        var out = service.list(77L);
 
         assertThat(out).hasSize(1);
-        verify(repo).findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(Collections.singletonList(77L));
-    }
-
-    @Test
-    void listByEncounterIdAndSource_ReturnsFromRepo() {
-        when(repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT))
-                .thenReturn(List.of());
-
-        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT,null);
-
-        assertThat(out).isEmpty();
-        verify(repo).findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        verify(repo).findByPatientIdAndDeletedAtIsNullOrderByCreatedDateDesc(77L);
     }
 
 
     @Test
     void downloadUrl_ReturnsTicket() throws Exception {
-        EncounterAttachments entity = EncounterAttachments.builder()
-                .id(10L).encounterId(1L).spaceKey("k").filename("f.txt")
+        PatientAttachments entity = PatientAttachments.builder()
+                .id(10L).patientId(1L).spaceKey("k").filename("f.txt")
                 .mimeType("text/plain").sizeBytes(1L)
-                .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT)
-                .sourceId(734845L).build();
+                .source(PatientAttachmentSource.PATIENT_PROFILE_ATTACHMENT).build();
 
         when(repo.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(entity));
 
@@ -245,7 +239,7 @@ when(vm.sourceId()).thenReturn(734845L);
     }
     @Test
     void softDelete_SetsDeletedAtOnce() {
-        EncounterAttachments entity = new EncounterAttachments();
+        PatientAttachments entity = new PatientAttachments();
         entity.setId(5L);
         entity.setDeletedAt(null);
 
@@ -260,7 +254,7 @@ when(vm.sourceId()).thenReturn(734845L);
 
     @Test
     void softDelete_NoOpIfAlreadyDeleted() {
-        EncounterAttachments entity = new EncounterAttachments();
+        PatientAttachments entity = new PatientAttachments();
         entity.setId(6L);
         entity.setDeletedAt(Instant.now());
         when(repo.findById(6L)).thenReturn(Optional.of(entity));
