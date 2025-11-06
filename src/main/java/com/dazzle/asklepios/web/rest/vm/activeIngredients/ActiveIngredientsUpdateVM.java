@@ -11,7 +11,6 @@ public record ActiveIngredientsUpdateVM(
         @NotNull Long id,
 
         @NotEmpty String name,
-        Long medicalCategoryId,
         Long drugClassId,
 
         String atcCode,
@@ -60,7 +59,6 @@ public record ActiveIngredientsUpdateVM(
         return new ActiveIngredientsUpdateVM(
                 entity.getId(),
                 entity.getName(),
-                entity.getMedicalCategory() != null ? entity.getMedicalCategory().getId() : null,
                 entity.getDrugClass() != null ? entity.getDrugClass().getId() : null,
                 entity.getAtcCode(),
                 entity.getOtc(),

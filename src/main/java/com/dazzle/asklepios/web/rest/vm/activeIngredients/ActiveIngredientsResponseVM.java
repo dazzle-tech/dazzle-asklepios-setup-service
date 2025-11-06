@@ -56,7 +56,7 @@ public record ActiveIngredientsResponseVM(
         return new ActiveIngredientsResponseVM(
                 entity.getId(),
                 entity.getName(),
-                entity.getMedicalCategory() != null ? entity.getMedicalCategory().getId() : null,
+                entity.getDrugClass() != null ? entity.getDrugClass().getMedicationCategoriesId() : null,
                 entity.getDrugClass() != null ? entity.getDrugClass().getId() : null,
                 entity.getAtcCode(),
                 entity.getOtc(),

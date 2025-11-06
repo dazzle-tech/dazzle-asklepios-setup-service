@@ -41,10 +41,6 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     private String name;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "medical_category_id", foreignKey = @ForeignKey(name = "fk_ai_medication_category"))
-    private MedicationCategories medicalCategory;
-
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "drug_class_id", foreignKey = @ForeignKey(name = "fk_ai_drug_class"))
     private MedicationCategoriesClass drugClass;
 

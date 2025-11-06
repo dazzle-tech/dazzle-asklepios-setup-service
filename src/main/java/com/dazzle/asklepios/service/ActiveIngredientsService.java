@@ -120,12 +120,7 @@ public class ActiveIngredientsService {
         return activeRepo.findByNameContainsIgnoreCase(name, pageable);
     }
 
-    // 5) get by medical category id (pageable)
-    @Transactional(readOnly = true)
-    public Page<ActiveIngredients> getByMedicalCategoryId(Long categoryId, Pageable pageable) {
-        LOG.debug("get active ingredients by medicalCategoryId: categoryId={} page={} size={}", categoryId, pageable.getPageNumber(), pageable.getPageSize());
-        return activeRepo.findByMedicalCategoryId(categoryId, pageable);
-    }
+
 
     // 6) get by drug class id (pageable)
     @Transactional(readOnly = true)
@@ -155,12 +150,10 @@ public class ActiveIngredientsService {
     // Helpers
 
     private ActiveIngredients toEntityForCreate(ActiveIngredientsCreateVM vm) {
-        MedicationCategories category = resolveCategory(vm.medicalCategoryId());
         MedicationCategoriesClass drugClass = resolveClass(vm.drugClassId());
 
         ActiveIngredients ai = new ActiveIngredients();
         ai.setName(vm.name());
-        ai.setMedicalCategory(category);
         ai.setDrugClass(drugClass);
         ai.setAtcCode(vm.atcCode());
         ai.setOtc(vm.otc());
@@ -204,7 +197,6 @@ public class ActiveIngredientsService {
 
     private void applyUpdate(ActiveIngredients ai, ActiveIngredientsUpdateVM vm) {
         if (vm.name() != null) ai.setName(vm.name());
-        if (vm.medicalCategoryId() != null) ai.setMedicalCategory(resolveCategory(vm.medicalCategoryId()));
         if (vm.drugClassId() != null) ai.setDrugClass(resolveClass(vm.drugClassId()));
         if (vm.atcCode() != null) ai.setAtcCode(vm.atcCode());
         if (vm.otc() != null) ai.setOtc(vm.otc());
@@ -245,11 +237,6 @@ public class ActiveIngredientsService {
         if (vm.doseAdjustmentPugC() != null) ai.setDoseAdjustmentPugC(vm.doseAdjustmentPugC());
     }
 
-    private MedicationCategories resolveCategory(Long id) {
-        LOG.debug("resolveCategory for active ingredients: id={}", id);
-        return categoryRepo.findById(id)
-                .orElseThrow(() -> new NotFoundAlertException("Medical category not found: " + id, "MedicalCategories", "notfound"));
-    }
 
     private MedicationCategoriesClass resolveClass(Long id) {
         LOG.debug("resolveClass for active ingredients: id={}", id);

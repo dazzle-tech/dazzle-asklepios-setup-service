@@ -10,7 +10,6 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ActiveIngredientsCreateVM(
         @NotEmpty String name,
-        Long medicalCategoryId,
         Long drugClassId,
         String atcCode,
         Boolean otc,
@@ -60,7 +59,6 @@ public record ActiveIngredientsCreateVM(
     public static ActiveIngredientsCreateVM ofEntity(ActiveIngredients entity) {
         return new ActiveIngredientsCreateVM(
                 entity.getName(),
-                entity.getMedicalCategory() != null ? entity.getMedicalCategory().getId() : null,
                 entity.getDrugClass() != null ? entity.getDrugClass().getId() : null,
                 entity.getAtcCode(),
                 entity.getOtc(),
