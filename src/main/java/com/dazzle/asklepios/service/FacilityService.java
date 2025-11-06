@@ -32,7 +32,7 @@ public class FacilityService {
         this.duplicationCandidateRepository = duplicationCandidateRepository;
     }
 
-     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
+//     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public FacilityResponseVM create(FacilityCreateVM vm) {
         LOG.debug("Request to create Facility : {}", vm);
 
@@ -52,7 +52,7 @@ public class FacilityService {
     }
 
 
-    @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
+//    @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
         LOG.debug("Request to update Facility id={} with {}", id, vm);
 
@@ -100,7 +100,7 @@ public class FacilityService {
                 .map(FacilityResponseVM::ofEntity);
     }
 
-     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
+//     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public boolean delete(Long id) {
         LOG.debug("Request to delete Facility : {}", id);
         if (!facilityRepository.existsById(id)) {

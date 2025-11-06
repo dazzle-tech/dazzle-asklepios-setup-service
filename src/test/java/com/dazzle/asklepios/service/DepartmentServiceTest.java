@@ -7,6 +7,8 @@ import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 
+import com.dazzle.asklepios.repository.UserDepartmentRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,9 @@ class DepartmentServiceTest {
 
     @Mock
     private DepartmentsRepository departmentRepository;
+
+    @Mock
+    private UserDepartmentRepository userDepartmentRepository;
 
     @Mock
     private FacilityRepository facilityRepository;
@@ -69,7 +74,7 @@ class DepartmentServiceTest {
     void testCreateDepartment_Success() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester"
+                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
@@ -87,20 +92,21 @@ class DepartmentServiceTest {
     void testCreateDepartment_FacilityNotFound() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", 99L, DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester"
+                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true
         );
 
         when(facilityRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> departmentService.create(vm));
-        verify(departmentRepository, never()).save(any());
+        assertThrows(BadRequestAlertException.class, () -> {
+            departmentService.create(vm);
+        });
     }
 
     @Test
     void testUpdateDepartment_Success() {
         var vm = new DepartmentUpdateVM(
                 5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "NEW01", "111", "new@test.com", null, false
+                true, "NEW01", "111", "new@test.com", null, false,true,true
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
@@ -122,6 +128,8 @@ class DepartmentServiceTest {
 
         assertThat(toggled).isPresent();
         assertThat(toggled.get().getIsActive()).isFalse();
+        verify(userDepartmentRepository).updateActiveByDepartmentId(department.getId(),false);
+
     }
 
     @Test

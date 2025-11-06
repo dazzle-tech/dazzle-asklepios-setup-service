@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +27,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class PatientAttachments  extends  AbstractAuditingEntity<Long>  implements Serializable {
 
     @Id
@@ -57,7 +59,7 @@ public class PatientAttachments  extends  AbstractAuditingEntity<Long>  implemen
     @Column(name = "details", columnDefinition = "text")
     private String details;
 
-    @Column(name = "source", length = 50)
+    @Column(name = "source", length = 50, nullable = false)
     @Enumerated(EnumType.STRING)
     private PatientAttachmentSource source;
 

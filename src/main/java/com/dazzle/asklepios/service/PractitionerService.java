@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.User;
@@ -168,6 +169,11 @@ public class PractitionerService {
     @Transactional(readOnly = true)
     public Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable) {
         return practitionerRepository.findBySpecialty(specialty, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findByFirstNameOrLastName(String name, Pageable pageable) {
+        return practitionerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name,name,pageable);
     }
 
     @Transactional(readOnly = true)

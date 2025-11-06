@@ -18,7 +18,11 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     Page<Practitioner> findByFacilityId(Long facilityId, Pageable pageable);
 
     Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable);
-
+    Page<Practitioner> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+            String firstName,
+            String lastName,
+            Pageable pageable
+    );
     boolean existsByUserId(Long userId);
 
 }

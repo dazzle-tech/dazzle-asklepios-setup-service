@@ -55,6 +55,8 @@ public class DepartmentService {
                 .email(departmentVM.email())
                 .encounterType(departmentVM.encounterType())
                 .isActive(departmentVM.isActive())
+                .hasMedicalSheets(departmentVM.hasMedicalSheets())
+                .hasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets())
                 .build();
         LOG.debug("Created department: {}", department);
 
@@ -86,6 +88,8 @@ public class DepartmentService {
         if (departmentVM.email() != null) department.setEmail(departmentVM.email());
         if (departmentVM.encounterType() != null) department.setEncounterType(departmentVM.encounterType());
         if (departmentVM.isActive() != null) department.setIsActive(departmentVM.isActive());
+        department.setHasMedicalSheets(departmentVM.hasMedicalSheets());
+        department.setHasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets());
 
         Department updated = departmentRepository.save(department);
         LOG.debug("Updated department: {}", updated);

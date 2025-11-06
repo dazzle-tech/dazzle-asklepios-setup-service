@@ -1,25 +1,21 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.EncounterAttachments;
-import com.dazzle.asklepios.domain.PatientAttachments;
+import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
 import io.lettuce.core.dynamic.annotation.Param;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
+
 @Repository
-public interface EncounterAttachementsRepository extends JpaRepository<EncounterAttachments,Long> {
-    Page<EncounterAttachments> findByEncounterIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, Pageable pageable);
+public interface EncounterAttachementsRepository extends JpaRepository<EncounterAttachments, Long> {
+    List<EncounterAttachments> findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(List<Long> encounterId);
+    List<EncounterAttachments> findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source);
+    List<EncounterAttachments> findByEncounterIdAndSourceAndSourceIdAndDeletedAtIsNullOrderByCreatedDateDesc(Long encounterId, EncounterAttachmentSource source, Long sourceId);
 
-    @Query("select e from EncounterAttachments e where e.id = :id and e.deletedAt is null")
-    Optional<EncounterAttachments> findActiveById(@Param("id") Long id);
-
-
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update EncounterAttachments e set e.deletedAt = CURRENT_TIMESTAMP where e.id = :id and e.deletedAt is null")
-    int softDelete(@Param("id") Long id);
-}
+    Optional<EncounterAttachments> findByIdAndDeletedAtIsNull(Long id);
+    }

@@ -46,15 +46,34 @@ public class Icd10Service {
     public void importCsv(MultipartFile file) {
         try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
              CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT
-                     .withDelimiter(';')
+                     .withDelimiter(',')
                      .withFirstRecordAsHeader()
                      .withIgnoreHeaderCase()
                      .withTrim())) {
 
-            List<CSVRecord> records = parser.getRecords();
-            LOG.info("Starting ICD10 CSV import. Total records: {}", records.size());
+            Set<String> requiredHeaders = Set.of("code", "description", "version", "is_active");
+            Set<String> fileHeaders = parser.getHeaderMap().keySet()
+                    .stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
 
-            // 1. تحقق من التكرارات
+            List<String> missingHeaders = requiredHeaders.stream()
+                    .filter(h -> !fileHeaders.contains(h))
+                    .toList();
+
+            if (!missingHeaders.isEmpty()) {
+                throw new BadRequestAlertException(
+                        "icd10",
+                        "missingheaders",
+                        "Missing or incorrect column(s): " + String.join(", ", missingHeaders)
+                );
+            }
+
+
+            List<CSVRecord> records = parser.getRecords();
+            LOG.info("Starting ICD10 incremental CSV import. Total records: {}", records.size());
+
+
             Map<String, Long> codeCounts = records.stream()
                     .map(r -> r.get("code"))
                     .filter(Objects::nonNull)
@@ -69,36 +88,37 @@ public class Icd10Service {
                 throw new BadRequestAlertException(
                         "Duplicate ICD10 code(s): " + String.join(", ", duplicates),
                         "icd10",
-                        "duplicate"
+                        "Duplicate ICD10 code(s): " + String.join(", ", duplicates)
                 );
             }
 
-            // 2. المعالجة والحفظ
-            Set<String> csvCodes = new HashSet<>();
+
             List<Icd10Code> toSave = new ArrayList<>();
 
             for (CSVRecord record : records) {
                 String code = record.get("code");
                 if (code == null || code.isBlank()) {
                     throw new BadRequestAlertException(
-                            "Missing code at line " + record.getRecordNumber(),
+                            "missingcode",
                             "icd10",
-                            "missingcode"
+                            "Missing code at line " + record.getRecordNumber()
                     );
                 }
 
-                csvCodes.add(code);
                 String description = record.get("description");
                 String version = record.get("version");
-                boolean isActive = !"false".equalsIgnoreCase(record.get("is_active"));
+                Boolean isActive = !"false".equalsIgnoreCase(record.get("is_active"));
 
                 Optional<Icd10Code> existing = repository.findByCode(code);
 
                 if (existing.isPresent()) {
                     Icd10Code entity = existing.get();
+
+
                     if (!Objects.equals(entity.getDescription(), description)
                             || !Objects.equals(entity.getVersion(), version)
                             || !Objects.equals(entity.getIsActive(), isActive)) {
+
                         entity.setDescription(description);
                         entity.setVersion(version);
                         entity.setIsActive(isActive);
@@ -106,6 +126,7 @@ public class Icd10Service {
                         toSave.add(entity);
                     }
                 } else {
+
                     toSave.add(Icd10Code.builder()
                             .code(code)
                             .description(description)
@@ -118,39 +139,22 @@ public class Icd10Service {
 
             repository.saveAll(toSave);
 
-            // 3. تعطيل الأكواد غير الموجودة في CSV
-            List<Icd10Code> toDeactivate = repository.findAll().stream()
-                    .filter(c -> !csvCodes.contains(c.getCode()) && Boolean.TRUE.equals(c.getIsActive()))
-                    .peek(c -> {
-                        c.setIsActive(false);
-                        c.setLastUpdated(Instant.now());
-                    })
-                    .toList();
-
-            repository.saveAll(toDeactivate);
-
-            LOG.info("ICD10 import complete. {} inserted/updated, {} deactivated.",
-                    toSave.size(), toDeactivate.size());
+            LOG.info("ICD10 incremental import complete. {} records inserted/updated.", toSave.size());
 
         } catch (IOException e) {
             LOG.error("Error reading ICD10 CSV file: {}", e.getMessage(), e);
-            throw new BadRequestAlertException(
-                    "Error reading CSV file: " + e.getMessage(),
-                    "icd10",
-                    "filereaderror"
-            );
+            throw new BadRequestAlertException("Error reading CSV file: " + e.getMessage(), "icd10", "filereaderror");
+
         } catch (BadRequestAlertException e) {
             LOG.warn("ICD10 CSV import validation failed: {}", e.getMessage());
             throw e;
+
         } catch (Exception e) {
             LOG.error("Unexpected error during ICD10 import: {}", e.getMessage(), e);
-            throw new BadRequestAlertException(
-                    "Unexpected error during import: " + e.getMessage(),
-                    "icd10",
-                    "unexpected"
-            );
+            throw new BadRequestAlertException("Unexpected error during import: " + e.getMessage(), "icd10", "unexpected");
         }
     }
+
 
     /**
      * Get paginated ICD10 codes.
@@ -167,9 +171,9 @@ public class Icd10Service {
         LOG.debug("Fetching ICD10 code: {}", code);
         return repository.findByCode(code)
                 .orElseThrow(() -> new NotFoundAlertException(
-                        "ICD10 code not found: " + code,
+                        "notfound",
                         "icd10",
-                        "notfound"
+                        "ICD10 code not found: " + code
                 ));
     }
 

@@ -5,8 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.regions.Region;
 
-import java.util.Set;
-
 @Component
 @Data
 @ConfigurationProperties(prefix = "setup.attachments")
