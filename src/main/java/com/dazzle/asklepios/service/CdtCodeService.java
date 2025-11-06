@@ -3,6 +3,8 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.CdtCode;
 import com.dazzle.asklepios.domain.enumeration.CdtClass;
 import com.dazzle.asklepios.repository.CdtCodeRepository;
+import com.dazzle.asklepios.service.dto.CdtConflictDTO;
+import com.dazzle.asklepios.service.dto.CdtImportResultDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +23,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,120 +38,101 @@ public class CdtCodeService {
     private static final Logger LOG = LoggerFactory.getLogger(CdtCodeService.class);
     private final CdtCodeRepository repository;
 
-    /** Response object returned to the client after an import attempt. */
-    public record ImportResult(
-            int totalRows,
-            int inserted,
-            int updated,
-            List<Conflict> conflicts
-    ) {}
-
-    /** A single conflict (same code already exists in DB). */
-    public record Conflict(
-            String code,
-            String incomingDescription,
-            String incomingClass,
-            Boolean incomingIsActive,
-            String existingDescription,
-            String existingClass,
-            Boolean existingIsActive
-    ) {}
-
     // ====================== IMPORT ======================
 
     @Transactional
-    public ImportResult importCsv(MultipartFile file, boolean overwrite) {
-        List<CSVRecord> records = readCsv(file);
-        LOG.info("Starting CDT CSV import (overwrite={}). Total records: {}", overwrite, records.size());
+    public CdtImportResultDTO importCsv(MultipartFile uploadedFile, boolean overwriteExistingRecords) {
+        List<CSVRecord> csvRecords = readCsv(uploadedFile);
+        LOG.info("Starting CDT CSV import (overwrite={}). Total records: {}", overwriteExistingRecords, csvRecords.size());
 
-        // Check duplicates inside the uploaded CSV (by code)
-        Map<String, Long> codeCounts = records.stream()
-                .map(r -> val(r, "code"))
-                .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+        Map<String, Long> codeOccurrences = csvRecords.stream()
+                .map(record -> getValue(record, "code"))
+                .collect(Collectors.groupingBy(code -> code, Collectors.counting()));
 
-        List<String> dupInFile = codeCounts.entrySet().stream()
-                .filter(e -> e.getValue() > 1)
+        List<String> duplicateCodes = codeOccurrences.entrySet().stream()
+                .filter(entry -> entry.getValue() > 1)
                 .map(Map.Entry::getKey)
                 .toList();
 
-        if (!dupInFile.isEmpty()) {
+        if (!duplicateCodes.isEmpty()) {
             throw new BadRequestAlertException(
-                    "Duplicate CDT code(s) in CSV: " + String.join(", ", dupInFile),
+                    "Duplicate CDT code(s) in CSV: " + String.join(", ", duplicateCodes),
                     "cdtcode",
                     "duplicate"
             );
         }
 
-        // Map incoming rows
-        List<CsvRow> rows = new ArrayList<>();
-        for (CSVRecord rec : records) {
-            rows.add(new CsvRow(
-                    val(rec, "code").trim(),
-                    val(rec, "description").trim(),
-                    parseClass(val(rec, "class")),
-                    parseBoolean(val(rec, "is active"))
-            ));
-        }
-        int totalRows = rows.size();
-
-        // Quick lookup by code
-        Map<String, CsvRow> byCode = rows.stream().collect(Collectors.toMap(CsvRow::code, r -> r));
-
-        // Load existing by code
-        Map<String, CdtCode> existingMap = new HashMap<>();
-        for (String code : byCode.keySet()) {
-            repository.findByCode(code).ifPresent(e -> existingMap.put(code, e));
-        }
-
-        // Conflicts (if not overwriting)
-        List<Conflict> conflicts = new ArrayList<>();
-        for (Map.Entry<String, CdtCode> e : existingMap.entrySet()) {
-            CsvRow incoming = byCode.get(e.getKey());
-            CdtCode ex = e.getValue();
-            conflicts.add(new Conflict(
-                    incoming.code(),
-                    incoming.description(),
-                    incoming.cdtClass().name(),
-                    incoming.isActive(),
-                    ex.getDescription(),
-                    ex.getCdtClass().name(),
-                    ex.getIsActive()
+        List<CsvRow> csvRows = new ArrayList<>();
+        for (CSVRecord csvRecord : csvRecords) {
+            csvRows.add(new CsvRow(
+                    getValue(csvRecord, "code").trim(),
+                    getValue(csvRecord, "description").trim(),
+                    parseClass(getValue(csvRecord, "class")),
+                    parseBoolean(getValue(csvRecord, "is active"))
             ));
         }
 
-        if (!overwrite && !conflicts.isEmpty()) {
-            LOG.info("CDT import aborted due to {} conflict(s).", conflicts.size());
-            return new ImportResult(totalRows, 0, 0, conflicts);
+        Integer totalRowsCount = csvRows.size();
+
+        Map<String, CsvRow> incomingRowsByCode = csvRows.stream()
+                .collect(Collectors.toMap(CsvRow::code, csvRow -> csvRow));
+
+        Map<String, CdtCode> existingCodesByCode = new HashMap<>();
+        for (String code : incomingRowsByCode.keySet()) {
+            repository.findByCode(code).ifPresent(existingCode -> existingCodesByCode.put(code, existingCode));
         }
 
-        // Inserts / updates
-        int inserted = 0, updated = 0;
-        for (CsvRow r : rows) {
-            CdtCode ex = existingMap.get(r.code());
-            if (ex == null) {
+        List<CdtConflictDTO> conflictList = new ArrayList<>();
+        for (Map.Entry<String, CdtCode> entry : existingCodesByCode.entrySet()) {
+            CsvRow incomingRow = incomingRowsByCode.get(entry.getKey());
+            CdtCode existingCode = entry.getValue();
+            conflictList.add(new CdtConflictDTO(
+                    incomingRow.code(),
+                    incomingRow.description(),
+                    incomingRow.cdtClass().name(),
+                    incomingRow.isActive(),
+                    existingCode.getDescription(),
+                    existingCode.getCdtClass().name(),
+                    existingCode.getIsActive()
+            ));
+        }
+
+        if (!overwriteExistingRecords && !conflictList.isEmpty()) {
+            LOG.info("CDT import aborted due to {} conflict(s).", conflictList.size());
+            return new CdtImportResultDTO(totalRowsCount, 0, 0, conflictList);
+        }
+
+        Integer insertedCount = 0;
+        Integer updatedCount = 0;
+        for (CsvRow csvRow : csvRows) {
+            CdtCode existingCode = existingCodesByCode.get(csvRow.code());
+            if (existingCode == null) {
                 repository.save(CdtCode.builder()
-                        .code(r.code())
-                        .description(r.description())
-                        .cdtClass(r.cdtClass())
-                        .isActive(r.isActive())
+                        .code(csvRow.code())
+                        .description(csvRow.description())
+                        .cdtClass(csvRow.cdtClass())
+                        .isActive(csvRow.isActive())
                         .lastUpdated(Instant.now())
                         .build());
-                inserted++;
-            } else if (overwrite) {
-                ex.setDescription(r.description());
-                ex.setCdtClass(r.cdtClass());
-                ex.setIsActive(r.isActive());
-                ex.setLastUpdated(Instant.now());
-                repository.save(ex);
-                updated++;
+                insertedCount++;
+            } else if (overwriteExistingRecords) {
+                existingCode.setDescription(csvRow.description());
+                existingCode.setCdtClass(csvRow.cdtClass());
+                existingCode.setIsActive(csvRow.isActive());
+                existingCode.setLastUpdated(Instant.now());
+                repository.save(existingCode);
+                updatedCount++;
             }
         }
 
-        LOG.info("CDT import done. Inserted={}, Updated={}, Conflicts={}", inserted, updated, conflicts.size());
-        return new ImportResult(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
+        LOG.info("CDT import complete. Inserted={}, Updated={}, Conflicts={}",
+                insertedCount, updatedCount, conflictList.size());
+
+        return new CdtImportResultDTO(totalRowsCount, insertedCount, updatedCount,
+                overwriteExistingRecords ? List.of() : conflictList);
     }
 
-    // ====================== READ / FILTER ONLY ======================
+    // ====================== READ / FILTER ======================
 
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<CdtCode> findAll(Pageable pageable) {
@@ -176,43 +164,25 @@ public class CdtCodeService {
         return repository.findByDescriptionContainingIgnoreCase(description, pageable);
     }
 
-    /**
-     * Flexible filter based on which parameter is provided.
-     * Priority:
-     *  - class -> filter by CDT class
-     *  - code -> filter by code fragment
-     *  - description -> filter by description fragment
-     *  - (optional) isActive -> filter by active flag
-     *  - else -> return all
-     */
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<CdtCode> filter(String code, String description, CdtClass cdtClass, Boolean isActive, Pageable pageable) {
         LOG.debug("CDT filter code='{}', description='{}', class='{}', isActive='{}', pageable={}",
                 code, description, cdtClass, isActive, pageable);
 
-        if (cdtClass != null) {
-            return findByClass(cdtClass, pageable);
-        }
-        if (code != null && !code.isBlank()) {
-            return findByCodeContainingIgnoreCase(code, pageable);
-        }
-        if (description != null && !description.isBlank()) {
-            return findByDescriptionContainingIgnoreCase(description, pageable);
-        }
-        if (isActive != null) {
-            return findByIsActive(isActive, pageable);
-        }
+        if (cdtClass != null) return findByClass(cdtClass, pageable);
+        if (code != null && !code.isBlank()) return findByCodeContainingIgnoreCase(code, pageable);
+        if (description != null && !description.isBlank()) return findByDescriptionContainingIgnoreCase(description, pageable);
+        if (isActive != null) return findByIsActive(isActive, pageable);
+
         return findAll(pageable);
     }
 
-    // ====================== Internal helpers ======================
+    // ====================== Helpers ======================
 
     private record CsvRow(String code, String description, CdtClass cdtClass, Boolean isActive) {}
 
-    private static final Set<String> REQ_HEADERS =
-            Set.of("code", "description", "class", "is active");
+    private static final Set<String> REQUIRED_HEADERS = Set.of("code", "description", "class", "is active");
 
-    // Allow common aliases (case-insensitive)
     private static final Map<String, Set<String>> HEADER_ALIASES = Map.of(
             "code", Set.of("code"),
             "description", Set.of("description", "desc"),
@@ -220,22 +190,20 @@ public class CdtCodeService {
             "is active", Set.of("is active", "is_active", "isActive", "active")
     );
 
-    private List<CSVRecord> readCsv(MultipartFile file) {
-        try (Reader reader = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+    private List<CSVRecord> readCsv(MultipartFile uploadedFile) {
+        try (Reader reader = new InputStreamReader(uploadedFile.getInputStream(), StandardCharsets.UTF_8);
              CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT
                      .withDelimiter(',')
                      .withFirstRecordAsHeader()
                      .withIgnoreHeaderCase()
                      .withTrim())) {
 
-            // Validate required headers up-front (with aliases and BOM stripping)
             ensureHeaders(parser);
-
             return parser.getRecords();
-        } catch (IOException e) {
-            LOG.error("Error reading CDT CSV file: {}", e.getMessage(), e);
+        } catch (IOException exception) {
+            LOG.error("Error reading CDT CSV file: {}", exception.getMessage(), exception);
             throw new BadRequestAlertException(
-                    "Error reading CSV file: " + e.getMessage(),
+                    "Error reading CSV file: " + exception.getMessage(),
                     "cdtcode",
                     "filereaderror"
             );
@@ -248,13 +216,13 @@ public class CdtCodeService {
                 .map(this::cleanHeaderKey)
                 .collect(Collectors.toSet());
 
-        for (String required : REQ_HEADERS) {
-            Set<String> aliases = HEADER_ALIASES.getOrDefault(required, Set.of(required));
-            boolean present = headers.stream().anyMatch(h ->
-                    aliases.stream().anyMatch(a -> a.equalsIgnoreCase(h)));
+        for (String requiredHeader : REQUIRED_HEADERS) {
+            Set<String> aliases = HEADER_ALIASES.getOrDefault(requiredHeader, Set.of(requiredHeader));
+            boolean present = headers.stream().anyMatch(header ->
+                    aliases.stream().anyMatch(alias -> alias.equalsIgnoreCase(header)));
             if (!present) {
                 throw new BadRequestAlertException(
-                        "Missing required column header: '" + required + "'",
+                        "Missing required column header: '" + requiredHeader + "'",
                         "cdtcode",
                         "missingheader"
                 );
@@ -262,49 +230,43 @@ public class CdtCodeService {
         }
     }
 
-    private String val(CSVRecord r, String canonicalCol) {
-        // Try direct
+    private String getValue(CSVRecord record, String canonicalColumn) {
         try {
-            String direct = r.get(canonicalCol);
-            if (direct != null && !direct.isBlank()) return direct;
-        } catch (IllegalArgumentException ignored) {
-            // fall through to alias search
-        }
+            String directValue = record.get(canonicalColumn);
+            if (directValue != null && !directValue.isBlank()) return directValue;
+        } catch (IllegalArgumentException ignored) {}
 
-        // Try aliases (case-insensitive), handling BOM on first header
-        Set<String> aliases = HEADER_ALIASES.getOrDefault(canonicalCol, Set.of(canonicalCol));
-        for (String k : r.toMap().keySet()) {
-            if (k == null) continue;
-            String cleaned = cleanHeaderKey(k);
-            if (aliases.stream().anyMatch(a -> a.equalsIgnoreCase(cleaned))) {
-                String v = r.get(k);
-                if (v == null || v.isBlank()) {
+        Set<String> aliases = HEADER_ALIASES.getOrDefault(canonicalColumn, Set.of(canonicalColumn));
+        for (String headerKey : record.toMap().keySet()) {
+            if (headerKey == null) continue;
+            String cleaned = cleanHeaderKey(headerKey);
+            if (aliases.stream().anyMatch(alias -> alias.equalsIgnoreCase(cleaned))) {
+                String value = record.get(headerKey);
+                if (value == null || value.isBlank()) {
                     throw new BadRequestAlertException(
-                            "Missing '" + canonicalCol + "' at line " + r.getRecordNumber(),
+                            "Missing '" + canonicalColumn + "' at line " + record.getRecordNumber(),
                             "cdtcode",
                             "missingfield"
                     );
                 }
-                return v;
+                return value;
             }
         }
 
         throw new BadRequestAlertException(
-                "Missing '" + canonicalCol + "' at line " + r.getRecordNumber(),
+                "Missing '" + canonicalColumn + "' at line " + record.getRecordNumber(),
                 "cdtcode",
                 "missingfield"
         );
     }
 
     private String cleanHeaderKey(String header) {
-        // strip BOM + trim
         return header.replace("\uFEFF", "").trim();
     }
 
-    private CdtClass parseClass(String raw) {
+    private CdtClass parseClass(String rawClassValue) {
         try {
-            // Normalize: replace '&' with AND, collapse non-alnum to underscores
-            String normalized = raw.trim()
+            String normalized = rawClassValue.trim()
                     .toUpperCase()
                     .replace("&", " AND ")
                     .replaceAll("[^A-Z0-9]+", "_")
@@ -313,20 +275,20 @@ public class CdtCodeService {
             return CdtClass.valueOf(normalized);
         } catch (Exception e) {
             throw new BadRequestAlertException(
-                    "Invalid class: '" + raw + "'. Please match one of the defined CDT classes.",
+                    "Invalid class: '" + rawClassValue + "'. Please match one of the defined CDT classes.",
                     "cdtcode",
                     "badclass"
             );
         }
     }
 
-    private Boolean parseBoolean(String raw) {
-        String s = raw.trim().toLowerCase();
-        if (s.equals("true") || s.equals("t") || s.equals("yes") || s.equals("y") || s.equals("1")) return true;
-        if (s.equals("false") || s.equals("f") || s.equals("no") || s.equals("n") || s.equals("0")) return false;
+    private Boolean parseBoolean(String rawValue) {
+        String lower = rawValue.trim().toLowerCase();
+        if (lower.equals("true") || lower.equals("t") || lower.equals("yes") || lower.equals("y") || lower.equals("1")) return true;
+        if (lower.equals("false") || lower.equals("f") || lower.equals("no") || lower.equals("n") || lower.equals("0")) return false;
 
         throw new BadRequestAlertException(
-                "Invalid 'is active' value: '" + raw + "'. Expected TRUE/FALSE, YES/NO, or 1/0.",
+                "Invalid 'is active' value: '" + rawValue + "'. Expected TRUE/FALSE, YES/NO, or 1/0.",
                 "cdtcode",
                 "badboolean"
         );
