@@ -125,19 +125,6 @@ public class ActiveIngredientsController {
     }
 
     /**
-     * {@code GET /active-ingredients/by-medicalCategory/{categoryId}} : Filter by medical category id (paginated).
-     */
-    @GetMapping("/active-ingredients/by-medicalCategory/{categoryId:\\d+}")
-    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByMedicalCategory(@PathVariable Long categoryId, @ParameterObject Pageable pageable) {
-        LOG.debug("REST list ActiveIngredients by medicalCategoryId={} page={}", categoryId, pageable);
-        Page<ActiveIngredients> page = activeIngredientsService.getByMedicalCategoryId(categoryId, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        List<ActiveIngredientsResponseVM> body = page.getContent()
-                .stream().map(ActiveIngredientsResponseVM::ofEntity).toList();
-        return new ResponseEntity<>(body, headers, HttpStatus.OK);
-    }
-
-    /**
      * {@code GET /active-ingredients/by-drugClass/{drugClassId}} : Filter by drug class id (paginated).
      */
     @GetMapping("/active-ingredients/by-drugClass/{drugClassId:\\d+}")
