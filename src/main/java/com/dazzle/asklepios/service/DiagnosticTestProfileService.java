@@ -44,8 +44,8 @@ public class DiagnosticTestProfileService {
     }
 
     @Transactional(readOnly = true)
-    public List<DiagnosticTestProfile> findAllByTestId(Long testId) {
-        return repository.findAllByTest_Id(testId);
+    public Page<DiagnosticTestProfile> findAllByTestId(Long testId,Pageable pageable) {
+        return repository.findAllByTest_Id(testId,pageable);
     }
 
     @Transactional(readOnly = true)
