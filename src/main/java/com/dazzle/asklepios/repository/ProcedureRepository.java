@@ -16,10 +16,10 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 
     Page<Procedure> findByFacility_Id(Long facilityId, Pageable pageable);
 
-    Page<Procedure> findByFacility_IdAndCategoryType(Long facilityId, ProcedureCategoryType categoryType, Pageable pageable);
+    Page<Procedure> findByCategoryType(ProcedureCategoryType categoryType, Pageable pageable);
 
-    Page<Procedure> findByFacility_IdAndNameContainingIgnoreCase(Long facilityId, String name, Pageable pageable);
+    Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-    Page<Procedure> findByFacility_IdAndCodeContainingIgnoreCase(Long facilityId, String code, Pageable pageable);
+    Page<Procedure> findByCodeContainingIgnoreCase(String code, Pageable pageable);
 
 }

@@ -66,7 +66,7 @@ public class ProcedureController {
         ProcedureResponseVM body = ProcedureResponseVM.ofEntity(created);
 
         return ResponseEntity
-                .created(URI.create("/setup/api/procedure/" + created.getId() + "?facilityId=" + facilityId))
+                .created(URI.create("/api/setup/procedure/" + created.getId()))
                 .body(body);
     }
 
@@ -97,14 +97,13 @@ public class ProcedureController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== READ ALL ======================
+    // ====================== READ ALL (بدون facilityId) ======================
     @GetMapping("/procedure")
     public ResponseEntity<List<ProcedureResponseVM>> getAllProcedures(
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures facilityId={} pageable={}", facilityId, pageable);
-        final Page<Procedure> page = procedureService.findAll(facilityId, pageable);
+        LOG.debug("REST list Procedures pageable={}", pageable);
+        final Page<Procedure> page = procedureService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -115,15 +114,14 @@ public class ProcedureController {
         );
     }
 
-    // ====================== FILTERS ======================
+    // ====================== FILTERS (بدون facilityId) ======================
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
             @PathVariable ProcedureCategoryType categoryType,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures by categoryType={} facilityId={} pageable={}", categoryType, facilityId, pageable);
-        Page<Procedure> page = procedureService.findByCategory(facilityId, categoryType, pageable);
+        LOG.debug("REST list Procedures by categoryType={} pageable={}", categoryType, pageable);
+        Page<Procedure> page = procedureService.findByCategory(categoryType, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -137,11 +135,10 @@ public class ProcedureController {
     @GetMapping("/procedure/by-code/{code}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCode(
             @PathVariable String code,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures by code='{}' facilityId={} pageable={}", code, facilityId, pageable);
-        Page<Procedure> page = procedureService.findByCodeContainingIgnoreCase(facilityId, code, pageable);
+        LOG.debug("REST list Procedures by code='{}' pageable={}", code, pageable);
+        Page<Procedure> page = procedureService.findByCodeContainingIgnoreCase(code, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -155,11 +152,10 @@ public class ProcedureController {
     @GetMapping("/procedure/by-name/{name}")
     public ResponseEntity<List<ProcedureResponseVM>> getByName(
             @PathVariable String name,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures by name='{}' facilityId={} pageable={}", name, facilityId, pageable);
-        Page<Procedure> page = procedureService.findByNameContainingIgnoreCase(facilityId, name, pageable);
+        LOG.debug("REST list Procedures by name='{}' pageable={}", name, pageable);
+        Page<Procedure> page = procedureService.findByNameContainingIgnoreCase(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -170,16 +166,35 @@ public class ProcedureController {
         );
     }
 
-    // ====================== TOGGLE ACTIVE ======================
+    // ====================== TOGGLE ACTIVE (بدون facilityId) ======================
     @PatchMapping("/procedure/{id}/toggle-active")
     public ResponseEntity<ProcedureResponseVM> toggleProcedureActiveStatus(
-            @PathVariable Long id,
-            @RequestParam Long facilityId
+            @PathVariable Long id
     ) {
-        LOG.debug("REST toggle Procedure isActive id={} facilityId={}", id, facilityId);
-        return procedureService.toggleIsActive(id, facilityId)
+        LOG.debug("REST toggle Procedure isActive id={}", id);
+        return procedureService.toggleIsActive(id)
                 .map(ProcedureResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    // ====================== FILTER by Facility (paged) ======================
+    @GetMapping("/procedure/by-facility/{facilityId}")
+    public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Procedures by facilityId={} pageable={}", facilityId, pageable);
+        Page<Procedure> page = procedureService.findByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }

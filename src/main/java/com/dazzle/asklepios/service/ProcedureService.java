@@ -143,35 +143,35 @@ public class ProcedureService {
         }
     }
 
-    // ====================== READ ======================
+    // ====================== READ (بدون facilityId) ======================
     @Transactional(readOnly = true)
-    public List<Procedure> findAll(Long facilityId) {
-        LOG.debug("Fetching all Procedures for facilityId={}", facilityId);
-        return procedureRepository.findByFacility_Id(facilityId);
+    public List<Procedure> findAll() {
+        LOG.debug("Fetching all Procedures (no facility filter)");
+        return procedureRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findAll(Long facilityId, Pageable pageable) {
-        LOG.debug("Fetching paged Procedures for facilityId={} pageable={}", facilityId, pageable);
-        return procedureRepository.findByFacility_Id(facilityId, pageable);
+    public Page<Procedure> findAll(Pageable pageable) {
+        LOG.debug("Fetching paged Procedures pageable={}", pageable);
+        return procedureRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(Long facilityId, ProcedureCategoryType categoryType, Pageable pageable) {
-        LOG.debug("Fetching Procedures by categoryType={} facilityId={}", categoryType, facilityId);
-        return procedureRepository.findByFacility_IdAndCategoryType(facilityId, categoryType, pageable);
+    public Page<Procedure> findByCategory(ProcedureCategoryType categoryType, Pageable pageable) {
+        LOG.debug("Fetching Procedures by categoryType={}", categoryType);
+        return procedureRepository.findByCategoryType(categoryType, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCodeContainingIgnoreCase(Long facilityId, String code, Pageable pageable) {
-        LOG.debug("Fetching Procedures by code='{}' facilityId={}", code, facilityId);
-        return procedureRepository.findByFacility_IdAndCodeContainingIgnoreCase(facilityId, code, pageable);
+    public Page<Procedure> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
+        LOG.debug("Fetching Procedures by code='{}'", code);
+        return procedureRepository.findByCodeContainingIgnoreCase(code, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByNameContainingIgnoreCase(Long facilityId, String name, Pageable pageable) {
-        LOG.debug("Fetching Procedures by name='{}' facilityId={}", name, facilityId);
-        return procedureRepository.findByFacility_IdAndNameContainingIgnoreCase(facilityId, name, pageable);
+    public Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable) {
+        LOG.debug("Fetching Procedures by name='{}'", name);
+        return procedureRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -180,11 +180,10 @@ public class ProcedureService {
         return procedureRepository.findById(id);
     }
 
-    // ====================== TOGGLE ======================
-    public Optional<Procedure> toggleIsActive(Long id, Long facilityId) {
-        LOG.info("Toggling isActive for Procedure id={} facilityId={}", id, facilityId);
+    // ====================== TOGGLE (بدون facilityId) ======================
+    public Optional<Procedure> toggleIsActive(Long id) {
+        LOG.info("Toggling isActive for Procedure id={}", id);
         return procedureRepository.findById(id)
-                .filter(proc -> proc.getFacility() != null && proc.getFacility().getId().equals(facilityId))
                 .map(entity -> {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
@@ -193,7 +192,14 @@ public class ProcedureService {
                     return saved;
                 });
     }
-
+    @Transactional(readOnly = true)
+    public Page<Procedure> findByFacility(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching Procedures by facilityId={} pageable={}", facilityId, pageable);
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
+        }
+        return procedureRepository.findByFacility_Id(facilityId, pageable);
+    }
     // ====================== Helpers ======================
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
