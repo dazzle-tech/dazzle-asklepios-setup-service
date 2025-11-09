@@ -19,6 +19,7 @@ public class UomGroupsRelationsController {
         this.service = service;
     }
 
+    // Create: POST /api/setup/uom-groups/relations/{groupId}
     @PostMapping("/{groupId}")
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroupsRelation create(@PathVariable Long groupId,
@@ -32,16 +33,17 @@ public class UomGroupsRelationsController {
         } else if (!groupId.equals(body.getGroup().getId())) {
             throw new IllegalArgumentException("Path groupId and body.group.id must match");
         }
-
         return service.create(body);
     }
 
+    // List: GET /api/setup/uom-groups/relations/{groupId}
     @GetMapping("/{groupId}")
     public List<UomGroupsRelation> list(@PathVariable Long groupId) {
         return service.listByGroup(groupId);
     }
 
-    @GetMapping("/{id}")
+    // Get one: GET /api/setup/uom-groups/relations/{groupId}/{id}
+    @GetMapping("/{groupId}/{id}")
     public UomGroupsRelation get(@PathVariable Long groupId, @PathVariable Long id) {
         UomGroupsRelation r = service.get(id);
         if (r.getGroup() == null || !groupId.equals(r.getGroup().getId())) {
@@ -50,7 +52,8 @@ public class UomGroupsRelationsController {
         return r;
     }
 
-    @PutMapping("/{id}")
+    // Update: PUT /api/setup/uom-groups/relations/{groupId}/{id}
+    @PutMapping("/{groupId}/{id}")
     public UomGroupsRelation update(@PathVariable Long groupId,
                                     @PathVariable Long id,
                                     @RequestBody UomGroupsRelation body) {
@@ -71,7 +74,8 @@ public class UomGroupsRelationsController {
         return updated;
     }
 
-    @DeleteMapping("/{id}")
+    // Delete: DELETE /api/setup/uom-groups/relations/{groupId}/{id}
+    @DeleteMapping("/{groupId}/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long groupId, @PathVariable Long id) {
         UomGroupsRelation r = service.get(id);
@@ -81,4 +85,3 @@ public class UomGroupsRelationsController {
         service.delete(id);
     }
 }
-

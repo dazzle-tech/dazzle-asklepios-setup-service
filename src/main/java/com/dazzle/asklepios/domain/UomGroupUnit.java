@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -35,7 +36,7 @@ public class UomGroupUnit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Size(max = 50)
+    @Enumerated
     private UOM uom;
 
     @Column(name = "uom_order")
