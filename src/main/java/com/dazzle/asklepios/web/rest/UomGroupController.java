@@ -2,29 +2,34 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.UomGroup;
 import com.dazzle.asklepios.domain.UomGroupUnit;
-import com.dazzle.asklepios.domain.UomGroupsRelation;
 import com.dazzle.asklepios.service.UomGroupService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// ... imports omitted
 @RestController
-@RequestMapping("/api/uom-groups")
+@RequestMapping("/api/setup/uom-groups")
 public class UomGroupController {
 
     private final UomGroupService service;
 
-    public UomGroupController(UomGroupService service) {
-        this.service = service;
-    }
+
+    public UomGroupController(UomGroupService service) { this.service = service; }
 
     // --- Groups ---
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroup createGroup(@RequestBody @Valid UomGroup body) {
-        // domain in, domain out
         return service.createGroup(body);
     }
 
@@ -44,12 +49,11 @@ public class UomGroupController {
         service.deleteGroup(id);
     }
 
-    // --- Units ---
+    // --- Units (keep if you want nested Units here) ---
     @PostMapping("/{groupId}/units")
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroupUnit addUnit(@PathVariable Long groupId,
                                 @RequestBody @Valid UomGroupUnit body) {
-        // use the values from the domain body, attach via path groupId
         return service.addUnit(groupId, body.getUom(), body.getUomOrder());
     }
 
@@ -58,19 +62,5 @@ public class UomGroupController {
         return service.listUnits(groupId);
     }
 
-    // --- Relations ---
-    @PostMapping("/{groupId}/relations")
-    @ResponseStatus(HttpStatus.CREATED)
-    public UomGroupsRelation addRelation(@PathVariable Long groupId,
-                                         @RequestBody @Valid UomGroupsRelation body) {
-        // domain body with nested refs: {"fromUnit":{"id":..}, "toUnit":{"id":..}, "relation": ...}
-        Long fromUnitId = body.getFromUnit() != null ? body.getFromUnit().getId() : null;
-        Long toUnitId   = body.getToUnit() != null ? body.getToUnit().getId() : null;
-        return service.addRelation(groupId, fromUnitId, toUnitId, body.getRelation());
-    }
 
-    @GetMapping("/{groupId}/relations")
-    public List<UomGroupsRelation> listRelations(@PathVariable Long groupId) {
-        return service.listRelations(groupId);
-    }
 }

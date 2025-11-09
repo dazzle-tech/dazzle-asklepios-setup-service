@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/uom-groups/{groupId}/relations")
-public class UomGroupRelationsController {
+public class UomGroupsRelationsController {
 
     private final UomGroupsRelationService service;
 

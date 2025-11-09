@@ -93,7 +93,6 @@ public class UomGroupsRelationService {
         return rel; // managed entity; changes will be flushed
     }
 
-
     public UomGroupsRelation create(Long groupId, Long fromUnitId, Long toUnitId, BigDecimal relation) {
         UomGroupsRelation tmp = new UomGroupsRelation();
         tmp.setRelation(relation);
