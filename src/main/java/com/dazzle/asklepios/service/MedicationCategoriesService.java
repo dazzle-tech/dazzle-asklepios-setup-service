@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.LanguageTranslation;
 import com.dazzle.asklepios.domain.MedicationCategories;
@@ -35,6 +36,11 @@ public class MedicationCategoriesService {
     public Optional<MedicationCategories> findOne(Long id) {
         LOG.debug("Request to get Medication Category : {}", id);
         return medicationCategoriesRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MedicationCategories> findByNameFilter(String nameFilter) {
+        return medicationCategoriesRepository.findByNameContainingIgnoreCase(nameFilter);
     }
 
     // create medication category

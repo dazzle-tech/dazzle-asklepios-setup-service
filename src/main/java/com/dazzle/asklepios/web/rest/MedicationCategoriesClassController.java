@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.MedicationCategories;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.service.MedicationCategoriesClassService;
 import jakarta.validation.Valid;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -46,9 +48,17 @@ public class MedicationCategoriesClassController {
 
 
     @GetMapping
-    public ResponseEntity<List<MedicationCategoriesClass>> findAll() {
+    public ResponseEntity<List<MedicationCategoriesClass>> findAll(
+            @RequestParam(required = false) String name
+    ) {
         LOG.debug("REST request to get all Medication Categories");
-        return ResponseEntity.ok(medicationCategoriesClassService.findAll());
+        List<MedicationCategoriesClass> list;
+        if (name != null && !name.isBlank()) {
+            list = medicationCategoriesClassService.findByNameFilter(name.trim());
+        } else {
+            list = medicationCategoriesClassService.findAll();
+        }
+        return ResponseEntity.ok(list);
     }
 
     @GetMapping("/{id}")

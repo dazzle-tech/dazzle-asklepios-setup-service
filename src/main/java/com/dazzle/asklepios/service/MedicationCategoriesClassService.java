@@ -36,6 +36,11 @@ public class MedicationCategoriesClassService {
         return medicationCategoriesClassRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicationCategoriesClass> findByNameFilter(String nameFilter) {
+        return medicationCategoriesClassRepository.findByNameContainingIgnoreCase(nameFilter);
+    }
+
     public MedicationCategoriesClass create(MedicationCategoriesClass vm) {
         LOG.debug("Request to create MedicationCategoriesClass : {}", vm);
 
