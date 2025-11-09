@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.pathology;
 
 import com.dazzle.asklepios.domain.DiagnosticTestPathology;
+
 import java.io.Serializable;
 
 /**

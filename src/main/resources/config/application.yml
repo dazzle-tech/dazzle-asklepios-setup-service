@@ -2,8 +2,6 @@ spring:
   config:
     activate:
       on-profile: '!api-docs'
-  cache:
-    type: redis
 springdoc:
   api-docs:
     enabled: false
@@ -165,6 +163,7 @@ server:
 
 springdoc:
   show-actuator: true
+  pre-loading-enabled: true
 
 # Properties to be exposed on the /info management endpoint
 info:

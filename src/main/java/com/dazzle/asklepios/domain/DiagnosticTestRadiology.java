@@ -1,14 +1,7 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.Method;
-import com.dazzle.asklepios.domain.enumeration.Property;
-import com.dazzle.asklepios.domain.enumeration.Scale;
-import com.dazzle.asklepios.domain.enumeration.System;
-import com.dazzle.asklepios.domain.enumeration.Timing;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;

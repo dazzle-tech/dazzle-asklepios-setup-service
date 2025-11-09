@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.radiology;
 
 import com.dazzle.asklepios.domain.DiagnosticTestRadiology;
+
 import java.io.Serializable;
 
 /**

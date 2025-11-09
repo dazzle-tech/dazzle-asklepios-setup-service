@@ -6,15 +6,15 @@ import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+
 import java.util.List;
 import java.util.Optional;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 @Service
 @Transactional

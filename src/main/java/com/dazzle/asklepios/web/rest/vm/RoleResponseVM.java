@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm;
 
 import com.dazzle.asklepios.domain.Role;
+
 import java.io.Serializable;
 
 /**

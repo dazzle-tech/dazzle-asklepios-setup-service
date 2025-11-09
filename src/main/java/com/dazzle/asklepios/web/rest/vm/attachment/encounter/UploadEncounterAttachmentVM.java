@@ -1,12 +1,11 @@
 package com.dazzle.asklepios.web.rest.vm.attachment.encounter;
+
 import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * View Model for uploading Encounter Attachments via REST.

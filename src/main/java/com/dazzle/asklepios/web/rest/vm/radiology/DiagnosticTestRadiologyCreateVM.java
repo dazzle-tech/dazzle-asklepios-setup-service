@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.radiology;
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestRadiology;
 import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 
 /**

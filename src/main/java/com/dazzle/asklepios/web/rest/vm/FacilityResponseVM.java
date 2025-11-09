@@ -5,7 +5,6 @@ import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import org.wildfly.common.annotation.NotNull;
 
-
 import java.io.Serializable;
 
 /**

@@ -1,10 +1,8 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Icd10Code;
 import com.dazzle.asklepios.service.Icd10Service;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

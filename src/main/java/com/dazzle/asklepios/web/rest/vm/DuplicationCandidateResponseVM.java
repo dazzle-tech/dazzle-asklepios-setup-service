@@ -3,8 +3,6 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.Instant;
-
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Map;

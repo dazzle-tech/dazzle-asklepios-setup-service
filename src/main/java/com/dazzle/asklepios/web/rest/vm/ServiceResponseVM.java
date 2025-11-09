@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 

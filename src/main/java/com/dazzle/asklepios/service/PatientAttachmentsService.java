@@ -1,15 +1,13 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
-import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.PatientAttachments;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import com.dazzle.asklepios.web.rest.vm.attachment.patient.DownloadPatientAttachmentVM;
 import com.dazzle.asklepios.web.rest.vm.attachment.patient.UploadPatientAttachmentVM;
-import com.dazzle.asklepios.web.rest.vm.attachment.patient.DownloadPatientAttachmentVM; // <-- add
-
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

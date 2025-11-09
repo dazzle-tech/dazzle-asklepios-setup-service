@@ -2,11 +2,10 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Role;
-import com.dazzle.asklepios.repository.RoleRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.RoleRepository;
 import com.dazzle.asklepios.web.rest.vm.RoleCreateVM;
 import com.dazzle.asklepios.web.rest.vm.RoleUpdateVM;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

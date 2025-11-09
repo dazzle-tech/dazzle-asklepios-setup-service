@@ -1,10 +1,10 @@
 package com.dazzle.asklepios.web.rest.errors;
 
-import java.net.URI;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.ErrorResponseException;
-import org.springframework.web.ErrorResponse;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.ErrorResponseException;
+
+import java.net.URI;
 
 /**
  * Exception used to send a Not Found (404) response with structured problem details.

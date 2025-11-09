@@ -3,7 +3,6 @@ package com.dazzle.asklepios.web.rest.vm;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-
 import jakarta.validation.constraints.NotNull;
 
 /**

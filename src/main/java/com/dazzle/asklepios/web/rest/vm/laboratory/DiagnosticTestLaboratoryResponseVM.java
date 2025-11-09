@@ -9,7 +9,6 @@ import com.dazzle.asklepios.domain.enumeration.System;
 import com.dazzle.asklepios.domain.enumeration.Timing;
 
 import java.io.Serializable;
-import java.util.Timer;
 
 public record DiagnosticTestLaboratoryResponseVM(
         Long id,

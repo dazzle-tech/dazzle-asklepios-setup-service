@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.userDepartments;
 
 import com.dazzle.asklepios.domain.UserDepartment;
+
 import java.io.Serializable;
 
 /**

@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.practitionerDepartment;
 
 import com.dazzle.asklepios.domain.PractitionerDepartment;
+
 import java.io.Serializable;
 
 /** View Model for reading Practitioner–Department relations. */

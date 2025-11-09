@@ -1,11 +1,9 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.PractitionerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;

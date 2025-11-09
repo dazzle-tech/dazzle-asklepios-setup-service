@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestLaboratory;
 import com.dazzle.asklepios.service.DiagnosticTestLaboratoryService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -28,7 +27,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 /**
  * REST controller for managing {@link com.dazzle.asklepios.domain.DiagnosticTestLaboratory}.
  */
