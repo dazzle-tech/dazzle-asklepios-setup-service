@@ -1,10 +1,7 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.MedicalCodeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,6 +18,7 @@ import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -28,8 +26,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "procedure_coding")
-public class ProcedureCoding extends AbstractAuditingEntity<Long> implements Serializable {
+@Table( name = "procedure_price_list")
+public class ProcedurePriceList extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -44,12 +42,10 @@ public class ProcedureCoding extends AbstractAuditingEntity<Long> implements Ser
     private Procedure procedure;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "code_type", nullable = false, length = 100)
-    private MedicalCodeType codeType;
+    @Column(name = "currency", nullable = false, length = 10)
+    private String currency;
 
     @NotNull
-    @Column(name = "code_id", nullable = false, length = 100)
-    private String codeId;
-
+    @Column(name = "price", nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
 }

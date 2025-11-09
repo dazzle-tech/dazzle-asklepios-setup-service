@@ -10,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -40,35 +39,34 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     private Long id;
 
     @NotNull
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 255)
     private String name;
 
     @NotNull
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 255)
     private String code;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "category_type", nullable = false, length = 100)
+    @Column(name = "category_type", nullable = false, length = 255)
     private ProcedureCategoryType categoryType;
 
     @NotNull
     @Column(name = "is_appointable", nullable = false)
     private Boolean isAppointable;
 
-    @Lob
+
     @Column(name = "indications", columnDefinition = "text")
     private String indications;
 
-    @Lob
+
     @Column(name = "contraindications", columnDefinition = "text")
     private String contraindications;
 
-    @Lob
+
     @Column(name = "preparation_instructions", columnDefinition = "text")
     private String preparationInstructions;
 
-    @Lob
     @Column(name = "recovery_notes", columnDefinition = "text")
     private String recoveryNotes;
 

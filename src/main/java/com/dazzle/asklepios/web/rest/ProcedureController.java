@@ -70,7 +70,6 @@ public class ProcedureController {
                 .body(body);
     }
 
-    // ====================== UPDATE ======================
     @PutMapping("/procedure/{id}")
     public ResponseEntity<ProcedureResponseVM> updateProcedure(
             @PathVariable Long id,
@@ -97,7 +96,6 @@ public class ProcedureController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== READ ALL (بدون facilityId) ======================
     @GetMapping("/procedure")
     public ResponseEntity<List<ProcedureResponseVM>> getAllProcedures(
             @ParameterObject Pageable pageable
@@ -114,7 +112,6 @@ public class ProcedureController {
         );
     }
 
-    // ====================== FILTERS (بدون facilityId) ======================
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
             @PathVariable ProcedureCategoryType categoryType,
@@ -166,7 +163,6 @@ public class ProcedureController {
         );
     }
 
-    // ====================== TOGGLE ACTIVE (بدون facilityId) ======================
     @PatchMapping("/procedure/{id}/toggle-active")
     public ResponseEntity<ProcedureResponseVM> toggleProcedureActiveStatus(
             @PathVariable Long id
@@ -177,7 +173,7 @@ public class ProcedureController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    // ====================== FILTER by Facility (paged) ======================
+
     @GetMapping("/procedure/by-facility/{facilityId}")
     public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
             @PathVariable Long facilityId,
