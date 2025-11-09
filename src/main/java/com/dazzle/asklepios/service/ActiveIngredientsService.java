@@ -17,6 +17,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
@@ -116,9 +118,9 @@ public class ActiveIngredientsService {
 
     // 6) get by drug class id (pageable)
     @Transactional(readOnly = true)
-    public Page<ActiveIngredients> getByDrugClassId(Long drugClassId, Pageable pageable) {
-        LOG.debug("get active ingredients by drugClassId: drugClassId={} page={} size={}", drugClassId, pageable.getPageNumber(), pageable.getPageSize());
-        return activeRepo.findByDrugClassId(drugClassId, pageable);
+    public Page<ActiveIngredients> getByDrugClassIds(List<Long> drugClassIds, Pageable pageable){
+        LOG.debug("get active ingredients by drugClassId: drugClassId={} page={} size={}", drugClassIds, pageable.getPageNumber(), pageable.getPageSize());
+        return activeRepo.findByDrugClassIdIn(drugClassIds, pageable);
     }
 
     // 7) get by atc code (pageable, contains+ignoreCase)

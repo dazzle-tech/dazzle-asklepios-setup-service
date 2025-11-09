@@ -125,15 +125,20 @@ public class ActiveIngredientsController {
     }
 
     /**
-     * {@code GET /active-ingredients/by-drugClass/{drugClassId}} : Filter by drug class id (paginated).
+     * {@code GET /active-ingredients/by-drugClass} : Filter by multiple drug class IDs (paginated).
      */
-    @GetMapping("/active-ingredients/by-drugClass/{drugClassId:\\d+}")
-    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByDrugClass(@PathVariable Long drugClassId, @ParameterObject Pageable pageable) {
-        LOG.debug("REST list ActiveIngredients by drugClassId={} page={}", drugClassId, pageable);
-        Page<ActiveIngredients> page = activeIngredientsService.getByDrugClassId(drugClassId, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+    @GetMapping("/active-ingredients/by-drugClass")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByDrugClass(@RequestParam List<Long> drugClassIds, @ParameterObject Pageable pageable) {
+        LOG.debug("REST list ActiveIngredients by drugClassIds={} page={}", drugClassIds, pageable);
+        Page<ActiveIngredients> page = activeIngredientsService.getByDrugClassIds(drugClassIds, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         List<ActiveIngredientsResponseVM> body = page.getContent()
-                .stream().map(ActiveIngredientsResponseVM::ofEntity).toList();
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
