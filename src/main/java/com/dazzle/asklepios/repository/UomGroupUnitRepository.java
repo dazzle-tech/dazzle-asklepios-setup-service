@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface UomGroupUnitRepository extends JpaRepository<UomGroupUnit, Long> {
-    List<UomGroupUnit> findByGroup_Id(Long groupId);
+    List<UomGroupUnit> findByGroupId(Long groupId);
 }

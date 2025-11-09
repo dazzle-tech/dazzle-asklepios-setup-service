@@ -45,7 +45,7 @@ public class UomGroupService {
         return unitRepo.save(unit);
     }
     public List<UomGroupUnit> listUnits(Long groupId) {
-        return unitRepo.findByGroup_Id(groupId);
+        return unitRepo.findByGroupId(groupId);
     }
 
     // Relation

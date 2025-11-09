@@ -44,7 +44,7 @@ public class UomGroupUnitService {
 
     @Transactional(readOnly = true)
     public List<UomGroupUnit> listByGroup(Long groupId) {
-        return unitRepo.findByGroup_Id(groupId);
+        return unitRepo.findByGroupId(groupId);
     }
 
     public void delete(Long id) { unitRepo.deleteById(id); }

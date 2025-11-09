@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/uom-groups/{groupId}/relations")
+@RequestMapping("/api/setup/uom-groups/relations")
 public class UomGroupsRelationsController {
 
     private final UomGroupsRelationService service;
@@ -19,11 +19,10 @@ public class UomGroupsRelationsController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping("/{groupId}")
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroupsRelation create(@PathVariable Long groupId,
                                     @RequestBody UomGroupsRelation body) {
-        // Enforce path groupId on the domain body
         if (body.getGroup() == null) {
             UomGroup g = new UomGroup();
             g.setId(groupId);
@@ -37,7 +36,7 @@ public class UomGroupsRelationsController {
         return service.create(body);
     }
 
-    @GetMapping
+    @GetMapping("/{groupId}")
     public List<UomGroupsRelation> list(@PathVariable Long groupId) {
         return service.listByGroup(groupId);
     }
@@ -55,7 +54,6 @@ public class UomGroupsRelationsController {
     public UomGroupsRelation update(@PathVariable Long groupId,
                                     @PathVariable Long id,
                                     @RequestBody UomGroupsRelation body) {
-        // If caller supplies a different group in body, enforce/override with path
         if (body.getGroup() == null) {
             UomGroup g = new UomGroup();
             g.setId(groupId);
@@ -67,7 +65,6 @@ public class UomGroupsRelationsController {
         }
 
         UomGroupsRelation updated = service.update(id, body);
-        // Safety: ensure updated relation still belongs to this group
         if (updated.getGroup() == null || !groupId.equals(updated.getGroup().getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Updated relation not in this group");
         }

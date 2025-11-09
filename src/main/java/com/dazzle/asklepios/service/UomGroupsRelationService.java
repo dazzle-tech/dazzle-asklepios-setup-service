@@ -28,9 +28,6 @@ public class UomGroupsRelationService {
         this.relRepo = relRepo;
     }
 
-    /* =========================
-       Domain-in / Domain-out
-       ========================= */
 
     public UomGroupsRelation create(UomGroupsRelation body) {
         Long groupId    = (body.getGroup()    != null) ? body.getGroup().getId()    : null;
@@ -66,7 +63,6 @@ public class UomGroupsRelationService {
             rel.setRelation(body.getRelation());
         }
 
-        // Optionally allow changing group/from/to via body
         Long newGroupId    = (body.getGroup()    != null) ? body.getGroup().getId()    : null;
         Long newFromUnitId = (body.getFromUnit() != null) ? body.getFromUnit().getId() : null;
         Long newToUnitId   = (body.getToUnit()   != null) ? body.getToUnit().getId()   : null;
@@ -84,13 +80,12 @@ public class UomGroupsRelationService {
             rel.setToUnit(to);
         }
 
-        // Final consistency check
         Long gid = rel.getGroup().getId();
         if (!gid.equals(rel.getFromUnit().getGroup().getId()) || !gid.equals(rel.getToUnit().getGroup().getId())) {
             throw new IllegalArgumentException("fromUnit and toUnit must belong to relation.group");
         }
 
-        return rel; // managed entity; changes will be flushed
+        return rel;
     }
 
     public UomGroupsRelation create(Long groupId, Long fromUnitId, Long toUnitId, BigDecimal relation) {

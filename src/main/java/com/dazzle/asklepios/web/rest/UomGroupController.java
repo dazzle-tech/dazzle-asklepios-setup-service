@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// ... imports omitted
 @RestController
 @RequestMapping("/api/setup/uom-groups")
 public class UomGroupController {
@@ -26,7 +25,6 @@ public class UomGroupController {
 
     public UomGroupController(UomGroupService service) { this.service = service; }
 
-    // --- Groups ---
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroup createGroup(@RequestBody @Valid UomGroup body) {
@@ -49,7 +47,6 @@ public class UomGroupController {
         service.deleteGroup(id);
     }
 
-    // --- Units (keep if you want nested Units here) ---
     @PostMapping("/{groupId}/units")
     @ResponseStatus(HttpStatus.CREATED)
     public UomGroupUnit addUnit(@PathVariable Long groupId,
