@@ -32,6 +32,6 @@ public class MedicationCategoriesClass {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "medication_category_id")
+    @Column(name = "medication_category_id", nullable = false)
     private Long medicationCategoriesId;
 }

@@ -41,14 +41,6 @@ public class MedicationCategoriesService {
     public MedicationCategories create(MedicationCategories vm) {
         LOG.debug("Request to create MedicationCategories : {}", vm);
 
-        medicationCategoriesRepository.findById(vm.getId())
-                .ifPresent(t -> {
-                    throw new ResponseStatusException(
-                            HttpStatus.CONFLICT,
-                            "MedicationCategoriy already exists for (" + vm.getId() + ")"
-                    );
-                });
-
         MedicationCategories entity = new MedicationCategories();
         entity.setName(vm.getName());
 
@@ -58,7 +50,6 @@ public class MedicationCategoriesService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Medication Category data", ex);
         }
     }
-
     // delete medication category
     public boolean delete(Long id) {
         LOG.debug("Request to delete Medication Category : {}", id);

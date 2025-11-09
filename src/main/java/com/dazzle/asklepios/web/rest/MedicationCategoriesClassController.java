@@ -58,6 +58,13 @@ public class MedicationCategoriesClassController {
                 .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/by-category/{id}")
+    public ResponseEntity<List<MedicationCategoriesClass>> findAllByCategory(@PathVariable Long id) {
+        LOG.debug("REST request to get MedicationCategoryClasses id={}", id);
+        return ResponseEntity.ok(medicationCategoriesClassService.findAllByCategoryId(id
+        ));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.debug("REST request to delete MedicationCategoryClass id={}", id);

@@ -36,19 +36,13 @@ public class MedicationCategoriesClassService {
         return medicationCategoriesClassRepository.findById(id);
     }
 
-    // create medication category class
     public MedicationCategoriesClass create(MedicationCategoriesClass vm) {
         LOG.debug("Request to create MedicationCategoriesClass : {}", vm);
 
-        medicationCategoriesClassRepository.findById(vm.getId())
-                .ifPresent(t -> {
-                    throw new ResponseStatusException(
-                            HttpStatus.CONFLICT,
-                            "MedicationCategoriesClass already exists for (" + vm.getId() + ")"
-                    );
-                });
-
-        MedicationCategoriesClass entity = new MedicationCategoriesClass(vm.getId(), vm.getName(), vm.getMedicationCategoriesId());
+        MedicationCategoriesClass entity = new MedicationCategoriesClass();
+        entity.setId(null);
+        entity.setName(vm.getName());
+        entity.setMedicationCategoriesId(vm.getMedicationCategoriesId());
 
         try {
             return medicationCategoriesClassRepository.save(entity);
@@ -56,6 +50,7 @@ public class MedicationCategoriesClassService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Medication Category class data", ex);
         }
     }
+
 
     // delete medication category class
     public boolean delete(Long id) {
@@ -81,4 +76,12 @@ public class MedicationCategoriesClassService {
             return updated;
         });
     }
+    // find one medication category class
+    @Transactional(readOnly = true)
+    public List<MedicationCategoriesClass> findAllByCategoryId(Long id) {
+        LOG.debug("Request to get Medication Category class: {}", id);
+        return medicationCategoriesClassRepository.findAllByMedicationCategoriesId(id);
+    }
+
+
 }
