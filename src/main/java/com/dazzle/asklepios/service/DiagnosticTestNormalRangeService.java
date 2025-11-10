@@ -27,7 +27,8 @@ public class DiagnosticTestNormalRangeService {
 
     public DiagnosticTestNormalRangeService(
             DiagnosticTestNormalRangeRepository rangeRepository,
-            DiagnosticTestNormalRangeLovRepository lovRepository) {
+            DiagnosticTestNormalRangeLovRepository lovRepository
+    ) {
         this.rangeRepository = rangeRepository;
         this.lovRepository = lovRepository;
     }
@@ -39,14 +40,17 @@ public class DiagnosticTestNormalRangeService {
         LOG.debug("Create DiagnosticTestNormalRange: {}", entity);
         DiagnosticTestNormalRange saved = rangeRepository.save(entity);
 
-        // handle LOV keys if resultType == LOV
-        if (entity.getResultType() == TestResultType.LOV && entity.getLovKeys() != null && !entity.getLovKeys().isEmpty()) {
+        // Handle LOVs only if type == LOV
+        if (entity.getResultType() == TestResultType.LOV &&
+                entity.getLovKeys() != null && !entity.getLovKeys().isEmpty()) {
+
             List<DiagnosticTestNormalRangeLov> lovs = entity.getLovKeys().stream()
                     .map(key -> DiagnosticTestNormalRangeLov.builder()
                             .normalRange(saved)
                             .lov(key)
                             .build())
                     .collect(Collectors.toList());
+
             lovRepository.saveAll(lovs);
             LOG.debug("Saved {} LOV keys for rangeId={}", lovs.size(), saved.getId());
         }
@@ -62,17 +66,21 @@ public class DiagnosticTestNormalRangeService {
             entity.setId(id);
             DiagnosticTestNormalRange updated = rangeRepository.save(entity);
 
-            // clear old LOVs and re-insert if necessary
+            // Refresh LOVs
             lovRepository.deleteByNormalRangeId(id);
-            if (entity.getResultType() == TestResultType.LOV && entity.getLovKeys() != null && !entity.getLovKeys().isEmpty()) {
+
+            if (entity.getResultType() == TestResultType.LOV &&
+                    entity.getLovKeys() != null && !entity.getLovKeys().isEmpty()) {
+
                 List<DiagnosticTestNormalRangeLov> lovs = entity.getLovKeys().stream()
                         .map(key -> DiagnosticTestNormalRangeLov.builder()
                                 .normalRange(updated)
                                 .lov(key)
                                 .build())
                         .collect(Collectors.toList());
+
                 lovRepository.saveAll(lovs);
-                LOG.debug("Updated LOV keys for rangeId={}", id);
+                LOG.debug("Updated {} LOV keys for rangeId={}", lovs.size(), id);
             }
 
             return updated;
@@ -83,21 +91,45 @@ public class DiagnosticTestNormalRangeService {
     // GET ALL (Paginated)
     // -----------------------------------------------------------------------
     public Page<DiagnosticTestNormalRange> findAll(Pageable pageable) {
-        return rangeRepository.findAll(pageable);
+        return rangeRepository.findAll(pageable)
+                .map(range -> {
+                    List<String> lovs = lovRepository.findByNormalRangeId(range.getId())
+                            .stream()
+                            .map(DiagnosticTestNormalRangeLov::getLov)
+                            .toList();
+                    range.setLovKeys(lovs);
+                    return range;
+                });
     }
 
     // -----------------------------------------------------------------------
     // GET ONE
     // -----------------------------------------------------------------------
     public Optional<DiagnosticTestNormalRange> findOne(Long id) {
-        return rangeRepository.findById(id);
+        return rangeRepository.findById(id)
+                .map(range -> {
+                    List<String> lovs = lovRepository.findByNormalRangeId(id)
+                            .stream()
+                            .map(DiagnosticTestNormalRangeLov::getLov)
+                            .toList();
+                    range.setLovKeys(lovs);
+                    return range;
+                });
     }
 
     // -----------------------------------------------------------------------
-    // GET BY TEST ID
+    // GET BY TEST ID (Paginated)
     // -----------------------------------------------------------------------
     public Page<DiagnosticTestNormalRange> findAllByTestId(Long testId, Pageable pageable) {
-        return rangeRepository.findByTest_Id(testId, pageable);
+        return rangeRepository.findByTest_Id(testId, pageable)
+                .map(range -> {
+                    List<String> lovs = lovRepository.findByNormalRangeId(range.getId())
+                            .stream()
+                            .map(DiagnosticTestNormalRangeLov::getLov)
+                            .toList();
+                    range.setLovKeys(lovs);
+                    return range;
+                });
     }
 
     // -----------------------------------------------------------------------
@@ -109,14 +141,13 @@ public class DiagnosticTestNormalRangeService {
         rangeRepository.deleteById(id);
     }
 
-
+    // -----------------------------------------------------------------------
+    // GET LOVs BY RANGE ID
+    // -----------------------------------------------------------------------
     public List<String> findLovsByNormalRangeId(Long normalRangeId) {
         return lovRepository.findByNormalRangeId(normalRangeId)
                 .stream()
                 .map(DiagnosticTestNormalRangeLov::getLov)
                 .toList();
     }
-
 }
-
-
