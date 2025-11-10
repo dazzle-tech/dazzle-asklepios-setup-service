@@ -1,9 +1,25 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.*;
-import jakarta.persistence.*;
+
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.domain.enumeration.MedFrequency;
+import com.dazzle.asklepios.domain.enumeration.MedRoa;
+import com.dazzle.asklepios.domain.enumeration.UOM;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -17,6 +33,7 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PrescriptionInstruction implements Serializable {
 
+    @jakarta.persistence.Id
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
