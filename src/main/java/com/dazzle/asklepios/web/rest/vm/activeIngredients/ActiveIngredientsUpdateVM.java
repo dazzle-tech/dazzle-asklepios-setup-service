@@ -23,7 +23,7 @@ public record ActiveIngredientsUpdateVM(
         Boolean isControlled,
         ActiveIngredientsControlled controlled,
         Boolean hasBlackBoxWarning,
-        Boolean blackBoxWarning,
+        String blackBoxWarning,
         Boolean isActive,
 
         String toxicityMaximumDose,
