@@ -2,6 +2,10 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.PrescriptionInstruction;
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.domain.enumeration.MedFrequency;
+import com.dazzle.asklepios.domain.enumeration.MedRoa;
+import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.dazzle.asklepios.repository.PrescriptionInstructionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -51,25 +55,25 @@ public class PrescriptionInstructionService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PrescriptionInstruction> findByCategory(String category, Pageable pageable) {
+    public Page<PrescriptionInstruction> findByCategory(AgeGroupType category, Pageable pageable) {
         LOG.debug("List PrescriptionInstructions by category='{}' page={}", category, pageable);
         return repository.findByCategory(category, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<PrescriptionInstruction> findByUnit(String unit, Pageable pageable) {
+    public Page<PrescriptionInstruction> findByUnit(UOM unit, Pageable pageable) {
         LOG.debug("List PrescriptionInstructions by unit='{}' page={}", unit, pageable);
         return repository.findByUnit(unit, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<PrescriptionInstruction> findByRoute(String route, Pageable pageable) {
+    public Page<PrescriptionInstruction> findByRoute(MedRoa route, Pageable pageable) {
         LOG.debug("List PrescriptionInstructions by route='{}' page={}", route, pageable);
         return repository.findByRout(route, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<PrescriptionInstruction> findByFrequency(String frequency, Pageable pageable) {
+    public Page<PrescriptionInstruction> findByFrequency(MedFrequency frequency, Pageable pageable) {
         LOG.debug("List PrescriptionInstructions by frequency='{}' page={}", frequency, pageable);
         return repository.findByFrequency(frequency, pageable);
     }

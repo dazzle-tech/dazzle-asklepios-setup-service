@@ -1,6 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.PrescriptionInstruction;
+import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.domain.enumeration.MedFrequency;
+import com.dazzle.asklepios.domain.enumeration.MedRoa;
+import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.dazzle.asklepios.service.PrescriptionInstructionService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
@@ -56,7 +60,7 @@ public class PrescriptionInstructionController {
 
     /** GET by category (paged) */
     @GetMapping("/prescription-instruction/by-category/{category}")
-    public ResponseEntity<List<PrescriptionInstruction>> byCategory(@PathVariable String category,
+    public ResponseEntity<List<PrescriptionInstruction>> byCategory(@PathVariable AgeGroupType category,
                                                                     @ParameterObject Pageable pageable) {
         Page<PrescriptionInstruction> page = service.findByCategory(category, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
@@ -66,7 +70,7 @@ public class PrescriptionInstructionController {
 
     /** GET by unit (paged) */
     @GetMapping("/prescription-instruction/by-unit/{unit}")
-    public ResponseEntity<List<PrescriptionInstruction>> byUnit(@PathVariable String unit,
+    public ResponseEntity<List<PrescriptionInstruction>> byUnit(@PathVariable UOM unit,
                                                                 @ParameterObject Pageable pageable) {
         Page<PrescriptionInstruction> page = service.findByUnit(unit, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
@@ -76,7 +80,7 @@ public class PrescriptionInstructionController {
 
     /** GET by route (paged) */
     @GetMapping("/prescription-instruction/by-route/{route}")
-    public ResponseEntity<List<PrescriptionInstruction>> byRoute(@PathVariable String route,
+    public ResponseEntity<List<PrescriptionInstruction>> byRoute(@PathVariable MedRoa route,
                                                                  @ParameterObject Pageable pageable) {
         Page<PrescriptionInstruction> page = service.findByRoute(route, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
@@ -86,7 +90,7 @@ public class PrescriptionInstructionController {
 
     /** GET by frequency (paged) */
     @GetMapping("/prescription-instruction/by-frequency/{frequency}")
-    public ResponseEntity<List<PrescriptionInstruction>> byFrequency(@PathVariable String frequency,
+    public ResponseEntity<List<PrescriptionInstruction>> byFrequency(@PathVariable MedFrequency frequency,
                                                                      @ParameterObject Pageable pageable) {
         Page<PrescriptionInstruction> page = service.findByFrequency(frequency, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
