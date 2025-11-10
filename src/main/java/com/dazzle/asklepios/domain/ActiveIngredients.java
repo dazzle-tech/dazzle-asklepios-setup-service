@@ -73,7 +73,7 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     private Boolean hasBlackBoxWarning;
 
     @Column(name = "black_box_warning")
-    private Boolean blackBoxWarning;
+    private String blackBoxWarning;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
