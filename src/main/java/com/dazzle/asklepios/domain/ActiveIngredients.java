@@ -93,7 +93,7 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     @Column(name = "pharma_absorption", columnDefinition = "text")
     private String pharmaAbsorption;
 
-    @Column(name = "pharma_route_of_elimination", length = 50)
+    @Column(name = "pharma_route_of_elimination", length = 500)
     private String pharmaRouteOfElimination;
 
     @Column(name = "pharma_volume_of_distribution", columnDefinition = "text")
