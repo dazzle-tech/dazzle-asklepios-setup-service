@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface DiagnosticTestLaboratoryRepository extends JpaRepository<DiagnosticTestLaboratory, Long> {
     Optional<DiagnosticTestLaboratory> findByTestId(Long testId);
     boolean existsByTestId(Long testId);
+
 }

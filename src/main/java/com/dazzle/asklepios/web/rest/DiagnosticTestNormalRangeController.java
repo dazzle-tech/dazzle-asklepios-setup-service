@@ -154,7 +154,32 @@ public class DiagnosticTestNormalRangeController {
                 HttpStatus.OK
         );
     }
+    /**
+     * {@code GET /diagnostic-test-normal-ranges/by-profile-test/:profileTestId} :
+     * Get a paginated list of DiagnosticTestNormalRanges by testId.
+     *
+     * @param profileTestId the id of the related diagnostic test.
+     * @param pageable pagination and sorting parameters.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of ranges.
+     */
+    @GetMapping("/by-profile-test/{profileTestId}")
+    public ResponseEntity<List<DiagnosticTestNormalRangeResponseVM>> findAllByProfileTestId(
+            @PathVariable Long profileTestId, @ParameterObject Pageable pageable) {
 
+        LOG.debug("REST request to list DiagnosticTestNormalRange by profileTtestId={} page={}", profileTestId, pageable);
+
+        Page<DiagnosticTestNormalRange> page = service.findAllByProfileTestId(profileTestId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
     /**
      * {@code DELETE /diagnostic-test-normal-ranges/:id} :
      * Delete a DiagnosticTestNormalRange by id.

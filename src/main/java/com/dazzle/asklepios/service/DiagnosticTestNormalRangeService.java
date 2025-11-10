@@ -133,6 +133,21 @@ public class DiagnosticTestNormalRangeService {
     }
 
     // -----------------------------------------------------------------------
+    // GET BY TEST ID (Paginated)
+    // -----------------------------------------------------------------------
+    public Page<DiagnosticTestNormalRange> findAllByProfileTestId(Long profileTestId, Pageable pageable) {
+        return rangeRepository.findByProfileTest_Id(profileTestId, pageable)
+                .map(range -> {
+                    List<String> lovs = lovRepository.findByNormalRangeId(range.getId())
+                            .stream()
+                            .map(DiagnosticTestNormalRangeLov::getLov)
+                            .toList();
+                    range.setLovKeys(lovs);
+                    return range;
+                });
+    }
+
+    // -----------------------------------------------------------------------
     // DELETE
     // -----------------------------------------------------------------------
     public void delete(Long id) {

@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DiagnosticTestNormalRangeRepository extends JpaRepository<DiagnosticTestNormalRange, Long> {
     Page<DiagnosticTestNormalRange> findByTest_Id(Long testId, Pageable pageable);
+    Page<DiagnosticTestNormalRange> findByProfileTest_Id(Long profileTestId, Pageable pageable);
 }
