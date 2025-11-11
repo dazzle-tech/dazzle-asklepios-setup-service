@@ -38,15 +38,6 @@ public class VaccineService {
         if (incoming == null) {
             throw new BadRequestAlertException("Vaccine payload is required", "vaccine", "payload.required");
         }
-        if (incoming.getName() == null || incoming.getName().isBlank()) {
-            throw new BadRequestAlertException("Vaccine name is required", "vaccine", "name.required");
-        }
-        if (incoming.getType() == null) {
-            throw new BadRequestAlertException("Vaccine type is required", "vaccine", "type.required");
-        }
-        if (incoming.getRoa() == null) {
-            throw new BadRequestAlertException("Route of administration (roa) is required", "vaccine", "roa.required");
-        }
 
         Vaccine entity = Vaccine.builder()
                 .name(incoming.getName())
@@ -67,14 +58,12 @@ public class VaccineService {
             Vaccine saved = vaccineRepository.saveAndFlush(entity);
             LOG.info("Successfully created vaccine id={} name='{}'", saved.getId(), saved.getName());
             return saved;
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
-            handleConstraintsOnCreateOrUpdate(ex);
-            // unreachable
-            throw ex;
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            handleConstraintsOnCreateOrUpdate(constraintException);
+            throw constraintException;
         }
     }
 
-    // ====================== UPDATE (style matched) ======================
     public Optional<Vaccine> update(Long id, Vaccine incoming) {
         LOG.info("[UPDATE] Request to update Vaccine id={} payload={}", id, incoming);
 
@@ -85,7 +74,6 @@ public class VaccineService {
         Vaccine existing = vaccineRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Vaccine not found with id " + id, "vaccine", "notfound"));
 
-        // Set fields directly (1:1 like your ServiceService.update)
         existing.setName(incoming.getName());
         existing.setAtcCode(incoming.getAtcCode());
         existing.setType(incoming.getType());
@@ -103,25 +91,16 @@ public class VaccineService {
             Vaccine updated = vaccineRepository.saveAndFlush(existing);
             LOG.info("Successfully updated vaccine id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
-            // ✅ استخدم نفس هيلبر الأخطاء الموجود تحت
-            handleConstraintsOnCreateOrUpdate(ex);
-            // لن يصل التنفيذ هنا لأن الدالة ترمي استثناءً مناسبًا
-            throw ex;
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            handleConstraintsOnCreateOrUpdate(constraintException);
+            throw constraintException;
         }
     }
 
-    // ====================== READ ======================
     @Transactional(readOnly = true)
     public Page<Vaccine> findAll(Pageable pageable) {
         LOG.debug("Fetching paged Vaccines pageable={}", pageable);
         return vaccineRepository.findAll(pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Vaccine> findOne(Long id) {
-        LOG.debug("Fetching Vaccine by id={}", id);
-        return vaccineRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
@@ -142,12 +121,6 @@ public class VaccineService {
         return vaccineRepository.findByType(type, pageable);
     }
 
-    // ====================== DELETE / TOGGLE ======================
-    public void delete(Long id) {
-        LOG.info("Deleting Vaccine id={}", id);
-        vaccineRepository.deleteById(id);
-    }
-
     public Optional<Vaccine> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for Vaccine id={}", id);
         return vaccineRepository.findById(id)
@@ -160,13 +133,12 @@ public class VaccineService {
                 });
     }
 
-    // ====================== Helpers ======================
-    private void handleConstraintsOnCreateOrUpdate(RuntimeException ex) {
-        Throwable root = getRootCause(ex);
-        String message = (root != null ? root.getMessage() : ex.getMessage());
+    private void handleConstraintsOnCreateOrUpdate(RuntimeException constraintException) {
+        Throwable root = getRootCause(constraintException);
+        String message = (root != null ? root.getMessage() : constraintException.getMessage());
         String lower = (message != null ? message.toLowerCase() : "");
 
-        LOG.error("Database constraint violation while saving vaccine: {}", message, ex);
+        LOG.error("Database constraint violation while saving vaccine: {}", message, constraintException);
 
         if (lower.contains("ux_vaccine_name_type_roa")
                 || lower.contains("unique constraint")

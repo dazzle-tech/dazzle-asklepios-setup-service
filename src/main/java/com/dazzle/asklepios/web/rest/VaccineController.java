@@ -42,7 +42,6 @@ public class VaccineController {
         this.vaccineService = vaccineService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/vaccine")
     public ResponseEntity<VaccineResponseVM> createVaccine(
             @Valid @RequestBody VaccineCreateVM vm
@@ -57,7 +56,7 @@ public class VaccineController {
                 .siteOfAdministration(vm.siteOfAdministration())
                 .postOpeningDuration(vm.postOpeningDuration())
                 .durationUnit(vm.durationUnit())
-                .numberOfDoses(vm.numberOfDoses())            // <-- added
+                .numberOfDoses(vm.numberOfDoses())
                 .indications(vm.indications())
                 .possibleReactions(vm.possibleReactions())
                 .contraindicationsAndPrecautions(vm.contraindicationsAndPrecautions())
@@ -73,7 +72,6 @@ public class VaccineController {
                 .body(body);
     }
 
-    // ====================== UPDATE ======================
     @PutMapping("/vaccine/{id}")
     public ResponseEntity<VaccineResponseVM> updateVaccine(
             @PathVariable Long id,
@@ -102,17 +100,7 @@ public class VaccineController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== READ: ONE ======================
-    @GetMapping("/vaccine/{id}")
-    public ResponseEntity<VaccineResponseVM> getVaccine(@PathVariable Long id) {
-        LOG.debug("REST get Vaccine id={}", id);
-        return vaccineService.findOne(id)
-                .map(VaccineResponseVM::ofEntity)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
 
-    // ====================== READ: ALL (paged) ======================
     @GetMapping("/vaccine")
     public ResponseEntity<List<VaccineResponseVM>> getAllVaccines(
             @ParameterObject Pageable pageable
@@ -129,7 +117,6 @@ public class VaccineController {
         );
     }
 
-    // ====================== FILTERS ======================
     @GetMapping("/vaccine/by-name/{name}")
     public ResponseEntity<List<VaccineResponseVM>> getByName(
             @PathVariable String name,
@@ -181,7 +168,6 @@ public class VaccineController {
         );
     }
 
-    // ====================== TOGGLE ACTIVE ======================
     @PatchMapping("/vaccine/{id}/toggle-active")
     public ResponseEntity<VaccineResponseVM> toggleVaccineActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle Vaccine isActive id={}", id);
@@ -191,11 +177,4 @@ public class VaccineController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== DELETE ======================
-    @DeleteMapping("/vaccine/{id}")
-    public ResponseEntity<Void> deleteVaccine(@PathVariable Long id) {
-        LOG.debug("REST delete Vaccine id={}", id);
-        vaccineService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

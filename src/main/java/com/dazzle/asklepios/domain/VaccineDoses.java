@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.MeasurementUnit;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
+import com.dazzle.asklepios.domain.enumeration.DoseNumber;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,15 +23,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "vaccine_brands")
-public class VaccineBrands extends AbstractAuditingEntity<Long> implements Serializable {
+@Table(name = "vaccine_doses")
+public class VaccineDoses extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -45,24 +45,28 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     private Vaccine vaccine;
 
     @NotNull
-    @Column(nullable = false, length = 255)
-    private String name;
-
-    @NotNull
-    @Column(name = "manufacture", nullable = false, length = 255)
-    private String manufacture;
-
-    @NotNull
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal volume;
-
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private MeasurementUnit unit;
+    @Column(name = "dose_number", nullable = false, length = 50)
+    private DoseNumber doseNumber;
 
-    @Column(name = "marketing_authorization_holder", length = 255)
-    private String marketingAuthorizationHolder;
+
+    @Column(name = "from_age", precision = 10, scale = 2)
+    private BigDecimal fromAge;
+
+    @Column(name = "to_age", precision = 10, scale = 2)
+    private BigDecimal toAge;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "from_age_unit", length = 50)
+    private AgeUnit fromAgeUnit;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "to_age_unit", length = 50)
+    private AgeUnit toAgeUnit;
+
+    @NotNull
+    @Column(name = "is_booster", nullable = false)
+    private Boolean isBooster = false;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

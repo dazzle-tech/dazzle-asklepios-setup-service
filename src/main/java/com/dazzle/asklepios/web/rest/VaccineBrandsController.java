@@ -40,7 +40,6 @@ public class VaccineBrandsController {
         this.vaccineBrandsService = vaccineBrandsService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/vaccine-brands")
     public ResponseEntity<VaccineBrandResponseVM> createVaccineBrand(
             @RequestParam Long vaccineId,
@@ -65,7 +64,6 @@ public class VaccineBrandsController {
                 .body(body);
     }
 
-    // ====================== UPDATE ======================
     @PutMapping("/vaccine-brands/{id}")
     public ResponseEntity<VaccineBrandResponseVM> updateVaccineBrand(
             @PathVariable Long id,
@@ -88,7 +86,6 @@ public class VaccineBrandsController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== READ: BY VACCINE (paged) ======================
     @GetMapping("/vaccine-brands/by-vaccine/{vaccineId}")
     public ResponseEntity<List<VaccineBrandResponseVM>> getByVaccine(
             @PathVariable Long vaccineId,
@@ -106,7 +103,6 @@ public class VaccineBrandsController {
         );
     }
 
-    // ====================== TOGGLE ACTIVE ======================
     @PatchMapping("/vaccine-brands/{id}/toggle-active")
     public ResponseEntity<VaccineBrandResponseVM> toggleVaccineBrandActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle VaccineBrand isActive id={}", id);

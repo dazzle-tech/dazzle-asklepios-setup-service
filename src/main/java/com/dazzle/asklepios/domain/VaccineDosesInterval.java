@@ -1,10 +1,7 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.MeasurementUnit;
-import jakarta.persistence.Column;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +9,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
 import java.io.Serializable;
@@ -22,15 +22,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "vaccine_brands")
-public class VaccineBrands extends AbstractAuditingEntity<Long> implements Serializable {
+@Table( name = "vaccine_doses_interval")
+public class VaccineDosesInterval extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -45,24 +44,23 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     private Vaccine vaccine;
 
     @NotNull
-    @Column(nullable = false, length = 255)
-    private String name;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "from_dose_id", nullable = false)
+    private VaccineDoses fromDose;
 
     @NotNull
-    @Column(name = "manufacture", nullable = false, length = 255)
-    private String manufacture;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "to_dose_id", nullable = false)
+    private VaccineDoses toDose;
 
     @NotNull
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal volume;
+    @Column(name = "interval_between_doses", nullable = false, precision = 10, scale = 2)
+    private BigDecimal intervalBetweenDoses;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private MeasurementUnit unit;
-
-    @Column(name = "marketing_authorization_holder", length = 255)
-    private String marketingAuthorizationHolder;
+    @Column(name = "unit", nullable = false, length = 50)
+    private AgeUnit unit;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

@@ -27,14 +27,13 @@ public class VaccineBrandsService {
     private static final Logger LOG = LoggerFactory.getLogger(VaccineBrandsService.class);
 
     private final VaccineBrandsRepository vaccineBrandsRepository;
-    private final EntityManager em;
+    private final EntityManager entityManager;
 
-    public VaccineBrandsService(VaccineBrandsRepository vaccineBrandsRepository, EntityManager em) {
+    public VaccineBrandsService(VaccineBrandsRepository vaccineBrandsRepository, EntityManager entityManager) {
         this.vaccineBrandsRepository = vaccineBrandsRepository;
-        this.em = em;
+        this.entityManager = entityManager;
     }
 
-    // ====================== CREATE ======================
     public VaccineBrands create(Long vaccineId, VaccineBrands incoming) {
         LOG.info("[CREATE] Request to create VaccineBrand for vaccineId={} payload={}", vaccineId, incoming);
 
@@ -58,13 +57,13 @@ public class VaccineBrandsService {
             VaccineBrands saved = vaccineBrandsRepository.saveAndFlush(entity);
             LOG.info("Successfully created vaccine brand id={} name='{}' for vaccineId={}", saved.getId(), saved.getName(), vaccineId);
             return saved;
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
-            handleConstraintViolation(ex);
-            throw ex;
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            handleConstraintViolation(constraintException);
+            throw constraintException;
         }
     }
 
-    // ====================== UPDATE ======================
+
     public Optional<VaccineBrands> update(Long id, Long vaccineId, VaccineBrands incoming) {
         LOG.info("[UPDATE] Request to update VaccineBrand id={} vaccineId={} payload={}", id, vaccineId, incoming);
 
@@ -86,18 +85,12 @@ public class VaccineBrandsService {
             VaccineBrands updated = vaccineBrandsRepository.saveAndFlush(existing);
             LOG.info("Successfully updated vaccine brand id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
-            handleConstraintViolation(ex);
-            throw ex;
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            handleConstraintViolation(constraintException);
+            throw constraintException;
         }
     }
 
-    // ====================== READ ======================
-    @Transactional(readOnly = true)
-    public Page<VaccineBrands> findAll(Pageable pageable) {
-        LOG.debug("Fetching paged VaccineBrands pageable={}", pageable);
-        return vaccineBrandsRepository.findAll(pageable);
-    }
 
     @Transactional(readOnly = true)
     public Page<VaccineBrands> findByVaccineId(Long vaccineId, Pageable pageable) {
@@ -105,7 +98,6 @@ public class VaccineBrandsService {
         return vaccineBrandsRepository.findByVaccine_Id(vaccineId, pageable);
     }
 
-    // ====================== TOGGLE ======================
     public Optional<VaccineBrands> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineBrand id={}", id);
         return vaccineBrandsRepository.findById(id)
@@ -118,17 +110,16 @@ public class VaccineBrandsService {
                 });
     }
 
-    // ====================== Helpers ======================
     private Vaccine refVaccine(Long vaccineId) {
-        return em.getReference(Vaccine.class, vaccineId);
+        return entityManager.getReference(Vaccine.class, vaccineId);
     }
 
-    private void handleConstraintViolation(RuntimeException ex) {
-        Throwable root = getRootCause(ex);
-        String message = (root != null ? root.getMessage() : ex.getMessage());
+    private void handleConstraintViolation(RuntimeException constraintException) {
+        Throwable root = getRootCause(constraintException);
+        String message = (root != null ? root.getMessage() : constraintException.getMessage());
         String msgLower = message != null ? message.toLowerCase() : "";
 
-        LOG.error("Database constraint violation while saving vaccine brand: {}", message, ex);
+        LOG.error("Database constraint violation while saving vaccine brand: {}", message, constraintException);
 
         if (msgLower.contains("ux_vaccine_brands_name_unit_volume")
                 || msgLower.contains("unique constraint")
