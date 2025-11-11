@@ -50,7 +50,6 @@ public class AllergensController {
         LOG.debug("REST create Allergen payload={}", vm);
 
         Allergens toCreate = Allergens.builder()
-                .code(vm.code())
                 .name(vm.name())
                 .type(vm.type())
                 .description(vm.description())
@@ -74,7 +73,6 @@ public class AllergensController {
         LOG.debug("REST update Allergen id={} payload={}", id, vm);
 
         Allergens patch = new Allergens();
-        patch.setCode(vm.code());
         patch.setName(vm.name());
         patch.setType(vm.type());
         patch.setDescription(vm.description());
@@ -112,24 +110,6 @@ public class AllergensController {
     ) {
         LOG.debug("REST list Allergens by type={} pageable={}", type, pageable);
         Page<Allergens> page = allergenService.findByType(type, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page);
-
-        List<AllergensResponseVM> body = page.getContent()
-                .stream()
-                .map(AllergensResponseVM::ofEntity)
-                .toList();
-
-        return new ResponseEntity<>(body, headers, HttpStatus.OK);
-    }
-
-    @GetMapping("/allergen/by-code/{code}")
-    public ResponseEntity<List<AllergensResponseVM>> getByCode(
-            @PathVariable String code,
-            @ParameterObject Pageable pageable
-    ) {
-        LOG.debug("REST list Allergens by code='{}' pageable={}", code, pageable);
-        Page<Allergens> page = allergenService.findByCodeContainingIgnoreCase(code, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

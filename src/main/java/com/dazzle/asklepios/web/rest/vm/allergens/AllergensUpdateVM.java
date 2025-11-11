@@ -12,7 +12,6 @@ import java.io.Serializable;
  */
 public record AllergensUpdateVM(
         @NotNull Long id,
-        @NotEmpty String code,
         @NotEmpty String name,
         @NotNull AllergenType type,
         String description,
@@ -22,7 +21,6 @@ public record AllergensUpdateVM(
     public static AllergensUpdateVM ofEntity(Allergens allergen) {
         return new AllergensUpdateVM(
                 allergen.getId(),
-                allergen.getCode(),
                 allergen.getName(),
                 allergen.getType(),
                 allergen.getDescription(),

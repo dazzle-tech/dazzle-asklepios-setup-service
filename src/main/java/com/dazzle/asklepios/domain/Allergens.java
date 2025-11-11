@@ -38,10 +38,6 @@ public class Allergens extends AbstractAuditingEntity<Long> implements Serializa
     private Long id;
 
     @NotNull
-    @Column(nullable = false, unique = true, length = 50)
-    private String code;
-
-    @NotNull
     @Column(nullable = false, unique = true, length = 255)
     private String name;
 
