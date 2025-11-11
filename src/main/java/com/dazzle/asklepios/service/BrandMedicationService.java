@@ -36,6 +36,13 @@ public class BrandMedicationService {
             throw new BadRequestAlertException("dosageForm is required", "brandMedication", "dosageformrequired");
         }
 
+//        if (vm.uomGroup() == null || vm.uomGroup().isBlank()) {
+//            throw new BadRequestAlertException("uomGroup is required", "brandMedication", "uomGrouprequired");
+//        }
+//        if (vm.uomGroupUnit() == null || vm.uomGroupUnit().isBlank()) {
+//            throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
+//        }
+
         BrandMedication entity = BrandMedication.builder()
                 .name(vm.name())
                 .manufacturer(vm.manufacturer())

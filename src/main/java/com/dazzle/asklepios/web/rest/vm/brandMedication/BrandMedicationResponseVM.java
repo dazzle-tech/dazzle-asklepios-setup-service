@@ -19,6 +19,8 @@ public record BrandMedicationResponseVM(
         String costCategory,
         String roa,
         Boolean isActive
+        //       , Long uomGroup,
+//        Long uomGroupUnit
 ) {
     public static BrandMedicationResponseVM ofEntity(BrandMedication entity) {
         if (entity == null) return null;

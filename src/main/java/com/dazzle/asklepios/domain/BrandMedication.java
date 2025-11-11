@@ -2,10 +2,14 @@ package com.dazzle.asklepios.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -34,7 +38,6 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
 
     @Column(length = 50)
     private String manufacturer;
-
 
     @Column(name = "dosage_form", nullable = false, length = 50)
     private String dosageForm;
@@ -68,4 +71,16 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
 
     @Column(name = "is_active")
     private Boolean isActive;
+
+ /*  TODO: add uom columns
+   @NotNull
+   @ManyToOne(optional = false)
+   @JoinColumn(name = "uom_group_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_id"))
+    private UOMGroup uomGroup;
+
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "uom_group_unit_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_unit_id"))
+    private UOMGroupUnit uomGroupUnit;
+*/
 }
