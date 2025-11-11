@@ -16,5 +16,10 @@ public interface LanguageTranslationRepository extends JpaRepository<LanguageTra
 
     List<LanguageTranslation> findAllByLangKey(String langKey);
 
+    Page<LanguageTranslation> findByLangKeyAndTranslationTextContainingIgnoreCase(
+            String langKey,
+            String translationText,
+            Pageable pageable
+    );
     List<LanguageTranslation> findAllByTranslationKeyContainingIgnoreCase(String partialKey, Pageable pageable);
 }
