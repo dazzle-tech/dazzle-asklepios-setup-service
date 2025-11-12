@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.BrandMedicationSubstitute;
 import com.dazzle.asklepios.service.BrandMedicationSubstituteService;
+import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedicationSubstitute.BrandMedicationSubstituteCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedicationSubstitute.BrandMedicationSubstituteResponseVM;
 import jakarta.validation.Valid;
@@ -49,14 +50,14 @@ public class BrandMedicationSubstituteController {
 
     /**
      * {@code GET /brand-medication-substitute/by-brand/{brandId}} :
-     * List substitutes where the given brand participates either as brand or alternative.
+     * List brand medication where the given brand participates either as brand or alternative.
      */
     @GetMapping("/brand-medication-substitute/by-brand/{brandId:\\d+}")
-    public ResponseEntity<List<BrandMedicationSubstituteResponseVM>> listByBrand(@PathVariable Long brandId) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> listByBrand(@PathVariable Long brandId) {
         LOG.debug("REST list BrandMedicationSubstitute by brandId={}", brandId);
-        List<BrandMedicationSubstituteResponseVM> list = service.findAllByBrandOrAlternative(brandId)
+        List<BrandMedicationResponseVM> list = service.findAllByBrandOrAlternative(brandId)
                 .stream()
-                .map(BrandMedicationSubstituteResponseVM::ofEntity)
+                .map(BrandMedicationResponseVM::ofEntity)
                 .toList();
         return ResponseEntity.ok(list);
     }
@@ -70,4 +71,21 @@ public class BrandMedicationSubstituteController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+
+    @DeleteMapping("/brand-medication-substitute/{brandId}/{altBrandId}")
+
+    public ResponseEntity<Void> deleteSubstituteLink(
+            @PathVariable long brandId,
+            @PathVariable long altBrandId) {
+
+        int deleted = service.removeSubstituteLink(brandId, altBrandId);
+
+        if (deleted > 0) {
+            return ResponseEntity.noContent().build(); // 204
+        } else {
+            return ResponseEntity.notFound().build(); // 404
+        }
+    }
 }
+

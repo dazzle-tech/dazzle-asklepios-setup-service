@@ -3,7 +3,8 @@ package com.dazzle.asklepios.web.rest.vm.brandMedicationSubstitute;
 import com.dazzle.asklepios.domain.BrandMedicationSubstitute;
 import jakarta.validation.constraints.NotNull;
 
-public record BrandMedicationSubstituteCreateVM(
+public record
+BrandMedicationSubstituteCreateVM(
         @NotNull Long brandId,
         @NotNull Long alternativeBrandId
 ) {

@@ -85,9 +85,9 @@ public class BrandMedicationSubstituteService {
     }
 
     @Transactional(readOnly = true)
-    public List<BrandMedicationSubstitute> findAllByBrandOrAlternative(Long brandMedicationId) {
-        LOG.debug("Request to get BrandMedicationSubstitutes by brand or alternative brand brandMedicationId={}", brandMedicationId);
-        return substituteRepository.findAllByBrandOrAlternative(brandMedicationId);
+    public List<BrandMedication> findAllByBrandOrAlternative(Long brandMedicationId) {
+        LOG.debug("Request to get BrandMedication by brand or alternative brand brandMedicationId={}", brandMedicationId);
+        return substituteRepository.findBrandMedicationsByBrandOrAlternative(brandMedicationId);
     }
 
     public void delete(Long id) {
@@ -101,4 +101,10 @@ public class BrandMedicationSubstituteService {
         }
         substituteRepository.deleteById(id);
     }
+
+    @Transactional
+    public int removeSubstituteLink(long brandId, long altBrandId) {
+        return substituteRepository.deleteLinkBetween(brandId, altBrandId);
+    }
+
 }
