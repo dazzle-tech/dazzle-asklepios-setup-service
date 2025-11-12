@@ -1,11 +1,10 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
-import com.dazzle.asklepios.domain.EncounterAttachments;
-import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
-import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
+import com.dazzle.asklepios.domain.InventoryTransferAttachments;
+import com.dazzle.asklepios.repository.InventoryTransferAttachmentsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.attachment.encounter.UploadEncounterAttachmentVM;
+import com.dazzle.asklepios.web.rest.vm.attachment.inventoryTransfer.UploadInventoryTransferAttachmentVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -16,9 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,10 +35,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class EncounterAttachmentsServiceTest {
+class InventoryTransferAttachmentsServiceTest {
 
     @Mock
-    private EncounterAttachementsRepository repo;
+    private InventoryTransferAttachmentsRepository repo;
 
     @Mock
     private AttachmentProperties props;
@@ -48,7 +47,7 @@ class EncounterAttachmentsServiceTest {
     private AttachmentStorageService storage;
 
     @InjectMocks
-    private EncounterAttachmentsService service;
+    private InventoryTransferAttachmentsService service;
 
     @BeforeEach
     void setUp() {
@@ -71,27 +70,26 @@ class EncounterAttachmentsServiceTest {
         when(head.contentType()).thenReturn("image/png");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn("scan");
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
-        ArgumentCaptor<EncounterAttachments> cap = ArgumentCaptor.forClass(EncounterAttachments.class);
+        ArgumentCaptor<InventoryTransferAttachments> cap = ArgumentCaptor.forClass(InventoryTransferAttachments.class);
         when(repo.save(cap.capture())).thenAnswer(inv -> inv.getArgument(0));
 
         var result = service.upload(55L, vm);
 
-        EncounterAttachments saved = cap.getValue();
-        assertThat(saved.getEncounterId()).isEqualTo(55L);
+        InventoryTransferAttachments saved = cap.getValue();
+        assertThat(saved.getTransactionId()).isEqualTo(55L);
         assertThat(saved.getFilename()).isEqualTo("x y__.png"); // sanitized
         assertThat(saved.getMimeType()).isEqualTo("image/png");
         assertThat(saved.getSizeBytes()).isEqualTo(1024L);
-        assertThat(saved.getType()).isEqualTo("3154545");
-        assertThat(saved.getDetails()).isEqualTo("scan");
-        assertThat(saved.getSource()).isEqualTo(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
 
-        verify(storage).put(startsWith("encounters/55/"), eq("image/png"), eq(1024L), any());
+        verify(storage).put(
+                startsWith("inventoryTransfer/55/"),
+                eq("image/png"),
+                eq(1024L),
+                any(InputStream.class)
+        );
     }
 
     @Test
@@ -104,12 +102,8 @@ class EncounterAttachmentsServiceTest {
         when(file.getSize()).thenReturn(100L);
         when(file.getOriginalFilename()).thenReturn("a.png");
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-when(vm.sourceId()).thenReturn(734845L);
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
         verify(repo, never()).save(any());
@@ -125,12 +119,8 @@ when(vm.sourceId()).thenReturn(734845L);
         when(file.getSize()).thenReturn(1_000000L);
         when(file.getOriginalFilename()).thenReturn("a.png");
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
 
         assertThrows(BadRequestAlertException.class, () -> service.upload(1L, vm));
         verify(storage, never()).put(anyString(), anyString(), anyLong(), any());
@@ -150,12 +140,9 @@ when(vm.sourceId()).thenReturn(734845L);
 
         doThrow(new RuntimeException("io")).when(storage).put(anyString(), anyString(), anyLong(), any());
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+
 
         verify(repo, never()).save(any());
     }
@@ -176,12 +163,9 @@ when(vm.sourceId()).thenReturn(734845L);
         when(head.contentType()).thenReturn("image/png");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
+
     }
 
     @Test
@@ -200,45 +184,29 @@ when(vm.sourceId()).thenReturn(734845L);
         when(head.contentType()).thenReturn("application/octet-stream");
         when(storage.head(anyString())).thenReturn(head);
 
-        UploadEncounterAttachmentVM vm = mock(UploadEncounterAttachmentVM.class);
+        UploadInventoryTransferAttachmentVM vm = mock(UploadInventoryTransferAttachmentVM.class);
         when(vm.file()).thenReturn(file);
-        when(vm.type()).thenReturn("3154545");
-        when(vm.details()).thenReturn(null);
-        when(vm.source()).thenReturn(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
-        when(vm.sourceId()).thenReturn(734845L);
 
     }
 
     @Test
     void list_ReturnsFromRepo() {
-        when(repo.findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(Collections.singletonList(77L)))
-                .thenReturn(List.of(new EncounterAttachments()));
+        when(repo.findByTransactionIdAndDeletedAtIsNullOrderByCreatedDateDesc(77L))
+                .thenReturn(List.of(new InventoryTransferAttachments()));
 
-        var out = service.list(Collections.singletonList(77L));
+        var out = service.list(77L);
 
         assertThat(out).hasSize(1);
-        verify(repo).findByEncounterIdInAndDeletedAtIsNullOrderByCreatedDateDesc(Collections.singletonList(77L));
-    }
-
-    @Test
-    void listByEncounterIdAndSource_ReturnsFromRepo() {
-        when(repo.findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT))
-                .thenReturn(List.of());
-
-        var out = service.listByEncounterIdAndSource(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT,null);
-
-        assertThat(out).isEmpty();
-        verify(repo).findByEncounterIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(77L, EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT);
+        verify(repo).findByTransactionIdAndDeletedAtIsNullOrderByCreatedDateDesc(77L);
     }
 
 
     @Test
     void downloadUrl_ReturnsTicket() throws Exception {
-        EncounterAttachments entity = EncounterAttachments.builder()
-                .id(10L).encounterId(1L).spaceKey("k").filename("f.txt")
+        InventoryTransferAttachments entity = InventoryTransferAttachments.builder()
+                .id(10L).transactionId(1L).spaceKey("k").filename("f.txt")
                 .mimeType("text/plain").sizeBytes(1L)
-                .source(EncounterAttachmentSource.CONSULTATION_ORDER_ATTACHMENT)
-                .sourceId(734845L).build();
+                .build();
 
         when(repo.findByIdAndDeletedAtIsNull(10L)).thenReturn(Optional.of(entity));
 
@@ -256,7 +224,7 @@ when(vm.sourceId()).thenReturn(734845L);
     }
     @Test
     void softDelete_SetsDeletedAtOnce() {
-        EncounterAttachments entity = new EncounterAttachments();
+        InventoryTransferAttachments entity = new InventoryTransferAttachments();
         entity.setId(5L);
         entity.setDeletedAt(null);
 
@@ -271,7 +239,7 @@ when(vm.sourceId()).thenReturn(734845L);
 
     @Test
     void softDelete_NoOpIfAlreadyDeleted() {
-        EncounterAttachments entity = new EncounterAttachments();
+        InventoryTransferAttachments entity = new InventoryTransferAttachments();
         entity.setId(6L);
         entity.setDeletedAt(Instant.now());
         when(repo.findById(6L)).thenReturn(Optional.of(entity));
