@@ -12,14 +12,13 @@ import java.util.List;
 @Repository
 public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
 
-    List<ServiceSetup> findByFacility_Id(Long facilityId);
+    Page<ServiceSetup> findAll(Pageable pageable);
+
+    Page<ServiceSetup> findByCategory(ServiceCategory category, Pageable pageable);
+
+    Page<ServiceSetup> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<ServiceSetup> findByCodeContainingIgnoreCase(String code, Pageable pageable);
 
     Page<ServiceSetup> findByFacility_Id(Long facilityId, Pageable pageable);
-
-    Page<ServiceSetup> findByFacility_IdAndCategory(Long facilityId, ServiceCategory category, Pageable pageable);
-
-    Page<ServiceSetup> findByFacility_IdAndNameContainingIgnoreCase(Long facilityId, String name, Pageable pageable);
-
-    Page<ServiceSetup> findByFacility_IdAndCodeContainingIgnoreCase(Long facilityId, String code, Pageable pageable);
-
 }
