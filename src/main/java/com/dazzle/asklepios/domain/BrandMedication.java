@@ -70,7 +70,7 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     private String roa;
 
     @Column(name = "is_active")
-    private Boolean isActive;
+    private Boolean isActive = true;
 
  /*  TODO: add uom columns
    @NotNull
