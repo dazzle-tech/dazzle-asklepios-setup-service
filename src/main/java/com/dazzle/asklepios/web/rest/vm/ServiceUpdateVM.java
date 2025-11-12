@@ -21,8 +21,7 @@ public record ServiceUpdateVM(
         BigDecimal price,
         @NotNull Currency currency,
         @NotNull Boolean isActive,
-        String lastModifiedBy,
-        @NotNull Long facilityId
+        String lastModifiedBy
 ) implements Serializable {
 
     public static ServiceUpdateVM ofEntity(ServiceSetup service) {
@@ -35,8 +34,6 @@ public record ServiceUpdateVM(
                 service.getPrice(),
                 service.getCurrency(),
                 service.getIsActive(),
-                service.getLastModifiedBy(),
-                service.getFacility() != null ? service.getFacility().getId() : null
-        );
+                service.getLastModifiedBy());
     }
 }
