@@ -227,6 +227,9 @@ public class ActiveIngredientsService {
 
     private MedicationCategoriesClass resolveClass(Long id) {
         LOG.debug("resolveClass for active ingredients: id={}", id);
+        if (id == null) {
+            return null;
+        }
         return classRepo.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Medical category class not found: " + id, "MedicalCategoriesClass", "notfound"));
     }
