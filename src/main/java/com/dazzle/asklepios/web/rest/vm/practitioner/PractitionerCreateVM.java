@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.practitioner;
 
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
@@ -35,7 +36,7 @@ public record PractitionerCreateVM(
         String secondaryMedicalLicense,
         String educationalLevel,
         Boolean appointable,
-       Long userId,
+        Long userId,
         @FutureOrPresent(message = "Default license valid until date must be in the present or future")
         LocalDate defaultLicenseValidUntil,
 
@@ -44,7 +45,7 @@ public record PractitionerCreateVM(
 
         @Past(message = "Date of birth must be in the past")
         LocalDate dateOfBirth,
-        String jobRole,
+        JobRole jobRole,
         Gender gender,
         Boolean isActive
 ) implements Serializable {

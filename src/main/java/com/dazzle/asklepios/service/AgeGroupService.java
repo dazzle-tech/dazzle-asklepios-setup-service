@@ -122,34 +122,39 @@ public class AgeGroupService {
     }
 
     @Transactional(readOnly = true)
-    public List<AgeGroup> findAll(Long facilityId) {
-        LOG.debug("Fetching all AgeGroups for facilityId={}", facilityId);
-        return ageGroupRepository.findByFacility_Id(facilityId);
+    public Page<AgeGroup> findAll(Pageable pageable) {
+        LOG.debug("Fetching paged AgeGroups (all facilities) pageable={}", pageable);
+        return ageGroupRepository.findAll(pageable);
     }
 
+
     @Transactional(readOnly = true)
-    public Page<AgeGroup> findAll(Long facilityId, Pageable pageable) {
+    public Page<AgeGroup> findByFacility(Long facilityId, Pageable pageable) {
         LOG.debug("Fetching paged AgeGroups for facilityId={} pageable={}", facilityId, pageable);
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "ageGroup", "facility.required");
+        }
         return ageGroupRepository.findByFacility_Id(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<AgeGroup> findByAgeGroup(Long facilityId, AgeGroupType label, Pageable pageable) {
-        LOG.debug("Fetching AgeGroups by label='{}' facilityId={}", label, facilityId);
-        return ageGroupRepository.findByFacility_IdAndAgeGroup(facilityId, label, pageable);
+    public Page<AgeGroup> findByAgeGroup(AgeGroupType label, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by label='{}' (no facility filter)", label);
+        return ageGroupRepository.findByAgeGroup(label, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<AgeGroup> findByFromAge(Long facilityId, BigDecimal fromAge, Pageable pageable) {
-        LOG.debug("Fetching AgeGroups by fromAge='{}' facilityId={}", fromAge, facilityId);
-        return ageGroupRepository.findByFacility_IdAndFromAge(facilityId, fromAge, pageable);
+    public Page<AgeGroup> findByFromAge(BigDecimal fromAge, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by fromAge='{}' (no facility filter)", fromAge);
+        return ageGroupRepository.findByFromAge(fromAge, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<AgeGroup> findByToAge(Long facilityId, BigDecimal toAge, Pageable pageable) {
-        LOG.debug("Fetching AgeGroups by toAge='{}' facilityId={}", toAge, facilityId);
-        return ageGroupRepository.findByFacility_IdAndToAge(facilityId, toAge, pageable);
+    public Page<AgeGroup> findByToAge(BigDecimal toAge, Pageable pageable) {
+        LOG.debug("Fetching AgeGroups by toAge='{}' (no facility filter)", toAge);
+        return ageGroupRepository.findByToAge(toAge, pageable);
     }
+
 
     @Transactional(readOnly = true)
     public Optional<AgeGroup> findOne(Long id) {

@@ -18,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -43,7 +42,6 @@ public class AgeGroupController {
         this.ageGroupService = ageGroupService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/age-group")
     public ResponseEntity<AgeGroupResponseVM> createAgeGroup(
             @RequestParam Long facilityId,
@@ -67,7 +65,6 @@ public class AgeGroupController {
                 .body(body);
     }
 
-    // ====================== UPDATE ======================
     @PutMapping("/age-group/{id}")
     public ResponseEntity<AgeGroupResponseVM> updateAgeGroup(
             @PathVariable Long id,
@@ -90,14 +87,12 @@ public class AgeGroupController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // ====================== READ ALL ======================
     @GetMapping("/age-group")
     public ResponseEntity<List<AgeGroupResponseVM>> getAllAgeGroups(
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups facilityId={} pageable={}", facilityId, pageable);
-        final Page<AgeGroup> page = ageGroupService.findAll(facilityId, pageable);
+        LOG.debug("REST list ALL AgeGroups (paged, no facility filter)");
+        final Page<AgeGroup> page = ageGroupService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -107,15 +102,30 @@ public class AgeGroupController {
         );
     }
 
-    // ====================== FILTERS ======================
-    @GetMapping("/age-group/by-label/{label}")
-    public ResponseEntity<List<AgeGroupResponseVM>> getByAgeGroupLabel(
-            @PathVariable("label") AgeGroupType label,
+
+    @GetMapping("/age-group/by-facility")
+    public ResponseEntity<List<AgeGroupResponseVM>> getByFacility(
             @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by label='{}' facilityId={} pageable={}", label, facilityId, pageable);
-        Page<AgeGroup> page = ageGroupService.findByAgeGroup(facilityId, label, pageable);
+        LOG.debug("REST list AgeGroups by facilityId={} pageable={}", facilityId, pageable);
+        final Page<AgeGroup> page = ageGroupService.findByFacility(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/age-group/by-label/{label}")
+    public ResponseEntity<List<AgeGroupResponseVM>> getByAgeGroupLabel(
+            @PathVariable("label") AgeGroupType label,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list AgeGroups by label='{}' (no facility filter) pageable={}", label, pageable);
+        Page<AgeGroup> page = ageGroupService.findByAgeGroup(label, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -128,11 +138,10 @@ public class AgeGroupController {
     @GetMapping("/age-group/by-from-age/{fromAge}")
     public ResponseEntity<List<AgeGroupResponseVM>> getByFromAge(
             @PathVariable BigDecimal fromAge,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by fromAge='{}' facilityId={} pageable={}", fromAge, facilityId, pageable);
-        Page<AgeGroup> page = ageGroupService.findByFromAge(facilityId, fromAge, pageable);
+        LOG.debug("REST list AgeGroups by fromAge='{}' (no facility filter) pageable={}", fromAge, pageable);
+        Page<AgeGroup> page = ageGroupService.findByFromAge(fromAge, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -145,11 +154,10 @@ public class AgeGroupController {
     @GetMapping("/age-group/by-to-age/{toAge}")
     public ResponseEntity<List<AgeGroupResponseVM>> getByToAge(
             @PathVariable BigDecimal toAge,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by toAge='{}' facilityId={} pageable={}", toAge, facilityId, pageable);
-        Page<AgeGroup> page = ageGroupService.findByToAge(facilityId, toAge, pageable);
+        LOG.debug("REST list AgeGroups by toAge='{}' (no facility filter) pageable={}", toAge, pageable);
+        Page<AgeGroup> page = ageGroupService.findByToAge(toAge, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(

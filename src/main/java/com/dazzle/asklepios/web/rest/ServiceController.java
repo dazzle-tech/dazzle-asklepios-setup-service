@@ -41,7 +41,6 @@ public class ServiceController {
         this.serviceService = serviceService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/service")
     public ResponseEntity<ServiceResponseVM> createService(
             @RequestParam Long facilityId,
@@ -67,8 +66,7 @@ public class ServiceController {
                 .body(body);
     }
 
-    // ====================== UPDATE ======================
-    @PutMapping("/service/{id}")
+                                                                                                                                                                                                                                                                                            @PutMapping("/service/{id}")
     public ResponseEntity<ServiceResponseVM> updateService(
             @PathVariable Long id,
             @RequestParam Long facilityId,
@@ -78,8 +76,8 @@ public class ServiceController {
 
         ServiceSetup patch = new ServiceSetup();
         patch.setName(vm.name());
-        patch.setAbbreviation(vm.abbreviation());
         patch.setCode(vm.code());
+        patch.setAbbreviation(vm.abbreviation());
         patch.setCategory(vm.category());
         patch.setPrice(vm.price());
         patch.setCurrency(vm.currency());
@@ -91,14 +89,13 @@ public class ServiceController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    // ====================== READ ALL ======================
+
     @GetMapping("/service")
     public ResponseEntity<List<ServiceResponseVM>> getAllServices(
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services facilityId={} pageable={}", facilityId, pageable);
-        final Page<ServiceSetup> page = serviceService.findAll(facilityId, pageable);
+        LOG.debug("REST list Services pageable={}", pageable);
+        final Page<ServiceSetup> page = serviceService.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -108,15 +105,29 @@ public class ServiceController {
         );
     }
 
-    // ====================== FILTERS ======================
+    @GetMapping("/service/by-facility/{facilityId}")
+    public ResponseEntity<List<ServiceResponseVM>> getByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by facilityId={} pageable={}", facilityId, pageable);
+        Page<ServiceSetup> page = serviceService.findByFacility(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/service/by-category/{category}")
     public ResponseEntity<List<ServiceResponseVM>> getByCategory(
             @PathVariable ServiceCategory category,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by category={} facilityId={} pageable={}", category, facilityId, pageable);
-        Page<ServiceSetup> page = serviceService.findByCategory(facilityId, category, pageable);
+        LOG.debug("REST list Services by category={} pageable={}", category, pageable);
+        Page<ServiceSetup> page = serviceService.findByCategory(category, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -129,11 +140,10 @@ public class ServiceController {
     @GetMapping("/service/by-code/{code}")
     public ResponseEntity<List<ServiceResponseVM>> getByCode(
             @PathVariable String code,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by code='{}' facilityId={} pageable={}", code, facilityId, pageable);
-        Page<ServiceSetup> page = serviceService.findByCodeContainingIgnoreCase(facilityId, code, pageable);
+        LOG.debug("REST list Services by code='{}' pageable={}", code, pageable);
+        Page<ServiceSetup> page = serviceService.findByCodeContainingIgnoreCase(code, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -146,11 +156,10 @@ public class ServiceController {
     @GetMapping("/service/by-name/{name}")
     public ResponseEntity<List<ServiceResponseVM>> getByName(
             @PathVariable String name,
-            @RequestParam Long facilityId,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by name='{}' facilityId={} pageable={}", name, facilityId, pageable);
-        Page<ServiceSetup> page = serviceService.findByNameContainingIgnoreCase(facilityId, name, pageable);
+        LOG.debug("REST list Services by name='{}' pageable={}", name, pageable);
+        Page<ServiceSetup> page = serviceService.findByNameContainingIgnoreCase(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -160,14 +169,12 @@ public class ServiceController {
         );
     }
 
-    // ====================== TOGGLE ACTIVE ======================
     @PatchMapping("/service/{id}/toggle-active")
     public ResponseEntity<ServiceResponseVM> toggleServiceActiveStatus(
-            @PathVariable Long id,
-            @RequestParam Long facilityId
+            @PathVariable Long id
     ) {
-        LOG.debug("REST toggle Service isActive id={} facilityId={}", id, facilityId);
-        return serviceService.toggleIsActive(id, facilityId)
+        LOG.debug("REST toggle Service isActive id={}", id);
+        return serviceService.toggleIsActive(id)
                 .map(ServiceResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

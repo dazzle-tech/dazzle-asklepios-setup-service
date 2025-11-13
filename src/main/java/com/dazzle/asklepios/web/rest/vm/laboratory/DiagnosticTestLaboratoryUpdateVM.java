@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.laboratory;
 
+import com.dazzle.asklepios.domain.DiagnosticTestLaboratory;
 import com.dazzle.asklepios.domain.enumeration.Method;
 import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
@@ -37,4 +38,17 @@ public record DiagnosticTestLaboratoryUpdateVM(
         @NotBlank String category,
         String tubeType,
         Timing timing
-) implements Serializable {}
+) implements Serializable {
+    public DiagnosticTestLaboratory toEntity() {
+        DiagnosticTestLaboratory entity = new DiagnosticTestLaboratoryCreateVM(
+                testId, property, system, scale, reagents, method,
+                testDurationTime, timeUnit, resultUnit, isProfile,
+                sampleContainer, sampleVolume, sampleVolumeUnit, tubeColor,
+                testDescription, sampleHandling, turnaroundTime, turnaroundTimeUnit,
+                preparationRequirements, medicalIndications, associatedRisks,
+                testInstructions, category, tubeType, timing
+        ).toEntity();
+        entity.setId(id);
+        return entity;
+    }
+}
