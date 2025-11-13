@@ -38,7 +38,6 @@ public class ActiveIngredientsService {
         this.classRepo = classRepo;
     }
 
-    // 1) create
     public ActiveIngredients create(ActiveIngredientsCreateVM activeIngredientsCreateVM) {
         LOG.debug("create active ingredient {}", activeIngredientsCreateVM);
         ActiveIngredients entity = toEntityForCreate(activeIngredientsCreateVM);
@@ -68,7 +67,6 @@ public class ActiveIngredientsService {
         }
     }
 
-    // 2) update (partial, applies only non-null fields)
     public ActiveIngredients update(ActiveIngredientsUpdateVM activeIngredientsUpdateVM) {
         LOG.debug("update active ingredients: {} ", activeIngredientsUpdateVM);
         ActiveIngredients entity = activeRepo.findById(activeIngredientsUpdateVM.id())
@@ -100,14 +98,12 @@ public class ActiveIngredientsService {
     }
     }
 
-    // 3) get all (pageable)
     @Transactional(readOnly = true)
     public Page<ActiveIngredients> getAll(Pageable pageable) {
         LOG.debug("get all active ingredients: page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
         return activeRepo.findAll(pageable);
     }
 
-    // 4) get by name (pageable, contains+ignoreCase)
     @Transactional(readOnly = true)
     public Page<ActiveIngredients> getByName(String name, Pageable pageable) {
         LOG.debug("get active ingredients by name : q='{}' page={} size={}", name, pageable.getPageNumber(), pageable.getPageSize());
@@ -116,21 +112,18 @@ public class ActiveIngredientsService {
 
 
 
-    // 6) get by drug class id (pageable)
     @Transactional(readOnly = true)
     public Page<ActiveIngredients> getByDrugClassIds(List<Long> drugClassIds, Pageable pageable){
         LOG.debug("get active ingredients by drugClassId: drugClassId={} page={} size={}", drugClassIds, pageable.getPageNumber(), pageable.getPageSize());
         return activeRepo.findByDrugClassIdIn(drugClassIds, pageable);
     }
 
-    // 7) get by atc code (pageable, contains+ignoreCase)
     @Transactional(readOnly = true)
     public Page<ActiveIngredients> getByAtcCode(String atcCode, Pageable pageable) {
         LOG.debug("get active ingredients by atcCode: q='{}' page={} size={}", atcCode, pageable.getPageNumber(), pageable.getPageSize());
         return activeRepo.findByAtcCodeContainsIgnoreCase(atcCode, pageable);
     }
 
-    // 8) toggle active
     public ActiveIngredients toggleActive(Long id) {
         LOG.debug("toggleActive for active ingredient: id={}", id);
         ActiveIngredients entity = activeRepo.findById(id)
