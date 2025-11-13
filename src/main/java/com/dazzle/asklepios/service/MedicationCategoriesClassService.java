@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.MedicationCategories;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.repository.MedicationCategoriesClassRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,14 @@ public class MedicationCategoriesClassService {
         try {
             return medicationCategoriesClassRepository.save(entity);
         } catch (DataIntegrityViolationException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Medication Category class data", ex);
+            throw new
+                    BadRequestAlertException(
+                    "Invalid Medication Category Class data",
+                    "medicationCategoryClass",
+                    "invalid.save"
+
+            );
+
         }
     }
 

@@ -1,18 +1,14 @@
 package com.dazzle.asklepios.service;
 
-import com.dazzle.asklepios.domain.DuplicationCandidate;
-import com.dazzle.asklepios.domain.Language;
-import com.dazzle.asklepios.domain.LanguageTranslation;
 import com.dazzle.asklepios.domain.MedicationCategories;
 import com.dazzle.asklepios.repository.MedicationCategoriesRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -53,9 +49,18 @@ public class MedicationCategoriesService {
         try {
             return medicationCategoriesRepository.save(entity);
         } catch (DataIntegrityViolationException ex) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Medication Category data", ex);
+            throw new
+                    BadRequestAlertException(
+                    "Invalid Medication Category data",
+                    "medicationCategory",
+                    "invalid.save"
+
+            )
+
+                    ;
         }
     }
+
     // delete medication category
     public boolean delete(Long id) {
         LOG.debug("Request to delete Medication Category : {}", id);
