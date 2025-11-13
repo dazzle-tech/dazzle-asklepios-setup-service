@@ -29,7 +29,6 @@ public class ActiveIngredientSynonymsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientSynonyms create(ActiveIngredientSynonymsCreateVM activeIngredientSynonymsCreateVM) {
         LOG.debug("create active ingredient synonyms {}", activeIngredientSynonymsCreateVM);
         ActiveIngredientSynonyms entity = toEntityForCreate(activeIngredientSynonymsCreateVM);
@@ -38,7 +37,6 @@ public class ActiveIngredientSynonymsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientSynonyms update(ActiveIngredientSynonymsUpdateVM activeIngredientSynonymsUpdateVM) {
         LOG.debug("update active ingredient synonyms : {} ", activeIngredientSynonymsUpdateVM);
         ActiveIngredientSynonyms entity = activeIngredientSynonymsRepository.findById(activeIngredientSynonymsUpdateVM.id())
@@ -49,14 +47,12 @@ public class ActiveIngredientSynonymsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientSynonyms> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get active ingredient synonyms by activeIngredientId : q='{}'", activeIngredientId);
         return activeIngredientSynonymsRepository.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete active ingredient synonyms
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete active ingredient synonyms by id : '{}'", id);
