@@ -29,7 +29,6 @@ public class ActiveIngredientAdverseEffectsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientAdverseEffects create(ActiveIngredientAdverseEffectsCreateVM activeIngredientAdverseEffectsCreateVM) {
         LOG.debug("create active ingredient adverse effect {}", activeIngredientAdverseEffectsCreateVM);
         ActiveIngredientAdverseEffects entity = toEntityForCreate(activeIngredientAdverseEffectsCreateVM);
@@ -38,7 +37,6 @@ public class ActiveIngredientAdverseEffectsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientAdverseEffects update(ActiveIngredientAdverseEffectsUpdateVM activeIngredientAdverseEffectsUpdateVM) {
         LOG.debug("update active ingredient adverse effect : {} ", activeIngredientAdverseEffectsUpdateVM);
         ActiveIngredientAdverseEffects entity = activeIngredientAdverseEffectsRepository.findById(activeIngredientAdverseEffectsUpdateVM.id())
@@ -49,14 +47,12 @@ public class ActiveIngredientAdverseEffectsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientAdverseEffects> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get active ingredient adverse effect by activeIngredientId : q='{}'", activeIngredientId);
         return activeIngredientAdverseEffectsRepository.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete active ingredient adverse effect
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete active ingredient adverse effect by id : '{}'", id);
