@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.brandMedication;
 
 import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.domain.enumeration.BrandMedicationUnit;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,12 +15,13 @@ public record BrandMedicationCreateVM(
         String storageRequirements,
         Boolean expiresAfterOpening,
         BigDecimal expiresAfterOpeningValue,
-        String expiresAfterOpeningUnit,
+        BrandMedicationUnit expiresAfterOpeningUnit,
         Boolean useSinglePatient,
         Boolean highCostMedication,
         String costCategory,
         String roa,
-        Boolean isActive
+        Boolean isActive,
+        String code
 //       ,@NotNull Long uomGroup,
 //       @NotNull Long uomGroupUnit
 ) {
@@ -38,7 +40,8 @@ public record BrandMedicationCreateVM(
                 entity.getHighCostMedication(),
                 entity.getCostCategory(),
                 entity.getRoa(),
-                entity.getIsActive()
+                entity.getIsActive(),
+                entity.getCode()
         );
     }
 }

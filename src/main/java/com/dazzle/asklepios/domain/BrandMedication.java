@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.BrandMedicationUnit;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,6 +40,9 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     private String name;
 
     @Column(length = 50)
+    private String code;
+
+    @Column(length = 50)
     private String manufacturer;
 
     @Column(name = "dosage_form", nullable = false, length = 50)
@@ -54,8 +60,9 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     @Column(name = "expires_after_opening_value", precision = 10, scale = 3)
     private BigDecimal expiresAfterOpeningValue;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "expires_after_opening_unit", length = 50)
-    private String expiresAfterOpeningUnit;
+    private BrandMedicationUnit expiresAfterOpeningUnit;
 
     @Column(name = "single_patient_use")
     private Boolean useSinglePatient;
