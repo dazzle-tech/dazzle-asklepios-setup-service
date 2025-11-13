@@ -34,7 +34,6 @@ public class ActiveIngredientPreRequestedTestService {
         this.diagnosticTestRepository = diagnosticTestRepository;
     }
 
-    // 1) create
     public ActiveIngredientPreRequestedTest create(ActiveIngredientPreRequestedTestCreateVM createVM) {
         LOG.debug("create active ingredient pre-requested test {}", createVM);
         ActiveIngredientPreRequestedTest entity = toEntityForCreate(createVM);
@@ -43,7 +42,6 @@ public class ActiveIngredientPreRequestedTestService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientPreRequestedTest update(ActiveIngredientPreRequestedTestUpdateVM updateVM) {
         LOG.debug("update active ingredient pre-requested test : {} ", updateVM);
         ActiveIngredientPreRequestedTest entity = preRequestedTestRepository.findById(updateVM.id())
@@ -58,14 +56,12 @@ public class ActiveIngredientPreRequestedTestService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientPreRequestedTest> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get active ingredient pre-requested tests by activeIngredientId : q='{}'", activeIngredientId);
         return preRequestedTestRepository.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete pre-requested test
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete active ingredient pre-requested test by id : '{}'", id);
