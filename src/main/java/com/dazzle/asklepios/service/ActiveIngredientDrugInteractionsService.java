@@ -30,7 +30,6 @@ public class ActiveIngredientDrugInteractionsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientDrugInteractions create(ActiveIngredientDrugInteractionsCreateVM vm) {
         LOG.debug("create ActiveIngredientDrugInteractions {}", vm);
         ActiveIngredientDrugInteractions entity = toEntityForCreate(vm);
@@ -39,7 +38,6 @@ public class ActiveIngredientDrugInteractionsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientDrugInteractions update(ActiveIngredientDrugInteractionsUpdateVM vm) {
         LOG.debug("update ActiveIngredientDrugInteractions {}", vm);
         ActiveIngredientDrugInteractions entity = drugInteractionsRepository.findById(vm.id())
@@ -50,14 +48,12 @@ public class ActiveIngredientDrugInteractionsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientDrugInteractions> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get drug interactions by activeIngredientId={}", activeIngredientId);
         return drugInteractionsRepository.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 5) delete
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete ActiveIngredientDrugInteractions id={}", id);
