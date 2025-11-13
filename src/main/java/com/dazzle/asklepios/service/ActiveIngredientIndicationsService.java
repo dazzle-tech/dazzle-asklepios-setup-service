@@ -34,7 +34,6 @@ public class ActiveIngredientIndicationsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientIndications create(ActiveIngredientIndicationsCreateVM activeIngredientIndicationsCreateVM) {
         LOG.debug("create active ingredient indication {}", activeIngredientIndicationsCreateVM);
         ActiveIngredientIndications entity = toEntityForCreate(activeIngredientIndicationsCreateVM);
@@ -43,7 +42,6 @@ public class ActiveIngredientIndicationsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientIndications update(ActiveIngredientIndicationsUpdateVM activeIngredientIndicationsUpdateVM) {
         LOG.debug("update active ingredient indication : {} ", activeIngredientIndicationsUpdateVM);
         ActiveIngredientIndications entity = activeIngredientIndicationsRepo.findById(activeIngredientIndicationsUpdateVM.id())
@@ -54,14 +52,12 @@ public class ActiveIngredientIndicationsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientIndications> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get active ingredient indications by activeIngredientId : q='{}'", activeIngredientId);
         return activeIngredientIndicationsRepo.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete active ingredient indication
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete active ingredient indication by id : '{}'", id);
