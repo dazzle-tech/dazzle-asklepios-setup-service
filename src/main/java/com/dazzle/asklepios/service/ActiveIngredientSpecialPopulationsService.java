@@ -30,7 +30,6 @@ public class ActiveIngredientSpecialPopulationsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientSpecialPopulations create(ActiveIngredientSpecialPopulationsCreateVM vm) {
         LOG.debug("create ActiveIngredientSpecialPopulations {}", vm);
         ActiveIngredientSpecialPopulations entity = toEntityForCreate(vm);
@@ -39,7 +38,6 @@ public class ActiveIngredientSpecialPopulationsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientSpecialPopulations update(ActiveIngredientSpecialPopulationsUpdateVM vm) {
         LOG.debug("update ActiveIngredientSpecialPopulations: {}", vm);
         ActiveIngredientSpecialPopulations entity = specialPopulationsRepository.findById(vm.id())
@@ -50,14 +48,12 @@ public class ActiveIngredientSpecialPopulationsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientSpecialPopulations> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get special populations by activeIngredientId={}", activeIngredientId);
         return specialPopulationsRepository.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete ActiveIngredientSpecialPopulations id={}", id);
