@@ -33,7 +33,6 @@ public class ActiveIngredientContraindicationsService {
         this.activeIngredientsRepo = activeIngredientsRepo;
     }
 
-    // 1) create
     public ActiveIngredientContraindications create(ActiveIngredientContraindicationsCreateVM activeIngredientContraindicationsCreateVM) {
         LOG.debug("create active ingredient contraindication {}", activeIngredientContraindicationsCreateVM);
         ActiveIngredientContraindications entity = toEntityForCreate(activeIngredientContraindicationsCreateVM);
@@ -42,7 +41,6 @@ public class ActiveIngredientContraindicationsService {
         return saved;
     }
 
-    // 2) update
     public ActiveIngredientContraindications update(ActiveIngredientContraindicationsUpdateVM activeIngredientContraindicationsUpdateVM) {
         LOG.debug("update active ingredient contraindication : {} ", activeIngredientContraindicationsUpdateVM);
         ActiveIngredientContraindications entity = activeIngredientContraindicationsRepo.findById(activeIngredientContraindicationsUpdateVM.id())
@@ -53,14 +51,12 @@ public class ActiveIngredientContraindicationsService {
         return saved;
     }
 
-    // 4) get by active ingredient id
     @Transactional(readOnly = true)
     public List<ActiveIngredientContraindications> getByActiveIngredientId(Long activeIngredientId) {
         LOG.debug("get active ingredient contraindication by activeIngredientId : q='{}'", activeIngredientId);
         return activeIngredientContraindicationsRepo.findByActiveIngredientId(activeIngredientId);
     }
 
-    // 8) delete active ingredient contraindication
     @Transactional
     public void hardDelete(Long id) {
         LOG.debug("delete active ingredient contraindication by id : '{}'", id);
