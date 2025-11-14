@@ -45,7 +45,6 @@ public class ProcedureCodingService {
         this.loincCodeService = loincCodeService;
     }
 
-    // ====================== CREATE ======================
     public ProcedureCoding create(Long procedureId, ProcedureCoding input) {
         LOG.debug("Request to create ProcedureCoding for procedureId={} payload={}", procedureId, input);
 
@@ -147,7 +146,6 @@ public class ProcedureCodingService {
         };
     }
 
-    // ====================== Helpers ======================
     private String extractMessage(Throwable ex) {
         Throwable root = getRootCause(ex);
         return (root != null && root.getMessage() != null ? root.getMessage() : ex.getMessage());

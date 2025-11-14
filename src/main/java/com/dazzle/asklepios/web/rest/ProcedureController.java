@@ -42,7 +42,6 @@ public class ProcedureController {
         this.procedureService = procedureService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/procedure")
     public ResponseEntity<ProcedureResponseVM> createProcedure(
             @RequestParam Long facilityId,

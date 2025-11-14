@@ -36,7 +36,6 @@ public class ProcedureService {
         this.em = em;
     }
 
-    // ====================== CREATE ======================
     public Procedure create(Long facilityId, Procedure incoming) {
         LOG.info("[CREATE] Request to create Procedure for facilityId={} payload={}", facilityId, incoming);
 
@@ -89,7 +88,6 @@ public class ProcedureService {
         }
     }
 
-    // ====================== UPDATE ======================
     public Optional<Procedure> update(Long id, Long facilityId, Procedure incoming) {
         LOG.info("[UPDATE] Request to update Procedure id={} facilityId={} payload={}", id, facilityId, incoming);
 
@@ -113,6 +111,7 @@ public class ProcedureService {
         existing.setPreparationInstructions(incoming.getPreparationInstructions());
         existing.setRecoveryNotes(incoming.getRecoveryNotes());
         existing.setIsActive(incoming.getIsActive());
+        existing.setFacility(refFacility(facilityId));
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);
@@ -143,7 +142,6 @@ public class ProcedureService {
         }
     }
 
-    // ====================== READ (بدون facilityId) ======================
     @Transactional(readOnly = true)
     public List<Procedure> findAll() {
         LOG.debug("Fetching all Procedures (no facility filter)");
@@ -180,7 +178,6 @@ public class ProcedureService {
         return procedureRepository.findById(id);
     }
 
-    // ====================== TOGGLE (بدون facilityId) ======================
     public Optional<Procedure> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for Procedure id={}", id);
         return procedureRepository.findById(id)
@@ -200,7 +197,6 @@ public class ProcedureService {
         }
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
-    // ====================== Helpers ======================
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
     }

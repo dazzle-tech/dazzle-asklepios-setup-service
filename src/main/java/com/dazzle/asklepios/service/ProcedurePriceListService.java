@@ -36,7 +36,7 @@ public class ProcedurePriceListService {
         this.procedureRepository = procedureRepository;
     }
 
-    // ====================== CREATE ======================
+
     public ProcedurePriceList create(Long procedureId, ProcedurePriceList input) {
         LOG.debug("Request to create ProcedurePriceList for procedureId={} payload={}", procedureId, input);
 
@@ -111,7 +111,6 @@ public class ProcedurePriceListService {
         LOG.debug("Deleted ProcedurePriceList id={}", id);
     }
 
-    // ====================== Helpers ======================
     private String extractMessage(Throwable ex) {
         Throwable root = getRootCause(ex);
         return (root != null && root.getMessage() != null ? root.getMessage() : ex.getMessage());
