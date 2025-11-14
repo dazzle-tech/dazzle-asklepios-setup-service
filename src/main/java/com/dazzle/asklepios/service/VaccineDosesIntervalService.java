@@ -42,7 +42,6 @@ public class VaccineDosesIntervalService {
         this.vaccineDosesRepository = vaccineDosesRepository;
     }
 
-    // ====================== CREATE ======================
     public VaccineDosesInterval create(Long vaccineId, VaccineDosesInterval incoming) {
         LOG.info("[CREATE] Request to create VaccineDosesInterval for vaccineId={} payload={}", vaccineId, incoming);
 
