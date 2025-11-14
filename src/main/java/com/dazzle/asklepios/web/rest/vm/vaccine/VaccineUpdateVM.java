@@ -11,9 +11,6 @@ import jakarta.validation.constraints.NotEmpty;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-/**
- * View Model for updating a Vaccine via REST.
- */
 public record VaccineUpdateVM(
         @NotNull Long id,
         @NotEmpty String name,
