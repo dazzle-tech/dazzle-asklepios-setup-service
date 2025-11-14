@@ -1,8 +1,5 @@
 package com.dazzle.asklepios.domain.enumeration;
 
-/**
- * Measurement units for laboratory results, medication dosages, and vaccine volumes.
- */
 public enum MeasurementUnit {
     PERCENT, // %
     INR,
