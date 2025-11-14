@@ -8,9 +8,6 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-/**
- * View Model for updating a VaccineBrand via REST.
- */
 public record VaccineBrandUpdateVM(
         @NotNull Long id,
         @NotEmpty String name,
