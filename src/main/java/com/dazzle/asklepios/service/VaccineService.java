@@ -31,7 +31,6 @@ public class VaccineService {
         this.vaccineRepository = vaccineRepository;
     }
 
-    // ====================== CREATE ======================
     public Vaccine create(Vaccine incoming) {
         LOG.info("[CREATE] Request to create Vaccine payload={}", incoming);
 
