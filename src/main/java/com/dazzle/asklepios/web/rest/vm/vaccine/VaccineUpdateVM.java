@@ -23,7 +23,7 @@ public record VaccineUpdateVM(
         String siteOfAdministration,
         BigDecimal postOpeningDuration,
         DurationUnit durationUnit,
-        @NotNull NumberOfDoses numberOfDoses,
+        NumberOfDoses numberOfDoses,
         String indications,
         String possibleReactions,
         String contraindicationsAndPrecautions,

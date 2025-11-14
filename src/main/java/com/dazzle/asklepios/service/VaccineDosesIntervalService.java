@@ -58,12 +58,9 @@ public class VaccineDosesIntervalService {
                 .fromDose(refDose(incoming.getFromDose().getId()))
                 .toDose(refDose(incoming.getToDose().getId()))
                 .intervalBetweenDoses(incoming.getIntervalBetweenDoses())
+                .isActive(incoming.getIsActive())
                 .unit(incoming.getUnit())
                 .build();
-
-        if (entity.getFromDose().getId().equals(entity.getToDose().getId())) {
-            throw new BadRequestAlertException("from_dose_id must be different from to_dose_id", "vaccineDosesInterval", "from.ne.to");
-        }
 
         try {
             VaccineDosesInterval saved = vaccineDosesIntervalRepository.saveAndFlush(entity);
@@ -138,16 +135,15 @@ public class VaccineDosesIntervalService {
 
         LOG.error("Database constraint violation while saving vaccine doses interval: {}", message, constraintException);
 
-        // Recognize your DB constraints by name or typical messages
-        if (msgLower.contains("ux_vdi_vaccine_from_to_interval_unit")
+        if (msgLower.contains("ux_vdi_vaccine_from_to")
                 || msgLower.contains("unique constraint")
                 || msgLower.contains("duplicate key")
                 || msgLower.contains("duplicate entry")) {
 
             throw new BadRequestAlertException(
-                    "A doses-interval with the same (vaccine, from_dose, to_dose, interval, unit) already exists.",
+                    "A doses-interval with the same (vaccine, from_dose, to_dose) already exists.",
                     "vaccineDosesInterval",
-                    "unique.vaccine.from.to.interval.unit"
+                    "unique.vaccine.from.to"
             );
         }
 
@@ -167,6 +163,14 @@ public class VaccineDosesIntervalService {
             );
         }
 
+        if (msgLower.contains("fk_vdi_from_dose") || msgLower.contains("fk_vdi_to_dose")) {
+            throw new BadRequestAlertException(
+                    "from_dose_id and to_dose_id must reference existing vaccine doses.",
+                    "vaccineDosesInterval",
+                    "dose.fk.notfound"
+            );
+        }
+
         throw new BadRequestAlertException(
                 "Database constraint violated while saving vaccine doses interval (check unique fields or required values).",
                 "vaccineDosesInterval",
@@ -174,9 +178,10 @@ public class VaccineDosesIntervalService {
         );
     }
 
+
     @Transactional(readOnly = true)
     public List<VaccineDoses> findDosesByVaccineExcludingFirst(Long vaccineId, Long fromDoseId) {
-        LOG.debug("Fetching doses for vaccineId={}, excluding doseId={}", vaccineId, fromDoseId);
+        LOG.debug("Fetching doses for vaccineId={}, after doseId={}", vaccineId, fromDoseId);
 
         if (vaccineId == null) {
             throw new BadRequestAlertException("vaccineId is required", "vaccineDose", "vaccine.required");
@@ -185,10 +190,32 @@ public class VaccineDosesIntervalService {
             throw new BadRequestAlertException("fromDoseId is required", "vaccineDose", "fromDose.required");
         }
 
-        return vaccineDosesRepository.findByVaccine_Id(vaccineId).stream()
-                .filter(d -> !fromDoseId.equals(d.getId()))
-                .sorted(Comparator.comparingInt(d -> d.getDoseNumber().getOrder()))
+        List<VaccineDoses> doses = vaccineDosesRepository.findByVaccine_Id(vaccineId);
+        VaccineDoses fromDose = doses.stream()
+                .filter(dose -> fromDoseId.equals(dose.getId()))
+                .findFirst()
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "fromDoseId not found for given vaccineId",
+                        "vaccineDose",
+                        "fromDose.notFound")
+                );
+
+        Integer fromOrder = fromDose.getDoseNumber().getOrder();
+
+        Integer maxOrder = doses.stream()
+                .mapToInt(d -> d.getDoseNumber().getOrder())
+                .max()
+                .orElse(fromOrder);
+
+        if (fromOrder >= maxOrder) {
+            return List.of();
+        }
+
+        return doses.stream()
+                .filter(dose -> dose.getDoseNumber().getOrder() > fromOrder)
+                .sorted(Comparator.comparingInt(dose -> dose.getDoseNumber().getOrder()))
                 .toList();
     }
+
 
 }

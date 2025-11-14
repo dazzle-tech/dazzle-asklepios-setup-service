@@ -46,6 +46,7 @@ public class VaccineService {
                 .roa(incoming.getRoa())
                 .siteOfAdministration(incoming.getSiteOfAdministration())
                 .postOpeningDuration(incoming.getPostOpeningDuration())
+                .numberOfDoses(incoming.getNumberOfDoses())
                 .durationUnit(incoming.getDurationUnit())
                 .indications(incoming.getIndications())
                 .possibleReactions(incoming.getPossibleReactions())
@@ -79,6 +80,7 @@ public class VaccineService {
         existing.setType(incoming.getType());
         existing.setRoa(incoming.getRoa());
         existing.setSiteOfAdministration(incoming.getSiteOfAdministration());
+        existing.setNumberOfDoses(incoming.getNumberOfDoses());
         existing.setPostOpeningDuration(incoming.getPostOpeningDuration());
         existing.setDurationUnit(incoming.getDurationUnit());
         existing.setIndications(incoming.getIndications());
