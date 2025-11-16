@@ -87,7 +87,7 @@ public class BrandMedicationSubstituteService {
     @Transactional(readOnly = true)
     public List<BrandMedication> findAllByBrandOrAlternative(Long brandMedicationId) {
         LOG.debug("Request to get BrandMedication by brand or alternative brand brandMedicationId={}", brandMedicationId);
-        return substituteRepository.findBrandMedicationsByBrandOrAlternative(brandMedicationId);
+        return brandRepository.findBrandMedicationsByBrandOrAlternative(brandMedicationId);
     }
 
     public void delete(Long id) {

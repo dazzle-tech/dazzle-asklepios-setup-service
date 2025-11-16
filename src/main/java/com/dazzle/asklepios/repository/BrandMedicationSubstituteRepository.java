@@ -15,21 +15,6 @@ public interface BrandMedicationSubstituteRepository extends JpaRepository<Brand
             "WHERE b.brandMedication.id = :brandMedicationId OR b.alternativeBrandMedication.id = :brandMedicationId")
     List<BrandMedicationSubstitute> findAllByBrandOrAlternative(long brandMedicationId);
 
-    @Query(value = """
-    SELECT DISTINCT bm.* 
-    FROM brand_medication_substitute bms
-    JOIN brand_medication bm 
-      ON bm.id = bms.alternative_brand_id
-    WHERE bms.brand_id = :brandMedicationId
-    UNION
-    SELECT DISTINCT bm.* 
-    FROM brand_medication_substitute bms
-    JOIN brand_medication bm 
-      ON bm.id = bms.brand_id
-    WHERE bms.alternative_brand_id = :brandMedicationId
-    """, nativeQuery = true)
-    List<BrandMedication> findBrandMedicationsByBrandOrAlternative(long brandMedicationId);
-
     @Modifying
     @Query("""
     DELETE FROM BrandMedicationSubstitute b
