@@ -11,7 +11,5 @@ import org.springframework.stereotype.Repository;
 public interface AllergensRepository extends JpaRepository<Allergens, Long> {
     Page<Allergens> findByType(AllergenType type, Pageable pageable);
 
-    Page<Allergens> findByCodeContainingIgnoreCase(String code, Pageable pageable);
-
     Page<Allergens> findByNameContainingIgnoreCase(String name, Pageable pageable);
 }

@@ -1,10 +1,13 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.LanguageTranslation;
 import com.dazzle.asklepios.repository.LanguageTranslationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -86,6 +89,15 @@ public class LanguageTranslationService {
     public List<LanguageTranslation> findByLangKey(String langKey) {
         return translationRepository.findAllByLangKey(langKey);
     }
+
+    @Transactional(readOnly = true)
+    public Page<LanguageTranslation> findByLangKeyAndTranslationText(
+            String langKey, String value, Pageable pageable
+    ) {
+        LOG.debug("Request to get LanguageTranslations by (langKey={}, value contains='{}') pageable={}", langKey, value, pageable);
+        return translationRepository.findByLangKeyAndTranslationTextContainingIgnoreCase(langKey, value, pageable);
+    }
+
 
     public boolean delete(Long id) {
         LOG.debug("Request to delete LanguageTranslation : {}", id);

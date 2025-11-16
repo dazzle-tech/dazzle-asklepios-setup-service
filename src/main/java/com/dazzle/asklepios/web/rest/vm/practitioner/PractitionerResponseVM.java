@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.practitioner;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 
 import java.io.Serializable;
@@ -28,7 +29,7 @@ public record PractitionerResponseVM(
         LocalDate defaultLicenseValidUntil,
         LocalDate secondaryLicenseValidUntil,
         LocalDate dateOfBirth,
-        String jobRole,
+        JobRole jobRole,
         Gender gender,
         Boolean isActive,
         Facility facility
