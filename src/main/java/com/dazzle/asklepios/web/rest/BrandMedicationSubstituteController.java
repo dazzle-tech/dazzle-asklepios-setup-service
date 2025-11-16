@@ -55,7 +55,7 @@ public class BrandMedicationSubstituteController {
     @GetMapping("/brand-medication-substitute/by-brand/{brandId:\\d+}")
     public ResponseEntity<List<BrandMedicationResponseVM>> listByBrand(@PathVariable Long brandId) {
         LOG.debug("REST list BrandMedicationSubstitute by brandId={}", brandId);
-        List<BrandMedicationResponseVM> list = service.findAllByBrandOrAlternative(brandId)
+        List<BrandMedicationResponseVM> list = service.findBrandMedicationsByBrandOrAlternative(brandId)
                 .stream()
                 .map(BrandMedicationResponseVM::ofEntity)
                 .toList();

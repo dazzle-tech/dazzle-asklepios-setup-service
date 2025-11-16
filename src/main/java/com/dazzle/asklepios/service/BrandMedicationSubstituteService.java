@@ -84,11 +84,22 @@ public class BrandMedicationSubstituteService {
         return created;
     }
 
-    @Transactional(readOnly = true)
-    public List<BrandMedication> findAllByBrandOrAlternative(Long brandMedicationId) {
-        LOG.debug("Request to get BrandMedication by brand or alternative brand brandMedicationId={}", brandMedicationId);
-        return brandRepository.findBrandMedicationsByBrandOrAlternative(brandMedicationId);
+    public List<BrandMedication> findBrandMedicationsByBrandOrAlternative(long brandMedicationId) {
+        List<BrandMedicationSubstitute> pairs =
+                substituteRepository.findPairsByBrandOrAlternative(brandMedicationId);
+
+        return pairs.stream()
+                .map(bms -> {
+                    if (bms.getBrandMedication().getId().equals(brandMedicationId)) {
+                        return bms.getAlternativeBrandMedication();
+                    } else {
+                        return bms.getBrandMedication();
+                    }
+                })
+                .distinct()
+                .toList();
     }
+
 
     public void delete(Long id) {
         LOG.debug("Request to delete BrandMedicationSubstitute : {}", id);

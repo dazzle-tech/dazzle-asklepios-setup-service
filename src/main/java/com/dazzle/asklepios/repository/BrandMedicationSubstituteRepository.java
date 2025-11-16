@@ -23,6 +23,12 @@ public interface BrandMedicationSubstituteRepository extends JpaRepository<Brand
 """)
     int deleteLinkBetween(long brandId, long altBrandId);
 
-
+    @Query("""
+    SELECT DISTINCT bms
+    FROM BrandMedicationSubstitute bms
+    WHERE bms.brandMedication.id = :brandMedicationId
+       OR bms.alternativeBrandMedication.id = :brandMedicationId
+    """)
+    List<BrandMedicationSubstitute> findPairsByBrandOrAlternative(long brandMedicationId);
 
 }

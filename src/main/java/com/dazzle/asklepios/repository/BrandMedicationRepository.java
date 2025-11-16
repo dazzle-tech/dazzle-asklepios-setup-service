@@ -28,18 +28,7 @@ Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable);
 //      AND bai2.brandMedication.id <> :brandId
 //    """)
 //    List<BrandMedication> findAllBrandMedicationsSharingActiveIngredients(Long brandId);
-    @Query("""
-    SELECT DISTINCT 
-        CASE 
-            WHEN bms.brandMedication.id = :brandMedicationId 
-                THEN bms.alternativeBrandMedication
-            ELSE bms.brandMedication
-        END
-    FROM BrandMedicationSubstitute bms
-    WHERE bms.brandMedication.id = :brandMedicationId
-       OR bms.alternativeBrandMedication.id = :brandMedicationId
-    """)
-    List<BrandMedication> findBrandMedicationsByBrandOrAlternative(long brandMedicationId);
+
 
 
 }
