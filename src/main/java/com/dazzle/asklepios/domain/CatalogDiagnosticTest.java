@@ -26,7 +26,7 @@ import java.io.Serializable;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @Table(name = "catalog_diagnostic_test")
-public class CatalogDiagnosticTest extends AbstractAuditingEntity<Long> implements Serializable {
+public class CatalogDiagnosticTest implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

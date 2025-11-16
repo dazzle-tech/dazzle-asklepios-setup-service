@@ -30,7 +30,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = false)
-public class Catalog extends AbstractAuditingEntity<Long> implements Serializable {
+public class Catalog implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

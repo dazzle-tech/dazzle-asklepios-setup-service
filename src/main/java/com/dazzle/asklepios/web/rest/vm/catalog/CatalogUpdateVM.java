@@ -19,5 +19,4 @@ public class CatalogUpdateVM {
     private String description;
     private TestType type;
     private Long departmentId;
-    private Boolean isActive;
 }

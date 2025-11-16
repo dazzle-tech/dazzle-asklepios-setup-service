@@ -20,7 +20,6 @@ public class CatalogResponseVM {
     private TestType type;
     private Long departmentId;
     private String departmentName;
-    private Boolean isActive;
 
     public static CatalogResponseVM ofEntity(Catalog c) {
         return CatalogResponseVM.builder()
