@@ -7,7 +7,6 @@ import java.io.Serializable;
 
 public record AllergensResponseVM(
         Long id,
-        String code,
         String name,
         AllergenType type,
         String description,
@@ -17,7 +16,6 @@ public record AllergensResponseVM(
     public static AllergensResponseVM ofEntity(Allergens allergen) {
         return new AllergensResponseVM(
                 allergen.getId(),
-                allergen.getCode(),
                 allergen.getName(),
                 allergen.getType(),
                 allergen.getDescription(),

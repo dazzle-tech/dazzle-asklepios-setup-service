@@ -26,7 +26,6 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class AllergensService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AllergensService.class);
-    public static final String ALLERGENS = "allergens";
 
     private final AllergensRepository allergenRepository;
 
@@ -41,7 +40,6 @@ public class AllergensService {
             throw new BadRequestAlertException("Allergen payload is required", "allergen", "payload.required");
         }
         Allergens entity = Allergens.builder()
-                .code(incoming.getCode())
                 .name(incoming.getName())
                 .type(incoming.getType())
                 .description(incoming.getDescription())
@@ -49,7 +47,7 @@ public class AllergensService {
                 .build();
         try {
             Allergens saved = allergenRepository.saveAndFlush(entity);
-            LOG.info("Successfully created allergen id={} code='{}' name='{}'", saved.getId(), saved.getCode(), saved.getName());
+            LOG.info("Successfully created allergen id={} name='{}'", saved.getId(), saved.getName());
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
@@ -63,15 +61,6 @@ public class AllergensService {
                         "An allergen with the same name already exists.",
                         "allergen",
                         "unique.name"
-                );
-            }
-            if (lower.contains("ux_allergens_code") ||
-                    lower.contains("unique") && lower.contains("code") ||
-                    lower.contains("duplicate") && lower.contains("code")) {
-                throw new BadRequestAlertException(
-                        "An allergen with the same code already exists.",
-                        "allergen",
-                        "unique.code"
                 );
             }
 
@@ -94,7 +83,6 @@ public class AllergensService {
 
         Allergens existing = allergenRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Allergen not found with id " + id, "allergen", "notfound"));
-        existing.setCode(incoming.getCode());
         existing.setName(incoming.getName());
         existing.setType(incoming.getType());
         existing.setDescription(incoming.getDescription());
@@ -103,7 +91,7 @@ public class AllergensService {
         existing.setLastModifiedBy(incoming.getLastModifiedBy());
         try {
             Allergens updated = allergenRepository.saveAndFlush(existing);
-            LOG.info("Successfully updated allergen id={} (code='{}', name='{}')", updated.getId(), updated.getCode(), updated.getName());
+            LOG.info("Successfully updated allergen id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
@@ -119,15 +107,6 @@ public class AllergensService {
                         "Another allergen with the same name already exists.",
                         "allergen",
                         "unique.name"
-                );
-            }
-            if (lower.contains("ux_allergens_code") ||
-                    lower.contains("unique") && lower.contains("code") ||
-                    lower.contains("duplicate") && lower.contains("code")) {
-                throw new BadRequestAlertException(
-                        "Another allergen with the same code already exists.",
-                        "allergen",
-                        "unique.code"
                 );
             }
 
@@ -158,11 +137,6 @@ public class AllergensService {
         return allergenRepository.findByType(type, pageable);
     }
 
-    @Transactional(readOnly = true)
-    public Page<Allergens> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
-        LOG.debug("Fetching Allergens by code like='{}' pageable={}", code, pageable);
-        return allergenRepository.findByCodeContainingIgnoreCase(code, pageable);
-    }
 
     @Transactional(readOnly = true)
     public Page<Allergens> findByNameContainingIgnoreCase(String name, Pageable pageable) {

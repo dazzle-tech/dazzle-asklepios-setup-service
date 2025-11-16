@@ -10,7 +10,6 @@ import java.io.Serializable;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record AllergensCreateVM(
-        @NotEmpty String code,
         @NotEmpty String name,
         @NotNull AllergenType type,
         String description,
@@ -19,7 +18,6 @@ public record AllergensCreateVM(
 
     public static AllergensCreateVM ofEntity(Allergens allergen) {
         return new AllergensCreateVM(
-                allergen.getCode(),
                 allergen.getName(),
                 allergen.getType(),
                 allergen.getDescription(),
