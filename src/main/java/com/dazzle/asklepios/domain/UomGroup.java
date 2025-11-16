@@ -1,7 +1,15 @@
 package com.dazzle.asklepios.domain;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,10 +26,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(
-        name = "uom_group",
-        uniqueConstraints = @UniqueConstraint(name = "uq_code", columnNames = "code")
-)
+@Table(name = "uom_group")
 public class UomGroup {
 
     @Id
@@ -34,15 +39,11 @@ public class UomGroup {
     @Size(max = 50)
     private String name;
 
-    @Size(max = 50)
-    @Column(nullable = false)
-    private String code;
-
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "group", orphanRemoval = true)
     @JsonManagedReference("group-units")
     private List<UomGroupUnit> units = new ArrayList<>();
 
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "group", orphanRemoval = true)
     @JsonManagedReference("group-relations")
     private List<UomGroupsRelation> relations = new ArrayList<>();
 
