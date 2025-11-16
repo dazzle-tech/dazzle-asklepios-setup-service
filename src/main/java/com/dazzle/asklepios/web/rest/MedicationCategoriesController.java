@@ -1,14 +1,22 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.AgeGroup;
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.MedicationCategories;
 import com.dazzle.asklepios.service.MedicationCategoriesService;
 import com.dazzle.asklepios.web.rest.vm.DuplicationCandidateResponseVM;
+import com.dazzle.asklepios.web.rest.vm.ageGroup.AgeGroupResponseVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.medicationcategories.MedicationCategoriesCreateVM;
+import com.dazzle.asklepios.web.rest.vm.medicationcategories.MedicationCategoriesResponseVM;
+import com.dazzle.asklepios.web.rest.vm.medicationcategories.MedicationCategoriesUpdateVM;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,20 +41,35 @@ public class MedicationCategoriesController {
     private final MedicationCategoriesService medicationCategoriesService;
 
     @PostMapping
-    public ResponseEntity<MedicationCategories> create(@Valid @RequestBody MedicationCategories vm) {
-        LOG.debug("REST request to create Medication Category: {}", vm);
-        MedicationCategories saved = medicationCategoriesService.create(vm);
+    public ResponseEntity<MedicationCategoriesResponseVM> create(@Valid @RequestBody MedicationCategoriesCreateVM vm) {
+        LOG.debug("REST create Medication Categories ={}", vm);
+
+        MedicationCategories toCreate = MedicationCategories.builder()
+                .name(vm.name())
+                .build();
+
+        MedicationCategories created = medicationCategoriesService.create(toCreate);
+        MedicationCategoriesResponseVM body = MedicationCategoriesResponseVM.mapEntity(created);
+
         return ResponseEntity
-                .created(URI.create("/api/setup/medication-categories/" + saved.getId()))
-                .body(saved);
+                .created(URI.create("/api/setup/medication-categories/" + created.getId()))
+                .body(body);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MedicationCategories> update(@PathVariable Long id,
-                                           @Valid @RequestBody MedicationCategories vm) {
+    public ResponseEntity<MedicationCategoriesResponseVM> update(@PathVariable Long id,
+                                           @Valid @RequestBody MedicationCategoriesUpdateVM vm) {
         LOG.debug("REST request to update Medication Category id={} with: {}", id, vm);
-        Optional<MedicationCategories> updated = medicationCategoriesService.update(id, vm);
-        return updated.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        MedicationCategories toUpdate = MedicationCategories.builder()
+                .name(vm.name())
+                .id(id)
+                .build();
+
+        return medicationCategoriesService.update(id, toUpdate)
+                .map(MedicationCategoriesResponseVM::mapEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+
     }
 
 
@@ -69,7 +92,8 @@ public class MedicationCategoriesController {
     public ResponseEntity<MedicationCategories> findOne(@PathVariable Long id) {
         LOG.debug("REST request to get MedicationCategories id={}", id);
         return medicationCategoriesService.findOne(id)
-                .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")

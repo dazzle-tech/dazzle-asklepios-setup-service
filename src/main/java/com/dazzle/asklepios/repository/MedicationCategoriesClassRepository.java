@@ -12,4 +12,8 @@ import java.util.List;
 public interface MedicationCategoriesClassRepository extends JpaRepository<MedicationCategoriesClass, Long> {
     List<MedicationCategoriesClass> findAllByMedicationCategoriesId(long id );
     List<MedicationCategoriesClass> findByNameContainingIgnoreCase(String name);
+List<MedicationCategoriesClass> findByMedicationCategoriesIdAndNameContainingIgnoreCase(
+        long id,
+        String name
+);
 }
