@@ -1,9 +1,8 @@
 package com.dazzle.asklepios.web.rest.vm.brandMedication;
 
 import com.dazzle.asklepios.domain.BrandMedication;
-import com.dazzle.asklepios.domain.enumeration.BrandMedicationUnit;
+import com.dazzle.asklepios.domain.enumeration.Unit;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
@@ -15,7 +14,7 @@ public record BrandMedicationCreateVM(
         String storageRequirements,
         Boolean expiresAfterOpening,
         BigDecimal expiresAfterOpeningValue,
-        BrandMedicationUnit expiresAfterOpeningUnit,
+        Unit expiresAfterOpeningUnit,
         Boolean useSinglePatient,
         Boolean highCostMedication,
         String costCategory,
