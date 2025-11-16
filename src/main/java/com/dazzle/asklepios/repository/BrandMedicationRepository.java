@@ -19,15 +19,15 @@ Page<BrandMedication> findByRoaContainsIgnoreCase(String roa, Pageable pageable)
 Page<BrandMedication> findByExpiresAfterOpening(Boolean expiresAfter, Pageable pageable);
 Page<BrandMedication> findByUseSinglePatient(Boolean useSinglePatient, Pageable pageable);
 Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable);
-    @Query("""
-    SELECT DISTINCT bai2.brandMedication
-    FROM BrandMedicationActiveIngredient bai1
-    JOIN BrandMedicationActiveIngredient bai2
-      ON bai1.activeIngredients = bai2.activeIngredients
-    WHERE bai1.brandMedication.id = :brandId
-      AND bai2.brandMedication.id <> :brandId
-    """)
-    List<BrandMedication> findAllBrandMedicationsSharingActiveIngredients(Long brandId);
+//    @Query("""
+//    SELECT DISTINCT bai2.brandMedication
+//    FROM BrandMedicationActiveIngredient bai1
+//    JOIN BrandMedicationActiveIngredient bai2
+//      ON bai1.activeIngredients = bai2.activeIngredients
+//    WHERE bai1.brandMedication.id = :brandId
+//      AND bai2.brandMedication.id <> :brandId
+//    """)
+//    List<BrandMedication> findAllBrandMedicationsSharingActiveIngredients(Long brandId);
     @Query("""
     SELECT DISTINCT 
         CASE 

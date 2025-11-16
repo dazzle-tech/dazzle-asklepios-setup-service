@@ -91,14 +91,14 @@ public class BrandMedicationSubstituteController {
      * {@code GET brand-medication-substitute/same-active-ingredient/by-brand/{brandId}} :
      * List brand medication where the given brand participates active ingredient.
      */
-    @GetMapping("/brand-medication-substitute/same-active-ingredient/by-brand/{brandId:\\d+}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> listOfBrandWithSameActiveIngredients(@PathVariable Long brandId) {
-        LOG.debug("REST list band medication by brand id={}", brandId);
-        List<BrandMedicationResponseVM> list = service.findBrandsWithSameActiveIngredients(brandId)
-                .stream()
-                .map(BrandMedicationResponseVM::ofEntity)
-                .toList();
-        return ResponseEntity.ok(list);
-    }
+//    @GetMapping("/brand-medication-substitute/same-active-ingredient/by-brand/{brandId:\\d+}")
+//    public ResponseEntity<List<BrandMedicationResponseVM>> listOfBrandWithSameActiveIngredients(@PathVariable Long brandId) {
+//        LOG.debug("REST list band medication by brand id={}", brandId);
+//        List<BrandMedicationResponseVM> list = service.findBrandsWithSameActiveIngredients(brandId)
+//                .stream()
+//                .map(BrandMedicationResponseVM::ofEntity)
+//                .toList();
+//        return ResponseEntity.ok(list);
+//    }
 }
 
