@@ -96,5 +96,11 @@ public class MedicationCategoriesClassService {
         return medicationCategoriesClassRepository.findAllByMedicationCategoriesId(id);
     }
 
+    @Transactional(readOnly = true)
+    public List<MedicationCategoriesClass> findAllByCategoryIdAndName(Long id, String name) {
+        LOG.debug("Request to get Medication Category class: {}", id);
+        return medicationCategoriesClassRepository.findByMedicationCategoriesIdAndNameContainingIgnoreCase(id, name);
+    }
+
 
 }
