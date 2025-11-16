@@ -1,7 +1,12 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.domain.MedicationCategoriesClass;
+import com.dazzle.asklepios.domain.UomGroup;
+import com.dazzle.asklepios.domain.UomGroupUnit;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
+import com.dazzle.asklepios.repository.UomGroupRepository;
+import com.dazzle.asklepios.repository.UomGroupUnitRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
@@ -21,9 +26,15 @@ public class BrandMedicationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BrandMedicationService.class);
     private final BrandMedicationRepository brandMedicationRepository;
+    private final UomGroupRepository uomGroupRepository;
+    private final UomGroupUnitRepository uomGroupUnitRepository;
 
-    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository) {
+
+
+    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository, UomGroupRepository uomGroupRepository, UomGroupUnitRepository uomGroupUnitRepository) {
         this.brandMedicationRepository = brandMedicationRepository;
+        this.uomGroupRepository = uomGroupRepository;
+        this.uomGroupUnitRepository = uomGroupUnitRepository;
     }
 
     public BrandMedication create(BrandMedicationCreateVM vm) {
@@ -36,12 +47,14 @@ public class BrandMedicationService {
             throw new BadRequestAlertException("dosageForm is required", "brandMedication", "dosageformrequired");
         }
 
-//        if (vm.uomGroup() == null || vm.uomGroup().isBlank()) {
-//            throw new BadRequestAlertException("uomGroup is required", "brandMedication", "uomGrouprequired");
-//        }
-//        if (vm.uomGroupUnit() == null || vm.uomGroupUnit().isBlank()) {
-//            throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
-//        }
+        if (vm.uomGroupId() == null) {
+            throw new BadRequestAlertException("uomGroup is required", "brandMedication", "uomGrouprequired");
+        }
+        if (vm.uomGroupUnitId() == null) {
+            throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
+        }
+        UomGroup uomGroup = getUOMGroup(vm.uomGroupId());
+        UomGroupUnit uomGroupUnit=getUOMGroupUnit(vm.uomGroupUnitId());
 
         BrandMedication entity = BrandMedication.builder()
                 .name(vm.name())
@@ -57,11 +70,29 @@ public class BrandMedicationService {
                 .costCategory(vm.costCategory())
                 .roa(vm.roa())
                 .isActive(vm.isActive())
+                .uomGroup(uomGroup)
+                .uomGroupUnit(uomGroupUnit)
                 .build();
 
         BrandMedication saved = brandMedicationRepository.save(entity);
         LOG.debug("Created BrandMedication: {}", saved);
         return saved;
+    }
+    private UomGroup getUOMGroup(Long id) {
+        LOG.debug("getUOMGroup for active ingredients: id={}", id);
+        if (id == null) {
+            return null;
+        }
+        return uomGroupRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("UOM group not found: " + id, "UomGroup", "notfound"));
+    }
+    private UomGroupUnit getUOMGroupUnit(Long id) {
+        LOG.debug("getUOMGroupUnit for active ingredients: id={}", id);
+        if (id == null) {
+            return null;
+        }
+        return uomGroupUnitRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("UOM group unit not found: " + id, "UomGroupUnit", "notfound"));
     }
 
     public Optional<BrandMedication> update(Long id, BrandMedicationUpdateVM vm) {
@@ -87,6 +118,8 @@ public class BrandMedicationService {
         if (vm.costCategory() != null) entity.setCostCategory(vm.costCategory());
         if (vm.roa() != null) entity.setRoa(vm.roa());
         if (vm.isActive() != null) entity.setIsActive(vm.isActive());
+        if(vm.uomGroupId() != null) entity.setUomGroup(getUOMGroup(vm.uomGroupId()));
+        if(vm.uomGroupUnitId()!=null) entity.setUomGroupUnit(getUOMGroupUnit(vm.uomGroupUnitId()));
 
         BrandMedication updated = brandMedicationRepository.save(entity);
         LOG.debug("Updated BrandMedication: {}", updated);
