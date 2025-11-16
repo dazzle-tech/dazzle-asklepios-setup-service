@@ -2,12 +2,12 @@ package com.dazzle.asklepios.domain.enumeration;
 
 
 public enum ResourceType {
-    Practitioner,
-    Medical_Test,
-    Clinic,
-    Inpatient_Admission,
-    Day_Case,
-    Emergency,
-    Operation
+    PRACTITIONER,
+    MEDICAL_TEST,
+    CLINIC,
+    INPATIENT_ADMISSION,
+    DAY_CASE,
+    EMERGENCY,
+    OPERATION
 
 }

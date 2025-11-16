@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.Resource;
 
 import com.dazzle.asklepios.domain.Resource;
 import com.dazzle.asklepios.domain.enumeration.ResourceType;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 
 import java.io.Serializable;
 
@@ -22,13 +23,18 @@ public record ResourceResponseVM(
             try {
                 resourceType = ResourceType.valueOf(resource.getResourceType());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException(
+                throw new BadRequestAlertException(
                     "Invalid ResourceType value: " + resource.getResourceType() + " for Resource id: " + resource.getId(),
-                    e
+                    "resource",
+                    "invalid.resourcetype"
                 );
             }
         } else {
-            throw new IllegalStateException("ResourceType cannot be null or blank for Resource id: " + resource.getId());
+            throw new BadRequestAlertException(
+                "ResourceType cannot be null or blank for Resource id: " + resource.getId(),
+                "resource",
+                "missing.resourcetype"
+            );
         }
         return new ResourceResponseVM(
                 resource.getId(),
