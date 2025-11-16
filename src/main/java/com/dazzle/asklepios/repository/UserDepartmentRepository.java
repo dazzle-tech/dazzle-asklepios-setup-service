@@ -25,16 +25,7 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     Optional<UserDepartment> findFirstByUserIdAndDepartment_Facility_IdAndIsActiveTrueOrderByIdAsc(Long userId, Long facilityId);
 
-    @Query("""
-       SELECT ud FROM UserDepartment ud
-        WHERE ud.user.id = :userId
-          AND ud.department.facility.id = :facilityId
-          AND ud.isActive = true
-        ORDER BY ud.isDefault DESC, ud.id ASC
-       """)
-    List<UserDepartment> findByUserIdAndFacilityAndIsActiveTrueOrderByIsDefaultDesc(
-            @Param("userId") Long userId,
-            @Param("facilityId") Long facilityId);
+    List<UserDepartment> findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(Long userId, Long facilityId);
 
     @Modifying
     @Query("""

@@ -112,7 +112,7 @@ public class UserDepartmentService {
     @Transactional(readOnly = true)
     public List<UserDepartment> getActiveUserDepartmentsByUserInFacility(Long userId, Long facilityId) {
         LOG.debug("List active user departments by userId={} facilityId={}", userId, facilityId);
-        return userDepartmentRepository.findByUserIdAndFacilityAndIsActiveTrueOrderByIsDefaultDesc(userId, facilityId);
+        return userDepartmentRepository.findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(userId, facilityId);
     }
 
     @Transactional(readOnly = true)
