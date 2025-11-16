@@ -87,5 +87,18 @@ public class BrandMedicationSubstituteController {
             return ResponseEntity.notFound().build(); // 404
         }
     }
+    /**
+     * {@code GET /brand-medication-active-ingredient/by-brand/{brandId}} :
+     * List brand medication where the given brand participates active ingredient.
+     */
+    @GetMapping("/brand-medication/by-active-ingrdient/{brandId:\\d+}")
+    public ResponseEntity<List<BrandMedicationResponseVM>> listOfBrandWithSameActiveIngredients(@PathVariable Long brandId) {
+        LOG.debug("REST list band medication by activeIngredient={}", brandId);
+        List<BrandMedicationResponseVM> list = service.findBrandsWithSameActiveIngredients(brandId)
+                .stream()
+                .map(BrandMedicationResponseVM::ofEntity)
+                .toList();
+        return ResponseEntity.ok(list);
+    }
 }
 

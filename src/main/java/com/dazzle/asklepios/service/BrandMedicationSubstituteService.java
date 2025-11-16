@@ -106,5 +106,9 @@ public class BrandMedicationSubstituteService {
     public int removeSubstituteLink(long brandId, long altBrandId) {
         return substituteRepository.deleteLinkBetween(brandId, altBrandId);
     }
+    public List<BrandMedication> findBrandsWithSameActiveIngredients(Long brandId) {
+        LOG.debug("Request to get BrandMedications that share active ingredients with brandId={}", brandId);
+        return brandRepository.findAllBrandMedicationsSharingActiveIngredients(brandId);
+    }
 
 }
