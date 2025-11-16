@@ -6,7 +6,7 @@ import com.dazzle.asklepios.domain.DentalAction;
 import com.dazzle.asklepios.repository.CdtCodeRepository;
 import com.dazzle.asklepios.repository.CdtDentalActionRepository;
 import com.dazzle.asklepios.repository.DentalActionRepository;
-
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -32,11 +32,21 @@ public class CdtDentalActionService {
 
         // Load existing dentalAction
         DentalAction dentalAction = dentalActionRepository.findById(dentalActionId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid dentalActionId: " + dentalActionId));
+                .orElseThrow(() ->
+        new BadRequestAlertException(
+                "Invalid dentalActionId: " + dentalActionId,
+                "cdtdentalaction",
+                "Invalid dentalActionId: " + dentalActionId
+        ));
 
         // Load existing CDT code
         CdtCode cdtCode = cdtCodeRepository.findByCode(cdtCodeStr)
-                .orElseThrow(() -> new IllegalArgumentException("CDT Code does not exist: " + cdtCodeStr));
+                .orElseThrow(() ->
+                       new BadRequestAlertException(
+                                "notExist" ,
+                                "cdtdentalaction",
+                               " CDT Code does not exist: " + cdtCodeStr
+                        ) );
 
         // Build entity
         CdtDentalAction entity = new CdtDentalAction();
