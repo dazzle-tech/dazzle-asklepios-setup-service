@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.brandMedicationActiveIngredient;
 import com.dazzle.asklepios.domain.BrandMedication;
 import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
 import com.dazzle.asklepios.domain.BrandMedicationSubstitute;
+import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsResponseVM;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
@@ -12,7 +13,10 @@ public record BrandMedicationActiveIngredientResponseVM(
         Long brandId,
         Long activeIngredientId,
         BigDecimal strength,
-        String unit
+        String unit,
+        ActiveIngredientsResponseVM activeIngredient
+
+
 ) {
     public static BrandMedicationActiveIngredientResponseVM ofEntity(BrandMedicationActiveIngredient entity) {
         if (entity == null) return null;
@@ -21,7 +25,8 @@ public record BrandMedicationActiveIngredientResponseVM(
                 entity.getBrandMedication() != null ? entity.getBrandMedication().getId() : null,
                 entity.getActiveIngredients() != null ? entity.getActiveIngredients().getId() : null,
                 entity.getStrength(),
-                entity.getUnit()
-        );
+                entity.getUnit(),
+                ActiveIngredientsResponseVM.ofEntity(entity.getActiveIngredients())
+                );
     }
 }

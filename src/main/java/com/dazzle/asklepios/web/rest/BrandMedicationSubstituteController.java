@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.BrandMedicationSubstitute;
+import com.dazzle.asklepios.service.BrandMedicationActiveIngredientService;
 import com.dazzle.asklepios.service.BrandMedicationSubstituteService;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedicationSubstitute.BrandMedicationSubstituteCreateVM;
@@ -22,9 +23,10 @@ public class BrandMedicationSubstituteController {
     private static final Logger LOG = LoggerFactory.getLogger(BrandMedicationSubstituteController.class);
 
     private final BrandMedicationSubstituteService service;
-
-    public BrandMedicationSubstituteController(BrandMedicationSubstituteService service) {
+    private final BrandMedicationActiveIngredientService activeIngredientService;
+    public BrandMedicationSubstituteController(BrandMedicationSubstituteService service, BrandMedicationActiveIngredientService activeIngredientService) {
         this.service = service;
+        this.activeIngredientService = activeIngredientService;
     }
 
     /**
@@ -54,13 +56,21 @@ public class BrandMedicationSubstituteController {
      */
     @GetMapping("/brand-medication-substitute/by-brand/{brandId:\\d+}")
     public ResponseEntity<List<BrandMedicationResponseVM>> listByBrand(@PathVariable Long brandId) {
+
         LOG.debug("REST list BrandMedicationSubstitute by brandId={}", brandId);
-        List<BrandMedicationResponseVM> list = service.findBrandMedicationsByBrandOrAlternative(brandId)
-                .stream()
-                .map(BrandMedicationResponseVM::ofEntity)
-                .toList();
+
+        List<BrandMedicationResponseVM> list =
+                service.findBrandMedicationsByBrandOrAlternative(brandId)
+                        .stream()
+                        .map(bm -> BrandMedicationResponseVM.ofEntity(
+                                bm,
+                                activeIngredientService.existsByBrandMedication(bm.getId())
+                        ))
+                        .toList();
+
         return ResponseEntity.ok(list);
     }
+
 
     /**
      * {@code DELETE /brand-medication-substitute/{id}} : Delete a relation.
@@ -93,12 +103,19 @@ public class BrandMedicationSubstituteController {
      */
     @GetMapping("/brand-medication-substitute/same-active-ingredient/by-brand/{brandId:\\d+}")
     public ResponseEntity<List<BrandMedicationResponseVM>> listOfBrandWithSameActiveIngredients(@PathVariable Long brandId) {
+
         LOG.debug("REST list band medication by brand id={}", brandId);
+
         List<BrandMedicationResponseVM> list = service.findBrandsWithSameActiveIngredients(brandId)
                 .stream()
-                .map(BrandMedicationResponseVM::ofEntity)
+                .map(bm -> BrandMedicationResponseVM.ofEntity(
+                        bm,
+                        activeIngredientService.existsByBrandMedication(bm.getId())   // ⬅ نفس طريقة الفنكشن الأول
+                ))
                 .toList();
+
         return ResponseEntity.ok(list);
     }
+
 }
 
