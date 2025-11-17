@@ -50,4 +50,6 @@ public class UomGroupUnit {
     @JsonBackReference("group-units")
     private UomGroup group;
 
+    public UomGroupUnit(Long id, UOM uom, BigDecimal uomOrder) {
+    }
 }

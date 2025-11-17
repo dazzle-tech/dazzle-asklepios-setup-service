@@ -42,23 +42,34 @@ public class UomGroupsRelationsController {
         return UomGroupsRelationResponseVM.of(saved);
     }
 
-@GetMapping("/{groupId}")
-public List<UomGroupsRelation> list(@PathVariable Long groupId) {
-    return service.listByGroup(groupId);
-}
+    @GetMapping("/{groupId}")
+    public List<UomGroupsRelation> list(@PathVariable Long groupId) {
+        return service.listByGroup(groupId);
+    }
+
 
     @PutMapping("/{groupId}/{id}")
     public UomGroupsRelationResponseVM update(@PathVariable Long groupId,
                                               @PathVariable Long id,
                                               @Valid @RequestBody UomGroupsRelationVM body) {
         var tmp = new UomGroupsRelation();
-        var g = new UomGroup(); g.setId(groupId); tmp.setGroup(g);
+        var g = new UomGroup();
+        g.setId(groupId);
+        tmp.setGroup(g);
         tmp.setRelation(body.relation());
-        if (body.fromUnitId() != null) { var fu = new UomGroupUnit(); fu.setId(body.fromUnitId()); tmp.setFromUnit(fu); }
-        if (body.toUnitId()  != null) { var tu = new UomGroupUnit(); tu.setId(body.toUnitId());   tmp.setToUnit(tu); }
+        if (body.fromUnitId() != null) {
+            var fu = new UomGroupUnit();
+            fu.setId(body.fromUnitId());
+            tmp.setFromUnit(fu);
+        }
+        if (body.toUnitId() != null) {
+            var tu = new UomGroupUnit();
+            tu.setId(body.toUnitId());
+            tmp.setToUnit(tu);
+        }
         var updated = service.update(id, tmp);
         if (!groupId.equals(updated.getGroup().getId())) {
-            throw new BadRequestAlertException( "Updated relation not in this group", ENTITY_NAME , "Relation not in this group");
+            throw new BadRequestAlertException("Updated relation not in this group", ENTITY_NAME, "Relation not in this group");
         }
         return UomGroupsRelationResponseVM.of(updated);
     }
