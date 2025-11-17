@@ -95,4 +95,8 @@ public class BrandMedicationActiveIngredientService {
         }
         brandMedicationActiveIngredientRepository.deleteById(id);
     }
+    @Transactional(readOnly = true)
+    public boolean existsByBrandMedication(Long brandId) {
+        return brandMedicationActiveIngredientRepository.existsByBrandMedicationId(brandId);
+    }
 }
