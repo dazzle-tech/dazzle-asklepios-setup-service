@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,6 +33,7 @@ public class DiagnosticTestProfile {
     @JoinColumn(name = "test_id", nullable = false)
     private DiagnosticTest test;
 
+    @NotNull(message = "Name cannot be null")
     @Column(nullable = false)
     private String name;
 

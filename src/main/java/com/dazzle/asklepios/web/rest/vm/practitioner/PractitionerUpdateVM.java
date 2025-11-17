@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.practitioner;
 
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import jakarta.validation.constraints.*;
 
@@ -60,7 +61,7 @@ public record PractitionerUpdateVM(
         @Past(message = "Date of birth must be in the past")
         LocalDate dateOfBirth,
 
-        String jobRole,
+        JobRole jobRole,
 
         Gender gender,
 

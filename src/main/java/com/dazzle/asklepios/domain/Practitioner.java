@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Gender;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -99,7 +100,7 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     private LocalDate dateOfBirth;
 
     @Column(name = "job_role")
-    private String jobRole;
+    private JobRole jobRole;
 
     @Column
     @Enumerated(EnumType.STRING)

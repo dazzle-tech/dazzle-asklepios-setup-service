@@ -13,13 +13,11 @@ import java.util.List;
 @Repository
 public interface AgeGroupRepository extends JpaRepository<AgeGroup, Long> {
 
-    List<AgeGroup> findByFacility_Id(Long facilityId);
-
     Page<AgeGroup> findByFacility_Id(Long facilityId, Pageable pageable);
 
-    Page<AgeGroup> findByFacility_IdAndAgeGroup(Long facilityId, AgeGroupType ageGroup, Pageable pageable);
+    Page<AgeGroup> findByAgeGroup(AgeGroupType label, Pageable pageable);
 
-    Page<AgeGroup> findByFacility_IdAndFromAge(Long facilityId, BigDecimal fromAge, Pageable pageable);
+    Page<AgeGroup> findByFromAge(BigDecimal fromAge, Pageable pageable);
 
-    Page<AgeGroup> findByFacility_IdAndToAge(Long facilityId, BigDecimal toAge, Pageable pageable);
+    Page<AgeGroup> findByToAge(BigDecimal toAge, Pageable pageable);
      }

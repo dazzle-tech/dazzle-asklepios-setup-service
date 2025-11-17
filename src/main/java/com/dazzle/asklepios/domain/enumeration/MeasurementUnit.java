@@ -40,7 +40,7 @@ public enum MeasurementUnit {
     KILOPASCAL,                       // kPa
 
     MILLIEQUIVALENT_PER_LITER,        // mEq/L
-    PH,
+
     SECOND,                           // s
 
     MILLISMOLAL_PER_KILOGRAM,         // mOsm/kg
@@ -68,3 +68,4 @@ public enum MeasurementUnit {
 
     NO_UNIT                           // no unit
 }
+

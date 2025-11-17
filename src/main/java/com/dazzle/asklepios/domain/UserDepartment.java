@@ -46,4 +46,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "is_default",nullable = false)
+    private Boolean isDefault = false;
 }

@@ -43,7 +43,6 @@ public class VaccineDosesController {
         this.vaccineDosesService = vaccineDosesService;
     }
 
-    // ====================== CREATE ======================
     @PostMapping("/vaccine/{vaccineId}/doses")
     public ResponseEntity<VaccineDosesResponseVM> createVaccineDose(
             @PathVariable Long vaccineId,
