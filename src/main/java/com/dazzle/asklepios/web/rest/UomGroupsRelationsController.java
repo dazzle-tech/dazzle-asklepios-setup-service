@@ -1,8 +1,13 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.UomGroup;
+import com.dazzle.asklepios.domain.UomGroupUnit;
 import com.dazzle.asklepios.domain.UomGroupsRelation;
 import com.dazzle.asklepios.service.UomGroupsRelationService;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.uom.UomGroupsRelationResponseVM;
+import com.dazzle.asklepios.web.rest.vm.uom.UomGroupsRelationVM;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +22,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+import static org.hibernate.id.IdentifierGenerator.ENTITY_NAME;
+
 @RestController
 @RequestMapping("/api/setup/uom-groups/relations")
 public class UomGroupsRelationsController {
@@ -27,27 +34,35 @@ public class UomGroupsRelationsController {
         this.service = service;
     }
 
-    // Create: POST /api/setup/uom-groups/relations/{groupId}
     @PostMapping("/{groupId}")
     @ResponseStatus(HttpStatus.CREATED)
-    public UomGroupsRelation create(@PathVariable Long groupId,
-                                    @RequestBody UomGroupsRelation body) {
-        if (body.getGroup() == null) {
-            UomGroup g = new UomGroup();
-            g.setId(groupId);
-            body.setGroup(g);
-        } else if (body.getGroup().getId() == null) {
-            body.getGroup().setId(groupId);
-        } else if (!groupId.equals(body.getGroup().getId())) {
-            throw new IllegalArgumentException("Path groupId and body.group.id must match");
-        }
-        return service.create(body);
+    public UomGroupsRelationResponseVM create(@PathVariable Long groupId,
+                                              @Valid @RequestBody UomGroupsRelationVM body) {
+        var saved = service.create(groupId, body.fromUnitId(), body.toUnitId(), body.relation());
+        return UomGroupsRelationResponseVM.of(saved);
     }
 
-    // List: GET /api/setup/uom-groups/relations/{groupId}
     @GetMapping("/{groupId}")
-    public List<UomGroupsRelation> list(@PathVariable Long groupId) {
-        return service.listByGroup(groupId);
+    public List<UomGroupsRelationResponseVM> list(@PathVariable Long groupId) {
+        return service.listByGroup(groupId).stream()
+                .map(UomGroupsRelationResponseVM::of)
+                .toList();
+    }
+
+    @PutMapping("/{groupId}/{id}")
+    public UomGroupsRelationResponseVM update(@PathVariable Long groupId,
+                                              @PathVariable Long id,
+                                              @Valid @RequestBody UomGroupsRelationVM body) {
+        var tmp = new UomGroupsRelation();
+        var g = new UomGroup(); g.setId(groupId); tmp.setGroup(g);
+        tmp.setRelation(body.relation());
+        if (body.fromUnitId() != null) { var fu = new UomGroupUnit(); fu.setId(body.fromUnitId()); tmp.setFromUnit(fu); }
+        if (body.toUnitId()  != null) { var tu = new UomGroupUnit(); tu.setId(body.toUnitId());   tmp.setToUnit(tu); }
+        var updated = service.update(id, tmp);
+        if (!groupId.equals(updated.getGroup().getId())) {
+            throw new BadRequestAlertException( "Updated relation not in this group", ENTITY_NAME , "Relation not in this group");
+        }
+        return UomGroupsRelationResponseVM.of(updated);
     }
 
     // Get one: GET /api/setup/uom-groups/relations/{groupId}/{id}
@@ -60,27 +75,6 @@ public class UomGroupsRelationsController {
         return r;
     }
 
-    // Update: PUT /api/setup/uom-groups/relations/{groupId}/{id}
-    @PutMapping("/{groupId}/{id}")
-    public UomGroupsRelation update(@PathVariable Long groupId,
-                                    @PathVariable Long id,
-                                    @RequestBody UomGroupsRelation body) {
-        if (body.getGroup() == null) {
-            UomGroup g = new UomGroup();
-            g.setId(groupId);
-            body.setGroup(g);
-        } else if (body.getGroup().getId() == null) {
-            body.getGroup().setId(groupId);
-        } else if (!groupId.equals(body.getGroup().getId())) {
-            throw new IllegalArgumentException("Path groupId and body.group.id must match");
-        }
-
-        UomGroupsRelation updated = service.update(id, body);
-        if (updated.getGroup() == null || !groupId.equals(updated.getGroup().getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Updated relation not in this group");
-        }
-        return updated;
-    }
 
     // Delete: DELETE /api/setup/uom-groups/relations/{groupId}/{id}
     @DeleteMapping("/{groupId}/{id}")

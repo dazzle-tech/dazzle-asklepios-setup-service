@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.dazzle.asklepios.repository.UomGroupRelationRepository;
 import com.dazzle.asklepios.repository.UomGroupRepository;
 import com.dazzle.asklepios.repository.UomGroupUnitRepository;
+import com.dazzle.asklepios.web.rest.vm.uom.UomGroupVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -44,15 +45,13 @@ public class UomGroupService {
     public Page<UomGroup> listGroups(Pageable pageable) { return groupRepo.findAll(pageable); }
     public void deleteGroup(Long id) { groupRepo.deleteById(id); }
 
-    public Optional<UomGroup> updateGroup(Long id, UomGroup vm) {
+    public Optional<UomGroup> updateGroup(Long id, UomGroupVM vm) {
         LOG.debug("Request to update UOM id={} with data: {}", id, vm);
 
         return groupRepo.findById(id).map(existing -> {
             // Do NOT change langKey here; treat it as immutable identity
-            existing.setName(vm.getName());
-            existing.setDescription(vm.getDescription());
-            existing.setUnits(vm.getUnits());
-            existing.setRelations(vm.getRelations());
+            existing.setName(vm.name());
+            existing.setDescription(vm.description());
             UomGroup updated = groupRepo.save(existing);
             LOG.debug("UOMGroup id={} updated successfully", id);
             return updated;
