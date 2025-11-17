@@ -42,12 +42,10 @@ public class UomGroupsRelationsController {
         return UomGroupsRelationResponseVM.of(saved);
     }
 
-    @GetMapping("/{groupId}")
-    public List<UomGroupsRelationResponseVM> list(@PathVariable Long groupId) {
-        return service.listByGroup(groupId).stream()
-                .map(UomGroupsRelationResponseVM::of)
-                .toList();
-    }
+@GetMapping("/{groupId}")
+public List<UomGroupsRelation> list(@PathVariable Long groupId) {
+    return service.listByGroup(groupId);
+}
 
     @PutMapping("/{groupId}/{id}")
     public UomGroupsRelationResponseVM update(@PathVariable Long groupId,
