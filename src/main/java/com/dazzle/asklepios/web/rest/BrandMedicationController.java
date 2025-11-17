@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.service.BrandMedicationActiveIngredientService;
 import com.dazzle.asklepios.service.BrandMedicationService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
@@ -28,9 +29,11 @@ public class BrandMedicationController {
     private static final Logger LOG = LoggerFactory.getLogger(BrandMedicationController.class);
 
     private final BrandMedicationService brandMedicationService;
+    private final BrandMedicationActiveIngredientService brandMedicationActiveIngredientService;
 
-    public BrandMedicationController(BrandMedicationService brandMedicationService) {
+    public BrandMedicationController(BrandMedicationService brandMedicationService, BrandMedicationActiveIngredientService brandMedicationActiveIngredientService) {
         this.brandMedicationService = brandMedicationService;
+        this.brandMedicationActiveIngredientService = brandMedicationActiveIngredientService;
     }
 
     /**
@@ -40,7 +43,9 @@ public class BrandMedicationController {
     public ResponseEntity<BrandMedicationResponseVM> create(@Valid @RequestBody BrandMedicationCreateVM vm) {
         LOG.debug("REST create BrandMedication payload={}", vm);
         BrandMedication created = brandMedicationService.create(vm);
-        BrandMedicationResponseVM body = BrandMedicationResponseVM.ofEntity(created);
+        boolean hasActiveIngredient = brandMedicationActiveIngredientService.existsByBrandMedication(created.getId());
+
+        BrandMedicationResponseVM body = BrandMedicationResponseVM.ofEntity(created, hasActiveIngredient);
         LOG.debug("REST create BrandMedication response={}", body);
         return ResponseEntity
                 .created(URI.create("/api/setup/brand-medication/" + created.getId()))
@@ -54,7 +59,11 @@ public class BrandMedicationController {
     public ResponseEntity<BrandMedicationResponseVM> update(@PathVariable Long id, @Valid @RequestBody BrandMedicationUpdateVM vm) {
         LOG.debug("REST update BrandMedication id={} payload={}", id, vm);
         return brandMedicationService.update(id, vm)
-                .map(BrandMedicationResponseVM::ofEntity)
+                .map(updated -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(updated.getId());
+                    return BrandMedicationResponseVM.ofEntity(updated, hasActiveIngredient);
+                })
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -69,11 +78,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     /**
@@ -83,7 +97,11 @@ public class BrandMedicationController {
     public ResponseEntity<BrandMedicationResponseVM> getOne(@PathVariable Long id) {
         LOG.debug("REST get BrandMedication id={}", id);
         return brandMedicationService.findOne(id)
-                .map(BrandMedicationResponseVM::ofEntity)
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -95,7 +113,11 @@ public class BrandMedicationController {
     public ResponseEntity<BrandMedicationResponseVM> toggleActive(@PathVariable Long id) {
         LOG.debug("REST toggle BrandMedication isActive id={}", id);
         return brandMedicationService.toggleIsActive(id)
-                .map(BrandMedicationResponseVM::ofEntity)
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -107,11 +129,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-manufacturer/{manufacturer}")
@@ -121,11 +148,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-dosage-form/{dosageForm}")
@@ -135,11 +167,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-usage-instructions/{usageInstructions}")
@@ -149,11 +186,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-roa/{roa}")
@@ -163,11 +205,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-expires-after-opening/{expiresAfterOpening}")
@@ -177,11 +224,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-use-single-patient/{useSinglePatient}")
@@ -191,11 +243,16 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/brand-medication/by-is-active/{isActive}")
@@ -205,10 +262,15 @@ public class BrandMedicationController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(BrandMedicationResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<BrandMedicationResponseVM> body = page.getContent().stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 }

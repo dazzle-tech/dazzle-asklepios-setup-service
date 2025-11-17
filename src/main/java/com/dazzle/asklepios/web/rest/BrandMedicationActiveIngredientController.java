@@ -73,16 +73,5 @@ public class BrandMedicationActiveIngredientController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
-    /**
-     * {@code GET /brand-medication-active-ingredient/by-brand/{brandId}/exists} :
-     * Check if a brand medication has at least one active ingredient.
-     */
-    @GetMapping("/brand-medication-active-ingredient/by-brand/{brandId:\\d+}/exists")
-    public ResponseEntity<Boolean> hasActiveIngredient(@PathVariable Long brandId) {
-        LOG.debug("REST check if BrandMedication id={} has any active ingredients", brandId);
-        boolean exists = service.existsByBrandMedication(brandId);
-        return ResponseEntity.ok(exists);
-    }
-
 
 }
