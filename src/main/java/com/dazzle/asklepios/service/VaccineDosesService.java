@@ -63,10 +63,18 @@ public class VaccineDosesService {
 
         try {
             VaccineDoses saved = vaccineDosesRepository.saveAndFlush(entity);
-            LOG.info("Successfully created vaccine dose id={} doseNumber={} for vaccineId={}", saved.getId(), saved.getDoseNumber(), vaccineId);
+            LOG.info("Successfully created vaccine dose id={} doseNumber={} for vaccineId={}",
+                    saved.getId(), saved.getDoseNumber(), vaccineId);
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintViolation(constraintException);
+
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while saving vaccine dose (check unique fields or required values).",
+                    "vaccineDose",
+                    "db.constraint"
+            );
         }
     }
 
@@ -78,7 +86,8 @@ public class VaccineDosesService {
         }
 
         VaccineDoses existing = vaccineDosesRepository.findById(id)
-                .orElseThrow(() -> new NotFoundAlertException("Vaccine dose not found with id " + id, "vaccineDose", "notfound"));
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Vaccine dose not found with id " + id, "vaccineDose", "notfound"));
 
         existing.setDoseNumber(incoming.getDoseNumber());
         existing.setFromAge(incoming.getFromAge());
@@ -87,13 +96,20 @@ public class VaccineDosesService {
         existing.setToAgeUnit(incoming.getToAgeUnit());
         existing.setIsBooster(incoming.getIsBooster());
         existing.setIsActive(incoming.getIsActive());
+
         try {
             VaccineDoses updated = vaccineDosesRepository.saveAndFlush(existing);
-            LOG.info("Successfully updated vaccine dose id={} (doseNumber={})", updated.getId(), updated.getDoseNumber());
+            LOG.info("Successfully updated vaccine dose id={} (doseNumber={})",
+                    updated.getId(), updated.getDoseNumber());
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             handleConstraintViolation(ex);
-            throw ex;
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating vaccine dose (check unique fields or required values).",
+                    "vaccineDose",
+                    "db.constraint"
+            );
         }
     }
 
@@ -161,6 +177,7 @@ public class VaccineDosesService {
                 "db.constraint"
         );
     }
+
     @Transactional(readOnly = true)
     public List<DoseNumber> getDoseNumbersUpTo(NumberOfDoses numberOfDoses) {
         LOG.debug("Listing DoseNumber values up to {}", numberOfDoses);
@@ -179,5 +196,4 @@ public class VaccineDosesService {
                 .limit(count)
                 .collect(Collectors.toList());
     }
-
 }

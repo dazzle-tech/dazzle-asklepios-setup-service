@@ -5,7 +5,6 @@ import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 
 import java.io.Serializable;
 import java.math.BigDecimal;

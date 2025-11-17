@@ -33,9 +33,11 @@ public class VaccineDosesIntervalService {
     private final VaccineDosesIntervalRepository vaccineDosesIntervalRepository;
     private final EntityManager entityManager;
     private final VaccineDosesRepository vaccineDosesRepository;
+
     public VaccineDosesIntervalService(
             VaccineDosesIntervalRepository vaccineDosesIntervalRepository,
-            EntityManager entityManager, VaccineDosesRepository vaccineDosesRepository
+            EntityManager entityManager,
+            VaccineDosesRepository vaccineDosesRepository
     ) {
         this.vaccineDosesIntervalRepository = vaccineDosesIntervalRepository;
         this.entityManager = entityManager;
@@ -68,6 +70,12 @@ public class VaccineDosesIntervalService {
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintViolation(constraintException);
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while saving vaccine doses interval (check unique fields or required values).",
+                    "vaccineDosesInterval",
+                    "db.constraint"
+            );
         }
     }
 
@@ -97,7 +105,12 @@ public class VaccineDosesIntervalService {
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             handleConstraintViolation(ex);
-            throw ex;
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating vaccine doses interval (check unique fields or required values).",
+                    "vaccineDosesInterval",
+                    "db.constraint"
+            );
         }
     }
 
@@ -118,6 +131,7 @@ public class VaccineDosesIntervalService {
                     return saved;
                 });
     }
+
     private Vaccine refVaccine(Long vaccineId) {
         return entityManager.getReference(Vaccine.class, vaccineId);
     }
@@ -176,7 +190,6 @@ public class VaccineDosesIntervalService {
         );
     }
 
-
     @Transactional(readOnly = true)
     public List<VaccineDoses> findDosesByVaccineExcludingFirst(Long vaccineId, Long fromDoseId) {
         LOG.debug("Fetching doses for vaccineId={}, after doseId={}", vaccineId, fromDoseId);
@@ -214,6 +227,4 @@ public class VaccineDosesIntervalService {
                 .sorted(Comparator.comparingInt(dose -> dose.getDoseNumber().getOrder()))
                 .toList();
     }
-
-
 }

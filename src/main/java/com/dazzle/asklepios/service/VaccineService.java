@@ -6,8 +6,10 @@ import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.repository.VaccineRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+
 import java.time.Instant;
 import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -60,6 +62,12 @@ public class VaccineService {
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintsOnCreateOrUpdate(constraintException);
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while saving vaccine (check required fields or unique constraints).",
+                    "vaccine",
+                    "db.constraint"
+            );
         }
     }
 
@@ -93,7 +101,12 @@ public class VaccineService {
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintsOnCreateOrUpdate(constraintException);
-            throw constraintException;
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating vaccine (check required fields or unique constraints).",
+                    "vaccine",
+                    "db.constraint"
+            );
         }
     }
 

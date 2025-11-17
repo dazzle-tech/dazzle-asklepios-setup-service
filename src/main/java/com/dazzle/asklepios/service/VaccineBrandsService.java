@@ -43,6 +43,7 @@ public class VaccineBrandsService {
         if (incoming == null) {
             throw new BadRequestAlertException("Vaccine brand payload is required", "vaccineBrand", "payload.required");
         }
+
         VaccineBrands entity = VaccineBrands.builder()
                 .vaccine(refVaccine(vaccineId))
                 .name(incoming.getName())
@@ -59,9 +60,13 @@ public class VaccineBrandsService {
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintViolation(constraintException);
+            throw new BadRequestAlertException(
+                    "Database constraint violated while saving vaccine brand (check unique fields or required values).",
+                    "vaccineBrand",
+                    "db.constraint"
+            );
         }
     }
-
 
     public Optional<VaccineBrands> update(Long id, Long vaccineId, VaccineBrands incoming) {
         LOG.info("[UPDATE] Request to update VaccineBrand id={} vaccineId={} payload={}", id, vaccineId, incoming);
@@ -86,10 +91,14 @@ public class VaccineBrandsService {
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintViolation(constraintException);
-            throw constraintException;
+
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating vaccine brand (check unique fields or required values).",
+                    "vaccineBrand",
+                    "db.constraint"
+            );
         }
     }
-
 
     @Transactional(readOnly = true)
     public Page<VaccineBrands> findByVaccineId(Long vaccineId, Pageable pageable) {
@@ -130,6 +139,7 @@ public class VaccineBrandsService {
                     "unique.name.unit.volume"
             );
         }
+
         throw new BadRequestAlertException(
                 "Database constraint violated while saving vaccine brand (check unique fields or required values).",
                 "vaccineBrand",
