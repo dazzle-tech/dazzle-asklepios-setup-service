@@ -60,7 +60,6 @@ public class VaccineService {
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintsOnCreateOrUpdate(constraintException);
-            throw constraintException;
         }
     }
 
