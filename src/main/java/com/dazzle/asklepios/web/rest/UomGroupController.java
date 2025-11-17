@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.UomGroup;
 import com.dazzle.asklepios.domain.UomGroupUnit;
 import com.dazzle.asklepios.service.UomGroupService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.uom.UomGroupVM;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
@@ -47,13 +49,16 @@ public class UomGroupController {
         return service.updateGroup(id, body);
     }
     @GetMapping
-    public ResponseEntity<Page<UomGroup>> listGroups(@RequestParam(required = false) String name, @ParameterObject Pageable pageable) {
-
-        if (name != null && !name.isBlank()) {
-            return ResponseEntity.ok(service.searchByName(name.trim(), pageable));
-        }
-        return ResponseEntity.ok(service.listGroups(pageable));
+    public ResponseEntity<List<UomGroup>> listGroups(@RequestParam(required = false) String name, @ParameterObject Pageable pageable) {
+         Page<UomGroup> page;
+        if (name != null && !name.isBlank())
+            page = service.searchByName(name.trim(), pageable);
+        else
+            page = service.listGroups(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().toList(), headers, HttpStatus.OK);
     }
+
 
     @GetMapping("/{id}")
     public UomGroup getGroup(@PathVariable Long id) {
