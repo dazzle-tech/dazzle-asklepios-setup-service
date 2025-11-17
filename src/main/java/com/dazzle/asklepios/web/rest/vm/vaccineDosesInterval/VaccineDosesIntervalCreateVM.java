@@ -4,7 +4,7 @@ import com.dazzle.asklepios.domain.VaccineDosesInterval;
 import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Positive;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 public record VaccineDosesIntervalCreateVM(
         @NotNull Long fromDoseId,
         @NotNull Long toDoseId,
-        @NotNull @PositiveOrZero BigDecimal intervalBetweenDoses,
+        @NotNull @Positive BigDecimal intervalBetweenDoses,
         @NotNull AgeUnit unit,
         @NotNull Boolean isActive
 ) implements Serializable {

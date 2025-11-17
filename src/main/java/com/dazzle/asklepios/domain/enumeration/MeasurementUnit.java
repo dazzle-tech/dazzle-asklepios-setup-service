@@ -1,55 +1,70 @@
 package com.dazzle.asklepios.domain.enumeration;
 
-/**
- * Measurement units for laboratory results, medication dosages, and vaccine volumes.
- */
 public enum MeasurementUnit {
-    PERCENT, // %
-    INR,
-    RATIO,
-    INDEX,
-    MG,
-    G,
-    KG,
-    NG,
-    PG,
-    MG_PER_ML, // mg/mL
-    NG_PER_ML, // ng/mL
-    PG_PER_ML, // pg/mL
-    G_PER_L, // g/L
-    MCG_PER_ML, // mcg/mL
-    MG_PER_DL, // mg/dL
-    MG_PER_L, // mg/L
-    NG_PER_L, // ng/L
-    MMOL_PER_L, // mmol/L
-    MOL_PER_L, // mol/L
-    NMOL_PER_L, // nmol/L
-    PMOL_PER_L, // pmol/L
-    U_PER_L, // U/L
-    IU_PER_L, // IU/L
-    IU_PER_ML, // IU/mL
-    KAT_PER_L, // kat/L
-    CELLS_PER_L, // cells/L
-    G_PER_L_ABBREV, // G/L
-    MMHG,
-    KPA,
-    MEQ_PER_L, // mEq/L
+
+    PERCENT,                          // %
+    INTERNATIONAL_NORMALIZED_RATIO,   // INR
+    RATIO,                            // General ratio
+    INDEX,                            // General index
+
+    MILLIGRAM,                        // mg
+    GRAM,                             // g
+    KILOGRAM,                         // kg
+    NANOGRAM,                         // ng
+    PICOGRAM,                         // pg
+
+    MILLIGRAM_PER_MILLILITER,         // mg/mL
+    NANOGRAM_PER_MILLILITER,          // ng/mL
+    PICOGRAM_PER_MILLILITER,          // pg/mL
+
+    GRAM_PER_LITER,                   // g/L
+    MICROGRAM_PER_MILLILITER,         // mcg/mL
+    MILLIGRAM_PER_DECILITER,          // mg/dL
+    MILLIGRAM_PER_LITER,              // mg/L
+    NANOGRAM_PER_LITER,               // ng/L
+
+    MILLIMOLE_PER_LITER,              // mmol/L
+    MOLE_PER_LITER,                   // mol/L
+    NANOMOLE_PER_LITER,               // nmol/L
+    PICOMOLE_PER_LITER,               // pmol/L
+
+    UNIT_PER_LITER,                   // U/L
+    INTERNATIONAL_UNIT_PER_LITER,     // IU/L
+    INTERNATIONAL_UNIT_PER_MILLILITER,// IU/mL
+    KATAL_PER_LITER,                  // kat/L
+
+    CELLS_PER_LITER,                  // cells/L
+    GRAM_PER_LITER_ABBREVIATED,       // G/L
+
+    MILLIMETER_OF_MERCURY,            // mmHg
+    KILOPASCAL,                       // kPa
+
+    MILLIEQUIVALENT_PER_LITER,        // mEq/L
     PH,
-    S, // seconds
-    MOSM_PER_L, // mOsm/L
-    MOSM_PER_KG, // mOsm/kg
-    NG_PER_DL, // ng/dL
-    CFU_PER_ML, // CFU/mL
-    CELLS_PER_HPF, // cells/HPF
-    SG, // Specific Gravity
-    AU, // Arbitrary Units
-    MCG,
-    MCG_PER_DL, // mcg/dL
-    MCMOL_PER_L, // mcmol/L
-    CELLS_PER_MCL, // cells/mcL
-    M_PER_MCL, // M/mcL
-    MCG_PER_L, // mcg/L
-    CELSIUS, // °C
-    ML,
-    NO_UNIT // No Unit
+    SECOND,                           // s
+
+    MILLISMOLAL_PER_KILOGRAM,         // mOsm/kg
+    MILLISMOLAL_PER_LITER,            // mOsm/L
+
+    NANOGRAM_PER_DECILITER,           // ng/dL
+
+    COLONY_FORMING_UNIT_PER_ML,       // CFU/mL
+    CELLS_PER_HIGH_POWER_FIELD,       // cells/HPF
+
+    SPECIFIC_GRAVITY,                 // SG
+    ARBITRARY_UNITS,                  // AU
+
+    MICROGRAM,                        // mcg
+    MICROGRAM_PER_DECILITER,          // mcg/dL
+    MICROMOLE_PER_LITER,              // mcmol/L
+
+    CELLS_PER_MICROLITER,             // cells/mcL
+    MILLION_PER_MICROLITER,           // M/mcL
+
+    MICROGRAM_PER_LITER,              // mcg/L
+    DEGREE_CELSIUS,                   // °C
+
+    MILLILITER,                       // mL
+
+    NO_UNIT                           // no unit
 }

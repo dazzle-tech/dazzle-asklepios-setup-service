@@ -3,12 +3,14 @@ package com.dazzle.asklepios.web.rest.vm.vaccineDoses;
 import com.dazzle.asklepios.domain.VaccineDoses;
 import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DoseNumber;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record VaccineDosesUpdateVM(
         @NotNull Long id,
         @NotNull DoseNumber doseNumber,

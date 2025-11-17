@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -68,6 +69,7 @@ public class VaccineDosesIntervalController {
     @PutMapping("/vaccine-doses-interval/{id}")
     public ResponseEntity<VaccineDosesIntervalResponseVM> updateInterval(
             @PathVariable Long id,
+            @RequestParam Long vaccineId,
             @Valid @RequestBody VaccineDosesIntervalUpdateVM vm
     ) {
         LOG.debug("REST update VaccineDosesInterval id={} payload={}", id, vm);
@@ -80,7 +82,7 @@ public class VaccineDosesIntervalController {
                 .isActive(vm.isActive())
                 .build();
 
-        return vaccineDosesIntervalService.update(id, null, patch)
+        return vaccineDosesIntervalService.update(id, vaccineId, patch)
                 .map(VaccineDosesIntervalResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
