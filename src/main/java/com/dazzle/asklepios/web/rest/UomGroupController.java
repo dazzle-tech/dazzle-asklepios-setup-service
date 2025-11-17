@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.UomGroup;
 import com.dazzle.asklepios.domain.UomGroupUnit;
 import com.dazzle.asklepios.service.UomGroupService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.uom.UomGroupVM;
 import jakarta.validation.Valid;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -42,7 +43,7 @@ public class UomGroupController {
     }
 
     @PutMapping("/{id}")
-    public Optional<UomGroup> updateGroup(@PathVariable Long id, @RequestBody @Valid UomGroup body) {
+    public Optional<UomGroup> updateGroup(@PathVariable Long id, @RequestBody @Valid UomGroupVM body) {
         return service.updateGroup(id, body);
     }
     @GetMapping
