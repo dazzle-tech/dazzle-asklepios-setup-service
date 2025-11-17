@@ -68,7 +68,6 @@ public class VaccineDosesIntervalService {
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             handleConstraintViolation(constraintException);
-            throw constraintException;
         }
     }
 
