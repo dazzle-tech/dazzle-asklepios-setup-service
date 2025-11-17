@@ -30,7 +30,7 @@ public class CdtDentalActionController {
         LOG.debug("REST request to create CdtDentalAction: {}", vm);
 
         CdtDentalAction result =
-                service.create(vm.dentalActionId(), vm.cdtCode());
+                service.create(vm.dentalActionId(), vm.cdtId());
 
         return ResponseEntity
                 .created(URI.create("/api/setup/cdt-dental-action/" + result.getId()))
@@ -44,8 +44,8 @@ public class CdtDentalActionController {
     }
 
     @GetMapping("/cdt-dental-action/by-code/{cdtCode}")
-    public List<CdtDentalActionResponseVM> findByCode(@PathVariable String cdtCode) {
-        return service.findByCdtCode(cdtCode)
+    public List<CdtDentalActionResponseVM> findByCode(@PathVariable Long cdtId) {
+        return service.findByCdtCode(cdtId)
                 .stream().map(CdtDentalActionResponseVM::ofEntity).toList();
     }
 

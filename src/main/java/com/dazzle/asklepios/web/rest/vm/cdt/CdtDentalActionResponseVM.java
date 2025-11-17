@@ -9,13 +9,13 @@ import lombok.Builder;
 public record CdtDentalActionResponseVM(
         Long id,
         Long dentalActionId,
-        CdtCode cdtCode
+        CdtCode cdtId
 ) {
     public static CdtDentalActionResponseVM ofEntity(CdtDentalAction entity) {
         return CdtDentalActionResponseVM.builder()
                 .id(entity.getId())
                 .dentalActionId(entity.getDentalAction() != null ? entity.getDentalAction().getId() : null)
-                .cdtCode(entity.getCdtCode())
+                .cdtId(entity.getCdtId())
                 .build();
     }
 }

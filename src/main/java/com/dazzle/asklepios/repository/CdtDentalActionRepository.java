@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface CdtDentalActionRepository extends JpaRepository<CdtDentalAction, Long> {
     List<CdtDentalAction> findByDentalAction_Id(Long dentalActionId);
-    List<CdtDentalAction> findByCdtCode_Code(String cdtCode);
+    List<CdtDentalAction> findByCdtId_Id(Long cdtId);
 }
 

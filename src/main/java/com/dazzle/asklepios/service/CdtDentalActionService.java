@@ -26,9 +26,9 @@ public class CdtDentalActionService {
     private final DentalActionRepository dentalActionRepository;
     private final CdtCodeRepository cdtCodeRepository;
 
-    public CdtDentalAction create(Long dentalActionId, String cdtCodeStr) {
+    public CdtDentalAction create(Long dentalActionId, Long cdtIdStr) {
 
-        LOG.debug("Create CdtDentalAction: dentalActionId={}, cdtCode={}", dentalActionId, cdtCodeStr);
+        LOG.debug("Create CdtDentalAction: dentalActionId={}, cdtId={}", dentalActionId, cdtIdStr);
 
         // Load existing dentalAction
         DentalAction dentalAction = dentalActionRepository.findById(dentalActionId)
@@ -40,18 +40,18 @@ public class CdtDentalActionService {
         ));
 
         // Load existing CDT code
-        CdtCode cdtCode = cdtCodeRepository.findByCode(cdtCodeStr)
+        CdtCode cdtCode = cdtCodeRepository.findById(cdtIdStr)
                 .orElseThrow(() ->
                        new BadRequestAlertException(
                                 "notExist" ,
                                 "cdtdentalaction",
-                               " CDT Code does not exist: " + cdtCodeStr
+                               " CDT Code does not exist: " + cdtIdStr
                         ) );
 
         // Build entity
         CdtDentalAction entity = new CdtDentalAction();
         entity.setDentalAction(dentalAction);
-        entity.setCdtCode(cdtCode);
+        entity.setCdtId(cdtCode);
 
         // Save link properly
         return repository.save(entity);
@@ -61,8 +61,8 @@ public class CdtDentalActionService {
         return repository.findByDentalAction_Id(dentalActionId);
     }
 
-    public List<CdtDentalAction> findByCdtCode(String cdtCode) {
-        return repository.findByCdtCode_Code(cdtCode);
+    public List<CdtDentalAction> findByCdtCode(Long cdtId) {
+        return repository.findByCdtId_Id(cdtId);
     }
 
     public void delete(Long id) {

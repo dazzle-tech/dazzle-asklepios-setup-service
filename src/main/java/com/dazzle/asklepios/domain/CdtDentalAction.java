@@ -31,10 +31,10 @@ public class CdtDentalAction implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dental_action_id", foreignKey = @ForeignKey(name = "fk_cdt_dental_action"))
+    @JoinColumn(name = "dental_action_id")
     private DentalAction dentalAction;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cdt_code", referencedColumnName = "code", foreignKey = @ForeignKey(name = "fk_cdt_dental_action_code"))
-    private CdtCode cdtCode;
+    @JoinColumn(name = "cdt_id", referencedColumnName = "id")
+    private CdtCode cdtId;
 }

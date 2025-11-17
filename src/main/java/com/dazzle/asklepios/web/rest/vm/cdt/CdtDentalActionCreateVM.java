@@ -10,12 +10,12 @@ import lombok.Builder;
 @Builder
 public record CdtDentalActionCreateVM(
         @NotNull Long dentalActionId,
-        @NotNull String cdtCode
+        @NotNull Long cdtId
 ) {
     public CdtDentalAction toEntity() {
         return CdtDentalAction.builder()
                 .dentalAction(DentalAction.builder().id(dentalActionId).build())
-                .cdtCode(CdtCode.builder().code(cdtCode).build())
+                .cdtId(CdtCode.builder().id(cdtId).build())
                 .build();
     }
 }
