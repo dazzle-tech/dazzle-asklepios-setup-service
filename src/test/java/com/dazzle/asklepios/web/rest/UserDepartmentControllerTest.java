@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.service.UserDepartmentService;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -56,20 +57,32 @@ class UserDepartmentControllerTest {
                 .andExpect(jsonPath("$.isActive").value(true));
     }
 
+
+
     @Test
     void testGetByUser() throws Exception {
-        var r2 = UserDepartment.builder()
-                .id(5L).user(user(2L)).department(dept(5001L)).isActive(false).build();
-        when(service.getUserDepartmentsByUser(2L)).thenReturn(List.of(r2));
+        // given
+        UserDepartmentResponseVM r2 = new UserDepartmentResponseVM(
+                5L,    // id
+                2L,    // userId
+                10L,   // facilityId (any test value)
+                5001L, // departmentId
+                false, // isActive
+                false  // isDefault
+        );
 
-        mockMvc.perform(get("/api/setup/user-departments/user/{userId}", 5L))
+        when(service.getUserDepartmentsByUser(2L))
+                .thenReturn(List.of(r2));
+
+        // when + then
+        mockMvc.perform(get("/api/setup/user-departments/user/{userId}", 2L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(5))
-                .andExpect(jsonPath("$[0].user.id").value(2))
-                .andExpect(jsonPath("$[0].department.id").value(5001))
-                .andExpect(jsonPath("$[0].isActive").value(true));
-
+                .andExpect(jsonPath("$[0].userId").value(2))
+                .andExpect(jsonPath("$[0].departmentId").value(5001))
+                .andExpect(jsonPath("$[0].isActive").value(false));
     }
+
 
     @Test
     void testGetByUser_NotFound() throws Exception {

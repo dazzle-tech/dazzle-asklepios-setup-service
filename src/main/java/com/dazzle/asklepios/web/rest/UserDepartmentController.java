@@ -54,13 +54,10 @@ public class UserDepartmentController {
     @GetMapping("/user-departments/user/{userId}")
     public ResponseEntity<List<UserDepartmentResponseVM>> getByUser(@PathVariable Long userId) {
         log.debug("REST request to get UserFacilityDepartments by userId : {}", userId);
-        List<UserDepartmentResponseVM> result = userDepartmentService.getUserDepartmentsByUser(userId)
-                .stream()
-                .map(UserDepartmentResponseVM::ofEntity)
-                .toList();
-        ;
+        List<UserDepartmentResponseVM> result = userDepartmentService.getUserDepartmentsByUser(userId);
         return ResponseEntity.ok(result);
     }
+
 
     /**
      * GET  /api/setup/user-departments/exists : Check if a link exists.
