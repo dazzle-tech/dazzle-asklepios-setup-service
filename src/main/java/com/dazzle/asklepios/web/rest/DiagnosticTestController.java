@@ -114,6 +114,38 @@ public class DiagnosticTestController {
         return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
+
+    /**
+     * Search diagnostic tests by type AND name (case-insensitive).
+     */
+    @GetMapping("/diagnostic-test/by-type-and-name/{type}/{name}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
+            @PathVariable TestType type,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST request to search DiagnosticTests by type={} and name='{}' page={}", type, name, pageable);
+
+        Page<DiagnosticTest> page = service.findByTypeAndName(type, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        LOG.debug("REST found {} DiagnosticTests with type={} and name='{}'",
+                page.getTotalElements(), type, name);
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(DiagnosticTestResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     /**
      * Get single diagnostic test by id.
      */

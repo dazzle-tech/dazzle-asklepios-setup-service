@@ -27,4 +27,7 @@ public class CatalogCreateVM {
     @NotNull
     private Long departmentId;
 
+    @NotNull
+    private Long facilityId;
+
 }

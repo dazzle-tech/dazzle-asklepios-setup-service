@@ -51,9 +51,14 @@ public class Catalog implements Serializable {
     @Column(name = "type", nullable = false, length = 50)
     private TestType type;
 
-    @NotNull
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_catalog_department"))
     private Department department;
+
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "facility_id", nullable = false, foreignKey = @ForeignKey(name = "fk_catalog_facility"))
+    private Facility facility;
 
 }

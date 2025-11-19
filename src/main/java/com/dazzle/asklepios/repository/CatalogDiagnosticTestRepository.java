@@ -10,5 +10,6 @@ public interface CatalogDiagnosticTestRepository extends JpaRepository<CatalogDi
     Page<CatalogDiagnosticTest> findByCatalog_Id(Long catalogId, Pageable pageable);
     boolean existsByCatalog_IdAndTest_Id(Long catalogId, Long testId);
     void deleteByCatalog_IdAndTest_Id(Long catalogId, Long testId);
+    void deleteByCatalog_Id(Long catalogId);
     long countByTest(DiagnosticTest test);
 }

@@ -20,6 +20,8 @@ public class CatalogResponseVM {
     private TestType type;
     private Long departmentId;
     private String departmentName;
+    private Long facilityId;
+    private String facilityName;
 
     public static CatalogResponseVM ofEntity(Catalog c) {
         return CatalogResponseVM.builder()
@@ -29,6 +31,8 @@ public class CatalogResponseVM {
                 .type(c.getType())
                 .departmentId(c.getDepartment().getId())
                 .departmentName(c.getDepartment().getName())
+                .facilityId(c.getFacility().getId())
+                .facilityName(c.getFacility().getName())
                 .build();
     }
 }

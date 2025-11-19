@@ -89,6 +89,10 @@ public class DiagnosticTestService {
         return repository.findByNameContainingIgnoreCase(name, pageable);
     }
 
+    public Page<DiagnosticTest> findByTypeAndName(TestType type, String name, Pageable pageable) {
+        return repository.findByTypeAndNameContainingIgnoreCase(type, name, pageable);
+    }
+
     @Transactional(readOnly = true)
     public Optional<DiagnosticTest> findOne(Long id) {
         return repository.findById(id);

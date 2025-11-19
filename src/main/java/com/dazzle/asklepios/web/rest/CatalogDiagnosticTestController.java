@@ -67,15 +67,6 @@ public class CatalogDiagnosticTestController {
         return ResponseEntity.noContent().build();
     }
 
-    /** DELETE a single link by id */
-    @DeleteMapping("/catalog-diagnostic-test/{id}")
-    public ResponseEntity<Void> deleteLink(@PathVariable Long id) {
-        // small passthrough using repository if you expose it in service; or keep here for clarity:
-        // catalogDiagnosticTestRepository.deleteById(id);
-        // To keep layering consistent, add a small service method and call it:
-        // catalogService.deleteCatalogDiagnosticTest(id);
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build(); // implement in service if you want
-    }
 
     /** DELETE by composite keys (catalog + test) */
     @DeleteMapping("/catalog/{catalogId:\\d+}/tests/{testId:\\d+}")

@@ -4,11 +4,13 @@ import com.dazzle.asklepios.domain.Catalog;
 import com.dazzle.asklepios.domain.CatalogDiagnosticTest;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.CatalogDiagnosticTestRepository;
 import com.dazzle.asklepios.repository.CatalogRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
+import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
@@ -27,19 +29,24 @@ import java.util.Optional;
 public class CatalogService {
 
     private final CatalogRepository catalogRepository;
-    private final DepartmentsRepository departmentRepository;     // assume exists
-    private final DiagnosticTestRepository diagnosticTestRepository; // assume exists
+    private final DepartmentsRepository departmentRepository;
+    private final FacilityRepository facilityRepository;
+    private final DiagnosticTestRepository diagnosticTestRepository;
     private final CatalogDiagnosticTestRepository catalogDiagnosticTestRepository;
 
     public Catalog create(CatalogCreateVM vm) {
         Department dept = departmentRepository.findById(vm.getDepartmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Department not found: " + vm.getDepartmentId()));
 
+        Facility facil = facilityRepository.findById(vm.getFacilityId())
+                .orElseThrow(() -> new EntityNotFoundException("Facility not found: " + vm.getFacilityId()));
+
         Catalog c = Catalog.builder()
                 .name(vm.getName())
                 .description(vm.getDescription())
                 .type(vm.getType())
                 .department(dept)
+                .facility(facil)
                 .build();
 
         return catalogRepository.save(c);
@@ -54,6 +61,11 @@ public class CatalogService {
                 Department dept = departmentRepository.findById(vm.getDepartmentId())
                         .orElseThrow(() -> new EntityNotFoundException("Department not found: " + vm.getDepartmentId()));
                 c.setDepartment(dept);
+            }
+            if (vm.getFacilityId() != null) {
+                Facility facil = facilityRepository.findById(vm.getFacilityId())
+                        .orElseThrow(() -> new EntityNotFoundException("Facility not found: " + vm.getFacilityId()));
+                c.setFacility(facil);
             }
             return catalogRepository.save(c);
         });
@@ -102,6 +114,11 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Page<CatalogDiagnosticTest> listTests(Long catalogId, Pageable pageable) {
         return catalogDiagnosticTestRepository.findByCatalog_Id(catalogId, pageable);
+    }
+
+    public void removeCatalog(Long catalogId) {
+        catalogRepository.deleteById(catalogId);
+        catalogDiagnosticTestRepository.deleteByCatalog_Id(catalogId);
     }
 
     public void removeTest(Long catalogId, Long testId) {
