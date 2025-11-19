@@ -53,12 +53,12 @@ public class Catalog implements Serializable {
 
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_catalog_department"))
+    @JoinColumn(name = "department_id", foreignKey = @ForeignKey(name = "fk_catalog_department"))
     private Department department;
 
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "facility_id", nullable = false, foreignKey = @ForeignKey(name = "fk_catalog_facility"))
+    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_catalog_facility"))
     private Facility facility;
 
 }

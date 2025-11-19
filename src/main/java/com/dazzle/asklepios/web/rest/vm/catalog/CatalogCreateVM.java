@@ -24,10 +24,8 @@ public class CatalogCreateVM {
     @NotNull
     private TestType type;
 
-    @NotNull
     private Long departmentId;
 
-    @NotNull
     private Long facilityId;
 
 }

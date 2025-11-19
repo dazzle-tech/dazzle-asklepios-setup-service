@@ -29,10 +29,10 @@ public class CatalogResponseVM {
                 .name(c.getName())
                 .description(c.getDescription())
                 .type(c.getType())
-                .departmentId(c.getDepartment().getId())
-                .departmentName(c.getDepartment().getName())
-                .facilityId(c.getFacility().getId())
-                .facilityName(c.getFacility().getName())
+                .departmentId(c.getDepartment() != null ? c.getDepartment().getId() : null)
+                .departmentName(c.getDepartment() != null ? c.getDepartment().getName() : null)
+                .facilityId(c.getFacility() != null ? c.getFacility().getId() : null)
+                .facilityName(c.getFacility() != null ? c.getFacility().getName() : null)
                 .build();
     }
 }
