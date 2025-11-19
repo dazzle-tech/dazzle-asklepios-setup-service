@@ -84,11 +84,22 @@ public class BrandMedicationSubstituteService {
         return created;
     }
 
-    @Transactional(readOnly = true)
-    public List<BrandMedication> findAllByBrandOrAlternative(Long brandMedicationId) {
-        LOG.debug("Request to get BrandMedication by brand or alternative brand brandMedicationId={}", brandMedicationId);
-        return substituteRepository.findBrandMedicationsByBrandOrAlternative(brandMedicationId);
+    public List<BrandMedication> findBrandMedicationsByBrandOrAlternative(long brandMedicationId) {
+        List<BrandMedicationSubstitute> pairs =
+                substituteRepository.findPairsByBrandOrAlternative(brandMedicationId);
+
+        return pairs.stream()
+                .map(bms -> {
+                    if (bms.getBrandMedication().getId().equals(brandMedicationId)) {
+                        return bms.getAlternativeBrandMedication();
+                    } else {
+                        return bms.getBrandMedication();
+                    }
+                })
+                .distinct()
+                .toList();
     }
+
 
     public void delete(Long id) {
         LOG.debug("Request to delete BrandMedicationSubstitute : {}", id);
@@ -106,5 +117,10 @@ public class BrandMedicationSubstituteService {
     public int removeSubstituteLink(long brandId, long altBrandId) {
         return substituteRepository.deleteLinkBetween(brandId, altBrandId);
     }
+
+//    public List<BrandMedication> findBrandsWithSameActiveIngredients(Long brandId) {
+//        LOG.debug("Request to get BrandMedications that share active ingredients with brandId={}", brandId);
+//        return brandRepository.findAllBrandMedicationsSharingActiveIngredients(brandId);
+//    }
 
 }

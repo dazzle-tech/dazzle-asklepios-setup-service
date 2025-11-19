@@ -55,7 +55,7 @@ public class BrandMedicationSubstituteController {
     @GetMapping("/brand-medication-substitute/by-brand/{brandId:\\d+}")
     public ResponseEntity<List<BrandMedicationResponseVM>> listByBrand(@PathVariable Long brandId) {
         LOG.debug("REST list BrandMedicationSubstitute by brandId={}", brandId);
-        List<BrandMedicationResponseVM> list = service.findAllByBrandOrAlternative(brandId)
+        List<BrandMedicationResponseVM> list = service.findBrandMedicationsByBrandOrAlternative(brandId)
                 .stream()
                 .map(BrandMedicationResponseVM::ofEntity)
                 .toList();
@@ -87,5 +87,18 @@ public class BrandMedicationSubstituteController {
             return ResponseEntity.notFound().build(); // 404
         }
     }
+    /**
+     * {@code GET brand-medication-substitute/same-active-ingredient/by-brand/{brandId}} :
+     * List brand medication where the given brand participates active ingredient.
+     */
+//    @GetMapping("/brand-medication-substitute/same-active-ingredient/by-brand/{brandId:\\d+}")
+//    public ResponseEntity<List<BrandMedicationResponseVM>> listOfBrandWithSameActiveIngredients(@PathVariable Long brandId) {
+//        LOG.debug("REST list band medication by brand id={}", brandId);
+//        List<BrandMedicationResponseVM> list = service.findBrandsWithSameActiveIngredients(brandId)
+//                .stream()
+//                .map(BrandMedicationResponseVM::ofEntity)
+//                .toList();
+//        return ResponseEntity.ok(list);
+//    }
 }
 

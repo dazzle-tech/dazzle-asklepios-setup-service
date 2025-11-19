@@ -16,4 +16,27 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
     @Modifying
     @Query("update UserDepartment ud set ud.isActive = ?2 where ud.department.id =?1")
     int updateActiveByDepartmentId( Long departmentId, boolean active);
+
+    boolean existsByUserIdAndDepartmentId(Long userId, Long departmentId);
+
+    boolean existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(Long userId, Long facilityId);
+
+    Optional<UserDepartment> findFirstByUserIdAndDepartment_Facility_IdAndIsDefaultTrue(Long userId, Long facilityId);
+
+    Optional<UserDepartment> findFirstByUserIdAndDepartment_Facility_IdAndIsActiveTrueOrderByIdAsc(Long userId, Long facilityId);
+
+    List<UserDepartment> findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(Long userId, Long facilityId);
+
+    @Modifying
+    @Query("""
+           UPDATE UserDepartment ud
+              SET ud.isDefault = false
+            WHERE ud.user.id = :userId
+              AND ud.isActive = true
+              AND ud.isDefault = true
+              AND ud.department.facility.id = :facilityId
+           """)
+    void clearDefaultForUserActiveInFacility(Long userId, Long facilityId);
+
 }
+

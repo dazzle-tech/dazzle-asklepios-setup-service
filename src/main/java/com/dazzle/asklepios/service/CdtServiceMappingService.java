@@ -5,7 +5,6 @@ import com.dazzle.asklepios.domain.CdtServiceMapping;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.repository.CdtCodeRepository;
 import com.dazzle.asklepios.repository.CdtServiceMappingRepository;
-import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.service.dto.CdtServiceMappingSyncResultDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -27,17 +26,20 @@ public class CdtServiceMappingService {
 
     private final CdtServiceMappingRepository mappingRepository;
     private final CdtCodeRepository cdtRepository;
-    private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<Long> getLinkedServiceIds(Long cdtId) {
-        return mappingRepository.findServiceIdsByCdtId(cdtId);
+        return mappingRepository.findByCdtCode_Id(cdtId).stream()
+                .map(m -> m.getService().getId())
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ServiceSetup> getLinkedServices(Long cdtId) {
-        return mappingRepository.findServicesByCdtId(cdtId);
+        return mappingRepository.findByCdtCode_Id(cdtId).stream()
+                .map(CdtServiceMapping::getService)
+                .toList();
     }
 
     public CdtServiceMappingSyncResultDTO sync(Long cdtId, List<Long> serviceIds) {
@@ -48,23 +50,24 @@ public class CdtServiceMappingService {
         CdtCode cdtCode = cdtRepository.findById(cdtId)
                 .orElseThrow(() -> new NotFoundAlertException("CDT not found: " + cdtId, "cdtService", "cdt.notfound"));
 
-        List<Long> existingServiceIds = mappingRepository.findServiceIdsByCdtId(cdtId);
+        List<Long> existingServiceIds = mappingRepository.findByCdtCode_Id(cdtId).stream()
+                .map(m -> m.getService().getId())
+                .toList();
         Integer beforeCount = existingServiceIds.size();
 
         Set<Long> desiredServiceIds = (serviceIds == null) ? Set.of() : new HashSet<>(serviceIds);
 
         Integer removedCount;
         if (desiredServiceIds.isEmpty()) {
-            mappingRepository.deleteAllForCdt(cdtId);
+            mappingRepository.deleteAllByCdtCode_Id(cdtId);
             removedCount = beforeCount;
         } else {
-            mappingRepository.deleteExtrasForCdtNotIn(cdtId, desiredServiceIds);
+            mappingRepository.deleteByCdtCode_IdAndService_IdNotIn(cdtId, desiredServiceIds);
             removedCount = (int) existingServiceIds.stream()
                     .filter(id -> !desiredServiceIds.contains(id))
                     .count();
         }
 
-       
         Integer addedCount = 0;
         for (Long serviceId : desiredServiceIds) {
             if (!existingServiceIds.contains(serviceId)) {
@@ -77,7 +80,7 @@ public class CdtServiceMappingService {
             }
         }
 
-        Integer afterCount = mappingRepository.findServiceIdsByCdtId(cdtId).size();
+        Integer afterCount = mappingRepository.findByCdtCode_Id(cdtId).size();
         log.info("[CDT-SYNC] cdtId={} added={} removed={} after={}", cdtId, addedCount, removedCount, afterCount);
 
         return new CdtServiceMappingSyncResultDTO(beforeCount, addedCount, removedCount, afterCount);

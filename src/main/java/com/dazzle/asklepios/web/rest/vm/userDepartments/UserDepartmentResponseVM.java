@@ -11,7 +11,8 @@ public record UserDepartmentResponseVM(
         Long userId,
         Long facilityId,
         Long departmentId,
-        Boolean isActive
+        Boolean isActive,
+        Boolean isDefault
 ) implements Serializable {
 
     public static UserDepartmentResponseVM ofEntity(UserDepartment entity) {
@@ -22,7 +23,8 @@ public record UserDepartmentResponseVM(
                         ? entity.getDepartment().getFacility().getId()
                         : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
-                entity.getIsActive()
+                entity.getIsActive(),
+                entity.getIsDefault()
         );
     }
 }

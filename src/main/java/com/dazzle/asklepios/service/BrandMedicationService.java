@@ -195,6 +195,4 @@ public class BrandMedicationService {
         LOG.debug("Request to get BrandMedications by isActive={} {}", isActive, pageable);
         return brandMedicationRepository.findByIsActive(isActive, pageable);
     }
-    //TODO: Retrieve all brand medications that share the same active ingredient as the current brand medication
-
 }
