@@ -7,6 +7,7 @@ import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -77,10 +78,13 @@ public class UserDepartmentService {
 
 
     @Transactional(readOnly = true)
-    public List<UserDepartment> getUserDepartmentsByUser(Long userId) {
-        LOG.debug("List UFDs by userId={}", userId);
-        return userDepartmentRepository.findByUserId(userId);
+    public List<UserDepartmentResponseVM> getUserDepartmentsByUser(Long userId) {
+        return userDepartmentRepository.findByUserId(userId)
+                .stream()
+                .map(UserDepartmentResponseVM::ofEntity)
+                .toList();
     }
+
 
     @Transactional(readOnly = true)
     public boolean exists(Long userId, Long departmentId) {
