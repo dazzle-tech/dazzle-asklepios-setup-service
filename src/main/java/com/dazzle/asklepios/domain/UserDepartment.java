@@ -28,7 +28,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Data
+@EqualsAndHashCode(callSuper = false)
 public class UserDepartment extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
