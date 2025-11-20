@@ -96,10 +96,7 @@ public class UserDepartmentController {
 
         log.debug("REST request to get active UserDepartments by userId={} facilityId={}", userId, facilityId);
         List<UserDepartmentResponseVM> result = userDepartmentService
-                .getActiveUserDepartmentsByUserInFacility(userId, facilityId)
-                .stream()
-                .map(UserDepartmentResponseVM::ofEntity)
-                .toList();
+                .getActiveUserDepartmentsByUserInFacility(userId, facilityId);
         return ResponseEntity.ok(result);
     }
 
