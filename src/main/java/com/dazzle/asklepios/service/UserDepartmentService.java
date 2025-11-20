@@ -85,7 +85,6 @@ public class UserDepartmentService {
                 .toList();
     }
 
-
     @Transactional(readOnly = true)
     public boolean exists(Long userId, Long departmentId) {
         return userDepartmentRepository.findByUserIdAndDepartmentId(userId, departmentId).isPresent();
@@ -114,9 +113,12 @@ public class UserDepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserDepartment> getActiveUserDepartmentsByUserInFacility(Long userId, Long facilityId) {
+    public List<UserDepartmentResponseVM> getActiveUserDepartmentsByUserInFacility(Long userId, Long facilityId) {
         LOG.debug("List active user departments by userId={} facilityId={}", userId, facilityId);
-        return userDepartmentRepository.findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(userId, facilityId);
+        return userDepartmentRepository.findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(userId, facilityId)
+                .stream()
+                .map(UserDepartmentResponseVM::ofEntity)
+                .toList();
     }
 
     @Transactional(readOnly = true)
