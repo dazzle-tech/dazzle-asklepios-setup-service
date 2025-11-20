@@ -42,7 +42,7 @@ public class ActiveIngredientFoodInteractions extends AbstractAuditingEntity<Lon
     @Column(nullable = false, length = 50)
     private String severity;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     private String description;
 
 }
