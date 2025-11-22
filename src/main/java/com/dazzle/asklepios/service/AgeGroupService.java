@@ -225,9 +225,9 @@ public class AgeGroupService {
             case MONTHS -> value.longValue() * 30;
             case WEEKS -> value.longValue() * 7;
             case DAYS -> value.longValue();
-            case HOURS -> value.longValue() / 24;
-};
-}
+            case HOURS -> value.longValue()/24;
+        };
+    }
 
 
 
