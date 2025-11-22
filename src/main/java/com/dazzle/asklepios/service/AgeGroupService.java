@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.AgeGroup;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.repository.AgeGroupRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -17,7 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,6 +54,7 @@ public class AgeGroupService {
                 .toAgeUnit(incoming.getToAgeUnit())
                 .facility(refFacility(facilityId))
                 .build();
+
         try {
             AgeGroup saved = ageGroupRepository.saveAndFlush(entity);
             LOG.info("Successfully created AgeGroup id={} label='{}' for facilityId={}", saved.getId(), saved.getAgeGroup(), facilityId);
@@ -60,6 +63,7 @@ public class AgeGroupService {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
             LOG.error("Database constraint violation while creating AgeGroup: {}", message, ex);
+
             if (message.contains("uq_facility_age_range") ||
                     message.contains("uq_facility_age_group_label") ||
                     message.contains("unique constraint") ||
@@ -71,6 +75,7 @@ public class AgeGroupService {
                         "unique.facility.ageGroup"
                 );
             }
+
             throw new BadRequestAlertException(
                     "Database constraint violated while creating age group (check facility, unique name, or required fields).",
                     "ageGroup",
@@ -81,19 +86,24 @@ public class AgeGroupService {
 
     public Optional<AgeGroup> update(Long id, Long facilityId, AgeGroup incoming) {
         LOG.info("[UPDATE] Request to update AgeGroup id={} facilityId={} payload={}", id, facilityId, incoming);
+
         if (incoming == null) {
             throw new BadRequestAlertException("AgeGroup payload is required", "ageGroup", "payload.required");
         }
+
         AgeGroup existing = ageGroupRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("AgeGroup not found with id " + id, "ageGroup", "notfound"));
+
         if (facilityId != null && (existing.getFacility() == null || !facilityId.equals(existing.getFacility().getId()))) {
             throw new BadRequestAlertException("AgeGroup does not belong to the provided facility", "ageGroup", "facility.mismatch");
         }
+
         existing.setAgeGroup(incoming.getAgeGroup());
         existing.setFromAge(incoming.getFromAge());
         existing.setToAge(incoming.getToAge());
         existing.setFromAgeUnit(incoming.getFromAgeUnit());
         existing.setToAgeUnit(incoming.getToAgeUnit());
+
         try {
             AgeGroup updated = ageGroupRepository.saveAndFlush(existing);
             LOG.info("Successfully updated AgeGroup id={} (label='{}')", updated.getId(), updated.getAgeGroup());
@@ -102,6 +112,7 @@ public class AgeGroupService {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
             LOG.error("Database constraint violation while updating AgeGroup: {}", message, ex);
+
             if (message.contains("uq_facility_age_range") ||
                     message.contains("uq_facility_age_group_label") ||
                     message.contains("unique constraint") ||
@@ -113,6 +124,7 @@ public class AgeGroupService {
                         "unique.facility.ageGroup"
                 );
             }
+
             throw new BadRequestAlertException(
                     "Database constraint violated while updating age group (check facility, unique name, or required fields).",
                     "ageGroup",
@@ -126,7 +138,6 @@ public class AgeGroupService {
         LOG.debug("Fetching paged AgeGroups (all facilities) pageable={}", pageable);
         return ageGroupRepository.findAll(pageable);
     }
-
 
     @Transactional(readOnly = true)
     public Page<AgeGroup> findByFacility(Long facilityId, Pageable pageable) {
@@ -155,7 +166,6 @@ public class AgeGroupService {
         return ageGroupRepository.findByToAge(toAge, pageable);
     }
 
-
     @Transactional(readOnly = true)
     public Optional<AgeGroup> findOne(Long id) {
         LOG.debug("Fetching single AgeGroup by id={}", id);
@@ -179,18 +189,46 @@ public class AgeGroupService {
             ageGroupRepository.deleteById(id);
             LOG.info("Successfully deleted AgeGroup with id={}", id);
             return true;
-        } catch (DataIntegrityViolationException | JpaSystemException ex) {
-            Throwable root = getRootCause(ex);
-            String message = (root != null ? root.getMessage() : ex.getMessage());
-            LOG.error("Database constraint violation while deleting AgeGroup id={}: {}", id, message, ex);
-            return false;
         } catch (Exception ex) {
-            LOG.error("Unexpected error occurred while deleting AgeGroup id={}: {}", id, ex.getMessage(), ex);
+            LOG.error("Error deleting AgeGroup id={}", id, ex);
             return false;
         }
     }
 
     private Facility refFacility(Long facilityId) {
         return entityManager.getReference(Facility.class, facilityId);
+    }
+
+
+    @Transactional(readOnly = true)
+    public AgeGroup findAgeGroupByBirthDate(LocalDate birthDate) {
+
+        if (birthDate == null) {
+            throw new BadRequestAlertException("Birth date is required", "ageGroup", "birthdate.required");
+        }
+
+        long ageInDays = ChronoUnit.DAYS.between(birthDate, LocalDate.now());
+
+        List<AgeGroup> groups = ageGroupRepository.findAll(); // بدون facility
+
+        return groups.stream()
+                .filter(g -> {
+                    long fromDays = convertToDays(g.getFromAge(), g.getFromAgeUnit());
+                    long toDays = convertToDays(g.getToAge(), g.getToAgeUnit());
+                    return ageInDays >= fromDays && ageInDays <= toDays;
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    private long convertToDays(BigDecimal value, AgeUnit unit) {
+        return switch (unit) {
+            case YEARS -> value.longValue() * 365;
+            case MONTHS -> value.longValue() * 30;
+            case WEEKS -> value.longValue() * 7;
+            case DAYS -> value.longValue();
+            case HOURS -> value.longValue() / 24;
+        };
     }
 }

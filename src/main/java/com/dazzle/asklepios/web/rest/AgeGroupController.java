@@ -13,22 +13,16 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -41,6 +35,7 @@ public class AgeGroupController {
     public AgeGroupController(AgeGroupService ageGroupService) {
         this.ageGroupService = ageGroupService;
     }
+
 
     @PostMapping("/age-group")
     public ResponseEntity<AgeGroupResponseVM> createAgeGroup(
@@ -65,6 +60,7 @@ public class AgeGroupController {
                 .body(body);
     }
 
+
     @PutMapping("/age-group/{id}")
     public ResponseEntity<AgeGroupResponseVM> updateAgeGroup(
             @PathVariable Long id,
@@ -87,14 +83,17 @@ public class AgeGroupController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+
     @GetMapping("/age-group")
     public ResponseEntity<List<AgeGroupResponseVM>> getAllAgeGroups(
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list ALL AgeGroups (paged, no facility filter)");
         final Page<AgeGroup> page = ageGroupService.findAll(pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         return new ResponseEntity<>(
                 page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
                 headers,
@@ -109,41 +108,52 @@ public class AgeGroupController {
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list AgeGroups by facilityId={} pageable={}", facilityId, pageable);
+
         final Page<AgeGroup> page = ageGroupService.findByFacility(facilityId, pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         return new ResponseEntity<>(
                 page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
                 headers,
                 HttpStatus.OK
         );
     }
+
 
     @GetMapping("/age-group/by-label/{label}")
     public ResponseEntity<List<AgeGroupResponseVM>> getByAgeGroupLabel(
             @PathVariable("label") AgeGroupType label,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by label='{}' (no facility filter) pageable={}", label, pageable);
+        LOG.debug("REST list AgeGroups by label='{}' (no facility filter)", label);
+
         Page<AgeGroup> page = ageGroupService.findByAgeGroup(label, pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         return new ResponseEntity<>(
                 page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
                 headers,
                 HttpStatus.OK
         );
     }
+
 
     @GetMapping("/age-group/by-from-age/{fromAge}")
     public ResponseEntity<List<AgeGroupResponseVM>> getByFromAge(
             @PathVariable BigDecimal fromAge,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by fromAge='{}' (no facility filter) pageable={}", fromAge, pageable);
+        LOG.debug("REST list AgeGroups by fromAge='{}'", fromAge);
+
         Page<AgeGroup> page = ageGroupService.findByFromAge(fromAge, pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         return new ResponseEntity<>(
                 page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
                 headers,
@@ -151,21 +161,27 @@ public class AgeGroupController {
         );
     }
 
+
     @GetMapping("/age-group/by-to-age/{toAge}")
     public ResponseEntity<List<AgeGroupResponseVM>> getByToAge(
             @PathVariable BigDecimal toAge,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list AgeGroups by toAge='{}' (no facility filter) pageable={}", toAge, pageable);
+        LOG.debug("REST list AgeGroups by toAge='{}'", toAge);
+
         Page<AgeGroup> page = ageGroupService.findByToAge(toAge, pageable);
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
         return new ResponseEntity<>(
                 page.getContent().stream().map(AgeGroupResponseVM::ofEntity).toList(),
                 headers,
                 HttpStatus.OK
         );
     }
+
+
     @DeleteMapping("/age-group/{id}")
     public ResponseEntity<Void> deleteAgeGroup(@PathVariable Long id) {
         LOG.debug("REST request to delete AgeGroup id={}", id);
@@ -174,12 +190,28 @@ public class AgeGroupController {
 
         if (deleted) {
             LOG.info("Successfully deleted AgeGroup id={}", id);
-            return ResponseEntity.noContent().build(); 
+            return ResponseEntity.noContent().build();
         } else {
-            LOG.warn("Failed to delete AgeGroup id={}, not found or constraint violation", id);
+            LOG.warn("Failed to delete AgeGroup id={}", id);
             return ResponseEntity.notFound().build();
         }
     }
 
+
+    @GetMapping("/age-group/by-birthdate")
+    public ResponseEntity<AgeGroupResponseVM> getAgeGroupByBirthDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
+    ) {
+        LOG.debug("REST get AgeGroup by birthDate={}", birthDate);
+
+        AgeGroup result = ageGroupService.findAgeGroupByBirthDate(birthDate);
+
+        if (result == null) {
+            LOG.warn("No matching AgeGroup found for birthDate={}", birthDate);
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(AgeGroupResponseVM.ofEntity(result));
+    }
 
 }
