@@ -109,8 +109,8 @@ public class CatalogController {
     }
 
     /** DELETE by composite key (catalog) */
-    @DeleteMapping("/catalog/{id}")
-    public ResponseEntity<Void> removeTest(@PathVariable Long catalogId) {
+    @DeleteMapping("/catalog/{catalogId}")
+    public ResponseEntity<Void> removeCatalog(@PathVariable Long catalogId) {
         catalogService.removeCatalog(catalogId);
         return ResponseEntity.noContent().build();
     }

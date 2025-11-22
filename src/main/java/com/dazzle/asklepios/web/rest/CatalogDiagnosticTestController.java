@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.CatalogDiagnosticTest;
 import com.dazzle.asklepios.service.CatalogService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
+import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,15 +49,6 @@ public class CatalogDiagnosticTestController {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
-    /** LIST by catalog (pageable) — used by your UI modal */
-    @GetMapping("/catalog/{catalogId:\\d+}/tests")
-    public ResponseEntity<List<CatalogDiagnosticTest>> listByCatalog(@PathVariable Long catalogId,
-                                                                     @ParameterObject Pageable pageable) {
-        Page<CatalogDiagnosticTest> page = catalogService.listTests(catalogId, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
-    }
 
     /** BULK ADD tests to a catalog */
     @PostMapping("/catalog/{catalogId:\\d+}/tests")
@@ -74,4 +66,12 @@ public class CatalogDiagnosticTestController {
         catalogService.removeTest(catalogId, testId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/catalog/{catalogId}/tests")
+    public ResponseEntity<CatalogTestVM> getTests(
+            @PathVariable Long catalogId,
+            Pageable pageable) {
+        return ResponseEntity.ok(catalogService.getTestsForCatalog(catalogId, pageable));
+    }
+
 }

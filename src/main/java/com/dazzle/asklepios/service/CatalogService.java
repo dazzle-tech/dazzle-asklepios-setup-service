@@ -13,6 +13,7 @@ import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
+import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -117,11 +119,19 @@ public class CatalogService {
     }
 
     public void removeCatalog(Long catalogId) {
-        catalogRepository.deleteById(catalogId);
         catalogDiagnosticTestRepository.deleteByCatalog_Id(catalogId);
+        catalogRepository.deleteById(catalogId);
     }
 
     public void removeTest(Long catalogId, Long testId) {
         catalogDiagnosticTestRepository.deleteByCatalog_IdAndTest_Id(catalogId, testId);
     }
+
+    public CatalogTestVM getTestsForCatalog(Long catalogId, Pageable pageable) {
+        Page<CatalogDiagnosticTest> page =
+                catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
+
+        return CatalogTestVM.ofPage(page);
+    }
+
 }
