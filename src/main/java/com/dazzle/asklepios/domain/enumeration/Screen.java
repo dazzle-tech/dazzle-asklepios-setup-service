@@ -132,11 +132,16 @@ public enum Screen {
     ICD_10,
     LOINC,
     CDT_CODES,
-    SNOMED_CT;
+    SNOMED_CT,
 
-
-
-
+    //Patient Old
+    PATIENT_REGISTRATION_OLD,
+    FACILITY_PATIENT_LIST_OLD,
+    PATIENT_LIST_OLD,
+    PATIENT_CHART_OLD,
+    PATIENT_EMR_OLD,
+    MERGE_PATIENT_FILES_OLD
+    ;
     @JsonCreator
     public static Screen fromValue(String value) {
         return Screen.valueOf(value.toUpperCase().replace(" ", "_"));
