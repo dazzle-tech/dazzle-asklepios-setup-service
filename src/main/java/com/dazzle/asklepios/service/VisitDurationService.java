@@ -35,33 +35,32 @@ public class VisitDurationService {
 
         if (incoming == null) {
             throw new BadRequestAlertException(
-                    "VisitDuration payload is required",
-                    "visitDuration",
-                    "payload.required"
+                "VisitDuration payload is required",
+                "visitDuration",
+                "payload.required"
             );
         }
 
         VisitDuration entity = VisitDuration.builder()
-                .visitType(incoming.getVisitType())
-                .durationInMinutes(incoming.getDurationInMinutes())
-                .resourceSpecific(
-                        incoming.getResourceSpecific() != null ? incoming.getResourceSpecific() : Boolean.FALSE
-                )
-                .build();
+            .visitType(incoming.getVisitType())
+            .durationInMinutes(incoming.getDurationInMinutes())
+            .resourceSpecific(
+                incoming.getResourceSpecific() != null ? incoming.getResourceSpecific() : Boolean.FALSE
+            )
+            .build();
 
         try {
             VisitDuration saved = visitDurationRepository.saveAndFlush(entity);
             LOG.info(
-                    "Successfully created VisitDuration id={} visitType={} durationInMinutes={} resourceSpecific={}",
-                    saved.getId(),
-                    saved.getVisitType(),
-                    saved.getDurationInMinutes(),
-                    saved.getResourceSpecific()
+                "Successfully created VisitDuration id={} visitType={} durationInMinutes={} resourceSpecific={}",
+                saved.getId(),
+                saved.getVisitType(),
+                saved.getDurationInMinutes(),
+                saved.getResourceSpecific()
             );
             return saved;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
-            handleConstraintViolationOnSave("create", constraintException);
-            throw constraintException;
+            throw handleConstraintViolationOnSave("create", constraintException);
         }
     }
 
@@ -70,40 +69,39 @@ public class VisitDurationService {
 
         if (incoming == null) {
             throw new BadRequestAlertException(
-                    "VisitDuration payload is required",
-                    "visitDuration",
-                    "payload.required"
+                "VisitDuration payload is required",
+                "visitDuration",
+                "payload.required"
             );
         }
 
         VisitDuration existing = visitDurationRepository.findById(id)
-                .orElseThrow(() ->
-                        new NotFoundAlertException(
-                                "VisitDuration not found with id " + id,
-                                "visitDuration",
-                                "notfound"
-                        )
-                );
+            .orElseThrow(() ->
+                new NotFoundAlertException(
+                    "VisitDuration not found with id " + id,
+                    "visitDuration",
+                    "notfound"
+                )
+            );
 
         existing.setVisitType(incoming.getVisitType());
         existing.setDurationInMinutes(incoming.getDurationInMinutes());
         existing.setResourceSpecific(
-                incoming.getResourceSpecific() != null ? incoming.getResourceSpecific() : Boolean.FALSE
+            incoming.getResourceSpecific() != null ? incoming.getResourceSpecific() : Boolean.FALSE
         );
 
         try {
             VisitDuration updated = visitDurationRepository.saveAndFlush(existing);
             LOG.info(
-                    "Successfully updated VisitDuration id={} visitType={} durationInMinutes={} resourceSpecific={}",
-                    updated.getId(),
-                    updated.getVisitType(),
-                    updated.getDurationInMinutes(),
-                    updated.getResourceSpecific()
+                "Successfully updated VisitDuration id={} visitType={} durationInMinutes={} resourceSpecific={}",
+                updated.getId(),
+                updated.getVisitType(),
+                updated.getDurationInMinutes(),
+                updated.getResourceSpecific()
             );
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
-            handleConstraintViolationOnSave("update", constraintException);
-            throw constraintException;
+            throw handleConstraintViolationOnSave("update", constraintException);
         }
     }
 
@@ -118,13 +116,14 @@ public class VisitDurationService {
         LOG.debug("Fetching VisitDurations by visitType='{}' pageable={}", visitType, pageable);
         if (visitType == null) {
             throw new BadRequestAlertException(
-                    "Visit type is required",
-                    "visitDuration",
-                    "visitType.required"
+                "Visit type is required",
+                "visitDuration",
+                "visitType.required"
             );
         }
         return visitDurationRepository.findByVisitType(visitType, pageable);
     }
+
     public boolean delete(Long id) {
         LOG.debug("Request to delete VisitDuration : {}", id);
 
@@ -153,30 +152,35 @@ public class VisitDurationService {
         }
     }
 
-    private void handleConstraintViolationOnSave(String operation, Exception constraintException) {
+    private RuntimeException handleConstraintViolationOnSave(String operation, Exception constraintException) {
         Throwable root = getRootCause(constraintException);
         String message = (root != null ? root.getMessage() : constraintException.getMessage());
         String lowerMessage = message != null ? message.toLowerCase() : "";
 
-        LOG.error("Database constraint violation while trying to {} VisitDuration: {}", operation, message, constraintException);
+        LOG.error(
+            "Database constraint violation while trying to {} VisitDuration: {}",
+            operation,
+            message,
+            constraintException
+        );
 
         if (lowerMessage.contains("ux_visit_duration_type_duration_global") ||
-                lowerMessage.contains("unique constraint") ||
-                lowerMessage.contains("duplicate key") ||
-                lowerMessage.contains("duplicate entry")) {
+            lowerMessage.contains("unique constraint") ||
+            lowerMessage.contains("duplicate key") ||
+            lowerMessage.contains("duplicate entry")) {
 
-            throw new BadRequestAlertException(
-                    "A global visit duration with the same visit type and duration already exists (resource_specific = false).",
-                    "visitDuration",
-                    "unique.visitDuration.global"
+            return new BadRequestAlertException(
+                "A global visit duration with the same visit type and duration already exists (resource_specific = false).",
+                "visitDuration",
+                "unique.visitDuration.global"
             );
         }
 
-        throw new BadRequestAlertException(
-                "Database constraint violated while trying to " + operation +
-                        " visit duration (check unique visit type + duration or required fields).",
-                "visitDuration",
-                "db.constraint"
+        return new BadRequestAlertException(
+            "Database constraint violated while trying to " + operation +
+                " visit duration (check unique visit type + duration or required fields).",
+            "visitDuration",
+            "db.constraint"
         );
     }
 }
