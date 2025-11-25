@@ -60,11 +60,12 @@ public enum Screen {
     SHIFT_SETUP,
     SUPPLIER_SETUP,
     SURGICAL_KITS_SETUP,
-    USER_NEW,
+    USER,
     TEST_REPORT_TEMPLATE_SETUP,
     PRODUCTS_SETUP,
     LANGUAGE_SETUP,
     COUNTRY_SETUP,
+    DIAGNOSTICS_SETUP_OLD,
 
     // Front Desk Office
     QUICK_APPOINTMENT,
@@ -133,11 +134,16 @@ public enum Screen {
     ICD_10,
     LOINC,
     CDT_CODES,
-    SNOMED_CT;
+    SNOMED_CT,
 
-
-
-
+    //Patient Old
+    PATIENT_REGISTRATION_OLD,
+    FACILITY_PATIENT_LIST_OLD,
+    PATIENT_LIST_OLD,
+    PATIENT_CHART_OLD,
+    PATIENT_EMR_OLD,
+    MERGE_PATIENT_FILES_OLD
+    ;
     @JsonCreator
     public static Screen fromValue(String value) {
         return Screen.valueOf(value.toUpperCase().replace(" ", "_"));
