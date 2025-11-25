@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -81,8 +82,8 @@ public class CatalogController {
 
 
     /** FILTERS / SEARCH (pageable) */
-    @GetMapping("/catalog/by-department/{departmentId:\\d+}")
-    public ResponseEntity<List<CatalogResponseVM>> byDepartment(@PathVariable Long departmentId,
+    @GetMapping("/catalog/by-department")
+    public ResponseEntity<List<CatalogResponseVM>> byDepartment(@RequestParam(required = false)  Long departmentId,
                                                                 @ParameterObject Pageable pageable) {
         Page<Catalog> page = catalogService.findByDepartment(departmentId, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
@@ -90,17 +91,22 @@ public class CatalogController {
         return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
-    @GetMapping("/catalog/by-type/{type}")
-    public ResponseEntity<List<CatalogResponseVM>> byType(@PathVariable TestType type,
+    @GetMapping("/catalog/by-type")
+    public ResponseEntity<List<CatalogResponseVM>> byType(@RequestParam(required = false) TestType type,
                                                           @ParameterObject Pageable pageable) {
         Page<Catalog> page = catalogService.findByType(type, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
-    @GetMapping("/catalog/by-name/{name}")
-    public ResponseEntity<List<CatalogResponseVM>> byName(@PathVariable String name,
+    @GetMapping("/catalog/by-name")
+    public ResponseEntity<List<CatalogResponseVM>> byName(@RequestParam(required = false)  String name,
                                                           @ParameterObject Pageable pageable) {
         Page<Catalog> page = catalogService.searchByName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(

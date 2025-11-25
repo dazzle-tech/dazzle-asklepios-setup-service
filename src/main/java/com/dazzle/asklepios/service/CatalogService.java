@@ -37,11 +37,18 @@ public class CatalogService {
     private final CatalogDiagnosticTestRepository catalogDiagnosticTestRepository;
 
     public Catalog create(CatalogCreateVM vm) {
-        Department dept = departmentRepository.findById(vm.getDepartmentId())
-                .orElseThrow(() -> new EntityNotFoundException("Department not found: " + vm.getDepartmentId()));
 
-        Facility facil = facilityRepository.findById(vm.getFacilityId())
-                .orElseThrow(() -> new EntityNotFoundException("Facility not found: " + vm.getFacilityId()));
+        Department dept = null;
+        if (vm.getDepartmentId() != null) {
+            dept = departmentRepository.findById(vm.getDepartmentId())
+                    .orElse(null);
+        }
+
+        Facility facil = null;
+        if (vm.getFacilityId() != null) {
+            facil = facilityRepository.findById(vm.getFacilityId())
+                    .orElse(null);
+        }
 
         Catalog c = Catalog.builder()
                 .name(vm.getName())
@@ -57,17 +64,27 @@ public class CatalogService {
     public Optional<Catalog> update(Long id, CatalogUpdateVM vm) {
         return catalogRepository.findById(id).map(c -> {
             if (vm.getName() != null) c.setName(vm.getName());
-            if (vm.getDescription() != null) c.setDescription(vm.getDescription());
+            if (vm.getDescription() != null) {
+                c.setDescription(vm.getDescription());
+
+            } else {
+
+                c.setDescription(null);
+            }
             if (vm.getType() != null) c.setType(vm.getType());
             if (vm.getDepartmentId() != null) {
                 Department dept = departmentRepository.findById(vm.getDepartmentId())
                         .orElseThrow(() -> new EntityNotFoundException("Department not found: " + vm.getDepartmentId()));
                 c.setDepartment(dept);
+            } else {
+                c.setDepartment(null);
             }
             if (vm.getFacilityId() != null) {
                 Facility facil = facilityRepository.findById(vm.getFacilityId())
                         .orElseThrow(() -> new EntityNotFoundException("Facility not found: " + vm.getFacilityId()));
                 c.setFacility(facil);
+            } else {
+                c.setFacility(null);
             }
             return catalogRepository.save(c);
         });
@@ -85,16 +102,25 @@ public class CatalogService {
 
     @Transactional(readOnly = true)
     public Page<Catalog> findByDepartment(Long departmentId, Pageable pageable) {
+        if (departmentId == null) {
+            return catalogRepository.findAll(pageable);
+        }
         return catalogRepository.findByDepartment_Id(departmentId, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Catalog> findByType(TestType type, Pageable pageable) {
+        if (type == null) {
+            return catalogRepository.findAll(pageable);
+        }
         return catalogRepository.findByType(type, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<Catalog> searchByName(String name, Pageable pageable) {
+        if (name == null) {
+            return catalogRepository.findAll(pageable);
+        }
         return catalogRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 

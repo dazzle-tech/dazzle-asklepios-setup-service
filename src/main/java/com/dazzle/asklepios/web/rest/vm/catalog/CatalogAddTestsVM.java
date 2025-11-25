@@ -18,8 +18,5 @@ import java.util.List;
 public class CatalogAddTestsVM {
 
     @NotEmpty
-    private List<Long> CatalogId;
-
-    @NotEmpty
     private List<Long> testIds;
 }

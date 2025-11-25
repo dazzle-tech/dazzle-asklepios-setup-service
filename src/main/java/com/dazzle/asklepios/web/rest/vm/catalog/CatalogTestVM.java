@@ -6,9 +6,8 @@ import org.springframework.data.domain.Page;
 import java.io.Serializable;
 import java.util.List;
 
-
 public record CatalogTestVM(
-        List<Long> testIds,
+        List<TestItemVM> tests,
         int page,
         int size,
         long totalElements,
@@ -18,7 +17,11 @@ public record CatalogTestVM(
     public static CatalogTestVM ofPage(Page<CatalogDiagnosticTest> page) {
         return new CatalogTestVM(
                 page.stream()
-                        .map(cdt -> cdt.getTest().getId())
+                        .map(cdt -> new TestItemVM(
+                                cdt.getTest().getId(),
+                                cdt.getTest().getInternalCode(),
+                                cdt.getTest().getName()
+                        ))
                         .toList(),
                 page.getNumber(),
                 page.getSize(),
@@ -26,7 +29,10 @@ public record CatalogTestVM(
                 page.getTotalPages()
         );
     }
+
+    public record TestItemVM(
+            Long id,
+            String code,
+            String name
+    ) implements Serializable {}
 }
-
-
-
