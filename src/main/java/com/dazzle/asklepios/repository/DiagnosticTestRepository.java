@@ -15,4 +15,5 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
     Page<DiagnosticTest> findByNameContainingIgnoreCase(String name, Pageable pageable);
     Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
 
+    Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(TestType type, String name, Pageable pageable);
 }

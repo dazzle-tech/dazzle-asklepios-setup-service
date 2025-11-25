@@ -104,6 +104,12 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<Department> findAll() {
+        LOG.debug("Request to get Departments");
+        return departmentRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public Page<Department> findByFacilityId(Long facilityId, Pageable pageable) {
         LOG.debug("Request to get Departments by Facility with pagination facilityId={} pageable={}", facilityId, pageable);
         return departmentRepository.findByFacilityId(facilityId, pageable);
