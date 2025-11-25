@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface CountryRepository extends JpaRepository<Country, Long> {
 
     // Paged search by name (contains, case-insensitive)
-    Page<Country> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<Country> findByName(String name, Pageable pageable);
 
     // Paged search by code (contains, case-insensitive)
     Page<Country> findByCodeContainingIgnoreCase(String code, Pageable pageable);

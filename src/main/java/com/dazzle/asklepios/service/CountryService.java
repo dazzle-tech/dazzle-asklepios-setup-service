@@ -92,7 +92,7 @@ public class CountryService {
         if (name == null || name.trim().isEmpty()) {
             return countryRepository.findAll(pageable);
         }
-        return countryRepository.findByNameContainingIgnoreCase(name.trim(), pageable);
+        return countryRepository.findByName(name.trim(), pageable);
     }
 
     @Transactional(readOnly = true)
