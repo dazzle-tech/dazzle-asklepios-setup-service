@@ -160,4 +160,9 @@ public class CatalogService {
         return CatalogTestVM.ofPage(page);
     }
 
+    public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {
+        return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
+
+    }
+
 }

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -118,10 +119,10 @@ public class DiagnosticTestController {
     /**
      * Search diagnostic tests by type AND name (case-insensitive).
      */
-    @GetMapping("/diagnostic-test/by-type-and-name/{type}/{name}")
+    @GetMapping("/diagnostic-test/by-type-and-name")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
-            @PathVariable TestType type,
-            @PathVariable String name,
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) String name,
             @ParameterObject Pageable pageable) {
 
         LOG.debug("REST request to search DiagnosticTests by type={} and name='{}' page={}", type, name, pageable);
