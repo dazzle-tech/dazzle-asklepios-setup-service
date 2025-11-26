@@ -30,9 +30,9 @@ public class UomGroupsRelationService {
 
 
     public UomGroupsRelation create(UomGroupsRelation body) {
-        Long groupId    = (body.getGroup()    != null) ? body.getGroup().getId()    : null;
+        Long groupId = (body.getGroup() != null) ? body.getGroup().getId() : null;
         Long fromUnitId = (body.getFromUnit() != null) ? body.getFromUnit().getId() : null;
-        Long toUnitId   = (body.getToUnit()   != null) ? body.getToUnit().getId()   : null;
+        Long toUnitId = (body.getToUnit() != null) ? body.getToUnit().getId() : null;
 
         if (groupId == null || fromUnitId == null || toUnitId == null) {
             throw new IllegalArgumentException("group.id, fromUnit.id and toUnit.id are required");
@@ -63,9 +63,9 @@ public class UomGroupsRelationService {
             rel.setRelation(body.getRelation());
         }
 
-        Long newGroupId    = (body.getGroup()    != null) ? body.getGroup().getId()    : null;
+        Long newGroupId = (body.getGroup() != null) ? body.getGroup().getId() : null;
         Long newFromUnitId = (body.getFromUnit() != null) ? body.getFromUnit().getId() : null;
-        Long newToUnitId   = (body.getToUnit()   != null) ? body.getToUnit().getId()   : null;
+        Long newToUnitId = (body.getToUnit() != null) ? body.getToUnit().getId() : null;
 
         if (newGroupId != null) {
             UomGroup g = groupRepo.findById(newGroupId).orElseThrow();
@@ -91,9 +91,15 @@ public class UomGroupsRelationService {
     public UomGroupsRelation create(Long groupId, Long fromUnitId, Long toUnitId, BigDecimal relation) {
         UomGroupsRelation tmp = new UomGroupsRelation();
         tmp.setRelation(relation);
-        UomGroup g = new UomGroup(); g.setId(groupId); tmp.setGroup(g);
-        UomGroupUnit fu = new UomGroupUnit(); fu.setId(fromUnitId); tmp.setFromUnit(fu);
-        UomGroupUnit tu = new UomGroupUnit(); tu.setId(toUnitId); tmp.setToUnit(tu);
+        UomGroup g = new UomGroup();
+        g.setId(groupId);
+        tmp.setGroup(g);
+        UomGroupUnit fu = new UomGroupUnit();
+        fu.setId(fromUnitId);
+        tmp.setFromUnit(fu);
+        UomGroupUnit tu = new UomGroupUnit();
+        tu.setId(toUnitId);
+        tmp.setToUnit(tu);
         return create(tmp);
     }
 
@@ -104,10 +110,40 @@ public class UomGroupsRelationService {
     }
 
     @Transactional(readOnly = true)
-    public UomGroupsRelation get(Long id) { return relRepo.findById(id).orElseThrow(); }
+    public UomGroupsRelation get(Long id) {
+        return relRepo.findById(id).orElseThrow();
+    }
 
     @Transactional(readOnly = true)
-    public List<UomGroupsRelation> listByGroup(Long groupId) { return relRepo.findByGroup_Id(groupId); }
+    public List<UomGroupsRelation> listByGroup(Long groupId) {
+        return relRepo.findByGroup_Id(groupId).stream()
+                .map(r -> new UomGroupsRelation(
+                        r.getId(),
+                        r.getRelation(),
+                        r.getGroup(),
 
-    public void delete(Long id) { relRepo.deleteById(id); }
+                        new UomGroupUnit(
+                                r.getFromUnit().getId(),
+                                r.getFromUnit().getUom(),                         // UOM enum/type
+                                r.getFromUnit().getUomOrder() instanceof BigDecimal
+                                        ? (BigDecimal) r.getFromUnit().getUomOrder()
+                                        : new BigDecimal(r.getFromUnit().getUomOrder().toString()), // ensure BigDecimal
+                                r.getGroup()                                      // ✅ UomGroup, not groupId
+                        ),
+
+                        new UomGroupUnit(
+                                r.getToUnit().getId(),
+                                r.getToUnit().getUom(),
+                                r.getToUnit().getUomOrder() instanceof BigDecimal
+                                        ? (BigDecimal) r.getToUnit().getUomOrder()
+                                        : new BigDecimal(r.getToUnit().getUomOrder().toString()),
+                                r.getGroup()                                      // ✅ UomGroup
+                        )
+                ))
+                .toList();
+    }
+
+    public void delete(Long id) {
+        relRepo.deleteById(id);
+    }
 }

@@ -179,6 +179,25 @@ public class DepartmentController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * {@code GET /department} : Get All Department without page.
+     *
+    * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the department view model,
+     *         or {@code 404 (Not Found)} if the department does not exist.
+     */
+    @GetMapping("/department/all")
+    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartment() {
+        LOG.debug("REST get All Department");
+
+        List<DepartmentResponseVM> departments = departmentService.findAll().stream()
+                .map(DepartmentResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(departments);
+
+    }
+
+
 
     /**
      * {@code PATCH /department/{id}/toggle-active} : Toggle the {@code isActive} status of a Department.
