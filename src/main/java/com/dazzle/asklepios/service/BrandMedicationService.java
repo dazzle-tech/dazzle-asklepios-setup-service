@@ -80,17 +80,11 @@ public class BrandMedicationService {
     }
     private UomGroup getUOMGroup(Long id) {
         LOG.debug("getUOMGroup for active ingredients: id={}", id);
-        if (id == null) {
-            return null;
-        }
         return uomGroupRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("UOM group not found: " + id, "UomGroup", "notfound"));
     }
     private UomGroupUnit getUOMGroupUnit(Long id) {
         LOG.debug("getUOMGroupUnit for active ingredients: id={}", id);
-        if (id == null) {
-            return null;
-        }
         return uomGroupUnitRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("UOM group unit not found: " + id, "UomGroupUnit", "notfound"));
     }
