@@ -28,7 +28,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Data
+@EqualsAndHashCode(callSuper = false)
 public class UserDepartment extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
@@ -46,4 +46,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "is_default",nullable = false)
+    private Boolean isDefault = false;
 }

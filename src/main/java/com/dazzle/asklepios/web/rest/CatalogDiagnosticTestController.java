@@ -67,18 +67,6 @@ public class CatalogDiagnosticTestController {
         return ResponseEntity.noContent().build();
     }
 
-//    @GetMapping("/catalog/{catalogId}/tests")
-//    public ResponseEntity<List<CatalogTestVM>> getTests(
-//            @PathVariable Long catalogId,
-//            Pageable pageable) {
-//        Page<CatalogTestVM> page = catalogService.getTestsForCatalog(catalogId, pageable);
-//        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-//                ServletUriComponentsBuilder.fromCurrentRequest(), page);
-//
-//        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
-//
-//   }
-
     @GetMapping("/catalog/{catalogId}/tests")
     public ResponseEntity<CatalogTestVM> getTests(
             @PathVariable Long catalogId,
@@ -94,6 +82,5 @@ public class CatalogDiagnosticTestController {
 
         return new ResponseEntity<>(vm, headers, HttpStatus.OK);
     }
-
 
 }
