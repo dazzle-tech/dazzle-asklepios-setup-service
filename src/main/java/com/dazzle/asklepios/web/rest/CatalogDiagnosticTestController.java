@@ -71,7 +71,16 @@ public class CatalogDiagnosticTestController {
     public ResponseEntity<CatalogTestVM> getTests(
             @PathVariable Long catalogId,
             Pageable pageable) {
-        return ResponseEntity.ok(catalogService.getTestsForCatalog(catalogId, pageable));
+
+        Page<CatalogDiagnosticTest> page =
+                catalogService.getDiagnosticTestsForCatalog(catalogId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        CatalogTestVM vm = CatalogTestVM.ofPage(page);
+
+        return new ResponseEntity<>(vm, headers, HttpStatus.OK);
     }
 
 }
