@@ -11,12 +11,15 @@ import com.dazzle.asklepios.repository.CatalogRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.web.rest.CatalogController;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,7 @@ public class CatalogService {
     private final FacilityRepository facilityRepository;
     private final DiagnosticTestRepository diagnosticTestRepository;
     private final CatalogDiagnosticTestRepository catalogDiagnosticTestRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(CatalogService.class);
 
     public Catalog create(CatalogCreateVM vm) {
 
@@ -163,6 +169,53 @@ public class CatalogService {
     public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {
         return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
 
+    }
+
+    /**
+     * Get tests of given type that are NOT already selected in this catalog.
+     * Also filter by name (search) if provided.
+     */
+    @Transactional(readOnly = true)
+    public List<DiagnosticTest> getUnselectedTestsForCatalog(
+            Long catalogId,
+            String search
+    ) {
+//        Catalog catalog = catalogRepository.findById(catalogId)
+//                .orElseThrow(() -> new RuntimeException("Catalog not found: " + catalogId));
+
+        Catalog catalog = this.findOne(catalogId)
+                .orElseThrow(() -> new RuntimeException("Catalog not found: " + catalogId));
+
+//        Catalog catalog = catalogRepository.findById(catalogId).orElse(null);
+
+//        if (catalog == null) {
+//            LOG.error("Catalog not found in DB for id={}", catalogId);
+//            // Return empty list instead of throwing, so your controller returns []
+//            return List.of();
+//        }
+        // 2) get tests already selected for this catalog
+        List<CatalogDiagnosticTest> selectedTests = catalogDiagnosticTestRepository.findAllByCatalogId(catalogId); // or getTests()
+
+        Set<DiagnosticTest> selectedIds = selectedTests.stream()
+                .map(CatalogDiagnosticTest::getTest)
+                .collect(Collectors.toSet());
+
+        // 3) get ALL tests of this type
+        List<DiagnosticTest> allOfType = diagnosticTestRepository.findAllByType(catalog.getType());
+
+        // 4) filter: not selected + search by name (if search provided)
+        String searchLower = (search == null) ? null : search.toLowerCase();
+
+        return allOfType.stream()
+                // keep tests that are NOT already in this catalog
+                .filter(dt -> !selectedIds.contains(dt.getId()))
+                // search by name if search text is given
+                .filter(dt -> {
+                    if (searchLower == null || searchLower.isBlank()) return true;
+                    String name = dt.getName();
+                    return name != null && name.toLowerCase().contains(searchLower);
+                })
+                .toList();
     }
 
 }

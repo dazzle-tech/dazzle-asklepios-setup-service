@@ -1,12 +1,14 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Catalog;
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.service.CatalogService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogResponseVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,4 +122,23 @@ public class CatalogController {
         catalogService.removeCatalog(catalogId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/catalog/unselected-tests/{catalogId}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getUnselectedTestsForCatalog(
+            @PathVariable Long catalogId,
+            @RequestParam(required = false) String name // search keyword
+    ) {
+        LOG.debug("REST get unselected tests for catalogId={}  name={}",
+                catalogId, name);
+
+        List<DiagnosticTest> tests =
+                catalogService.getUnselectedTestsForCatalog(catalogId, name);
+
+        List<DiagnosticTestResponseVM> body = tests.stream()
+                .map(DiagnosticTestResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
 }
