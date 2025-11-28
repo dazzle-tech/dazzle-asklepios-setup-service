@@ -52,13 +52,13 @@ public class Catalog implements Serializable {
     private TestType type;
 
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "department_id", foreignKey = @ForeignKey(name = "fk_catalog_department"))
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "department_id", foreignKey = @ForeignKey(name = "fk_catalog_department") , nullable = true)
     private Department department;
 
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_catalog_facility"))
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "facility_id", foreignKey = @ForeignKey(name = "fk_catalog_facility"),  nullable = true)
     private Facility facility;
 
 }

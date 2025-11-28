@@ -11,19 +11,25 @@ import com.dazzle.asklepios.repository.CatalogRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.web.rest.CatalogController;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -35,19 +41,22 @@ public class CatalogService {
     private final FacilityRepository facilityRepository;
     private final DiagnosticTestRepository diagnosticTestRepository;
     private final CatalogDiagnosticTestRepository catalogDiagnosticTestRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(CatalogService.class);
 
     public Catalog create(CatalogCreateVM vm) {
 
         Department dept = null;
         if (vm.getDepartmentId() != null) {
             dept = departmentRepository.findById(vm.getDepartmentId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Department not found: " + vm.getDepartmentId()));
+
         }
 
         Facility facil = null;
         if (vm.getFacilityId() != null) {
             facil = facilityRepository.findById(vm.getFacilityId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Facility not found: " + vm.getFacilityId()));
+
         }
 
         Catalog c = Catalog.builder()
@@ -163,6 +172,46 @@ public class CatalogService {
     public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {
         return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
 
+    }
+
+    /**
+     * Get tests of given type that are NOT already selected in this catalog.
+     * Also filter by name (search) if provided.
+     */
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> getUnselectedTestsForCatalog(
+            Long catalogId,
+            String search,
+            Pageable pageable
+    ) {
+        Catalog catalog = this.findOne(catalogId)
+                .orElseThrow(() -> new RuntimeException("Catalog not found: " + catalogId));
+
+        // 2) get tests already selected for this catalog
+        List<CatalogDiagnosticTest> selectedTests = catalogDiagnosticTestRepository.findAllByCatalogId(catalogId);
+
+        Set<Long> selectedIds = selectedTests.stream()
+                .map(cdt -> cdt.getTest().getId())
+                .collect(Collectors.toSet());
+
+        // 3) get ALL tests of this type
+        List<DiagnosticTest> allOfType = diagnosticTestRepository.findAllByType(catalog.getType());
+
+        // 4) filter: not selected + search by name (if search provided)
+        String searchLower = (search == null) ? null : search.toLowerCase();
+
+        List<DiagnosticTest> filtered = allOfType.stream()
+                // keep tests that are NOT already in this catalog
+                .filter(dt -> !selectedIds.contains(dt.getId()))
+                // search by name if search text is given
+                .filter(dt -> {
+                    if (searchLower == null || searchLower.isBlank()) return true;
+                    String name = dt.getName();
+                    return name != null && name.toLowerCase().contains(searchLower);
+                })
+                .toList();
+
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
 }
