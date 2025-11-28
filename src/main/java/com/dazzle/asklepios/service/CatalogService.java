@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,13 +48,15 @@ public class CatalogService {
         Department dept = null;
         if (vm.getDepartmentId() != null) {
             dept = departmentRepository.findById(vm.getDepartmentId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Department not found: " + vm.getDepartmentId()));
+
         }
 
         Facility facil = null;
         if (vm.getFacilityId() != null) {
             facil = facilityRepository.findById(vm.getFacilityId())
-                    .orElse(null);
+                    .orElseThrow(() -> new RuntimeException("Facility not found: " + vm.getFacilityId()));
+
         }
 
         Catalog c = Catalog.builder()
@@ -176,28 +179,19 @@ public class CatalogService {
      * Also filter by name (search) if provided.
      */
     @Transactional(readOnly = true)
-    public List<DiagnosticTest> getUnselectedTestsForCatalog(
+    public Page<DiagnosticTest> getUnselectedTestsForCatalog(
             Long catalogId,
-            String search
+            String search,
+            Pageable pageable
     ) {
-//        Catalog catalog = catalogRepository.findById(catalogId)
-//                .orElseThrow(() -> new RuntimeException("Catalog not found: " + catalogId));
-
         Catalog catalog = this.findOne(catalogId)
                 .orElseThrow(() -> new RuntimeException("Catalog not found: " + catalogId));
 
-//        Catalog catalog = catalogRepository.findById(catalogId).orElse(null);
-
-//        if (catalog == null) {
-//            LOG.error("Catalog not found in DB for id={}", catalogId);
-//            // Return empty list instead of throwing, so your controller returns []
-//            return List.of();
-//        }
         // 2) get tests already selected for this catalog
-        List<CatalogDiagnosticTest> selectedTests = catalogDiagnosticTestRepository.findAllByCatalogId(catalogId); // or getTests()
+        List<CatalogDiagnosticTest> selectedTests = catalogDiagnosticTestRepository.findAllByCatalogId(catalogId);
 
-        Set<DiagnosticTest> selectedIds = selectedTests.stream()
-                .map(CatalogDiagnosticTest::getTest)
+        Set<Long> selectedIds = selectedTests.stream()
+                .map(cdt -> cdt.getTest().getId())
                 .collect(Collectors.toSet());
 
         // 3) get ALL tests of this type
@@ -206,7 +200,7 @@ public class CatalogService {
         // 4) filter: not selected + search by name (if search provided)
         String searchLower = (search == null) ? null : search.toLowerCase();
 
-        return allOfType.stream()
+        List<DiagnosticTest> filtered = allOfType.stream()
                 // keep tests that are NOT already in this catalog
                 .filter(dt -> !selectedIds.contains(dt.getId()))
                 // search by name if search text is given
@@ -216,6 +210,8 @@ public class CatalogService {
                     return name != null && name.toLowerCase().contains(searchLower);
                 })
                 .toList();
+
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
 
 }

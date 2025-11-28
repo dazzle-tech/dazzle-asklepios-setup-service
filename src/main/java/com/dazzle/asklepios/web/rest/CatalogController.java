@@ -123,22 +123,28 @@ public class CatalogController {
         return ResponseEntity.noContent().build();
     }
 
+
     @GetMapping("/catalog/unselected-tests/{catalogId}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> getUnselectedTestsForCatalog(
             @PathVariable Long catalogId,
-            @RequestParam(required = false) String name // search keyword
+            @RequestParam(required = false) String search,
+            @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST get unselected tests for catalogId={}  name={}",
-                catalogId, name);
 
-        List<DiagnosticTest> tests =
-                catalogService.getUnselectedTestsForCatalog(catalogId, name);
+        LOG.debug("REST get unselected tests for catalogId={}  search={}",
+               catalogId, search);
 
-        List<DiagnosticTestResponseVM> body = tests.stream()
+        Page<DiagnosticTest> page =
+                catalogService.getUnselectedTestsForCatalog(catalogId, search, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<DiagnosticTestResponseVM> body = page.getContent().stream()
                 .map(DiagnosticTestResponseVM::ofEntity)
                 .toList();
 
-        return ResponseEntity.ok(body);
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
 }
