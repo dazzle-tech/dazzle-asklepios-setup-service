@@ -211,7 +211,13 @@ public class CatalogService {
                 })
                 .toList();
 
-        return new PageImpl<>(filtered, pageable, filtered.size());
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        List<DiagnosticTest> pageContent =
+                start > end ? List.of() : filtered.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, filtered.size());
+
     }
 
 }

@@ -127,15 +127,16 @@ public class CatalogController {
     @GetMapping("/catalog/unselected-tests/{catalogId}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> getUnselectedTestsForCatalog(
             @PathVariable Long catalogId,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String name,
             @ParameterObject Pageable pageable
     ) {
 
-        LOG.debug("REST get unselected tests for catalogId={}  search={}",
-               catalogId, search);
+        LOG.debug("REST get unselected tests for catalogId={}  name={}",
+               catalogId, name);
 
         Page<DiagnosticTest> page =
-                catalogService.getUnselectedTestsForCatalog(catalogId, search, pageable);
+                catalogService.getUnselectedTestsForCatalog(catalogId, name, pageable);
+
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
