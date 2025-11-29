@@ -137,6 +137,7 @@ public class CatalogController {
         Page<DiagnosticTest> page =
                 catalogService.getUnselectedTestsForCatalog(catalogId, name, pageable);
 
+
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

@@ -217,6 +217,7 @@ public class CatalogService {
                 start > end ? List.of() : filtered.subList(start, end);
 
         return new PageImpl<>(pageContent, pageable, filtered.size());
+
     }
 
 }
