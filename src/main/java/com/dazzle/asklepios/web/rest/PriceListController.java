@@ -31,30 +31,43 @@ public class PriceListController {
     }
 
     /**
-     * Bulk create or update (same endpoint).
-     * - vm.id != null => update single
-     * - vm.id == null => bulk create (one per facilityId), or global if facilityIds empty
+     * Create or update price lists.
+     * - vm.id != null => update single record
+     * - vm.id == null => bulk create (one per facilityId; requires at least one facility)
      *
-     * Returns LIST because create may generate multiple records.
+     * Returns LIST because bulk create may generate multiple records.
      */
     @PostMapping("/price-list")
     public ResponseEntity<List<PriceListResponseVM>> save(@RequestBody PriceListSaveVM vm) {
         LOG.debug("REST save PriceList payload={}", vm);
 
+        boolean isUpdate = vm.id() != null;
+
         List<PriceList> saved = service.save(vm);
 
-        URI location = saved.isEmpty()
-                ? URI.create("/api/setup/price-list")
-                : URI.create("/api/setup/price-list/" + saved.get(0).getId());
+        List<PriceListResponseVM> body =
+                saved.stream().map(PriceListResponseVM::ofEntity).toList();
+
+        if (saved.isEmpty()) {
+            return isUpdate
+                    ? ResponseEntity.ok(body)
+                    : ResponseEntity.status(HttpStatus.CREATED).body(body);
+        }
+
+        URI location = URI.create("/api/setup/price-list/" + saved.get(0).getId());
+
+        if (isUpdate) {
+            return ResponseEntity
+                    .ok()
+                    .location(location)
+                    .body(body);
+        }
 
         return ResponseEntity
                 .created(location)
-                .body(saved.stream().map(PriceListResponseVM::ofEntity).toList());
+                .body(body);
     }
 
-    /**
-     * List all price lists (paginated).
-     */
     @GetMapping("/price-list")
     public ResponseEntity<List<PriceListResponseVM>> list(@ParameterObject Pageable pageable) {
         LOG.debug("REST request to list PriceLists page={}", pageable);
@@ -73,9 +86,6 @@ public class PriceListController {
         );
     }
 
-    /**
-     * List active price lists only (paginated).
-     */
     @GetMapping("/price-list/active")
     public ResponseEntity<List<PriceListResponseVM>> listActive(@ParameterObject Pageable pageable) {
         LOG.debug("REST request to list active PriceLists page={}", pageable);
@@ -94,9 +104,6 @@ public class PriceListController {
         );
     }
 
-    /**
-     * Get single price list by id.
-     */
     @GetMapping("/price-list/{id}")
     public ResponseEntity<PriceListResponseVM> get(@PathVariable Long id) {
         LOG.debug("REST request to get PriceList id={}", id);
@@ -107,9 +114,6 @@ public class PriceListController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /**
-     * Find price lists by type (paginated).
-     */
     @GetMapping("/price-list/by-type/{type}")
     public ResponseEntity<List<PriceListResponseVM>> findByType(
             @PathVariable PriceListTypes type,
@@ -131,9 +135,6 @@ public class PriceListController {
         );
     }
 
-    /**
-     * Find price lists by name (case-insensitive, paginated).
-     */
     @GetMapping("/price-list/by-name/{name}")
     public ResponseEntity<List<PriceListResponseVM>> findByName(
             @PathVariable String name,
@@ -155,9 +156,6 @@ public class PriceListController {
         );
     }
 
-    /**
-     * Find price lists by type AND name (paginated).
-     */
     @GetMapping("/price-list/by-type-and-name/{type}/{name}")
     public ResponseEntity<List<PriceListResponseVM>> findByTypeAndName(
             @PathVariable PriceListTypes type,
@@ -180,9 +178,6 @@ public class PriceListController {
         );
     }
 
-    /**
-     * Toggle isActive status.
-     */
     @PatchMapping("/price-list/{id}/toggle-active")
     public ResponseEntity<PriceListResponseVM> toggleActive(@PathVariable Long id) {
         LOG.debug("REST toggle PriceList isActive id={}", id);
