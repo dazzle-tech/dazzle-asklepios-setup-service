@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 @Service
 @Transactional
 public class PriceListService {
@@ -30,65 +29,81 @@ public class PriceListService {
     }
 
     /**
-     * create/update:
-     * - if vm.id != null => update single record
-     * - else => bulk create based on facilityIds
-     * <p>
-     * facilityIds:
-     * - empty/null => create GLOBAL list (facilityId = null)
-     * - multiple  => create one list per facilityId
+     * Entry point:
+     * - if vm.id != null => update a single record
+     * - else            => bulk create (requires at least one facility)
      */
     public List<PriceList> save(PriceListSaveVM vm) {
         LOG.debug("Save PriceList payload={}", vm);
 
-        // validation: date range
-        if (vm.effectiveTo() != null && vm.effectiveTo().isBefore(vm.effectiveFrom())) {
+        validateDateRange(vm);
+
+        if (vm.id() != null) {
+            return update(vm);
+        }
+
+        return createBulk(vm);
+    }
+
+    // ---------------- UPDATE SINGLE ----------------
+    private List<PriceList> update(PriceListSaveVM vm) {
+
+        PriceList existing = repo.findById(vm.id())
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "notFound",
+                        "priceList",
+                        "Price list not found."
+                ));
+
+        // Facility is optional in update:
+        // If facilityIds is provided, take the first one and update facility + currency.
+        // If not provided, keep the current facilityId as-is.
+        if (vm.facilityIds() != null && !vm.facilityIds().isEmpty()) {
+            Long facilityId = vm.facilityIds().get(0);
+            if (facilityId == null) {
+                throw new BadRequestAlertException(
+                        "facilityRequired",
+                        "priceList",
+                        "Facility id cannot be null."
+                );
+            }
+            existing.setFacilityId(facilityId);
+            existing.setCurrency(resolveCurrency(facilityId));
+        }
+
+        existing.setName(vm.name());
+        existing.setType(vm.type());
+        existing.setEffectiveFrom(vm.effectiveFrom());
+        existing.setEffectiveTo(vm.effectiveTo());
+        existing.setDescription(vm.description());
+        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
+
+        return List.of(repo.save(existing));
+    }
+
+    // ---------------- BULK CREATE ----------------
+    private List<PriceList> createBulk(PriceListSaveVM vm) {
+
+        List<Long> facilityIds = vm.facilityIds();
+
+        // At least one facility must be selected for create.
+        if (facilityIds == null || facilityIds.isEmpty()) {
             throw new BadRequestAlertException(
-                    "dateRangeInvalid",
+                    "facilityRequired",
                     "priceList",
-                    "Effective To must be after Effective From."
+                    "At least one facility must be selected."
             );
         }
 
-        // ---------------- UPDATE SINGLE ----------------
-        if (vm.id() != null) {
-            PriceList existing = repo.findById(vm.id())
-                    .orElseThrow(() -> new BadRequestAlertException(
-                            "notFound",
-                            "priceList",
-                            "Price list not found."
-                    ));
-
-            Long facilityId = null;
-            if (vm.facilityIds() != null && !vm.facilityIds().isEmpty()) {
-                // update: منسمح ب facility واحدة فقط
-                facilityId = vm.facilityIds().get(0);
-            }
-
-            existing.setFacilityId(facilityId);
-            existing.setName(vm.name());
-            existing.setType(vm.type());
-            existing.setCurrency(resolveCurrency(facilityId));
-            existing.setEffectiveFrom(vm.effectiveFrom());
-            existing.setEffectiveTo(vm.effectiveTo());
-            existing.setDescription(vm.description());
-            existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
-
-            return List.of(repo.save(existing));
-        }
-
-        // ---------------- BULK CREATE ----------------
-        List<Long> facilityIds = vm.facilityIds();
-
-        // no facility selected => one GLOBAL record
-        if (facilityIds == null || facilityIds.isEmpty()) {
-            PriceList pl = buildEntity(vm, null);
-            return List.of(repo.save(pl));
-        }
-
-        // many facilities selected => one record per facilityId
         List<PriceList> created = new ArrayList<>();
         for (Long fid : facilityIds) {
+            if (fid == null) {
+                throw new BadRequestAlertException(
+                        "facilityRequired",
+                        "priceList",
+                        "Facility id cannot be null."
+                );
+            }
             PriceList pl = buildEntity(vm, fid);
             created.add(repo.save(pl));
         }
@@ -96,9 +111,19 @@ public class PriceListService {
         return created;
     }
 
+    private void validateDateRange(PriceListSaveVM vm) {
+        if (vm.effectiveTo() != null && vm.effectiveTo().isBefore(vm.effectiveFrom())) {
+            throw new BadRequestAlertException(
+                    "dateRangeInvalid",
+                    "priceList",
+                    "Effective To must be after Effective From."
+            );
+        }
+    }
+
     private PriceList buildEntity(PriceListSaveVM vm, Long facilityId) {
         return PriceList.builder()
-                .facilityId(facilityId) // nullable => global
+                .facilityId(facilityId)
                 .name(vm.name())
                 .type(vm.type())
                 .currency(resolveCurrency(facilityId))
@@ -110,19 +135,12 @@ public class PriceListService {
     }
 
     /**
-     * currency logic:
+     * Currency logic placeholder:
      * - if facilityId != null => get currency from facility-service
-     * - else => get default currency (global)
-     * <p>
-     * حالياً placeholder لحد ما تربطي facility-service.
+     * - else                 => get default currency (global)
      */
     private Currency resolveCurrency(Long facilityId) {
-        // TODO: call facility-service
-        // مثال:
-        // if (facilityId != null) return facilityClient.getCurrency(facilityId);
-        // else return facilityClient.getDefaultCurrency();
-
-        return Currency.USD; // مؤقت
+        return Currency.USD; // temporary
     }
 
     // ---------------- READ APIs ----------------
