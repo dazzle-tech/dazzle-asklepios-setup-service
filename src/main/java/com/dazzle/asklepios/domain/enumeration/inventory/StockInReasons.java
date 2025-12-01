@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.domain.enumeration;
+package com.dazzle.asklepios.domain.enumeration.inventory;
 
 public enum StockInReasons {
     NEW_PURCHASE,
