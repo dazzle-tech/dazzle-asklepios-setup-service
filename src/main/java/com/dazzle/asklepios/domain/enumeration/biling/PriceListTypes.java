@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.domain.enumeration.Biling;
+package com.dazzle.asklepios.domain.enumeration.biling;
 
 public enum PriceListTypes {
     CASH,
