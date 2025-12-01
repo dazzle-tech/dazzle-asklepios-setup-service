@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 public record DiagnosticTestTemplateSaveVM(
+        Long id,
         @NotNull(message = "diagnosticTestId cannot be null")
         Long diagnosticTestId,
 

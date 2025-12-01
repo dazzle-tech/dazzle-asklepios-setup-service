@@ -29,23 +29,29 @@ public class ReportTemplateController {
         this.service = service;
     }
 
-    /**
-     * Create or update template (same endpoint).
-     */
+    // -------- CREATE --------
     @PostMapping("/report-template")
-    public ResponseEntity<ReportTemplateResponseVM> save(@RequestBody ReportTemplateSaveVM vm) {
-        LOG.debug("REST save ReportTemplate payload={}", vm);
-        ReportTemplate saved = service.save(vm);
-        return ResponseEntity.created(URI.create("/api/setup/report-template/" + saved.getId()))
-                .body(ReportTemplateResponseVM.ofEntity(saved));
+    public ResponseEntity<ReportTemplateResponseVM> create(@RequestBody ReportTemplateSaveVM vm) {
+        LOG.debug("REST create ReportTemplate payload={}", vm);
+        ReportTemplate created = service.create(vm);
+        return ResponseEntity.created(URI.create("/api/setup/report-template/" + created.getId()))
+                .body(ReportTemplateResponseVM.ofEntity(created));
     }
 
-    /**
-     * List all templates (paginated).
-     */
+    // -------- UPDATE --------
+    @PutMapping("/report-template/{id}")
+    public ResponseEntity<ReportTemplateResponseVM> update(
+            @PathVariable Long id,
+            @RequestBody ReportTemplateSaveVM vm
+    ) {
+        LOG.debug("REST update ReportTemplate id={} payload={}", id, vm);
+        ReportTemplate updated = service.update(id, vm);
+        return ResponseEntity.ok(ReportTemplateResponseVM.ofEntity(updated));
+    }
+
+    // الباقي مثل ما هو
     @GetMapping("/report-template")
     public ResponseEntity<List<ReportTemplateResponseVM>> list(@ParameterObject Pageable pageable) {
-        LOG.debug("REST list ReportTemplates page={}", pageable);
         Page<ReportTemplate> page = service.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -57,12 +63,8 @@ public class ReportTemplateController {
         );
     }
 
-    /**
-     * List active templates only.
-     */
     @GetMapping("/report-template/active")
     public ResponseEntity<List<ReportTemplateResponseVM>> listActive(@ParameterObject Pageable pageable) {
-        LOG.debug("REST list active ReportTemplates page={}", pageable);
         Page<ReportTemplate> page = service.findAllActive(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -74,9 +76,6 @@ public class ReportTemplateController {
         );
     }
 
-    /**
-     * Get one template.
-     */
     @GetMapping("/report-template/{id}")
     public ResponseEntity<ReportTemplateResponseVM> get(@PathVariable Long id) {
         return service.findOne(id)
@@ -85,9 +84,6 @@ public class ReportTemplateController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /**
-     * Search by name.
-     */
     @GetMapping("/report-template/by-name/{name}")
     public ResponseEntity<List<ReportTemplateResponseVM>> findByName(
             @PathVariable String name,

@@ -25,19 +25,24 @@ public class ReportTemplateService {
         this.repository = repository;
     }
 
-    public ReportTemplate save(ReportTemplateSaveVM vm) {
-        LOG.debug("Save ReportTemplate payload={}", vm);
+    // ---------------- CREATE ----------------
+    public ReportTemplate create(ReportTemplateSaveVM vm) {
+        LOG.debug("Create ReportTemplate payload={}", vm);
 
-        if (vm.id() == null) {
-            ReportTemplate t = ReportTemplate.builder()
-                    .name(vm.name())
-                    .templateValue(vm.templateValue())
-                    .isActive(vm.isActive() != null ? vm.isActive() : true)
-                    .build();
-            return repository.save(t);
-        }
+        ReportTemplate t = ReportTemplate.builder()
+                .name(vm.name())
+                .templateValue(vm.templateValue())
+                .isActive(vm.isActive() != null ? vm.isActive() : true)
+                .build();
 
-        return repository.findById(vm.id())
+        return repository.save(t);
+    }
+
+    // ---------------- UPDATE ----------------
+    public ReportTemplate update(Long id, ReportTemplateSaveVM vm) {
+        LOG.debug("Update ReportTemplate id={} payload={}", id, vm);
+
+        return repository.findById(id)
                 .map(existing -> {
                     existing.setName(vm.name());
                     existing.setTemplateValue(vm.templateValue());
@@ -50,6 +55,7 @@ public class ReportTemplateService {
                         "Template not found."
                 ));
     }
+
 
     @Transactional(readOnly = true)
     public Page<ReportTemplate> findAll(Pageable pageable) {

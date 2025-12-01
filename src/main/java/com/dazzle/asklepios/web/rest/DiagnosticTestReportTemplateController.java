@@ -20,34 +20,35 @@ public class DiagnosticTestReportTemplateController {
         this.service = service;
     }
 
-    /**
-     * Create or update (same endpoint).
-     */
+    // -------- CREATE --------
     @PostMapping("/diagnostic-test/template")
-    public ResponseEntity<DiagnosticTestTemplateResponseVM> save(@RequestBody DiagnosticTestTemplateSaveVM vm) {
-        LOG.debug("REST request to save DiagnosticTestReportTemplate payload={}", vm);
-        var saved = service.save(vm);
-        return ResponseEntity.ok(DiagnosticTestTemplateResponseVM.ofEntity(saved));
+    public ResponseEntity<DiagnosticTestTemplateResponseVM> create(@RequestBody DiagnosticTestTemplateSaveVM vm) {
+        LOG.debug("REST create DiagnosticTestReportTemplate payload={}", vm);
+        var created = service.create(vm);
+        return ResponseEntity.ok(DiagnosticTestTemplateResponseVM.ofEntity(created));
     }
 
-    /**
-     * Get template by test id.
-     */
+    // -------- UPDATE by testId --------
+    @PutMapping("/diagnostic-test/{testId}/template")
+    public ResponseEntity<DiagnosticTestTemplateResponseVM> update(
+            @PathVariable Long testId,
+            @RequestBody DiagnosticTestTemplateSaveVM vm
+    ) {
+        LOG.debug("REST update DiagnosticTestReportTemplate testId={} payload={}", testId, vm);
+        var updated = service.update(testId, vm);
+        return ResponseEntity.ok(DiagnosticTestTemplateResponseVM.ofEntity(updated));
+    }
+
     @GetMapping("/diagnostic-test/{testId}/template")
     public ResponseEntity<DiagnosticTestTemplateResponseVM> getByTest(@PathVariable Long testId) {
-        LOG.debug("REST request to get DiagnosticTestReportTemplate testId={}", testId);
         return service.findByTestId(testId)
                 .map(DiagnosticTestTemplateResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
-    /**
-     * Optional delete template (if you want).
-     */
     @DeleteMapping("/diagnostic-test/template/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        LOG.debug("REST request to delete DiagnosticTestReportTemplate id={}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -60,5 +61,4 @@ public class DiagnosticTestReportTemplateController {
         var saved = service.assignFromLibrary(testId, templateId);
         return ResponseEntity.ok(DiagnosticTestTemplateResponseVM.ofEntity(saved));
     }
-
 }

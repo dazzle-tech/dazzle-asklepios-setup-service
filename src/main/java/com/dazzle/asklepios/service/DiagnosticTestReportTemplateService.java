@@ -24,17 +24,20 @@ public class DiagnosticTestReportTemplateService {
     private final DiagnosticTestReportTemplateRepository templateRepo;
     private final DiagnosticTestRepository testRepo;
     private final ReportTemplateRepository reportTemplateRepository;
+
     public DiagnosticTestReportTemplateService(
             DiagnosticTestReportTemplateRepository templateRepo,
-            DiagnosticTestRepository testRepo, ReportTemplateRepository reportTemplateRepository
+            DiagnosticTestRepository testRepo,
+            ReportTemplateRepository reportTemplateRepository
     ) {
         this.templateRepo = templateRepo;
         this.testRepo = testRepo;
         this.reportTemplateRepository = reportTemplateRepository;
     }
 
-    public DiagnosticTestReportTemplate save(DiagnosticTestTemplateSaveVM vm) {
-        LOG.debug("Save DiagnosticTestReportTemplate for testId={} payload={}", vm.diagnosticTestId(), vm);
+    // -------- CREATE template for test (if not exists) --------
+    public DiagnosticTestReportTemplate create(DiagnosticTestTemplateSaveVM vm) {
+        LOG.debug("Create DiagnosticTestReportTemplate testId={} payload={}", vm.diagnosticTestId(), vm);
 
         DiagnosticTest test = testRepo.findById(vm.diagnosticTestId())
                 .orElseThrow(() -> new BadRequestAlertException(
@@ -43,22 +46,41 @@ public class DiagnosticTestReportTemplateService {
                         "Diagnostic test not found."
                 ));
 
-        return templateRepo.findByDiagnosticTest_Id(vm.diagnosticTestId())
+        // ممنوع انشاء Template ثانية لنفس test
+        if (templateRepo.findByDiagnosticTest_Id(vm.diagnosticTestId()).isPresent()) {
+            throw new BadRequestAlertException(
+                    "alreadyExists",
+                    "diagnosticTestReportTemplate",
+                    "Template already exists for this test. Use update."
+            );
+        }
+
+        DiagnosticTestReportTemplate t = DiagnosticTestReportTemplate.builder()
+                .diagnosticTest(test)
+                .name(vm.name())
+                .templateValue(vm.templateValue())
+                .isActive(vm.isActive() != null ? vm.isActive() : true)
+                .build();
+
+        return templateRepo.save(t);
+    }
+
+    // -------- UPDATE existing template by testId --------
+    public DiagnosticTestReportTemplate update(Long testId, DiagnosticTestTemplateSaveVM vm) {
+        LOG.debug("Update DiagnosticTestReportTemplate testId={} payload={}", testId, vm);
+
+        return templateRepo.findByDiagnosticTest_Id(testId)
                 .map(existing -> {
                     existing.setName(vm.name());
                     existing.setTemplateValue(vm.templateValue());
                     existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
                     return templateRepo.save(existing);
                 })
-                .orElseGet(() -> {
-                    DiagnosticTestReportTemplate t = DiagnosticTestReportTemplate.builder()
-                            .diagnosticTest(test)
-                            .name(vm.name())
-                            .templateValue(vm.templateValue())
-                            .isActive(vm.isActive() != null ? vm.isActive() : true)
-                            .build();
-                    return templateRepo.save(t);
-                });
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "notFound",
+                        "diagnosticTestReportTemplate",
+                        "No template found for this test. Use create."
+                ));
     }
 
     @Transactional(readOnly = true)
@@ -66,8 +88,8 @@ public class DiagnosticTestReportTemplateService {
         return templateRepo.findByDiagnosticTest_Id(testId);
     }
 
+    // assignFromLibrary زي ما عندك
     public DiagnosticTestReportTemplate assignFromLibrary(Long testId, Long templateId) {
-
         DiagnosticTest test = testRepo.findById(testId)
                 .orElseThrow(() -> new BadRequestAlertException(
                         "testNotFound",
@@ -84,23 +106,20 @@ public class DiagnosticTestReportTemplateService {
 
         return templateRepo.findByDiagnosticTest_Id(testId)
                 .map(existing -> {
-
                     existing.setName(library.getName());
                     existing.setTemplateValue(library.getTemplateValue());
                     existing.setIsActive(true);
                     return templateRepo.save(existing);
                 })
-                .orElseGet(() -> {
-                    DiagnosticTestReportTemplate t = DiagnosticTestReportTemplate.builder()
-                            .diagnosticTest(test)
-                            .name(library.getName())
-                            .templateValue(library.getTemplateValue())
-                            .isActive(true)
-                            .build();
-                    return templateRepo.save(t);
-                });
+                .orElseGet(() -> templateRepo.save(
+                        DiagnosticTestReportTemplate.builder()
+                                .diagnosticTest(test)
+                                .name(library.getName())
+                                .templateValue(library.getTemplateValue())
+                                .isActive(true)
+                                .build()
+                ));
     }
-
 
     public void delete(Long id) {
         templateRepo.deleteById(id);
