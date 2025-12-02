@@ -149,4 +149,14 @@ public class DepartmentService {
         LOG.debug("Request to get ACTIVE Departments by Facility facility_id={}", facilityId);
         return departmentRepository.findByFacilityIdAndIsActiveTrue(facilityId);
     }
+    @Transactional(readOnly = true)
+    public Page<Department> findAppointableByDepartmentType(DepartmentType type, Pageable pageable) {
+        LOG.debug("Request to get appoitable Departments by Type with pagination type={} pageable={}", type, pageable);
+        return departmentRepository.findByTypeAndAppointableTrueAndIsActiveTrue(type, pageable);
+    }
+    @Transactional(readOnly = true)
+    public Page<Department> findAppointableDepartment(Pageable pageable) {
+        LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
+        return departmentRepository.findByAppointableTrueAndIsActiveTrue( pageable);
+    }
 }

@@ -223,4 +223,47 @@ public class DepartmentController {
     ) {
         return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId));
     }
+
+    @GetMapping("/department/appointable/by-type/{type}")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableByType(
+            @PathVariable DepartmentType type,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list appointable Departments by type={} page={}", type, pageable);
+
+        Page<Department> page = departmentService.findAppointableByDepartmentType(type, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/department/appointable")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableDepartment(@ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list appointable Departments page={}",  pageable);
+
+        Page<Department> page = departmentService.findAppointableDepartment(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }
