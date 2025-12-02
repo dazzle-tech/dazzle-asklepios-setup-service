@@ -150,13 +150,13 @@ public class DepartmentService {
         return departmentRepository.findByFacilityIdAndIsActiveTrue(facilityId);
     }
     @Transactional(readOnly = true)
-    public Page<Department> findAppointableByDepartmentType(DepartmentType type, Pageable pageable) {
+    public Page<Department> findAppointableByDepartmentType(DepartmentType type,Long facilityId, Pageable pageable) {
         LOG.debug("Request to get appoitable Departments by Type with pagination type={} pageable={}", type, pageable);
-        return departmentRepository.findByTypeAndAppointableTrueAndIsActiveTrue(type, pageable);
+        return departmentRepository.findByTypeAndAppointableTrueAndIsActiveTrueAndFacilityId(type,facilityId, pageable);
     }
     @Transactional(readOnly = true)
-    public Page<Department> findAppointableDepartment(Pageable pageable) {
+    public Page<Department> findAppointableDepartment(Long facilityId, Pageable pageable) {
         LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
-        return departmentRepository.findByAppointableTrueAndIsActiveTrue( pageable);
+        return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
     }
 }
