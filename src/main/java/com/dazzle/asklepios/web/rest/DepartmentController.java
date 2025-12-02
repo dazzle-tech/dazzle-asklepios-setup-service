@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Department;
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.service.DepartmentService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -224,14 +225,15 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId));
     }
 
-    @GetMapping("/department/appointable/by-type/{type}")
+    @GetMapping("/department/appointable/by-type/{type}/{facilityId}")
     public ResponseEntity<List<DepartmentResponseVM>> getAppointableByType(
             @PathVariable DepartmentType type,
+            @PathVariable Long facilityId,
             @ParameterObject Pageable pageable) {
 
         LOG.debug("REST list appointable Departments by type={} page={}", type, pageable);
 
-        Page<Department> page = departmentService.findAppointableByDepartmentType(type, pageable);
+        Page<Department> page = departmentService.findAppointableByDepartmentType(type,facilityId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -246,12 +248,12 @@ public class DepartmentController {
         );
     }
 
-    @GetMapping("/department/appointable")
-    public ResponseEntity<List<DepartmentResponseVM>> getAppointableDepartment(@ParameterObject Pageable pageable) {
+    @GetMapping("/department/appointable/{facilityId}")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableDepartment(@PathVariable Long facilityId, @ParameterObject Pageable pageable) {
 
         LOG.debug("REST list appointable Departments page={}",  pageable);
 
-        Page<Department> page = departmentService.findAppointableDepartment(pageable);
+        Page<Department> page = departmentService.findAppointableDepartment(facilityId,pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
