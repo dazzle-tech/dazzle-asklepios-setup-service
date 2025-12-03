@@ -13,6 +13,8 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
     Page<Resource> findAll(Pageable pageable);
 
     Page<Resource> findByResourceType(String resourceType, Pageable pageable);
+    Page<Resource> findByResourceTypeAndIsActiveTrue(String resourceType, Pageable pageable);
+
 
 
 }

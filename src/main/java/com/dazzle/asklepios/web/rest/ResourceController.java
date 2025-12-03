@@ -155,5 +155,23 @@ public class ResourceController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    /**
+     * {@code GET /resource/by-type/{resourceType}} : Get resources by type (paginated).
+     *
+     * @param resourceType the resource type to filter by.
+     * @param pageable pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of resource view models.
+     */
+    @GetMapping("/resource/active/by-type/{resourceType}")
+    public ResponseEntity<List<ResourceResponseVM>> getActiveByResourceType(
+            @PathVariable ResourceType resourceType,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list of active Resources by resourceType={} page={}", resourceType, pageable);
+        Page<Resource> page = resourceService.findActiveByResourceType(resourceType, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().map(ResourceResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
 }
 
