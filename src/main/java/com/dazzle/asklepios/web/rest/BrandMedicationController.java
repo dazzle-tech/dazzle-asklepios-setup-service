@@ -7,6 +7,7 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.brandMedication.search.BrandWithActivesVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,6 @@ public class BrandMedicationController {
 
     private final BrandMedicationService brandMedicationService;
     private final BrandMedicationActiveIngredientService brandMedicationActiveIngredientService;
-
     public BrandMedicationController(BrandMedicationService brandMedicationService, BrandMedicationActiveIngredientService brandMedicationActiveIngredientService) {
         this.brandMedicationService = brandMedicationService;
         this.brandMedicationActiveIngredientService = brandMedicationActiveIngredientService;
@@ -273,4 +273,12 @@ public class BrandMedicationController {
 
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
+
+    @GetMapping("/brand-medication/search/{keyword}")
+    public ResponseEntity<List<BrandWithActivesVM>> search(@PathVariable String keyword) {
+        LOG.debug("REST search brands by keyword='{}'", keyword);
+        return ResponseEntity.ok(brandMedicationService.searchBrandsByNameOrActive(keyword));
+    }
+
+
 }
