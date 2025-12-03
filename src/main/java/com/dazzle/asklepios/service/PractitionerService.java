@@ -170,6 +170,10 @@ public class PractitionerService {
     public Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable) {
         return practitionerRepository.findBySpecialty(specialty, pageable);
     }
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findBySubSpecialty(String specialty, Pageable pageable) {
+        return practitionerRepository.findBySubSpecialtyAndIsActiveTrue(specialty, pageable);
+    }
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findByFirstNameOrLastName(String name, Pageable pageable) {
