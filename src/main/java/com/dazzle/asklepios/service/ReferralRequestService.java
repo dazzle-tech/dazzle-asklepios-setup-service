@@ -39,7 +39,7 @@ public class ReferralRequestService {
                 .patientId(vm.patientId())
                 .encounterId(vm.encounterId())
                 .referralType(type)
-                .facilityId(type == ReferralType.EXTERNAL ? vm.facilityId() : null)
+                .facilityId(vm.facilityId())
                 .departmentId(vm.departmentId())
                 .referralReason(vm.referralReason())
                 .priority(vm.priority())
@@ -67,7 +67,7 @@ public class ReferralRequestService {
         existing.setEncounterId(vm.encounterId());
         existing.setReferralType(vm.referralType());
 
-        existing.setFacilityId(vm.referralType() == ReferralType.EXTERNAL ? vm.facilityId() : null);
+        existing.setFacilityId(vm.facilityId());
         existing.setDepartmentId(vm.departmentId());
         existing.setReferralReason(vm.referralReason());
         existing.setPriority(vm.priority());

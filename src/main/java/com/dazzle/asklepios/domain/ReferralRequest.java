@@ -51,10 +51,11 @@ public class ReferralRequest extends AbstractAuditingEntity<Long> implements Ser
     private ReferralType referralType = ReferralType.INTERNAL;
 
     // used only if EXTERNAL
+    @NotNull(message = "Facility can not be empty")
     @Column(name = "facility_id")
     private Long facilityId;
 
-    @NotNull
+    @NotNull(message = "Department can not be empty")
     @Column(name = "department_id", nullable = false)
     private Long departmentId;
 
@@ -62,7 +63,7 @@ public class ReferralRequest extends AbstractAuditingEntity<Long> implements Ser
     @Column(name = "referral_reason", nullable = false, length = 1000)
     private String referralReason;
 
-    @NotNull
+    @NotNull(message = "Priority can not be empty ")
     @Enumerated(EnumType.STRING)
     @Column(name = "priority", nullable = false, length = 30)
     private ReferralPriority priority;
