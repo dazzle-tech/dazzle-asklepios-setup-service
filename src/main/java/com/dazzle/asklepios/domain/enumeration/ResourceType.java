@@ -8,6 +8,6 @@ public enum ResourceType {
     INPATIENT_ADMISSION,
     DAY_CASE,
     EMERGENCY,
-    OPERATION
+    PROCEDURE
 
 }
