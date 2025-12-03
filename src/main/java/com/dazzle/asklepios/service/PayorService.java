@@ -138,23 +138,23 @@ public class PayorService {
         if (category != null) {
             // 3 filters
             if ((name != null && !name.isBlank()) || (code != null && !code.isBlank())) {
-                return repo.findByCategoryAndNameContainingIgnoreCaseAndCodeContainingIgnoreCaseAndIsActiveTrue(
+                return repo.findByCategoryAndNameContainingIgnoreCaseAndCodeContainingIgnoreCase(
                         category, safeName, safeCode, pageable
                 );
             }
             // فقط category
-            return repo.findByCategoryAndIsActiveTrue(category, pageable);
+            return repo.findByCategory(category, pageable);
         }
 
         if (name != null && !name.isBlank()) {
-            return repo.findByNameContainingIgnoreCaseAndIsActiveTrue(safeName, pageable);
+            return repo.findByNameContainingIgnoreCase(safeName, pageable);
         }
 
         if (code != null && !code.isBlank()) {
-            return repo.findByCodeContainingIgnoreCaseAndIsActiveTrue(safeCode, pageable);
+            return repo.findByCodeContainingIgnoreCase(safeCode, pageable);
         }
 
-        return repo.findByIsActiveTrue(pageable);
+        return repo.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
