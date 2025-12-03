@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -180,6 +182,20 @@ public class AgeGroupController {
             return ResponseEntity.notFound().build();
         }
     }
+    @GetMapping("/age-group/by-birthdate")
+    public ResponseEntity<AgeGroupResponseVM> getAgeGroupByBirthDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
+    ) {
+        LOG.debug("REST get AgeGroup by birthDate={}", birthDate);
 
+        AgeGroup result = ageGroupService.findAgeGroupByBirthDate(birthDate);
+
+        if (result == null) {
+            LOG.warn("No matching AgeGroup found for birthDate={}", birthDate);
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(AgeGroupResponseVM.ofEntity(result));
+}
 
 }
