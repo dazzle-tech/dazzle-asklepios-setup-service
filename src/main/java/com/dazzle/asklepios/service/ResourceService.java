@@ -78,6 +78,10 @@ public class ResourceService {
     public Page<Resource> findByResourceType(ResourceType resourceType, Pageable pageable) {
         return resourceRepository.findByResourceType(resourceType.name(), pageable);
     }
+    @Transactional(readOnly = true)
+    public Page<Resource> findActiveByResourceType(ResourceType resourceType, Pageable pageable) {
+        return resourceRepository.findByResourceTypeAndIsActiveTrue(resourceType.name(), pageable);
+    }
 
     @Transactional(readOnly = true)
     public Optional<Resource> findOne(Long id) {
