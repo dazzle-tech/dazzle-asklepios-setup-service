@@ -1,10 +1,13 @@
+// src/main/java/com/dazzle/asklepios/service/DepartmentService.java
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.Resource;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.ResourceRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
@@ -13,26 +16,34 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
 @Transactional
 public class DepartmentService {
+
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentService.class);
+
     private final DepartmentsRepository departmentRepository;
     private final FacilityRepository facilityRepository;
     private final UserDepartmentRepository userDepartmentRepository;
+    private final ResourceRepository resourceRepository;
 
-    public DepartmentService(DepartmentsRepository departmentRepository, FacilityRepository facilityRepository, UserDepartmentRepository userDepartmentRepository) {
+    public DepartmentService(
+            DepartmentsRepository departmentRepository,
+            FacilityRepository facilityRepository,
+            UserDepartmentRepository userDepartmentRepository,
+            ResourceRepository resourceRepository
+    ) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
         this.userDepartmentRepository = userDepartmentRepository;
+        this.resourceRepository = resourceRepository;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -58,6 +69,7 @@ public class DepartmentService {
                 .hasMedicalSheets(departmentVM.hasMedicalSheets())
                 .hasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets())
                 .build();
+
         LOG.debug("Created department: {}", department);
 
         return departmentRepository.save(department);
@@ -79,6 +91,7 @@ public class DepartmentService {
                         "department",
                         "notfound"
                 ));
+
         if (departmentVM.name() != null) department.setName(departmentVM.name());
         if (facility != null) department.setFacility(facility);
         if (departmentVM.departmentType() != null) department.setType(departmentVM.departmentType());
@@ -122,6 +135,13 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Department> findByTypeAndFacilityId(DepartmentType type, Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
+                type, facilityId, pageable);
+        return departmentRepository.findByTypeAndFacilityId(type, facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Department> findByDepartmentName(String name, Pageable pageable) {
         LOG.debug("Request to get Departments by Name with pagination name='{}' pageable={}", name, pageable);
         return departmentRepository.findByNameContainingIgnoreCase(name, pageable);
@@ -144,19 +164,47 @@ public class DepartmentService {
                     return departmentRepository.save(department);
                 });
     }
+
     @Transactional(readOnly = true)
     public List<Department> findActiveByFacilityId(Long facilityId) {
         LOG.debug("Request to get ACTIVE Departments by Facility facility_id={}", facilityId);
         return departmentRepository.findByFacilityIdAndIsActiveTrue(facilityId);
     }
+
     @Transactional(readOnly = true)
-    public Page<Department> findAppointableByDepartmentType(DepartmentType type,Long facilityId, Pageable pageable) {
+    public Page<Department> findAppointableByDepartmentType(DepartmentType type, Long facilityId, Pageable pageable) {
         LOG.debug("Request to get appoitable Departments by Type with pagination type={} pageable={}", type, pageable);
-        return departmentRepository.findByTypeAndAppointableTrueAndIsActiveTrueAndFacilityId(type,facilityId, pageable);
+        return departmentRepository.findByTypeAndAppointableTrueAndIsActiveTrueAndFacilityId(type, facilityId, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Department> findAppointableDepartment(Long facilityId, Pageable pageable) {
         LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> findDepartmentsLinkedToResourceType(String resourceType) {
+        LOG.debug("Request to get Departments linked to resources of type={}", resourceType);
+
+        List<Resource> resources =
+                resourceRepository.findByResourceTypeAndIsActiveTrue(resourceType);
+
+        List<Long> deptIds = resources.stream()
+                .map(Resource::getResourceKey)
+                .filter(Objects::nonNull)
+                .map(Long::valueOf)
+                .toList();
+
+        if (deptIds.isEmpty()) {
+            return List.of();
+        }
+
+        return departmentRepository.findByIdIn(deptIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> findDepartmentsLinkedToEmergencyResource() {
+        return findDepartmentsLinkedToResourceType("EMERGENCY");
     }
 }
