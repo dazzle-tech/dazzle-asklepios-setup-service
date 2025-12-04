@@ -27,4 +27,6 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
 
     Page<Practitioner> findBySubSpecialtyAndIsActiveTrue(String specialty, Pageable pageable);
 
+
+
 }
