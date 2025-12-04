@@ -13,6 +13,7 @@ public record ResourceResponseVM(
         Long id,
         ResourceType resourceType,
         String resourceKey,
+        String resourceName,
         Boolean isAllowParallel,
         Boolean isActive
 ) implements Serializable {
@@ -40,6 +41,7 @@ public record ResourceResponseVM(
                 resource.getId(),
                 resourceType,
                 resource.getResourceKey(),
+                resource.getResourceName(),
                 resource.getIsAllowParallel(),
                 resource.getIsActive()
         );
