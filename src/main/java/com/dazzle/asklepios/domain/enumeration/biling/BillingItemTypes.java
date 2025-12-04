@@ -3,8 +3,9 @@ package com.dazzle.asklepios.domain.enumeration.biling;
 public enum BillingItemTypes {
     MEDICATION,
 
-    DIAGNOSTICTEST,
-
+    LABORATORY,
+    RADIOLOGY,
+    PATHOLOGY,
     SERVICE,
 
     PROCEDURE
