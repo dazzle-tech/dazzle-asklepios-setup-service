@@ -17,7 +17,8 @@ public record PayorPlanUpdateVM(
         @NotBlank @Size(max = 255)
         String name,
 
-        @NotNull PayorPlanType planType,
+        @NotNull
+        PayorPlanType planType,
 
         @NotNull BillingItemTypes itemType,
         BigDecimal amount,

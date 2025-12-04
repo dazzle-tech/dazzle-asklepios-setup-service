@@ -39,23 +39,23 @@ public class PayorPlan extends AbstractAuditingEntity<Long> implements Serializa
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
+    @NotNull(message = "Payor can not be empty")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payor_id", nullable = false)
     private Payor payor;
 
     // Information
-    @NotNull
+    @NotNull(message = "Name can not be empty")
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @NotNull
+    @NotNull(message = "Plan Type can not be empty")
     @Enumerated(EnumType.STRING)
     @Column(name = "plan_type", nullable = false, length = 50)
     private PayorPlanType planType;
 
     // Coverage rule (single)
-    @NotNull
+    @NotNull(message = "Item Type can not be empty")
     @Enumerated(EnumType.STRING)
     @Column(name = "item_type", nullable = false, length = 50)
     private BillingItemTypes itemType;
@@ -63,12 +63,11 @@ public class PayorPlan extends AbstractAuditingEntity<Long> implements Serializa
     @Column(name = "amount", precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @NotNull
+    @NotNull(message = "Coverage can not be empty")
     @Enumerated(EnumType.STRING)
     @Column(name = "coverage_type", nullable = false, length = 50)
     private InsuranceCoverageType coverageType;
 
-    @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 }
