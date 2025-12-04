@@ -29,9 +29,17 @@ public class ResourceService {
     public Resource create(ResourceCreateVM vm) {
         LOG.debug("Request to create Resource: {}", vm);
 
+        // If resourceName is not provided, use resourceKey as fallback
+        String resourceName = vm.resourceName();
+        if (resourceName == null || resourceName.isEmpty()) {
+            resourceName = vm.resourceKey();
+            LOG.debug("Resource name not provided, using resourceKey as fallback: {}", resourceName);
+        }
+
         Resource resource = Resource.builder()
                 .resourceType(vm.resourceType().name())
                 .resourceKey(vm.resourceKey())
+                .resourceName(resourceName)
                 .isAllowParallel(vm.isAllowParallel() != null ? vm.isAllowParallel() : true)
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
                 .build();
@@ -55,6 +63,9 @@ public class ResourceService {
         }
         if (vm.resourceKey() != null) {
             resource.setResourceKey(vm.resourceKey());
+        }
+        if (vm.resourceName() != null) {
+            resource.setResourceName(vm.resourceName());
         }
         if (vm.isAllowParallel() != null) {
             resource.setIsAllowParallel(vm.isAllowParallel());

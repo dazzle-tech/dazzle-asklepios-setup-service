@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 
 
 @Entity
+@Table(name = "resource")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -40,6 +42,10 @@ public class Resource extends AbstractAuditingEntity<Long> implements Serializab
     @NotNull
     @Column(name = "resource_key", nullable = false)
     private String resourceKey;
+
+    @NotNull
+    @Column(name = "resource_name",nullable = false)
+    private String resourceName;
 
 
     @Column(name = "is_allow_parallel")

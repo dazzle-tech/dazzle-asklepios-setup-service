@@ -18,6 +18,7 @@ public record ResourceCreateVM(
         @NotBlank(message = "Resource key cannot be blank")
         @Size(max = 255, message = "Resource key cannot exceed 255 characters")
         String resourceKey,
+        String resourceName,
 
         Boolean isAllowParallel,
 
@@ -28,6 +29,7 @@ public record ResourceCreateVM(
         return new ResourceCreateVM(
                 ResourceType.valueOf(resource.getResourceType()),
                 resource.getResourceKey(),
+                resource.getResourceName(),
                 resource.getIsAllowParallel(),
                 resource.getIsActive()
         );
