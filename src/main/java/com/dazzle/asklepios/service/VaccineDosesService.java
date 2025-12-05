@@ -119,6 +119,12 @@ public class VaccineDosesService {
         return vaccineDosesRepository.findByVaccine_Id(vaccineId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<VaccineDoses> findAll(Pageable pageable) {
+        LOG.debug("Fetching VaccineDoses pageable={}",  pageable);
+        return vaccineDosesRepository.findAll(pageable);
+    }
+
     public Optional<VaccineDoses> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineDose id={}", id);
         return vaccineDosesRepository.findById(id)
