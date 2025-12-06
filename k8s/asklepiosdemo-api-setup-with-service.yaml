@@ -32,7 +32,7 @@ spec:
         spec:
             containers:
                 - name: asklepiosdemo-api-setup
-                  image: registry.digitalocean.com/asklepios/asklepios-api-setup:demo.017f49985ccbe00c45c69d5b239a9cdbd022f00e
+                  image: registry.digitalocean.com/asklepios/asklepios-api-setup:demo.3eaf56633e1d8ca5a796cec094fc7453eff1fe7f
                   env:
                     - name: spring.profiles.active
                       value: stage,api-docs
