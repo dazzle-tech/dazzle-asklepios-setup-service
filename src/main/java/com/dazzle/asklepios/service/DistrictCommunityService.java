@@ -34,20 +34,20 @@ public class DistrictCommunityService {
         this.entityManager = entityManager;
     }
 
-    public DistrictCommunity create(Long districtId, DistrictCommunity incoming) {
-        LOG.info("[CREATE] Request to create DistrictCommunity for districtId={} payload={}", districtId, incoming);
+    public DistrictCommunity create(Long districtId, DistrictCommunity communityRequest) {
+        LOG.info("[CREATE] Request to create DistrictCommunity for districtId={} payload={}", districtId, communityRequest);
 
         if (districtId == null) {
             throw new BadRequestAlertException("District id is required", "districtCommunity", "district.required");
         }
-        if (incoming == null) {
+        if (communityRequest == null) {
             throw new BadRequestAlertException("DistrictCommunity payload is required", "districtCommunity", "payload.required");
         }
 
         DistrictCommunity entity = DistrictCommunity.builder()
                 .district(refDistrict(districtId))
-                .name(incoming.getName().trim())
-                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : Boolean.TRUE)
+                .name(communityRequest.getName().trim())
+                .isActive(communityRequest.getIsActive() != null ? communityRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
         try {
@@ -60,13 +60,13 @@ public class DistrictCommunityService {
         }
     }
 
-    public Optional<DistrictCommunity> update(Long id, DistrictCommunity incoming) {
-        LOG.info("[UPDATE] Request to update DistrictCommunity id={} payload={}", id, incoming);
+    public Optional<DistrictCommunity> update(Long id, DistrictCommunity communityRequest) {
+        LOG.info("[UPDATE] Request to update DistrictCommunity id={} payload={}", id, communityRequest);
 
         if (id == null) {
             throw new BadRequestAlertException("DistrictCommunity id is required", "districtCommunity", "id.required");
         }
-        if (incoming == null) {
+        if (communityRequest == null) {
             throw new BadRequestAlertException("DistrictCommunity payload is required", "districtCommunity", "payload.required");
         }
 
@@ -75,8 +75,8 @@ public class DistrictCommunityService {
                         new NotFoundAlertException("DistrictCommunity not found with id " + id,
                                 "districtCommunity", "notfound"));
 
-        existing.setName(incoming.getName().trim());
-        existing.setIsActive(incoming.getIsActive());
+        existing.setName(communityRequest.getName().trim());
+        existing.setIsActive(communityRequest.getIsActive());
 
         try {
             DistrictCommunity updated = communityRepository.saveAndFlush(existing);
@@ -121,7 +121,6 @@ public class DistrictCommunityService {
                 districtId, name.trim(), pageable
         );
     }
-
 
     @Transactional
     public Optional<DistrictCommunity> toggleIsActive(Long id) {
