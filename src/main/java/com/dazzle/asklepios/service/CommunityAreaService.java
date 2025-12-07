@@ -34,20 +34,20 @@ public class CommunityAreaService {
         this.entityManager = entityManager;
     }
 
-    public CommunityArea create(Long communityId, CommunityArea incoming) {
-        LOG.info("[CREATE] Request to create CommunityArea for communityId={} payload={}", communityId, incoming);
+    public CommunityArea create(Long communityId, CommunityArea areaRequest) {
+        LOG.info("[CREATE] Request to create CommunityArea for communityId={} payload={}", communityId, areaRequest);
 
         if (communityId == null) {
             throw new BadRequestAlertException("Community id is required", "communityArea", "community.required");
         }
-        if (incoming == null) {
+        if (areaRequest == null) {
             throw new BadRequestAlertException("CommunityArea payload is required", "communityArea", "payload.required");
         }
 
         CommunityArea entity = CommunityArea.builder()
                 .community(refCommunity(communityId))
-                .name(incoming.getName().trim())
-                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : Boolean.TRUE)
+                .name(areaRequest.getName().trim())
+                .isActive(areaRequest.getIsActive() != null ? areaRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
         try {
@@ -57,13 +57,13 @@ public class CommunityAreaService {
         }
     }
 
-    public Optional<CommunityArea> update(Long id, CommunityArea incoming) {
-        LOG.info("[UPDATE] Request to update CommunityArea id={} payload={}", id, incoming);
+    public Optional<CommunityArea> update(Long id, CommunityArea areaRequest) {
+        LOG.info("[UPDATE] Request to update CommunityArea id={} payload={}", id, areaRequest);
 
         if (id == null) {
             throw new BadRequestAlertException("CommunityArea id is required", "communityArea", "id.required");
         }
-        if (incoming == null) {
+        if (areaRequest == null) {
             throw new BadRequestAlertException("CommunityArea payload is required", "communityArea", "payload.required");
         }
 
@@ -73,8 +73,8 @@ public class CommunityAreaService {
                         "communityArea",
                         "notfound"));
 
-        existing.setName(incoming.getName().trim());
-        existing.setIsActive(incoming.getIsActive());
+        existing.setName(areaRequest.getName().trim());
+        existing.setIsActive(areaRequest.getIsActive());
 
         try {
             return Optional.of(areaRepository.saveAndFlush(existing));
