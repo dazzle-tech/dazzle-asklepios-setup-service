@@ -30,17 +30,17 @@ public class CountryService {
         this.countryRepository = countryRepository;
     }
 
-    public Country create(Country incoming) {
-        LOG.info("[CREATE] Request to create Country payload={}", incoming);
+    public Country create(Country countryRequest) {
+        LOG.info("[CREATE] Request to create Country payload={}", countryRequest);
 
-        if (incoming == null) {
+        if (countryRequest == null) {
             throw new BadRequestAlertException("Country payload is required", "country", "payload.required");
         }
 
         Country entity = Country.builder()
-                .name(incoming.getName().trim())
-                .code(incoming.getCode().trim())
-                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : Boolean.TRUE)
+                .name(countryRequest.getName().trim())
+                .code(countryRequest.getCode().trim())
+                .isActive(countryRequest.getIsActive() != null ? countryRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
         try {
@@ -53,22 +53,22 @@ public class CountryService {
         }
     }
 
-    public Optional<Country> update(Long id, Country incoming) {
-        LOG.info("[UPDATE] Request to update Country id={} payload={}", id, incoming);
+    public Optional<Country> update(Long id, Country countryRequest) {
+        LOG.info("[UPDATE] Request to update Country id={} payload={}", id, countryRequest);
 
         if (id == null) {
             throw new BadRequestAlertException("Country id is required", "country", "id.required");
         }
-        if (incoming == null) {
+        if (countryRequest == null) {
             throw new BadRequestAlertException("Country payload is required", "country", "payload.required");
         }
 
         Country existing = countryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Country not found with id " + id, "country", "notfound"));
 
-            existing.setName(incoming.getName().trim());
-            existing.setCode(incoming.getCode().trim());
-            existing.setIsActive(incoming.getIsActive());
+        existing.setName(countryRequest.getName().trim());
+        existing.setCode(countryRequest.getCode().trim());
+        existing.setIsActive(countryRequest.getIsActive());
 
         try {
             Country updated = countryRepository.saveAndFlush(existing);
