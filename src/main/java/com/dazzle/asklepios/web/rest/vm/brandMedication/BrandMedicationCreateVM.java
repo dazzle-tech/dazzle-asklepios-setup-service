@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.brandMedication;
 import com.dazzle.asklepios.domain.BrandMedication;
 import com.dazzle.asklepios.domain.enumeration.Unit;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
@@ -20,9 +21,9 @@ public record BrandMedicationCreateVM(
         String costCategory,
         String roa,
         Boolean isActive,
-        String code
-//       ,@NotNull Long uomGroup,
-//       @NotNull Long uomGroupUnit
+        String code,
+        @NotNull Long uomGroupId,
+        @NotNull Long uomGroupUnitId
 ) {
     public static BrandMedicationCreateVM ofEntity(BrandMedication entity) {
         if (entity == null) return null;
@@ -40,7 +41,9 @@ public record BrandMedicationCreateVM(
                 entity.getCostCategory(),
                 entity.getRoa(),
                 entity.getIsActive(),
-                entity.getCode()
+                entity.getCode(),
+                entity.getUomGroup()!=null? entity.getUomGroup().getId():null,
+                entity.getUomGroupUnit()!=null?entity.getUomGroupUnit().getId():null
         );
     }
 }

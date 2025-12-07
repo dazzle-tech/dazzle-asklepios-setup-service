@@ -107,6 +107,22 @@ public class VaccineDosesController {
         );
     }
 
+    @GetMapping("/vaccine/doses")
+    public ResponseEntity<List<VaccineDosesResponseVM>> getAll(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list VaccineDoses pageable={}",  pageable);
+        final Page<VaccineDoses> page = vaccineDosesService.findAll(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(VaccineDosesResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @PatchMapping("/vaccine-doses/{id}/toggle-active")
     public ResponseEntity<VaccineDosesResponseVM> toggleVaccineDoseActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle VaccineDose isActive id={}", id);

@@ -191,4 +191,21 @@ public class PractitionerController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    /**
+     * {@code GET /practitioner/active/by-specialty/{specialty}} : Get practitioners by specialty (paginated).
+     *
+     * @param specialty the sub specialty to filter by.
+     * @param pageable pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models.
+     */
+    @GetMapping("/practitioner/active/by-sub-specialty/{specialty}")
+    public ResponseEntity<List<PractitionerResponseVM>> getBySubSpecialty(
+            @PathVariable String specialty,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Practitioners by sub specialty={} page={}", specialty, pageable);
+        Page<Practitioner> page = practitionerService.findBySubSpecialty(specialty, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
 }

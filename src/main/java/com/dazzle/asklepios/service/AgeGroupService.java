@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.AgeGroup;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.repository.AgeGroupRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -193,4 +196,39 @@ public class AgeGroupService {
     private Facility refFacility(Long facilityId) {
         return entityManager.getReference(Facility.class, facilityId);
     }
+
+    @Transactional(readOnly = true)
+    public AgeGroup findAgeGroupByBirthDate(LocalDate birthDate) {
+
+        if (birthDate == null) {
+            throw new BadRequestAlertException("Birth date is required", "ageGroup", "birthdate.required");
+        }
+
+        long ageInDays = ChronoUnit.DAYS.between(birthDate, LocalDate.now());
+
+        List<AgeGroup> groups = ageGroupRepository.findAll();
+
+        return groups.stream()
+                .filter(g -> {
+                    long fromDays = convertToDays(g.getFromAge(), g.getFromAgeUnit());
+                    long toDays = convertToDays(g.getToAge(), g.getToAgeUnit());
+                    return ageInDays >= fromDays && ageInDays <= toDays;
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    private long convertToDays(BigDecimal value, AgeUnit unit) {
+        return switch (unit) {
+            case YEARS -> value.longValue() * 365;
+            case MONTHS -> value.longValue() * 30;
+            case WEEKS -> value.longValue() * 7;
+            case DAYS -> value.longValue();
+            case HOURS -> value.longValue() / 24;
+};
+}
+
+
+
 }

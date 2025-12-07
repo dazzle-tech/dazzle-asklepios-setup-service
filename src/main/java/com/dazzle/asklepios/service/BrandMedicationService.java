@@ -1,19 +1,36 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.ActiveIngredients;
 import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
+import com.dazzle.asklepios.domain.MedicationCategoriesClass;
+import com.dazzle.asklepios.domain.UomGroup;
+import com.dazzle.asklepios.domain.UomGroupUnit;
+import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
+import com.dazzle.asklepios.repository.BrandMedicationActiveIngredientRepository;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
+import com.dazzle.asklepios.repository.UomGroupRepository;
+import com.dazzle.asklepios.repository.UomGroupUnitRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.brandMedication.search.ActiveIngredientInBrandVM;
+import com.dazzle.asklepios.web.rest.vm.brandMedication.search.BrandWithActivesVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -21,9 +38,18 @@ public class BrandMedicationService {
 
     private static final Logger LOG = LoggerFactory.getLogger(BrandMedicationService.class);
     private final BrandMedicationRepository brandMedicationRepository;
+    private final UomGroupRepository uomGroupRepository;
+    private final UomGroupUnitRepository uomGroupUnitRepository;
+    private final ActiveIngredientsRepository activeRepository;
+    private final BrandMedicationActiveIngredientRepository relRepository;
 
-    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository) {
+
+    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository, UomGroupRepository uomGroupRepository, UomGroupUnitRepository uomGroupUnitRepository, ActiveIngredientsRepository activeRepository, BrandMedicationActiveIngredientRepository relRepository) {
         this.brandMedicationRepository = brandMedicationRepository;
+        this.uomGroupRepository = uomGroupRepository;
+        this.uomGroupUnitRepository = uomGroupUnitRepository;
+        this.activeRepository = activeRepository;
+        this.relRepository = relRepository;
     }
 
     public BrandMedication create(BrandMedicationCreateVM vm) {
@@ -36,12 +62,14 @@ public class BrandMedicationService {
             throw new BadRequestAlertException("dosageForm is required", "brandMedication", "dosageformrequired");
         }
 
-//        if (vm.uomGroup() == null || vm.uomGroup().isBlank()) {
-//            throw new BadRequestAlertException("uomGroup is required", "brandMedication", "uomGrouprequired");
-//        }
-//        if (vm.uomGroupUnit() == null || vm.uomGroupUnit().isBlank()) {
-//            throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
-//        }
+        if (vm.uomGroupId() == null) {
+            throw new BadRequestAlertException("uomGroup is required", "brandMedication", "uomGrouprequired");
+        }
+        if (vm.uomGroupUnitId() == null) {
+            throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
+        }
+        UomGroup uomGroup = getUOMGroup(vm.uomGroupId());
+        UomGroupUnit uomGroupUnit=getUOMGroupUnit(vm.uomGroupUnitId());
 
         BrandMedication entity = BrandMedication.builder()
                 .name(vm.name())
@@ -57,11 +85,23 @@ public class BrandMedicationService {
                 .costCategory(vm.costCategory())
                 .roa(vm.roa())
                 .isActive(vm.isActive())
+                .uomGroup(uomGroup)
+                .uomGroupUnit(uomGroupUnit)
                 .build();
 
         BrandMedication saved = brandMedicationRepository.save(entity);
         LOG.debug("Created BrandMedication: {}", saved);
         return saved;
+    }
+    private UomGroup getUOMGroup(Long id) {
+        LOG.debug("getUOMGroup for active ingredients: id={}", id);
+        return uomGroupRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("UOM group not found: " + id, "UomGroup", "notfound"));
+    }
+    private UomGroupUnit getUOMGroupUnit(Long id) {
+        LOG.debug("getUOMGroupUnit for active ingredients: id={}", id);
+        return uomGroupUnitRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("UOM group unit not found: " + id, "UomGroupUnit", "notfound"));
     }
 
     public Optional<BrandMedication> update(Long id, BrandMedicationUpdateVM vm) {
@@ -87,6 +127,8 @@ public class BrandMedicationService {
         if (vm.costCategory() != null) entity.setCostCategory(vm.costCategory());
         if (vm.roa() != null) entity.setRoa(vm.roa());
         if (vm.isActive() != null) entity.setIsActive(vm.isActive());
+        if(vm.uomGroupId() != null) entity.setUomGroup(getUOMGroup(vm.uomGroupId()));
+        if(vm.uomGroupUnitId()!=null) entity.setUomGroupUnit(getUOMGroupUnit(vm.uomGroupUnitId()));
 
         BrandMedication updated = brandMedicationRepository.save(entity);
         LOG.debug("Updated BrandMedication: {}", updated);
@@ -162,4 +204,81 @@ public class BrandMedicationService {
         LOG.debug("Request to get BrandMedications by isActive={} {}", isActive, pageable);
         return brandMedicationRepository.findByIsActive(isActive, pageable);
     }
+
+    @Transactional(readOnly = true)
+    public List<BrandWithActivesVM> searchBrandsByNameOrActive(String keyword) {
+
+        String kw = keyword == null ? "" : keyword.trim();
+        LOG.debug("Search brands by name or active kw='{}'", kw);
+
+        // 1) brands matching by name/code
+        List<Long> brandIdsFromName =
+                brandMedicationRepository
+                        .findByNameContainsIgnoreCaseOrCodeContainsIgnoreCase(kw, kw)
+                        .stream()
+                        .map(BrandMedication::getId)
+                        .toList();
+
+        // 2) active ids matching by name/atcCode
+        List<Long> activeIds =
+                activeRepository
+                        .findByNameContainsIgnoreCaseOrAtcCodeContainingIgnoreCase(kw, kw)
+                        .stream()
+                        .map(ActiveIngredients::getId)
+                        .toList();
+
+        // 3) brand ids linked to these actives
+        List<Long> brandIdsFromActives = activeIds.isEmpty()
+                ? List.of()
+                : relRepository.findDistinctBrandIdsByActiveIngredientIds(activeIds);
+
+        // 4) union ids (distinct + order)
+        LinkedHashSet<Long> allBrandIds = new LinkedHashSet<>();
+        allBrandIds.addAll(brandIdsFromName);
+        allBrandIds.addAll(brandIdsFromActives);
+
+        if (allBrandIds.isEmpty()) {
+            return List.of();
+        }
+
+
+        List<BrandMedication> brands = brandMedicationRepository.findAllById(allBrandIds);
+
+        // 6) fetch all relations for these brands in ONE query
+        List<BrandMedicationActiveIngredient> rels =
+                relRepository.findAllByBrandMedicationIdInWithActive(allBrandIds);
+
+        // 7) group relations by brandId
+        Map<Long, List<BrandMedicationActiveIngredient>> relsByBrandId =
+                rels.stream().collect(Collectors.groupingBy(r -> r.getBrandMedication().getId()));
+
+        // 8) keep order
+        Map<Long, BrandMedication> brandById =
+                brands.stream().collect(Collectors.toMap(BrandMedication::getId, b -> b));
+
+        List<BrandMedication> orderedBrands = allBrandIds.stream()
+                .map(brandById::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // 9) map to VM using grouped relations
+        return orderedBrands.stream()
+                .map(brand -> {
+                    List<ActiveIngredientInBrandVM> activesVM =
+                            relsByBrandId.getOrDefault(brand.getId(), List.of())
+                                    .stream()
+                                    .map(rel -> ActiveIngredientInBrandVM.of(
+                                            rel.getActiveIngredients(),
+                                            rel.getStrength(),
+                                            rel.getUnit()
+                                    ))
+                                    .distinct()
+                                    .toList();
+
+                    return BrandWithActivesVM.ofEntity(brand, activesVM);
+                })
+                .toList();
+    }
+
+
 }

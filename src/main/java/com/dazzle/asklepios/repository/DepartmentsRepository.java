@@ -11,8 +11,27 @@ import java.util.List;
 
 @Repository
 public interface DepartmentsRepository extends JpaRepository<Department, Long> {
+
     Page<Department> findByFacilityId(Long facilityId, Pageable pageable);
+
     Page<Department> findByType(DepartmentType type, Pageable pageable);
+
     Page<Department> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
     List<Department> findByFacilityIdAndIsActiveTrue(Long facilityId);
+
+    Page<Department> findByTypeAndAppointableTrueAndIsActiveTrueAndFacilityId(
+            DepartmentType type,
+            Long facilityId,
+            Pageable pageable
+    );
+
+    Page<Department> findByAppointableTrueAndIsActiveTrueAndFacilityId(
+            Long facilityId,
+            Pageable pageable
+    );
+
+    Page<Department> findByTypeAndFacilityId(DepartmentType type, Long facilityId, Pageable pageable);
+
+    List<Department> findByIdIn(List<Long> ids);
 }

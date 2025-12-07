@@ -5,10 +5,16 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -18,6 +24,10 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -75,15 +85,18 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     @Column(name = "is_active")
     private Boolean isActive = true;
 
- /*  TODO: add uom columns
    @NotNull
    @ManyToOne(optional = false)
    @JoinColumn(name = "uom_group_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_id"))
-    private UOMGroup uomGroup;
+    private UomGroup uomGroup;
 
     @NotNull
     @ManyToOne(optional = false)
     @JoinColumn(name = "uom_group_unit_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_unit_id"))
-    private UOMGroupUnit uomGroupUnit;
-*/
+    private UomGroupUnit uomGroupUnit;
+
+    @OneToMany(mappedBy = "brandMedication", fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<BrandMedicationActiveIngredient> brandMedicationActiveIngredients = new ArrayList<>();
+
+
 }

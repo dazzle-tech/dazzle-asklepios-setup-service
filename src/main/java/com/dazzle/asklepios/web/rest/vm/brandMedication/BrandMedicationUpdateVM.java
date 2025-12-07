@@ -22,9 +22,9 @@ public record BrandMedicationUpdateVM(
         String costCategory,
         String roa,
         Boolean isActive,
-        String code
-        //       ,@NotNull Long uomGroup,
-//       @NotNull Long uomGroupUnit
+        String code,
+        @NotNull Long uomGroupId,
+       @NotNull Long uomGroupUnitId
 ) {
     public static BrandMedicationUpdateVM ofEntity(BrandMedication entity) {
         if (entity == null) return null;
@@ -43,7 +43,9 @@ public record BrandMedicationUpdateVM(
                 entity.getCostCategory(),
                 entity.getRoa(),
                 entity.getIsActive(),
-                entity.getCode()
+                entity.getCode(),
+                entity.getUomGroup()!=null? entity.getUomGroup().getId():null,
+                entity.getUomGroupUnit()!=null?entity.getUomGroupUnit().getId():null
         );
     }
 }

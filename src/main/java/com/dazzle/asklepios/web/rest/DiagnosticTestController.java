@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -112,6 +113,38 @@ public class DiagnosticTestController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         LOG.debug("REST found {} DiagnosticTests matching name='{}'", page.getTotalElements(), name);
         return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
+
+
+    /**
+     * Search diagnostic tests by type AND name (case-insensitive).
+     */
+    @GetMapping("/diagnostic-test/by-type-and-name")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST request to search DiagnosticTests by type={} and name='{}' page={}", type, name, pageable);
+
+        Page<DiagnosticTest> page = service.findByTypeAndName(type, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        LOG.debug("REST found {} DiagnosticTests with type={} and name='{}'",
+                page.getTotalElements(), type, name);
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(DiagnosticTestResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
     /**

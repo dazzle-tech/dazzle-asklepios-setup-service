@@ -12,4 +12,7 @@ public interface ActiveIngredientsRepository  extends JpaRepository<ActiveIngred
     Page<ActiveIngredients> findByDrugClassIdIn(List<Long> drugClassId, Pageable pageable);
     Page<ActiveIngredients> findByNameContainsIgnoreCase(String name, Pageable pageable);
     Page<ActiveIngredients> findByAtcCodeContainsIgnoreCase(String atcCode, Pageable pageable);
+
+    List<ActiveIngredients> findByNameContainsIgnoreCaseOrAtcCodeContainingIgnoreCase(String k1, String k2);
+
 }
