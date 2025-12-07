@@ -34,21 +34,21 @@ public class CountryDistrictService {
         this.entityManager = entityManager;
     }
 
-    public CountryDistrict create(Long countryId, CountryDistrict incoming) {
-        LOG.info("[CREATE] Request to create CountryDistrict for countryId={} payload={}", countryId, incoming);
+    public CountryDistrict create(Long countryId, CountryDistrict districtRequest) {
+        LOG.info("[CREATE] Request to create CountryDistrict for countryId={} payload={}", countryId, districtRequest);
 
         if (countryId == null) {
             throw new BadRequestAlertException("Country id is required", "countryDistrict", "country.required");
         }
-        if (incoming == null) {
+        if (districtRequest == null) {
             throw new BadRequestAlertException("CountryDistrict payload is required", "countryDistrict", "payload.required");
         }
 
         CountryDistrict entity = CountryDistrict.builder()
                 .country(refCountry(countryId))
-                .name(incoming.getName().trim())
-                .code(incoming.getCode().trim())
-                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : Boolean.TRUE)
+                .name(districtRequest.getName().trim())
+                .code(districtRequest.getCode().trim())
+                .isActive(districtRequest.getIsActive() != null ? districtRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
         try {
@@ -61,22 +61,22 @@ public class CountryDistrictService {
         }
     }
 
-    public Optional<CountryDistrict> update(Long id, CountryDistrict incoming) {
-        LOG.info("[UPDATE] Request to update CountryDistrict id={} payload={}", id, incoming);
+    public Optional<CountryDistrict> update(Long id, CountryDistrict districtRequest) {
+        LOG.info("[UPDATE] Request to update CountryDistrict id={} payload={}", id, districtRequest);
 
         if (id == null) {
             throw new BadRequestAlertException("CountryDistrict id is required", "countryDistrict", "id.required");
         }
-        if (incoming == null) {
+        if (districtRequest == null) {
             throw new BadRequestAlertException("CountryDistrict payload is required", "countryDistrict", "payload.required");
         }
 
         CountryDistrict existing = districtRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("CountryDistrict not found with id " + id, "countryDistrict", "notfound"));
 
-        existing.setName(incoming.getName().trim());
-        existing.setCode(incoming.getCode().trim());
-        existing.setIsActive(incoming.getIsActive());
+        existing.setName(districtRequest.getName().trim());
+        existing.setCode(districtRequest.getCode().trim());
+        existing.setIsActive(districtRequest.getIsActive());
 
         try {
             CountryDistrict updated = districtRepository.saveAndFlush(existing);
