@@ -46,14 +46,14 @@ public class PayorPlanController {
     public ResponseEntity<com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanResponseVM> createPlan(@RequestBody PayorPlanSaveVM vm) {
         PayorPlan saved = service.createPlan(vm);
         URI location = URI.create("/api/setup/payor-plan/" + saved.getId());
-        return ResponseEntity.created(location).body(PayorPlanResponseVM.ofEntity(saved, false));
+        return ResponseEntity.created(location).body(PayorPlanResponseVM.ofEntity(saved));
     }
 
     @PutMapping("/payor-plan")
     public ResponseEntity<PayorPlanResponseVM> updatePlan(@RequestBody PayorPlanUpdateVM vm) {
         PayorPlan saved = service.updatePlan(vm);
         URI location = URI.create("/api/setup/payor-plan/" + saved.getId());
-        return ResponseEntity.ok().location(location).body(PayorPlanResponseVM.ofEntity(saved, false));
+        return ResponseEntity.ok().location(location).body(PayorPlanResponseVM.ofEntity(saved));
     }
 
     @GetMapping("/payor-plan/{id}")
@@ -73,7 +73,7 @@ public class PayorPlanController {
     @PatchMapping("/payor-plan/{id}/toggle-active")
     public ResponseEntity<PayorPlanResponseVM> togglePlanActive(@PathVariable Long id) {
         return service.togglePlanActive(id)
-                .map(p -> PayorPlanResponseVM.ofEntity(p, false))
+                .map(p -> PayorPlanResponseVM.ofEntity(p))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -88,7 +88,7 @@ public class PayorPlanController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
         return new ResponseEntity<>(
-                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p, false)).toList(),
+                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p)).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -102,7 +102,7 @@ public class PayorPlanController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
         return new ResponseEntity<>(
-                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p, false)).toList(),
+                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p)).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -119,7 +119,7 @@ public class PayorPlanController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
         return new ResponseEntity<>(
-                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p, false)).toList(),
+                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p)).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -136,7 +136,7 @@ public class PayorPlanController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
         return new ResponseEntity<>(
-                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p, false)).toList(),
+                page.getContent().stream().map(p -> PayorPlanResponseVM.ofEntity(p)).toList(),
                 headers,
                 HttpStatus.OK
         );
