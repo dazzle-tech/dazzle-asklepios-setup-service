@@ -217,7 +217,6 @@ public class AgeGroupController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
     ) {
         LOG.debug("REST get AgeGroup by birthDate={}", birthDate);
-
         AgeGroup result = ageGroupService.findAgeGroupByBirthDate(birthDate);
 
         if (result == null) {
