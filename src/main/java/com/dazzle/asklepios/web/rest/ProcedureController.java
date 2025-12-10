@@ -192,4 +192,25 @@ public class ProcedureController {
         );
     }
 
+    @GetMapping("/procedure/active-appointable")
+    public ResponseEntity<List<ProcedureResponseVM>> getActiveAppointable(
+
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
+
+        Page<Procedure> page = procedureService.findActiveAppointable( pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
 }

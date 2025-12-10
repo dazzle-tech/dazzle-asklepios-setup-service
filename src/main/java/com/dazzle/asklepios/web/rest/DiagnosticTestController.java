@@ -1,12 +1,14 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.service.DiagnosticTestService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -171,5 +173,25 @@ public class DiagnosticTestController {
                 .map(DiagnosticTestResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/diagnostic-test/active-appointable")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getActiveAppointable(
+
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
+
+        Page<DiagnosticTest> page = service.findActiveAppointable( pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 }
