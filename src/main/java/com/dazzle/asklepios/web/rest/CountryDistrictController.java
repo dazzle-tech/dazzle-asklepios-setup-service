@@ -100,6 +100,28 @@ public class CountryDistrictController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/district/active")
+    public ResponseEntity<List<CountryDistrictResponseVM>> getActiveDistricts(
+            @RequestParam("countryId") Long countryId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active CountryDistricts for countryId={} pageable={}", countryId, pageable);
+
+        Page<CountryDistrict> page = districtService.findActive(countryId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<CountryDistrictResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryDistrictResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
     @GetMapping("/country/{countryId}/district")
     public ResponseEntity<List<CountryDistrictResponseVM>> getByCountry(
             @PathVariable Long countryId,

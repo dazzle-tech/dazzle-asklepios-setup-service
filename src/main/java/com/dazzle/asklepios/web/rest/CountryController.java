@@ -95,6 +95,26 @@ public class CountryController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/country/active")
+    public ResponseEntity<List<CountryResponseVM>> getActiveCountries(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Countries pageable={}", pageable);
+
+        Page<Country> page = countryService.findActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
     @GetMapping("/country/by-name/{name}")
     public ResponseEntity<List<CountryResponseVM>> getByName(
             @PathVariable String name,
@@ -139,4 +159,15 @@ public class CountryController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    @PostMapping("/country/bulk")
+    public ResponseEntity<List<CountryResponseVM>> getCountriesBulk(@RequestBody List<Long> ids) {
+        List<Country> countries = countryService.findByIds(ids);
+
+        List<CountryResponseVM> body = countries.stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
 }

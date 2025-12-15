@@ -200,23 +200,44 @@ public class AgeGroupService {
     @Transactional(readOnly = true)
     public AgeGroup findAgeGroupByBirthDate(LocalDate birthDate) {
 
+        LOG.info("[FIND AGE GROUP] Request to find AgeGroup for birthDate={}", birthDate);
+
         if (birthDate == null) {
+            LOG.warn("[FIND AGE GROUP] Birth date is NULL — throwing exception");
             throw new BadRequestAlertException("Birth date is required", "ageGroup", "birthdate.required");
         }
 
         long ageInDays = ChronoUnit.DAYS.between(birthDate, LocalDate.now());
+        LOG.debug("[FIND AGE GROUP] Calculated ageInDays={}", ageInDays);
 
         List<AgeGroup> groups = ageGroupRepository.findAll();
+        LOG.debug("[FIND AGE GROUP] Loaded {} AgeGroups from database", groups.size());
 
-        return groups.stream()
+        AgeGroup result = groups.stream()
                 .filter(g -> {
                     long fromDays = convertToDays(g.getFromAge(), g.getFromAgeUnit());
                     long toDays = convertToDays(g.getToAge(), g.getToAgeUnit());
-                    return ageInDays >= fromDays && ageInDays <= toDays;
+
+                    boolean matches = ageInDays >= fromDays && ageInDays <= toDays;
+
+                    LOG.trace("[FIND AGE GROUP] Checking AgeGroup id={} label={} rangeDays=[{}-{}] matches={}",
+                            g.getId(), g.getAgeGroup(), fromDays, toDays, matches);
+
+                    return matches;
                 })
                 .findFirst()
                 .orElse(null);
+
+        if (result == null) {
+            LOG.info("[FIND AGE GROUP] No AgeGroup matched for ageInDays={}", ageInDays);
+        } else {
+            LOG.info("[FIND AGE GROUP] Found AgeGroup id={} label={} for ageInDays={}",
+                    result.getId(), result.getAgeGroup(), ageInDays);
+        }
+
+        return result;
     }
+
 
 
     private long convertToDays(BigDecimal value, AgeUnit unit) {
