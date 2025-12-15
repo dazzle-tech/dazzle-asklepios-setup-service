@@ -17,5 +17,8 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
     Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
     Page<Procedure> findByCodeContainingIgnoreCase(String code, Pageable pageable);
+    Page<Procedure> findByIsActiveTrueAndIsAppointableTrue(
 
+            Pageable pageable
+    );
 }
