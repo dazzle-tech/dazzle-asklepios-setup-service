@@ -197,6 +197,11 @@ public class ProcedureService {
         }
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
+    public Page<Procedure> findActiveAppointable( Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Procedures  pageable={} is",  pageable);
+        return procedureRepository
+                .findByIsActiveTrueAndIsAppointableTrue( pageable);
+    }
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
     }

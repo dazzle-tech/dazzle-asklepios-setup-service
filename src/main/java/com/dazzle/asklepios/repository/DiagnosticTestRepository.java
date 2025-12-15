@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,6 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
     List<DiagnosticTest> findAllByType(TestType type);
     Page<DiagnosticTest> findByNameContainingIgnoreCase(String name, Pageable pageable);
     Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
-
+    Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(  Pageable pageable);
     Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(TestType type, String name, Pageable pageable);
 }

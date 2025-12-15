@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
@@ -98,7 +99,11 @@ public class DiagnosticTestService {
         return repository.findById(id);
     }
 
-
+    public Page<DiagnosticTest> findActiveAppointable(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  DiagnosticTest  pageable={} is",  pageable);
+        return repository
+                .findByIsActiveTrueAndAppointableTrue( pageable);
+    }
     public Optional<DiagnosticTest> toggleIsActive(Long id) {
         return repository.findById(id)
                 .map(p -> {

@@ -6,6 +6,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PayorPlanRepository extends JpaRepository<PayorPlan, Long> {
-    Page<PayorPlan> findByPayorId(Long payorId, Pageable pageable);
-}
 
+    Page<PayorPlan> findByPayorId(Long payorId, Pageable pageable);
+
+    Page<PayorPlan> findByIsActiveTrue(Pageable pageable);
+
+    Page<PayorPlan> findByPayorIdAndIsActiveTrue(Long payorId, Pageable pageable);
+}
