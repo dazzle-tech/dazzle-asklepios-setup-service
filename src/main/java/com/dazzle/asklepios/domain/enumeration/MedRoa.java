@@ -1,6 +1,6 @@
 package com.dazzle.asklepios.domain.enumeration;
 
-public enum MedRoa {
+public enum MedRoa{
     RECTALLY,
     ORALLY_PO,
     INTRAMUSCULAR_IM,
@@ -10,4 +10,5 @@ public enum MedRoa {
     INTRAVENOUS_IV,
     TRANSDERMAL_PATCH,
     TOPICAL
-}
+
+    }
