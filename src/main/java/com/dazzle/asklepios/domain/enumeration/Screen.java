@@ -19,6 +19,7 @@ public enum Screen {
     // Billing & Finance
     LEDGER_ACCOUNT,
     PRICE_LISTS,
+    CLAIMS,
 
     // System Setup
     ALLERGENS,
