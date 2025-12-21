@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class PriceListAttributeService {
@@ -25,7 +27,6 @@ public class PriceListAttributeService {
     }
 
     public PriceListAttribute create(PriceListAttributeSaveVM vm) {
-        LOG.debug("Enter: create() with argument[s] = {}", vm);
         LOG.debug("Create PriceListAttribute payload={}", vm);
 
         PriceListAttribute a = PriceListAttribute.builder()
@@ -41,29 +42,24 @@ public class PriceListAttributeService {
         return saved;
     }
 
-    public PriceListAttribute update(PriceListAttributeUpdateVM vm) {
-        LOG.debug("Enter: update() with argument[s] = {}", vm);
-
-        PriceListAttribute existing = repo.findById(vm.id())
-                .orElseThrow(() -> new BadRequestAlertException(
-                        "notFound", "priceListAttribute", "Attribute not found."
-                ));
-
+    public PriceListAttribute update(PriceListAttribute existing, PriceListAttributeUpdateVM vm) {
         existing.setPriceListId(vm.priceListId());
         existing.setAttributeType(vm.attributeType());
         existing.setAttribute(vm.attribute());
         existing.setPrice(vm.price());
-        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
 
-        PriceListAttribute saved = repo.save(existing);
-        LOG.debug("Exit: update() with result = {}", saved.getId());
-        return saved;
+        if (vm.isActive() != null) {
+            existing.setIsActive(vm.isActive());
+        }
+
+        return repo.save(existing);
     }
 
+
     @Transactional(readOnly = true)
-    public java.util.Optional<PriceListAttribute> findOne(Long id) {
+    public Optional<PriceListAttribute> findOne(Long id) {
         LOG.debug("Enter: findOne() with argument[s] = {}", id);
-        var res = repo.findById(id);
+        Optional<PriceListAttribute> res = repo.findById(id);
         LOG.debug("Exit: findOne() with result present = {}", res.isPresent());
         return res;
     }
@@ -88,7 +84,7 @@ public class PriceListAttributeService {
     @Transactional(readOnly = true)
     public Page<PriceListAttribute> getAll(Pageable pageable) {
         LOG.debug("Enter: getAll() with argument[s] = {}", pageable);
-        var page = repo.findAll(pageable);
+        Page<PriceListAttribute> page = repo.findAll(pageable);
         LOG.debug("Exit: getAll() with result size = {}", page.getNumberOfElements());
         return page;
     }
@@ -96,7 +92,7 @@ public class PriceListAttributeService {
     @Transactional(readOnly = true)
     public Page<PriceListAttribute> getAllActive(Pageable pageable) {
         LOG.debug("Enter: getAllActive() with argument[s] = {}", pageable);
-        var page = repo.findByIsActiveTrue(pageable);
+        Page<PriceListAttribute> page = repo.findByIsActiveTrue(pageable);
         LOG.debug("Exit: getAllActive() with result size = {}", page.getNumberOfElements());
         return page;
     }
@@ -104,7 +100,7 @@ public class PriceListAttributeService {
     @Transactional(readOnly = true)
     public Page<PriceListAttribute> getByPriceList(Long priceListId, Pageable pageable) {
         LOG.debug("Enter: getByPriceList() priceListId={}, pageable={}", priceListId, pageable);
-        var page = repo.findByPriceListId(priceListId, pageable);
+        Page<PriceListAttribute> page = repo.findByPriceListId(priceListId, pageable);
         LOG.debug("Exit: getByPriceList() with result size = {}", page.getNumberOfElements());
         return page;
     }
@@ -112,7 +108,7 @@ public class PriceListAttributeService {
     @Transactional(readOnly = true)
     public Page<PriceListAttribute> getActiveByPriceList(Long priceListId, Pageable pageable) {
         LOG.debug("Enter: getActiveByPriceList() priceListId={}, pageable={}", priceListId, pageable);
-        var page = repo.findByPriceListIdAndIsActiveTrue(priceListId, pageable);
+        Page<PriceListAttribute> page = repo.findByPriceListIdAndIsActiveTrue(priceListId, pageable);
         LOG.debug("Exit: getActiveByPriceList() with result size = {}", page.getNumberOfElements());
         return page;
     }

@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.PriceListAttribute;
 import com.dazzle.asklepios.service.PriceListAttributeService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.pricelist.*;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -40,10 +41,18 @@ public class PriceListAttributeController {
     @PutMapping("/price-list-attributes")
     public ResponseEntity<PriceListAttributeResponseVM> update(@Valid @RequestBody PriceListAttributeUpdateVM vm) {
         LOG.debug("REST request to update PriceListAttribute : {}", vm);
-        PriceListAttribute saved = service.update(vm);
+
+        PriceListAttribute existing = service.findOne(vm.id())
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "notFound", "priceListAttribute", "Attribute not found."
+                ));
+
+        PriceListAttribute saved = service.update(existing, vm);
+
         URI location = URI.create("/api/setup/price-list-attributes/" + saved.getId());
         return ResponseEntity.ok().location(location).body(PriceListAttributeResponseVM.ofEntity(saved));
     }
+
 
     @GetMapping("/price-list-attributes/{id}")
     public ResponseEntity<PriceListAttributeResponseVM> getOne(@PathVariable Long id) {
