@@ -50,4 +50,7 @@ public class UserStickyNotes extends AbstractAuditingEntity<Long> implements Ser
     @NotNull
     private BigDecimal priorityOrder;
 
+    @Column(name = "patient_id")
+    private Long patientId;
+
 }
