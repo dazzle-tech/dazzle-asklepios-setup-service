@@ -32,7 +32,7 @@ public class OrganizationDefinitionController {
     }
 
     /**
-     * {@code POST /organization-definition} : Create a new OrganizationDefinition.
+     * {@code POST /organization-definition} : Create OrganizationDefinition (single instance only).
      */
     @PostMapping("/organization-definition")
     public ResponseEntity<OrganizationDefinition> createOrganizationDefinition(
@@ -40,12 +40,19 @@ public class OrganizationDefinitionController {
     ) {
         LOG.debug("REST create OrganizationDefinition payload={}", vm);
 
+        if (organizationDefinitionService.exists()) {
+            return ResponseEntity
+                    .status(409) // CONFLICT
+                    .build();
+        }
+
         OrganizationDefinition created = organizationDefinitionService.create(vm);
 
         return ResponseEntity
                 .created(URI.create("/api/setup/organization-definition/" + created.getId()))
                 .body(created);
     }
+
 
     /**
      * {@code PUT /organization-definition/{id}} : Update an existing OrganizationDefinition.

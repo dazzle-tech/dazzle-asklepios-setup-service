@@ -77,4 +77,9 @@ public class OrganizationDefinitionService {
         LOG.debug("Request to get OrganizationDefinition : {}", id);
         return organizationDefinitionRepository.findById(id);
     }
+
+    @Transactional(readOnly = true)
+    public boolean exists() {
+        return organizationDefinitionRepository.count() > 0;
+    }
 }
