@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.OrganizationDefinition;
+import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.OrganizationDefinitionService;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionCreateVM;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionUpdateVM;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +37,7 @@ public class OrganizationDefinitionController {
      * {@code POST /organization-definition} : Create OrganizationDefinition (single instance only).
      */
     @PostMapping("/organization-definition")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<OrganizationDefinition> createOrganizationDefinition(
             @Valid @RequestBody OrganizationDefinitionCreateVM vm
     ) {
@@ -58,6 +61,7 @@ public class OrganizationDefinitionController {
      * {@code PUT /organization-definition/{id}} : Update an existing OrganizationDefinition.
      */
     @PutMapping("/organization-definition/{id}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<OrganizationDefinition> updateOrganizationDefinition(
             @PathVariable Long id,
             @Valid @RequestBody OrganizationDefinitionUpdateVM vm
@@ -73,6 +77,7 @@ public class OrganizationDefinitionController {
      * {@code GET /organization-definition} : Get all OrganizationDefinitions (no pagination).
      */
     @GetMapping("/organization-definition")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<List<OrganizationDefinition>> getAllOrganizationDefinitions() {
         LOG.debug("REST get all OrganizationDefinitions");
         return ResponseEntity.ok(organizationDefinitionService.findAll());
@@ -82,6 +87,7 @@ public class OrganizationDefinitionController {
      * {@code GET /organization-definition/{id}} : Get a single OrganizationDefinition by id.
      */
     @GetMapping("/organization-definition/{id}")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<OrganizationDefinition> getOrganizationDefinition(@PathVariable Long id) {
         LOG.debug("REST get OrganizationDefinition id={}", id);
 
