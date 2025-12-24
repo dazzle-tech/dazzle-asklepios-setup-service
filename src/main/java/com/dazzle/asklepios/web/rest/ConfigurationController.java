@@ -111,27 +111,6 @@ public class ConfigurationController {
 
 
     /**
-     * GET /configuration/integrations : isIntegration=true.
-     */
-    @GetMapping("/configuration/integrations")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<List<Configuration>> getIntegrations() {
-        LOG.debug("REST get Configurations where isIntegration=true");
-        return ResponseEntity.ok(configurationService.findIntegrations());
-    }
-
-    /**
-     * GET /configuration/non-integrations : isIntegration=false.
-     */
-    @GetMapping("/configuration/non-integrations")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<List<Configuration>> getNonIntegrations() {
-        LOG.debug("REST get Configurations where isIntegration=false");
-        return ResponseEntity.ok(configurationService.findNonIntegrations());
-    }
-
-
-    /**
      * Optional helper endpoint: resolve effective configuration for a facility.
      * If facility override exists, return it. Else return org-level if present.
      */
@@ -156,5 +135,23 @@ public class ConfigurationController {
                 "configuration",
                 "duplicatekey"
         );
+    }
+
+    /**
+     * GET /configuration : Paged list
+     */
+    @GetMapping("/configuration")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<Configuration>> getAll(@ParameterObject Pageable pageable) {
+        LOG.debug("REST get all Configuration");
+
+        Page<Configuration> page = configurationService.findAll(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
 }

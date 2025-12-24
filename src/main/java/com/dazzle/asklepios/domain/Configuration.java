@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.ConfigurationKeys;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,10 +57,20 @@ public class Configuration extends AbstractAuditingEntity<Long> implements Seria
     private String value;
 
     @NotNull
+    @Column(name = "valueType", nullable = false, length = 50)
+    @Enumerated(EnumType.STRING)
+    private ConfigurationValueType valueType;
+
+    @NotNull
+    @Column(name = "referenceType", nullable = false, length = 50)
+    @Enumerated(EnumType.STRING)
+    private ConfigurationReferenceType referenceType;
+
+    @NotNull
     @Column(nullable = false, columnDefinition = "text")
     private String description;
 
     @NotNull
-    @Column(name = "is_integration", nullable = false)
-    private Boolean isIntegration = false;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

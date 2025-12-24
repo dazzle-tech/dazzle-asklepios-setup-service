@@ -53,11 +53,11 @@ public class ConfigurationService {
                 .facility(facility)
                 .key(vm.key())
                 .value(vm.value())
+                .valueType(vm.valueType())
+                .referenceType(vm.referenceType())
                 .description(vm.description())
-                .isIntegration(Boolean.TRUE.equals(vm.isIntegration()))
+                .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
-
-        LOG.debug("Created configuration: {}", configuration);
 
         return configurationRepository.save(configuration);
     }
@@ -86,7 +86,9 @@ public class ConfigurationService {
         if (vm.key() != null) configuration.setKey(vm.key());
         if (vm.value() != null) configuration.setValue(vm.value());
         if (vm.description() != null) configuration.setDescription(vm.description());
-        if (vm.isIntegration() != null) configuration.setIsIntegration(vm.isIntegration());
+        if(vm.referenceType() != null) configuration.setReferenceType(vm.referenceType());
+        if(vm.valueType() != null) configuration.setValueType(vm.valueType());
+        if (vm.isActive() != null) configuration.setIsActive(vm.isActive());
 
         Configuration updated = configurationRepository.save(configuration);
         LOG.debug("Updated configuration: {}", updated);
@@ -98,7 +100,7 @@ public class ConfigurationService {
         LOG.debug("Request to get Configuration by key={} and facilityId={}", key, facilityId);
 
         if (facilityId == null) {
-            return configurationRepository.findByKeyAndFacilityIsNull(key);
+            return configurationRepository.findByKeyAndFacilityIsNullAndIsActiveTrue(key);
         }
 
         Facility facility = facilityRepository.findById(facilityId)
@@ -108,7 +110,7 @@ public class ConfigurationService {
                         "notfound"
                 ));
 
-        return configurationRepository.findByKeyAndFacility(key, facility);
+        return configurationRepository.findByKeyAndFacilityAndIsActiveTrue(key, facility);
     }
 
 
@@ -119,15 +121,10 @@ public class ConfigurationService {
     }
 
     @Transactional(readOnly = true)
-    public List<Configuration> findIntegrations() {
-        LOG.debug("Request to get Configurations where isIntegration=true");
-        return configurationRepository.findAllByIsIntegrationTrue();
+    public Page<Configuration> findAll(Pageable pageable) {
+        LOG.debug("Request to get all Configuration ");
+        return configurationRepository.findAll(pageable);
     }
 
-    @Transactional(readOnly = true)
-    public List<Configuration> findNonIntegrations() {
-        LOG.debug("Request to get Configurations where isIntegration=false");
-        return configurationRepository.findAllByIsIntegrationFalse();
-    }
 
 }

@@ -12,11 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ConfigurationRepository extends JpaRepository<Configuration, Long> {
 
-    List<Configuration> findAllByIsIntegrationTrue();
+    Optional<Configuration> findByKeyAndFacilityAndIsActiveTrue(ConfigurationKeys key, Facility facility);
 
-    List<Configuration> findAllByIsIntegrationFalse();
-
-    Optional<Configuration> findByKeyAndFacility(ConfigurationKeys key, Facility facility);
-
-    Optional<Configuration> findByKeyAndFacilityIsNull(ConfigurationKeys key);
+    Optional<Configuration> findByKeyAndFacilityIsNullAndIsActiveTrue(ConfigurationKeys key);
 }
