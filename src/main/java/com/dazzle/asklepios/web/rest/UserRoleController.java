@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.service.UserRoleService;
 import com.dazzle.asklepios.web.rest.vm.UserRoleVM;
 import lombok.RequiredArgsConstructor;
@@ -57,5 +58,15 @@ public class UserRoleController {
         userRoleService.delete(vm.userId(), vm.roleId());
         LOG.debug("UserRole deleted successfully: userId={}, roleId={}", vm.userId(), vm.roleId());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GET /api/setup/user-role/users/by-facility/{facilityId} :
+     * Get DISTINCT users who have any role belonging to this facility.
+     */
+    @GetMapping("/users/by-facility/{facilityId}")
+    public ResponseEntity<List<User>> getUsersByFacility(@PathVariable Long facilityId) {
+        LOG.info("REST request to get users by facilityId={} via roles", facilityId);
+        return ResponseEntity.ok(userRoleService.findUsersByFacilityId(facilityId));
     }
 }
