@@ -19,6 +19,7 @@ public enum Screen {
     // Billing & Finance
     LEDGER_ACCOUNT,
     PRICE_LISTS,
+    CLAIMS,
 
     // System Setup
     ALLERGENS,
@@ -142,7 +143,12 @@ public enum Screen {
     PATIENT_LIST_OLD,
     PATIENT_CHART_OLD,
     PATIENT_EMR_OLD,
-    MERGE_PATIENT_FILES_OLD
+    MERGE_PATIENT_FILES_OLD,
+
+    // System Configurations
+    ORGANIZATION_DEFINITION,
+    GENERAL_SETTINGS,
+    CONFIGURATIONS
     ;
     @JsonCreator
     public static Screen fromValue(String value) {

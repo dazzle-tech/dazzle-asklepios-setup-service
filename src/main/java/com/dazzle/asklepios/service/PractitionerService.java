@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -179,7 +180,11 @@ public class PractitionerService {
     public Page<Practitioner> findByFirstNameOrLastName(String name, Pageable pageable) {
         return practitionerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name,name,pageable);
     }
-
+    public Page<Practitioner> findActiveAppointable( Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Practitionerpageable={} is", pageable);
+        return practitionerRepository
+                .findByIsActiveTrueAndAppointableTrue(pageable);
+    }
     @Transactional(readOnly = true)
     public Optional<Practitioner> findOne(Long id) {
         return practitionerRepository.findById(id);

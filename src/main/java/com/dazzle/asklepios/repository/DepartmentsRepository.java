@@ -30,7 +30,10 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
             Long facilityId,
             Pageable pageable
     );
-
+    Page<Department> findByAppointableTrueAndIsActiveTrueAndType(
+            DepartmentType type,
+            Pageable pageable
+    );
     Page<Department> findByTypeAndFacilityId(DepartmentType type, Long facilityId, Pageable pageable);
 
     List<Department> findByIdIn(List<Long> ids);

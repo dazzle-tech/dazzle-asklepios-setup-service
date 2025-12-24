@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,9 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     boolean existsByUserId(Long userId);
 
     Page<Practitioner> findBySubSpecialtyAndIsActiveTrue(String specialty, Pageable pageable);
+    Page<Practitioner> findByIsActiveTrueAndAppointableTrue(
+    Pageable pageable
+    );
 
 
 

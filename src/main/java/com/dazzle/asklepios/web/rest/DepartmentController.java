@@ -212,7 +212,7 @@ public class DepartmentController {
     }
 
     @GetMapping("/department/appointable/by-type/{type}/{facilityId}")
-    public ResponseEntity<List<DepartmentResponseVM>> getAppointableByType(
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableByTypeByFacility(
             @PathVariable DepartmentType type,
             @PathVariable Long facilityId,
             @ParameterObject Pageable pageable
@@ -220,6 +220,28 @@ public class DepartmentController {
         LOG.debug("REST list appointable Departments by type={} page={}", type, pageable);
 
         Page<Department> page = departmentService.findAppointableByDepartmentType(type, facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+    @GetMapping("/department/appointable/active/by-type/{type}")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableByType(
+            @PathVariable DepartmentType type,
+
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list appointable Departments by type={} page={}", type, pageable);
+
+        Page<Department> page = departmentService.findActiveAppointableByDepartmentType(type, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
