@@ -208,4 +208,13 @@ public class PractitionerController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
+    @GetMapping("/practitioner/by-user/{userId}")
+    public ResponseEntity<PractitionerResponseVM> getPractitionerByUserId(@PathVariable Long userId) {
+        LOG.debug("REST get Practitioner by userId={}", userId);
+
+        return practitionerService.findByUser(userId)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }

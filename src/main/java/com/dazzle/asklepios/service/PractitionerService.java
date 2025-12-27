@@ -192,4 +192,9 @@ public class PractitionerService {
                     return practitionerRepository.save(p);
                 });
     }
+
+    @Transactional(readOnly = true)
+    public Optional<Practitioner> findByUser(Long userId) {
+        return practitionerRepository.findByUserId(userId);
+    }
 }
