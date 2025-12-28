@@ -21,7 +21,21 @@ public interface ConfigurationRepository extends JpaRepository<Configuration, Lo
 
     Optional<Configuration> findByKeyAndFacilityIsNullAndIsActiveTrue(ConfigurationKeys key);
 
-    Page<Configuration> findByValueContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrKeyContainingIgnoreCase(String value, String description, String key, Pageable pageable );
+    Page<Configuration> findByValueContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String value, String description, Pageable pageable);
+
+    @Query("""
+                select c
+                from Configuration c
+                where
+                    lower(c.value) like lower(concat('%', ?1, '%'))
+                    or lower(c.description) like lower(concat('%', ?1, '%'))
+                    or c.key = ?2
+            """)
+    Page<Configuration> searchValueDescriptionOrKey(
+            String q,
+            ConfigurationKeys key,
+            Pageable pageable
+    );
 
     Page<Configuration> findAllByValueType(ConfigurationValueType valueType, Pageable pageable);
 

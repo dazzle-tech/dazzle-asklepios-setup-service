@@ -129,16 +129,37 @@ public class ConfigurationService {
         return configurationRepository.findAll(pageable);
     }
 
-    public Page<Configuration> quickSearch(String searchText, Pageable pageable) {
-        LOG.debug("Request to quick search for Configuration contain text : {} ", searchText);
 
+    public Page<Configuration> quickSearch(String searchText, Pageable pageable) {
         if (searchText == null || searchText.isBlank()) {
             return Page.empty(pageable);
         }
-        return configurationRepository
-                .findByValueContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrKeyContainingIgnoreCase(
-                        searchText, searchText, searchText, pageable
-                );
+
+        String text = searchText.trim();
+        String normalizedKey = normalizeToEnumKey(text);
+
+        // Try exact enum match
+        ConfigurationKeys matchedKey = null;
+        try {
+            matchedKey = ConfigurationKeys.valueOf(normalizedKey);
+        } catch (IllegalArgumentException ignored) {
+            // not a valid enum key
+        }
+
+        if (matchedKey == null) {
+            // Search only value + description
+            return configurationRepository.findByValueContainingIgnoreCaseOrDescriptionContainingIgnoreCase(text,text, pageable);
+        }
+
+        // Search value, description OR exact key
+        return configurationRepository.searchValueDescriptionOrKey(text, matchedKey, pageable);
+    }
+
+    private String normalizeToEnumKey(String input) {
+        return input
+                .trim()
+                .toUpperCase()
+                .replaceAll("\\s+", "_");
     }
 
     public Page<Configuration> filterByValueType(ConfigurationValueType valueType, Pageable pageable) {
