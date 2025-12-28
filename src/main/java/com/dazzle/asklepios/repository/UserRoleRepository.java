@@ -12,11 +12,16 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRole.Use
     List<UserRole> findByIdRoleId(Long roleId);
 
     @Query("""
-        select distinct u
-        from UserRole ur, Role r, User u
-        where r.id = ur.id.roleId
-          and u.id = ur.id.userId
-          and r.facility.id = :facilityId
-    """)
-    List<User> findDistinctUsersByFacilityId(@Param("facilityId") Long facilityId);
+                select distinct u
+                from User u
+                where exists (
+                    select 1
+                    from UserRole ur, Role r
+                    where ur.id.userId = u.id
+                      and r.id = ur.id.roleId
+                      and r.facility.id = ?1
+                )
+            """)
+    List<User> findDistinctUsersByFacilityId(Long facilityId);
+
 }
