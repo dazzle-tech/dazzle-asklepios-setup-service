@@ -57,12 +57,12 @@ public class Configuration extends AbstractAuditingEntity<Long> implements Seria
     private String value;
 
     @NotNull
-    @Column(name = "valueType", nullable = false, length = 50)
+    @Column(name = "value_type", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private ConfigurationValueType valueType;
 
     @NotNull
-    @Column(name = "referenceType", nullable = false, length = 50)
+    @Column(name = "reference_type", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private ConfigurationReferenceType referenceType;
 

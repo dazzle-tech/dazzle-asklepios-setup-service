@@ -4,6 +4,8 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Configuration;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationKeys;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
 import com.dazzle.asklepios.repository.ConfigurationRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -86,8 +88,8 @@ public class ConfigurationService {
         if (vm.key() != null) configuration.setKey(vm.key());
         if (vm.value() != null) configuration.setValue(vm.value());
         if (vm.description() != null) configuration.setDescription(vm.description());
-        if(vm.referenceType() != null) configuration.setReferenceType(vm.referenceType());
-        if(vm.valueType() != null) configuration.setValueType(vm.valueType());
+        if (vm.referenceType() != null) configuration.setReferenceType(vm.referenceType());
+        if (vm.valueType() != null) configuration.setValueType(vm.valueType());
         if (vm.isActive() != null) configuration.setIsActive(vm.isActive());
 
         Configuration updated = configurationRepository.save(configuration);
@@ -95,6 +97,7 @@ public class ConfigurationService {
 
         return Optional.of(updated);
     }
+
     @Transactional(readOnly = true)
     public Optional<Configuration> findByKeyAndFacility(ConfigurationKeys key, Long facilityId) {
         LOG.debug("Request to get Configuration by key={} and facilityId={}", key, facilityId);
@@ -126,5 +129,26 @@ public class ConfigurationService {
         return configurationRepository.findAll(pageable);
     }
 
+    public Page<Configuration> quickSearch(String searchText, Pageable pageable) {
+        LOG.debug("Request to quick search for Configuration contain text : {} ", searchText);
+
+        if (searchText == null || searchText.isBlank()) {
+            return Page.empty(pageable);
+        }
+        return configurationRepository
+                .findByValueContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrKeyContainingIgnoreCase(
+                        searchText, searchText, searchText, pageable
+                );
+    }
+
+    public Page<Configuration> filterByValueType(ConfigurationValueType valueType, Pageable pageable) {
+        LOG.debug("Request to filterByValueType for Configuration ");
+        return configurationRepository.findAllByValueType(valueType, pageable);
+    }
+
+    public Page<Configuration> filterByReferenceType(ConfigurationReferenceType referenceType, Pageable pageable) {
+        LOG.debug("Request to filterByReferenceType for Configuration ");
+        return configurationRepository.findAllByReferenceType(referenceType, pageable);
+    }
 
 }

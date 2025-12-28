@@ -17,8 +17,8 @@ public record ConfigurationCreateVM(
 
         @NotNull ConfigurationKeys key,
         @NotEmpty String value,
-        @NotEmpty ConfigurationValueType valueType,
-        @NotEmpty ConfigurationReferenceType referenceType,
+        @NotNull ConfigurationValueType valueType,
+        @NotNull ConfigurationReferenceType referenceType,
         @NotEmpty String description,
         Boolean isActive
 ) implements Serializable {

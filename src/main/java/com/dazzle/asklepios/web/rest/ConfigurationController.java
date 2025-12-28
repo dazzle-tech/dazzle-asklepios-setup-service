@@ -3,6 +3,8 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Configuration;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationKeys;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
 import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.ConfigurationService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -154,4 +156,53 @@ public class ConfigurationController {
 
         return ResponseEntity.ok().headers(headers).body(page.getContent());
     }
+
+    @GetMapping("/configuration/search")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<Configuration>> quickSearch(
+            @RequestParam("searchText") String searchText,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<Configuration> page = configurationService.quickSearch(searchText, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/configuration/filter/value-type")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<Configuration>> filterByValueType(
+            @RequestParam("valueType") ConfigurationValueType valueType,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<Configuration> page = configurationService.filterByValueType(valueType, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
+
+    @GetMapping("/configuration/filter/reference-type")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<Configuration>> filterByReferenceType(
+            @RequestParam("referenceType") ConfigurationReferenceType referenceType,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<Configuration> page = configurationService.filterByReferenceType(referenceType, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return ResponseEntity.ok().headers(headers).body(page.getContent());
+    }
 }
+
