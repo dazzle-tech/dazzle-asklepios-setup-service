@@ -38,6 +38,7 @@ public class UserStickyNotesService {
                 .priority(userStickyNotes.getPriority())
                 .priorityOrder(userStickyNotes.getPriorityOrder())
                 .color(userStickyNotes.getColor())
+                .patientId(userStickyNotes.getPatientId())
                 .build();
 
         try {
