@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PractitionersRepository extends JpaRepository<Practitioner, Long> {
@@ -30,7 +31,7 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     Page<Practitioner> findByIsActiveTrueAndAppointableTrue(
     Pageable pageable
     );
-
+    Optional<Practitioner> findByUserId(Long userId);
 
 
 }
