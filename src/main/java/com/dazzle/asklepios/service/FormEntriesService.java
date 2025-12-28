@@ -16,12 +16,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
 public class FormEntriesService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FormEntriesService.class);
 
     private final FormEntriesRepository formEntriesRepository;
     private final FormTemplateRepository formTemplateRepository;
@@ -41,85 +43,127 @@ public class FormEntriesService {
     }
 
     public FormEntryResponseVM create(FormEntryCreateDTO dto) {
+        LOG.debug("Create FormEntry payload: dataJsonLen={}",
+                dto.dataJson() != null ? dto.dataJson().length() : 0);
+
         FormTemplate template = formTemplateRepository.findById(dto.templateId()).orElseThrow();
         Facility facility = facilityRepository.findById(dto.facilityId()).orElseThrow();
         Department department = departmentsRepository.findById(dto.departmentId()).orElseThrow();
 
-        FormEntries e = new FormEntries();
-        e.setTitle(dto.title());
-        e.setTemplate(template);
-        e.setFacility(facility);
-        e.setDepartment(department);
-        e.setDataJson(dto.dataJson());
+        LOG.debug("Resolved templateId={} -> '{}', facilityId={} -> '{}', departmentId={} -> '{}'",
+                template.getId(), template.getName(),
+                facility.getId(), facility.getName(),
+                department.getId(), department.getName());
 
-        return toVM(formEntriesRepository.save(e));
+        FormEntries formEntries = new FormEntries();
+        formEntries.setTitle(dto.title());
+        formEntries.setTemplate(template);
+        formEntries.setFacility(facility);
+        formEntries.setDepartment(department);
+        formEntries.setDataJson(dto.dataJson());
+
+        return toVM(formEntriesRepository.save(formEntries));
     }
 
     public FormEntryResponseVM update(Long id, FormEntryUpdateDTO dto) {
-        FormEntries e = formEntriesRepository.findById(id).orElseThrow();
+        FormEntries formEntries = formEntriesRepository.findById(id).orElseThrow();
 
-        e.setTitle(dto.title());
-        e.setDataJson(dto.dataJson());
+        formEntries.setTitle(dto.title());
+        formEntries.setDataJson(dto.dataJson());
 
-        return toVM(formEntriesRepository.save(e));
+        return toVM(formEntriesRepository.save(formEntries));
     }
 
     @Transactional(readOnly = true)
     public FormEntryResponseVM get(Long id) {
+        LOG.debug("Request to get FormEntry id={}", id);
         return toVM(formEntriesRepository.findById(id).orElseThrow());
     }
 
     @Transactional(readOnly = true)
-    public Page<FormEntryResponseVM> list(Long facilityId, Long departmentId, Long templateId, String q, Pageable pageable) {
+    public Page<FormEntryResponseVM> list(Long facilityId, Long departmentId, Long templateId, String query, Pageable pageable) {
         boolean hasFacility = facilityId != null;
         boolean hasDepartment = departmentId != null;
         boolean hasTemplate = templateId != null;
-        boolean hasQ = q != null && !q.trim().isEmpty();
-        String qq = hasQ ? q.trim() : null;
+        boolean hasQuery = query != null && !query.trim().isEmpty();
+        String qq = hasQuery ? query.trim() : null;
+
+        LOG.debug("Request to list FormEntries: facilityId={}, departmentId={}, templateId={}, query='{}', page={}, size={}, sort={}",
+                facilityId, departmentId, templateId, qq,
+                pageable != null ? pageable.getPageNumber() : null,
+                pageable != null ? pageable.getPageSize() : null,
+                pageable != null ? pageable.getSort() : null);
 
         Page<FormEntries> page;
 
         if (hasTemplate) {
-            if (hasQ)
-                page = formEntriesRepository.findByTemplate_IdAndTitleContainingIgnoreCase(templateId, qq, pageable);
-            else page = formEntriesRepository.findByTemplate_Id(templateId, pageable);
+                if (hasQuery) {
+                    LOG.debug("List branch: template+query");
+                    page = formEntriesRepository.findByTemplate_IdAndTitleContainingIgnoreCase(templateId, qq, pageable);
+                } else {
+                    LOG.debug("List branch: template");
+                    page = formEntriesRepository.findByTemplate_Id(templateId, pageable);
+                }
         } else if (hasFacility && hasDepartment) {
-            if (hasQ)
-                page = formEntriesRepository.findByFacility_IdAndDepartment_IdAndTitleContainingIgnoreCase(facilityId, departmentId, qq, pageable);
-            else page = formEntriesRepository.findByFacility_IdAndDepartment_Id(facilityId, departmentId, pageable);
-        } else if (hasFacility) {
-            if (hasQ)
+            if (hasQuery) {
+                LOG.debug("List branch: facility+department+query");
+                page = formEntriesRepository.findByFacility_IdAndDepartment_IdAndTitleContainingIgnoreCase(
+                        facilityId, departmentId, qq, pageable
+                );
+            } else {
+                LOG.debug("List branch: facility+department");
+                page = formEntriesRepository.findByFacility_IdAndDepartment_Id(facilityId, departmentId, pageable);
+            }
+           } else if (hasFacility) {
+            if (hasQuery) {
+                LOG.debug("List branch: facility+query");
                 page = formEntriesRepository.findByFacility_IdAndTitleContainingIgnoreCase(facilityId, qq, pageable);
-            else page = formEntriesRepository.findByFacility_Id(facilityId, pageable);
-        } else if (hasDepartment) {
-            if (hasQ)
+            } else {
+                LOG.debug("List branch: facility");
+                page = formEntriesRepository.findByFacility_Id(facilityId, pageable);
+            }
+            } else if (hasDepartment) {
+            if (hasQuery) {
+                LOG.debug("List branch: department+query");
                 page = formEntriesRepository.findByDepartment_IdAndTitleContainingIgnoreCase(departmentId, qq, pageable);
-            else page = formEntriesRepository.findByDepartment_Id(departmentId, pageable);
-        } else {
-            if (hasQ) page = formEntriesRepository.findByTitleContainingIgnoreCase(qq, pageable);
-            else page = formEntriesRepository.findAll(pageable);
-        }
+            } else {
+                LOG.debug("List branch: department");
+                page = formEntriesRepository.findByDepartment_Id(departmentId, pageable);
+            }
+             } else {
+            if (hasQuery) {
+                LOG.debug("List branch: query-only");
+                page = formEntriesRepository.findByTitleContainingIgnoreCase(qq, pageable);
+            } else {
+                LOG.debug("List branch: all");
+                page = formEntriesRepository.findAll(pageable);
+            }
+           }
+
+        LOG.debug("List result: totalElements={}, totalPages={}, returned={}",
+                page.getTotalElements(), page.getTotalPages(), page.getNumberOfElements());
 
         return page.map(this::toVM);
     }
 
     public void delete(Long id) {
+        LOG.info("Request to delete FormEntry id={}", id);
         formEntriesRepository.deleteById(id);
     }
 
-    private FormEntryResponseVM toVM(FormEntries e) {
+    private FormEntryResponseVM toVM(FormEntries formEntries) {
         return new FormEntryResponseVM(
-                e.getId(),
-                e.getTitle(),
-                e.getTemplate() != null ? e.getTemplate().getId() : null,
-                e.getTemplate() != null ? e.getTemplate().getName() : null,
-                e.getFacility() != null ? e.getFacility().getId() : null,
-                e.getDepartment() != null ? e.getDepartment().getId() : null,
-                e.getDataJson(),
-                e.getCreatedDate(),
-                e.getCreatedBy(),
-                e.getLastModifiedDate(),
-                e.getLastModifiedBy()
+                formEntries.getId(),
+                formEntries.getTitle(),
+                formEntries.getTemplate() != null ? formEntries.getTemplate().getId() : null,
+                formEntries.getTemplate() != null ? formEntries.getTemplate().getName() : null,
+                formEntries.getFacility() != null ? formEntries.getFacility().getId() : null,
+                formEntries.getDepartment() != null ? formEntries.getDepartment().getId() : null,
+                formEntries.getDataJson(),
+                formEntries.getCreatedDate(),
+                formEntries.getCreatedBy(),
+                formEntries.getLastModifiedDate(),
+                formEntries.getLastModifiedBy()
         );
     }
 }

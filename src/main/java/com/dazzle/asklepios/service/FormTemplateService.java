@@ -13,6 +13,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 @Service
 @Transactional
@@ -21,6 +24,7 @@ public class FormTemplateService {
     private final FormTemplateRepository formTemplateRepository;
     private final FacilityRepository facilityRepository;
     private final DepartmentsRepository departmentsRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(FormTemplateService.class);
 
     public FormTemplateService(
             FormTemplateRepository formTemplateRepository,
@@ -32,84 +36,106 @@ public class FormTemplateService {
         this.departmentsRepository = departmentsRepository;
     }
 
-    public FormTemplateResponseVM create(FormTemplateCreateDTO vm) {
-        Facility facility = facilityRepository.findById(vm.facilityId()).orElseThrow();
-        Department department = departmentsRepository.findById(vm.departmentId()).orElseThrow();
+    public FormTemplateResponseVM create(FormTemplateCreateDTO dto) {
+        LOG.info("Request to create FormTemplate: name='{}', facilityId={}, departmentId={}",
+                dto.name(), dto.facilityId(), dto.departmentId());
+        LOG.debug("Create FormTemplate payload: descriptionLen={}, formJsonLen={}",
+                dto.description() != null ? dto.description().length() : 0,
+                dto.formJson() != null ? dto.formJson().length() : 0);
 
-        FormTemplate ft = new FormTemplate();
-        ft.setName(vm.name());
-        ft.setDescription(vm.description());
-        ft.setFacility(facility);
-        ft.setDepartment(department);
-        ft.setFormJson(vm.formJson());
+        Facility facility = facilityRepository.findById(dto.facilityId()).orElseThrow();
+        Department department = departmentsRepository.findById(dto.departmentId()).orElseThrow();
+
+        FormTemplate formTemplate = new FormTemplate();
+        formTemplate.setName(dto.name());
+        formTemplate.setDescription(dto.description());
+        formTemplate.setFacility(facility);
+        formTemplate.setDepartment(department);
+        formTemplate.setFormJson(dto.formJson());
 
 
-        FormTemplate saved = formTemplateRepository.save(ft);
+        FormTemplate saved = formTemplateRepository.save(formTemplate);
+        LOG.info("Created FormTemplate id={} name='{}'", saved.getId(), saved.getName());
         return toVM(saved);
     }
 
-    public FormTemplateResponseVM update(Long id, FormTemplateUpdateDTO vm) {
-        FormTemplate ft = formTemplateRepository.findById(id).orElseThrow();
+    public FormTemplateResponseVM update(Long id, FormTemplateUpdateDTO dto) {
+        LOG.debug("Update FormTemplate payload: descriptionLen={}, formJsonLen={}",
+                dto.description() != null ? dto.description().length() : 0,
+                dto.formJson() != null ? dto.formJson().length() : 0);
+        FormTemplate formTemplate = formTemplateRepository.findById(id).orElseThrow();
 
-        Facility facility = facilityRepository.findById(vm.facilityId()).orElseThrow();
-        Department department = departmentsRepository.findById(vm.departmentId()).orElseThrow();
+        Facility facility = facilityRepository.findById(dto.facilityId()).orElseThrow();
+        Department department = departmentsRepository.findById(dto.departmentId()).orElseThrow();
 
-        ft.setName(vm.name());
-        ft.setDescription(vm.description());
-        ft.setFacility(facility);
-        ft.setDepartment(department);
-        ft.setFormJson(vm.formJson());
-
-        return toVM(formTemplateRepository.save(ft));
+        formTemplate.setName(dto.name());
+        formTemplate.setDescription(dto.description());
+        formTemplate.setFacility(facility);
+        formTemplate.setDepartment(department);
+        formTemplate.setFormJson(dto.formJson());
+        FormTemplate saved = formTemplateRepository.save(formTemplate);
+        LOG.info("Updated FormTemplate id={} name='{}'", saved.getId(), saved.getName());
+        return toVM(saved);
     }
 
     @Transactional(readOnly = true)
     public FormTemplateResponseVM get(Long id) {
+        LOG.debug("Request to get FormTemplate id={}", id);
         return toVM(formTemplateRepository.findById(id).orElseThrow());
     }
 
     @Transactional(readOnly = true)
-    public Page<FormTemplateResponseVM> list(Long facilityId, Long departmentId, String q, Pageable pageable) {
+    public Page<FormTemplateResponseVM> list(Long facilityId, Long departmentId, String query, Pageable pageable) {
         boolean hasFacility = facilityId != null;
         boolean hasDepartment = departmentId != null;
-        boolean hasQ = q != null && !q.trim().isEmpty();
+        boolean hasQuery = query != null && !query.trim().isEmpty();
 
         Page<FormTemplate> page;
 
         // 1) both facility + department
         if (hasFacility && hasDepartment) {
-            if (hasQ) {
+            if (hasQuery) {
+                LOG.debug("List branch: facility+department+query");
                 page = formTemplateRepository.findByFacility_IdAndDepartment_IdAndNameContainingIgnoreCase(
-                        facilityId, departmentId, q.trim(), pageable
+                        facilityId, departmentId, query.trim(), pageable
                 );
             } else {
+                LOG.debug("List branch: facility+department");
                 page = formTemplateRepository.findByFacility_IdAndDepartment_Id(facilityId, departmentId, pageable);
             }
         }
         // 2) only facility
         else if (hasFacility) {
-            if (hasQ) {
-                page = formTemplateRepository.findByFacility_IdAndNameContainingIgnoreCase(facilityId, q.trim(), pageable);
+            if (hasQuery) {
+                LOG.debug("List branch: facility+query");
+                page = formTemplateRepository.findByFacility_IdAndNameContainingIgnoreCase(facilityId, query.trim(), pageable);
             } else {
+                LOG.debug("List branch: facility");
                 page = formTemplateRepository.findByFacility_Id(facilityId, pageable);
             }
         }
         // 3) only department
         else if (hasDepartment) {
-            if (hasQ) {
-                page = formTemplateRepository.findByDepartment_IdAndNameContainingIgnoreCase(departmentId, q.trim(), pageable);
+            if (hasQuery) {
+                LOG.debug("List branch: department+query");
+                page = formTemplateRepository.findByDepartment_IdAndNameContainingIgnoreCase(departmentId, query.trim(), pageable);
             } else {
+                LOG.debug("List branch: department");
                 page = formTemplateRepository.findByDepartment_Id(departmentId, pageable);
             }
         }
-        // 4) none (only q or all)
         else {
-            if (hasQ) {
-                page = formTemplateRepository.findByNameContainingIgnoreCase(q.trim(), pageable);
+            if (hasQuery) {
+                LOG.debug("List branch: query-only");
+                page = formTemplateRepository.findByNameContainingIgnoreCase(query.trim(), pageable);
             } else {
+                LOG.debug("List branch: all");
                 page = formTemplateRepository.findAll(pageable);
             }
         }
+        LOG.debug("List result: totalElements={}, totalPages={}, returned={}",
+                page.getTotalElements(), page.getTotalPages(), page.getNumberOfElements());
+
 
         return page.map(this::toVM);
     }
@@ -118,20 +144,20 @@ public class FormTemplateService {
         formTemplateRepository.deleteById(id);
     }
 
-    private FormTemplateResponseVM toVM(FormTemplate ft) {
+    private FormTemplateResponseVM toVM(FormTemplate formTemplate) {
         return new FormTemplateResponseVM(
-                ft.getId(),
-                ft.getName(),
-                ft.getDescription(),
-                ft.getFacility() != null ? ft.getFacility().getId() : null,
-                ft.getFacility() != null ? ft.getFacility().getName() : null,
-                ft.getDepartment() != null ? ft.getDepartment().getId() : null,
-                ft.getDepartment() != null ? ft.getDepartment().getName() : null,
-                ft.getFormJson(),
-                ft.getCreatedBy(),
-                ft.getCreatedDate(),
-                ft.getLastModifiedBy(),
-                ft.getLastModifiedDate()
+                formTemplate.getId(),
+                formTemplate.getName(),
+                formTemplate.getDescription(),
+                formTemplate.getFacility() != null ? formTemplate.getFacility().getId() : null,
+                formTemplate.getFacility() != null ? formTemplate.getFacility().getName() : null,
+                formTemplate.getDepartment() != null ? formTemplate.getDepartment().getId() : null,
+                formTemplate.getDepartment() != null ? formTemplate.getDepartment().getName() : null,
+                formTemplate.getFormJson(),
+                formTemplate.getCreatedBy(),
+                formTemplate.getCreatedDate(),
+                formTemplate.getLastModifiedBy(),
+                formTemplate.getLastModifiedDate()
         );
     }
 }
