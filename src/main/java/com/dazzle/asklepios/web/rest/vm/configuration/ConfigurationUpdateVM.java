@@ -18,8 +18,8 @@ public record ConfigurationUpdateVM(
         Long facilityId,
         @NotNull ConfigurationKeys key,
         @NotEmpty @Size(max = 50) String value,
-        @NotEmpty @Size(max = 50) ConfigurationValueType valueType,
-        @NotEmpty @Size(max = 50) ConfigurationReferenceType referenceType,
+        @NotNull ConfigurationValueType valueType,
+        @NotNull ConfigurationReferenceType referenceType,
         @NotEmpty String description,
         @NotNull  Boolean isActive
 ) implements Serializable {
