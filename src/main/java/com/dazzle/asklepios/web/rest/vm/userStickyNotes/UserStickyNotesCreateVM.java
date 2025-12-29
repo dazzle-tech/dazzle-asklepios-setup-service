@@ -14,7 +14,7 @@ public record UserStickyNotesCreateVM(
         @NotBlank(message = "Priority can not be null") String priority,
         @NotNull(message = "Priority order can not be null") BigDecimal priorityOrder,
         String color,
-        Long patientId
+        String patientId
 
 ) implements Serializable {
 
@@ -25,7 +25,7 @@ public record UserStickyNotesCreateVM(
                 userStickyNotes.getPriority(),
                 userStickyNotes.getPriorityOrder(),
                 userStickyNotes.getColor(),
-                userStickyNotes.getPatientId()
+                userStickyNotes.getPatientId() != null ? userStickyNotes.getPatientId().toString() : null
         );
     }
 }
