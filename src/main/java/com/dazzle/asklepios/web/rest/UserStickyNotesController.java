@@ -60,7 +60,7 @@ public class UserStickyNotesController {
                 .color(vm.color())
                 .userId(vm.userId())
                 .priorityOrder(vm.priorityOrder())
-                .patientId(vm.patientId())
+                .patientId(vm.patientId() != null ? Long.parseLong(vm.patientId()) : null)
                 .build();
 
         UserStickyNotes created = userStickyNotesService.create(toCreate);

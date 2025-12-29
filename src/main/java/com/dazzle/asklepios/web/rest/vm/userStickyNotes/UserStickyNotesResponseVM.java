@@ -16,7 +16,7 @@ public record UserStickyNotesResponseVM(
         Instant createdDate,
         String lastModifiedBy,
         Instant lastModifiedDate,
-        Long patientId
+        String patientId
 ) implements Serializable {
 
     public static UserStickyNotesResponseVM ofEntity(UserStickyNotes userStickyNotes) {
@@ -31,7 +31,7 @@ public record UserStickyNotesResponseVM(
                 userStickyNotes.getCreatedDate(),
                 userStickyNotes.getLastModifiedBy(),
                 userStickyNotes.getLastModifiedDate(),
-                userStickyNotes.getPatientId()
+                userStickyNotes.getPatientId() != null ? userStickyNotes.getPatientId().toString() : null
         );
     }
 }
