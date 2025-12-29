@@ -38,10 +38,12 @@ public class CdtCodeService {
     private static final Logger LOG = LoggerFactory.getLogger(CdtCodeService.class);
     private final CdtCodeRepository repository;
 
-    // ====================== IMPORT ======================
+
 
     @Transactional
     public CdtImportResultDTO importCsv(MultipartFile uploadedFile, boolean overwriteExistingRecords) {
+        validateUploadedCsv(uploadedFile);
+
         List<CSVRecord> csvRecords = readCsv(uploadedFile);
         LOG.info("Starting CDT CSV import (overwrite={}). Total records: {}", overwriteExistingRecords, csvRecords.size());
 
@@ -128,11 +130,14 @@ public class CdtCodeService {
         LOG.info("CDT import complete. Inserted={}, Updated={}, Conflicts={}",
                 insertedCount, updatedCount, conflictList.size());
 
-        return new CdtImportResultDTO(totalRowsCount, insertedCount, updatedCount,
-                overwriteExistingRecords ? List.of() : conflictList);
+        return new CdtImportResultDTO(
+                totalRowsCount,
+                insertedCount,
+                updatedCount,
+                overwriteExistingRecords ? List.of() : conflictList
+        );
     }
 
-    // ====================== READ / FILTER ======================
 
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public Page<CdtCode> findAll(Pageable pageable) {
@@ -177,7 +182,6 @@ public class CdtCodeService {
         return findAll(pageable);
     }
 
-    // ====================== Helpers ======================
 
     private record CsvRow(String code, String description, CdtClass cdtClass, Boolean isActive) {}
 
@@ -189,6 +193,41 @@ public class CdtCodeService {
             "class", Set.of("class", "category", "cdtclass", "cdt_class"),
             "is active", Set.of("is active", "is_active", "isActive", "active")
     );
+
+    private void validateUploadedCsv(MultipartFile file) {
+        String name = file.getOriginalFilename();
+        if (name == null || !name.toLowerCase().endsWith(".csv")) {
+            throw new BadRequestAlertException(
+                    "Invalid file type. Only 'CSV (Comma delimited) (*.csv)' files are allowed.",
+                    "cdtcode",
+                    "badfiletype"
+            );
+        }
+
+        try (var in = file.getInputStream()) {
+            in.mark(3);
+            int b1 = in.read();
+            int b2 = in.read();
+            int b3 = in.read();
+            in.reset();
+
+            boolean hasUtf8Bom = (b1 == 0xEF && b2 == 0xBB && b3 == 0xBF);
+            if (hasUtf8Bom) {
+                throw new BadRequestAlertException(
+                        "CSV UTF-8 (with BOM) is not supported. Please export as 'CSV (Comma delimited) (*.csv)'.",
+                        "cdtcode",
+                        "utf8bomnotallowed"
+                );
+            }
+        } catch (IOException exception) {
+            LOG.error("Error reading CDT CSV file: {}", exception.getMessage(), exception);
+            throw new BadRequestAlertException(
+                    "Error reading CSV file: " + exception.getMessage(),
+                    "cdtcode",
+                    "filereaderror"
+            );
+        }
+    }
 
     private List<CSVRecord> readCsv(MultipartFile uploadedFile) {
         try (Reader reader = new InputStreamReader(uploadedFile.getInputStream(), StandardCharsets.UTF_8);
