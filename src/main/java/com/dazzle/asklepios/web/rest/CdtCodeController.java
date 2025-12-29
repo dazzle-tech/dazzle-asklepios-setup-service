@@ -118,8 +118,18 @@ public class CdtCodeController {
     }
 
     @GetMapping("cdt/{cdtId}/services/details")
-    public ResponseEntity<List<ServiceSetup>> getLinkedDetails(@PathVariable Long cdtId) {
-        return ResponseEntity.ok(mappingService.getLinkedServices(cdtId));
+    public ResponseEntity<List<ServiceSetup>> getLinkedDetails(
+            @PathVariable Long cdtId,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<ServiceSetup> page = mappingService.getLinkedServicesPaged(cdtId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
     @PutMapping("cdt/{cdtId}/services")

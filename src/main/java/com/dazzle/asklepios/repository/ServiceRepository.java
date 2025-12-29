@@ -21,4 +21,7 @@ public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
     Page<ServiceSetup> findByCodeContainingIgnoreCase(String code, Pageable pageable);
 
     Page<ServiceSetup> findByFacility_Id(Long facilityId, Pageable pageable);
+
+    Page<ServiceSetup> findByIdIn(List<Long> ids, Pageable pageable);
+
 }
