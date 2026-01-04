@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
@@ -113,7 +112,7 @@ public class ProcedureController {
 
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
-            @PathVariable ProcedureCategoryType categoryType,
+            @PathVariable String categoryType,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by categoryType={} pageable={}", categoryType, pageable);
@@ -176,10 +175,10 @@ public class ProcedureController {
     @GetMapping("/procedure/by-facility/{facilityId}")
     public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
             @PathVariable Long facilityId,
+            @RequestParam(required = false) String category,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures by facilityId={} pageable={}", facilityId, pageable);
-        Page<Procedure> page = procedureService.findByFacility(facilityId, pageable);
+        Page<Procedure> page = procedureService.findByFacilityAndOptionalCategory(facilityId, category, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -191,6 +190,7 @@ public class ProcedureController {
                 HttpStatus.OK
         );
     }
+
 
     @GetMapping("/procedure/active-appointable")
     public ResponseEntity<List<ProcedureResponseVM>> getActiveAppointable(
