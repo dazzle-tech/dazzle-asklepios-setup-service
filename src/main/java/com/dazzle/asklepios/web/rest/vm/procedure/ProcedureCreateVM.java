@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +11,7 @@ import java.io.Serializable;
 public record ProcedureCreateVM(
         @NotEmpty String name,
         @NotEmpty String code,
-        @NotNull ProcedureCategoryType categoryType,
+        @NotNull String categoryType,
         @NotNull Boolean isAppointable,
         String indications,
         String contraindications,
