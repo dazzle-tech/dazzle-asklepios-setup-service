@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
+import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
@@ -10,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -25,16 +25,38 @@ public class DiagnosticTestProfileService {
     }
 
     public DiagnosticTestProfile create(DiagnosticTestProfile entity) {
-        LOG.info("Creating DiagnosticTestProfile for testId={}",
-                entity.getTest() != null ? entity.getTest().getId() : null);
-        return repository.save(entity);
+        Long testId = entity.getTest() != null ? entity.getTest().getId() : null;
+        LOG.info("Creating DiagnosticTestProfile for testId={}", testId);
+
+        validate(entity);
+
+        DiagnosticTestProfile saved = repository.save(entity);
+
+        // enforce single default per test
+        if (Boolean.TRUE.equals(saved.getIsDefault())) {
+            unsetOtherDefaults(saved.getId(), testId);
+        }
+
+        return saved;
     }
 
     public Optional<DiagnosticTestProfile> update(Long id, DiagnosticTestProfile entity) {
         LOG.info("Updating DiagnosticTestProfile id={}", id);
+
         return repository.findById(id).map(existing -> {
             entity.setId(existing.getId());
-            return repository.save(entity);
+
+            validate(entity);
+
+            DiagnosticTestProfile saved = repository.save(entity);
+
+            // enforce single default per test
+            Long testId = saved.getTest() != null ? saved.getTest().getId() : null;
+            if (Boolean.TRUE.equals(saved.getIsDefault())) {
+                unsetOtherDefaults(saved.getId(), testId);
+            }
+
+            return saved;
         });
     }
 
@@ -44,8 +66,8 @@ public class DiagnosticTestProfileService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTestProfile> findAllByTestId(Long testId,Pageable pageable) {
-        return repository.findAllByTest_Id(testId,pageable);
+    public Page<DiagnosticTestProfile> findAllByTestId(Long testId, Pageable pageable) {
+        return repository.findAllByTest_Id(testId, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -61,8 +83,41 @@ public class DiagnosticTestProfileService {
         repository.deleteById(id);
     }
 
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTestProfile> findProfilesForLab(Long testId, Pageable pageable) {
+        long c = repository.countByTest_Id(testId);
+        if (c <= 1) {
+            return repository.findAllByTest_Id(testId, pageable);
+        }
+        return repository.findAllByTest_IdAndIsDefaultFalse(testId, pageable);
+    }
+
     public void deleteAllByTestId(Long testId) {
         LOG.info("Deleting all DiagnosticTestProfiles for testId={}", testId);
         repository.deleteAllByTest_Id(testId);
+    }
+
+    // -------------------------
+    // helpers
+    // -------------------------
+    private void validate(DiagnosticTestProfile entity) {
+        if (entity.getTest() == null || entity.getTest().getId() == null) {
+            throw new BadRequestAlertException("testId is required", "diagnosticTestProfile", "testidmissing");
+        }
+        if (entity.getName() == null || entity.getName().isBlank()) {
+            throw new BadRequestAlertException("name is required", "diagnosticTestProfile", "namemissing");
+        }
+        if (entity.getResultType() == null) {
+            throw new BadRequestAlertException("resultType is required", "diagnosticTestProfile", "resulttypemissing");
+        }
+        // إذا بتحبي: default قيمة لو null (بدل error)
+        // if (entity.getResultType() == null) entity.setResultType(TestResultType.TEXT);
+    }
+
+    private void unsetOtherDefaults(Long savedProfileId, Long testId) {
+        if (testId == null) return;
+
+        // ملاحظة: هذا يعتمد على method جديد بالـ repository (انظر تحت)
+        repository.unsetDefaultsExcept(testId, savedProfileId);
     }
 }

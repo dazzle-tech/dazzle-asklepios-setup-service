@@ -52,8 +52,11 @@ public class DiagnosticTestNormalRangeController {
         LOG.debug("REST request to create DiagnosticTestNormalRange payload={}", vm);
         DiagnosticTestNormalRange saved = service.create(vm.toEntity());
 
-        LOG.info("Created DiagnosticTestNormalRange id={} for testId={}",
-                saved.getId(), saved.getTest() != null ? saved.getTest().getId() : null);
+        LOG.info("Created DiagnosticTestNormalRange id={} for profileTestId={} testId={}",
+                saved.getId(),
+                saved.getProfileTest() != null ? saved.getProfileTest().getId() : null,
+                saved.getTest() != null ? saved.getTest().getId() : null);
+
 
         return ResponseEntity
                 .created(URI.create("/api/setup/diagnostic-test-normal-ranges/" + saved.getId()))

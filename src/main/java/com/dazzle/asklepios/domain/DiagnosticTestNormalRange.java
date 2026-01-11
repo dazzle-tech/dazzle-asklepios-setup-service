@@ -38,8 +38,9 @@ public class DiagnosticTestNormalRange {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // مرجعي فقط (nullable)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "test_id", nullable = false)
+    @JoinColumn(name = "test_id")
     private DiagnosticTest test;
 
     private String gender;
@@ -57,13 +58,9 @@ public class DiagnosticTestNormalRange {
     @Enumerated(EnumType.STRING)
     private Condition condition;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TestResultType resultType;
-
     private String resultText;
 
-    private String resultLov; // optional single LOV key
+    private String resultLov;
 
     @Enumerated(EnumType.STRING)
     private NormalRangeType normalRangeType;
@@ -75,14 +72,11 @@ public class DiagnosticTestNormalRange {
     private Double criticalValueLessThan;
     private Double criticalValueMoreThan;
 
+    // الأساس (NOT NULL)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "profile_test_id")
+    @JoinColumn(name = "profile_test_id", nullable = false)
     private DiagnosticTestProfile profileTest;
 
-    private Boolean isProfile = false;
-
-    // transient field - not persisted, comes from frontend
     @Transient
     private List<String> lovKeys;
-
 }

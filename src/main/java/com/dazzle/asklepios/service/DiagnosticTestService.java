@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
@@ -24,13 +26,15 @@ public class DiagnosticTestService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestService.class);
     private final DiagnosticTestRepository repository;
-
-    public DiagnosticTestService(DiagnosticTestRepository repository) {
+    private final DiagnosticTestProfileRepository profileRepository;
+    public DiagnosticTestService(DiagnosticTestRepository repository, DiagnosticTestProfileRepository profileRepository) {
         this.repository = repository;
+        this.profileRepository = profileRepository;
     }
 
     public DiagnosticTest create(DiagnosticTestCreateVM vm) {
         LOG.debug("Create DiagnosticTest: {}", vm);
+
         DiagnosticTest test = DiagnosticTest.builder()
                 .type(vm.type())
                 .name(vm.name())
@@ -49,7 +53,20 @@ public class DiagnosticTestService {
                 .appointable(vm.appointable())
                 .build();
 
-        return repository.save(test);
+        DiagnosticTest saved = repository.save(test);
+
+        // ALWAYS ensure at least one profile exists (default)
+        DiagnosticTestProfile defaultProfile = DiagnosticTestProfile.builder()
+                .test(saved)
+                .name(saved.getName())
+                .resultUnit(vm.defaultProfileResultUnit())
+                .resultType(vm.defaultProfileResultType())
+                .isDefault(true)
+                .build();
+
+        profileRepository.save(defaultProfile);
+
+        return saved;
     }
 
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
@@ -70,16 +87,34 @@ public class DiagnosticTestService {
             existing.setIsActive(vm.isActive());
             existing.setIsProfile(vm.isProfile());
 
-            return repository.save(existing);
+            DiagnosticTest saved = repository.save(existing);
+
+
+            if (vm.defaultProfileResultType() != null || vm.defaultProfileResultUnit() != null) {
+
+                profileRepository.findAllByTest_Id(saved.getId(), Pageable.unpaged())
+                        .stream()
+                        .filter(p -> Boolean.TRUE.equals(p.getIsDefault()))
+                        .findFirst()
+                        .ifPresent(p -> {
+                            if (vm.defaultProfileResultType() != null) p.setResultType(vm.defaultProfileResultType());
+                            if (vm.defaultProfileResultUnit() != null) p.setResultUnit(vm.defaultProfileResultUnit());
+
+                            p.setName(saved.getName());
+                            profileRepository.save(p);
+                        });
+            }
+
+            return saved;
         });
     }
-
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAll(Pageable pageable) {
         return repository.findAll(pageable);
     }
 
+ 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
         return repository.findByType(type, pageable);

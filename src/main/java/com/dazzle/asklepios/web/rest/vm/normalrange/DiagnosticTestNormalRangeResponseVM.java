@@ -19,7 +19,7 @@ public record DiagnosticTestNormalRangeResponseVM(
         Double ageTo,
         AgeUnit ageToUnit,
         Condition condition,
-        TestResultType resultType,
+
         String resultText,
         String resultLov,
         NormalRangeType normalRangeType,
@@ -29,7 +29,7 @@ public record DiagnosticTestNormalRangeResponseVM(
         Double criticalValueLessThan,
         Double criticalValueMoreThan,
         Long profileTestId,
-        Boolean isProfile,
+        TestResultType resultType,
         List<String> lovKeys
 ) {
     public static DiagnosticTestNormalRangeResponseVM fromEntity(DiagnosticTestNormalRange e) {
@@ -42,7 +42,7 @@ public record DiagnosticTestNormalRangeResponseVM(
                 .ageTo(e.getAgeTo())
                 .ageToUnit(e.getAgeToUnit())
                 .condition(e.getCondition())
-                .resultType(e.getResultType())
+
                 .resultText(e.getResultText())
                 .resultLov(e.getResultLov())
                 .normalRangeType(e.getNormalRangeType())
@@ -52,7 +52,7 @@ public record DiagnosticTestNormalRangeResponseVM(
                 .criticalValueLessThan(e.getCriticalValueLessThan())
                 .criticalValueMoreThan(e.getCriticalValueMoreThan())
                 .profileTestId(e.getProfileTest() != null ? e.getProfileTest().getId() : null)
-                .isProfile(e.getIsProfile())
+                .resultType(e.getProfileTest() != null ? e.getProfileTest().getResultType() : null)
                 .lovKeys(e.getLovKeys())
                 .build();
     }
