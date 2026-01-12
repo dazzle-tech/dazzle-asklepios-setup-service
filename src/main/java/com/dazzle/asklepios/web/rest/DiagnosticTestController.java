@@ -1,14 +1,12 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.service.DiagnosticTestService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -83,6 +81,7 @@ public class DiagnosticTestController {
         LOG.debug("REST found {} DiagnosticTests", page.getTotalElements());
         return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
+
     @GetMapping("/diagnostic-test/active")
     public ResponseEntity<List<DiagnosticTestResponseVM>> getAllActiveTests(Pageable pageable) {
         LOG.debug("REST request to list DiagnosticTests page={}", pageable);
@@ -166,6 +165,7 @@ public class DiagnosticTestController {
                     return ResponseEntity.notFound().build();
                 });
     }
+
     @PatchMapping("/diagnostic-test/{id}/toggle-active")
     public ResponseEntity<DiagnosticTestResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
@@ -180,9 +180,9 @@ public class DiagnosticTestController {
 
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
+        LOG.debug("REST list active appointable Procedures  pageable={}", pageable);
 
-        Page<DiagnosticTest> page = service.findActiveAppointable( pageable);
+        Page<DiagnosticTest> page = service.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page

@@ -1,8 +1,11 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
+import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
+import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +22,10 @@ public class DiagnosticTestProfileService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestProfileService.class);
     private final DiagnosticTestProfileRepository repository;
-
-    public DiagnosticTestProfileService(DiagnosticTestProfileRepository repository) {
+    private final DiagnosticTestRepository diagnosticTestRepository;
+    public DiagnosticTestProfileService(DiagnosticTestProfileRepository repository, DiagnosticTestRepository diagnosticTestRepository) {
         this.repository = repository;
+        this.diagnosticTestRepository = diagnosticTestRepository;
     }
 
     public DiagnosticTestProfile create(DiagnosticTestProfile entity) {
@@ -30,12 +34,25 @@ public class DiagnosticTestProfileService {
 
         validate(entity);
 
-        DiagnosticTestProfile saved = repository.save(entity);
 
-        // enforce single default per test
-        if (Boolean.TRUE.equals(saved.getIsDefault())) {
-            unsetOtherDefaults(saved.getId(), testId);
+        DiagnosticTest test = diagnosticTestRepository.findById(testId)
+                .orElseThrow(() -> new BadRequestAlertException("Test not found", "diagnosticTest", "notfound"));
+
+        if (test.getType() != TestType.LABORATORY ) {
+            throw new BadRequestAlertException(
+                    "Profiles are allowed only for LABORATORY tests",
+                    "diagnosticTestProfile",
+                    "not_laboratory"
+            );
         }
+
+
+        entity.setIsDefault(false);
+
+
+        entity.setTest(test);
+
+        DiagnosticTestProfile saved = repository.save(entity);
 
         return saved;
     }
@@ -110,14 +127,13 @@ public class DiagnosticTestProfileService {
         if (entity.getResultType() == null) {
             throw new BadRequestAlertException("resultType is required", "diagnosticTestProfile", "resulttypemissing");
         }
-        // إذا بتحبي: default قيمة لو null (بدل error)
-        // if (entity.getResultType() == null) entity.setResultType(TestResultType.TEXT);
+
     }
 
     private void unsetOtherDefaults(Long savedProfileId, Long testId) {
         if (testId == null) return;
 
-        // ملاحظة: هذا يعتمد على method جديد بالـ repository (انظر تحت)
+
         repository.unsetDefaultsExcept(testId, savedProfileId);
     }
 }

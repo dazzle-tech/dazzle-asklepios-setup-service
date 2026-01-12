@@ -55,19 +55,31 @@ public class DiagnosticTestService {
 
         DiagnosticTest saved = repository.save(test);
 
-        // ALWAYS ensure at least one profile exists (default)
-        DiagnosticTestProfile defaultProfile = DiagnosticTestProfile.builder()
-                .test(saved)
-                .name(saved.getName())
-                .resultUnit(vm.defaultProfileResultUnit())
-                .resultType(vm.defaultProfileResultType())
-                .isDefault(true)
-                .build();
 
-        profileRepository.save(defaultProfile);
+        if (saved.getType() == TestType.LABORATORY ) {
+
+            if (vm.defaultProfileResultType() == null) {
+                throw new BadRequestAlertException(
+                        "defaultProfileResultType is required for LABORATORY tests",
+                        "diagnosticTest",
+                        "missing_default_profile_result_type"
+                );
+            }
+
+            DiagnosticTestProfile defaultProfile = DiagnosticTestProfile.builder()
+                    .test(saved)
+                    .name(saved.getName())
+                    .resultUnit(vm.defaultProfileResultUnit())
+                    .resultType(vm.defaultProfileResultType())
+                    .isDefault(true)
+                    .build();
+
+            profileRepository.save(defaultProfile);
+        }
 
         return saved;
     }
+
 
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
         return repository.findById(id).map(existing -> {
@@ -114,7 +126,7 @@ public class DiagnosticTestService {
         return repository.findAll(pageable);
     }
 
- 
+
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
         return repository.findByType(type, pageable);
