@@ -61,22 +61,29 @@ public class DiagnosticTestProfileService {
         LOG.info("Updating DiagnosticTestProfile id={}", id);
 
         return repository.findById(id).map(existing -> {
-            entity.setId(existing.getId());
 
-            validate(entity);
 
-            DiagnosticTestProfile saved = repository.save(entity);
-
-            // enforce single default per test
-            Long testId = saved.getTest() != null ? saved.getTest().getId() : null;
-            if (Boolean.TRUE.equals(saved.getIsDefault())) {
-                unsetOtherDefaults(saved.getId(), testId);
+            if (Boolean.TRUE.equals(existing.getIsDefault())) {
+                throw new BadRequestAlertException(
+                        "default_profile_readonly",
+                        "diagnosticTestProfile",
+                        "Default profile cannot be updated"
+                );
             }
 
-            return saved;
+            entity.setIsDefault(false);
+            entity.setId(existing.getId());
+            entity.setTest(existing.getTest());
+            validate(entity);
+
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(existing.getIsActive() != null ? existing.getIsActive() : true);
+            }
+
+            return repository.save(entity);
         });
     }
-
+    
     @Transactional(readOnly = true)
     public Page<DiagnosticTestProfile> findAll(Pageable pageable) {
         return repository.findAll(pageable);

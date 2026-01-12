@@ -84,6 +84,7 @@ public class DiagnosticTestService {
 
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
         return repository.findById(id).map(existing -> {
+
             existing.setType(vm.type());
             existing.setName(vm.name());
             existing.setInternalCode(vm.internalCode());
@@ -102,20 +103,61 @@ public class DiagnosticTestService {
 
             DiagnosticTest saved = repository.save(existing);
 
+            if (saved.getType() == TestType.LABORATORY) {
 
-            if (vm.defaultProfileResultType() != null || vm.defaultProfileResultUnit() != null) {
-
-                profileRepository.findAllByTest_Id(saved.getId(), Pageable.unpaged())
-                        .stream()
-                        .filter(p -> Boolean.TRUE.equals(p.getIsDefault()))
-                        .findFirst()
-                        .ifPresent(p -> {
-                            if (vm.defaultProfileResultType() != null) p.setResultType(vm.defaultProfileResultType());
-                            if (vm.defaultProfileResultUnit() != null) p.setResultUnit(vm.defaultProfileResultUnit());
-
-                            p.setName(saved.getName());
-                            profileRepository.save(p);
+                DiagnosticTestProfile p = profileRepository
+                        .findFirstByTest_IdAndIsDefaultTrue(saved.getId())
+                        .orElseGet(() -> {
+                            if (vm.defaultProfileResultType() == null) {
+                                throw new BadRequestAlertException(
+                                        "defaultProfileResultType is required to create default profile",
+                                        "diagnosticTest",
+                                        "missing_default_profile_result_type"
+                                );
+                            }
+                            DiagnosticTestProfile created = DiagnosticTestProfile.builder()
+                                    .test(saved)
+                                    .name(saved.getName())
+                                    .resultUnit(vm.defaultProfileResultUnit())
+                                    .resultType(vm.defaultProfileResultType())
+                                    .isDefault(true)
+                                    .isActive(true)
+                                    .build();
+                            return profileRepository.save(created);
                         });
+
+                boolean changed = false;
+
+                // اسم الديفولت لازم يضل مطابق لاسم التست
+                if (!saved.getName().equals(p.getName())) {
+                    p.setName(saved.getName());
+                    changed = true;
+                }
+
+                // عدّل فقط إذا المستخدم بعت قيمة
+                if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != p.getResultType()) {
+                    p.setResultType(vm.defaultProfileResultType());
+                    changed = true;
+                }
+
+                if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(p.getResultUnit())) {
+                    p.setResultUnit(vm.defaultProfileResultUnit());
+                    changed = true;
+                }
+
+                // enforce flags
+                if (!Boolean.TRUE.equals(p.getIsDefault())) {
+                    p.setIsDefault(true);
+                    changed = true;
+                }
+                if (p.getIsActive() == null) {
+                    p.setIsActive(true);
+                    changed = true;
+                }
+
+                if (changed) {
+                    profileRepository.save(p);
+                }
             }
 
             return saved;

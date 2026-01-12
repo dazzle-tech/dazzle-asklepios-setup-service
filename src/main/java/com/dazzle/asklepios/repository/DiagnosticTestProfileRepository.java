@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -35,5 +37,6 @@ public interface DiagnosticTestProfileRepository extends JpaRepository<Diagnosti
     Page<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrue(Long testId, Pageable pageable);
 
     Page<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrueAndIsDefaultFalse(Long testId, Pageable pageable);
+    List<DiagnosticTestProfile> findAllByTest_IdInAndIsDefaultTrue(Collection<Long> testIds);
 
 }
