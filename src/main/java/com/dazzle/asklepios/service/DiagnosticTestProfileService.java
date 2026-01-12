@@ -135,5 +135,14 @@ public class DiagnosticTestProfileService {
 
 
         repository.unsetDefaultsExcept(testId, savedProfileId);
+
+    }
+
+    public Optional<DiagnosticTestProfile> toggleIsActive(Long id) {
+        return repository.findById(id)
+                .map(p -> {
+                    p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
+                    return repository.save(p);
+                });
     }
 }

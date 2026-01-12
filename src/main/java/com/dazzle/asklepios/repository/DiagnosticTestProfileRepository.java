@@ -30,5 +30,10 @@ public interface DiagnosticTestProfileRepository extends JpaRepository<Diagnosti
     int unsetDefaultsExcept(Long testId, Long keepId);
 
     Optional<DiagnosticTestProfile> findFirstByTest_IdAndIsDefaultTrue(Long testId);
+    long countByTest_IdAndIsActiveTrue(Long testId);
+
+    Page<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrue(Long testId, Pageable pageable);
+
+    Page<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrueAndIsDefaultFalse(Long testId, Pageable pageable);
 
 }

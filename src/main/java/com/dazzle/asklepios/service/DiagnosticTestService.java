@@ -72,6 +72,7 @@ public class DiagnosticTestService {
                     .resultUnit(vm.defaultProfileResultUnit())
                     .resultType(vm.defaultProfileResultType())
                     .isDefault(true)
+                    .isActive(true)
                     .build();
 
             profileRepository.save(defaultProfile);

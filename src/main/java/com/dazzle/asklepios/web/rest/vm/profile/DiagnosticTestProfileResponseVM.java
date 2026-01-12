@@ -9,7 +9,8 @@ public record DiagnosticTestProfileResponseVM(
         String name,
         String resultUnit,
         TestResultType resultType,
-        Boolean isDefault
+        Boolean isDefault,
+        Boolean isActive
 ) {
     public static DiagnosticTestProfileResponseVM fromEntity(DiagnosticTestProfile e) {
         return new DiagnosticTestProfileResponseVM(
@@ -18,7 +19,8 @@ public record DiagnosticTestProfileResponseVM(
                 e.getName(),
                 e.getResultUnit(),
                 e.getResultType(),
-                e.getIsDefault()
+                e.getIsDefault(),
+                e.getIsActive()
         );
     }
 }

@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.service.DiagnosticTestProfileService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.profile.DiagnosticTestProfileCreateVM;
 import com.dazzle.asklepios.web.rest.vm.profile.DiagnosticTestProfileResponseVM;
 import com.dazzle.asklepios.web.rest.vm.profile.DiagnosticTestProfileUpdateVM;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -134,4 +136,14 @@ public class DiagnosticTestProfileController {
         service.deleteAllByTestId(testId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestProfileResponseVM> toggleDiagnosticProfileActiveStatus(@PathVariable Long id) {
+        LOG.debug("REST toggle Diagnostic Profile Setup isActive id={}", id);
+        return service.toggleIsActive(id)
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 }

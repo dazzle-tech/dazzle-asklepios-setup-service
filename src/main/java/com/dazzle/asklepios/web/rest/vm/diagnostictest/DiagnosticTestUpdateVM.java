@@ -31,8 +31,6 @@ public record DiagnosticTestUpdateVM(
         Boolean isActive,
         Boolean isProfile,
         Boolean appointable,
-
-        // OPTIONAL: allow updating default profile meta
         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit
 ) implements Serializable {}

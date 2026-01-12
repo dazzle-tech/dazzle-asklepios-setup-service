@@ -29,8 +29,6 @@ public record DiagnosticTestCreateVM(
         Boolean isActive,
         Boolean isProfile,
         Boolean appointable,
-
-        // NEW: required to create default profile
-        @NotNull TestResultType defaultProfileResultType,
+         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit
 ) implements Serializable {}
