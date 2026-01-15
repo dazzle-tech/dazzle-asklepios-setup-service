@@ -10,7 +10,8 @@ public record DiagnosticTestProfileResponseVM(
         String resultUnit,
         TestResultType resultType,
         Boolean isDefault,
-        Boolean isActive
+        Boolean isActive,
+        Long listOfValueId
 ) {
     public static DiagnosticTestProfileResponseVM fromEntity(DiagnosticTestProfile e) {
         return new DiagnosticTestProfileResponseVM(
@@ -20,7 +21,8 @@ public record DiagnosticTestProfileResponseVM(
                 e.getResultUnit(),
                 e.getResultType(),
                 e.getIsDefault(),
-                e.getIsActive()
+                e.getIsActive(),
+                e.getListOfValueId()
         );
     }
 }

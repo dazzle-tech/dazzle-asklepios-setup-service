@@ -135,6 +135,7 @@ public class DiagnosticTestProfileService {
             throw new BadRequestAlertException("resultType is required", "diagnosticTestProfile", "resulttypemissing");
         }
 
+
     }
 
     private void unsetOtherDefaults(Long savedProfileId, Long testId) {

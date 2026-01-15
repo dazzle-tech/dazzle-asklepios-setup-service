@@ -12,7 +12,8 @@ public record DiagnosticTestProfileUpdateVM(
         @NotBlank String name,
         String resultUnit,
         @NotNull TestResultType resultType,
-        Boolean isDefault
+        Boolean isDefault,
+        Long listOfValueId
 ) {
     public DiagnosticTestProfile toEntity() {
         return DiagnosticTestProfile.builder()
@@ -22,6 +23,7 @@ public record DiagnosticTestProfileUpdateVM(
                 .resultUnit(resultUnit)
                 .resultType(resultType)
                 .isDefault(isDefault != null ? isDefault : false)
+                .listOfValueId(listOfValueId)
                 .build();
     }
 }

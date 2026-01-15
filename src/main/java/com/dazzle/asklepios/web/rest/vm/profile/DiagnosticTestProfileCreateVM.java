@@ -10,7 +10,8 @@ public record DiagnosticTestProfileCreateVM(
         @NotNull Long testId,
         @NotBlank String name,
         String resultUnit,
-        @NotNull TestResultType resultType
+        @NotNull TestResultType resultType,
+        Long listOfValueId
 
 ) {
     public DiagnosticTestProfile toEntity() {
@@ -19,7 +20,7 @@ public record DiagnosticTestProfileCreateVM(
                 .name(name)
                 .resultUnit(resultUnit)
                 .resultType(resultType)
-
+                .listOfValueId(listOfValueId)
                 .build();
     }
 }

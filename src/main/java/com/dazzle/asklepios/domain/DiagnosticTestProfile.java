@@ -46,9 +46,13 @@ public class DiagnosticTestProfile {
     @Enumerated(EnumType.STRING)
     @Column(name = "result_type", nullable = false)
     private TestResultType resultType;
+
     @Builder.Default
     @Column(name = "is_default")
     private Boolean isDefault = false;
+
+    @Column(name = "list_of_value_id")
+    private Long listOfValueId;
 
     @Builder.Default
     @Column(name ="is_active",nullable = false)
