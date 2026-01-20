@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -205,6 +206,12 @@ public class DiagnosticTestService {
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAllActive(Pageable pageable) {
         return repository.findByIsActiveTrue(pageable);
+    }
+// Add to DiagnosticTestService.java
+
+    @Transactional(readOnly = true)
+    public List<DiagnosticTest> findAllByIds(List<Long> ids) {
+        return repository.findAllById(ids);
     }
 
 }

@@ -193,6 +193,30 @@ public class DiagnosticTestController {
                 HttpStatus.OK
         );
     }
+// Add to DiagnosticTestController.java
+
+    @GetMapping("/diagnostic-test/by-ids")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST request to get DiagnosticTests by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<DiagnosticTest> tests = service.findAllByIds(ids);
+
+        // Optional: keep same input order
+        var map = tests.stream().collect(Collectors.toMap(DiagnosticTest::getId, t -> t, (a, b) -> a));
+        List<DiagnosticTestResponseVM> body = ids.stream()
+                .map(map::get)
+                .filter(java.util.Objects::nonNull)
+                .map(this::enrichWithDefaultProfile)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 
     private DiagnosticTestResponseVM enrichWithDefaultProfile(DiagnosticTest test) {
         DiagnosticTestResponseVM vm = DiagnosticTestResponseVM.ofEntity(test);
