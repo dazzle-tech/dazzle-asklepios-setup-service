@@ -78,6 +78,7 @@ public class FormTemplateController {
                 pageable != null ? pageable.getPageNumber() : null,
                 pageable != null ? pageable.getPageSize() : null,
                 pageable != null ? pageable.getSort() : null);
+        
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
          return ResponseEntity.ok().headers(headers).body(page.getContent());
 
