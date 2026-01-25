@@ -30,5 +30,6 @@ public record DiagnosticTestCreateVM(
         Boolean isProfile,
         Boolean appointable,
          TestResultType defaultProfileResultType,
-        String defaultProfileResultUnit
+        String defaultProfileResultUnit,
+        String listOfValueId
 ) implements Serializable {}

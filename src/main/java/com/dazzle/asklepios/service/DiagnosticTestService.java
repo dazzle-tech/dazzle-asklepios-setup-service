@@ -72,6 +72,7 @@ public class DiagnosticTestService {
                     .name(saved.getName())
                     .resultUnit(vm.defaultProfileResultUnit())
                     .resultType(vm.defaultProfileResultType())
+                    .listOfValueId(vm.listOfValueId())
                     .isDefault(true)
                     .isActive(true)
                     .build();
@@ -121,6 +122,7 @@ public class DiagnosticTestService {
                                     .name(saved.getName())
                                     .resultUnit(vm.defaultProfileResultUnit())
                                     .resultType(vm.defaultProfileResultType())
+                                    .listOfValueId(vm.listOfValueId())
                                     .isDefault(true)
                                     .isActive(true)
                                     .build();
@@ -129,13 +131,13 @@ public class DiagnosticTestService {
 
                 boolean changed = false;
 
-                // اسم الديفولت لازم يضل مطابق لاسم التست
+
                 if (!saved.getName().equals(p.getName())) {
                     p.setName(saved.getName());
                     changed = true;
                 }
 
-                // عدّل فقط إذا المستخدم بعت قيمة
+
                 if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != p.getResultType()) {
                     p.setResultType(vm.defaultProfileResultType());
                     changed = true;
@@ -143,6 +145,10 @@ public class DiagnosticTestService {
 
                 if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(p.getResultUnit())) {
                     p.setResultUnit(vm.defaultProfileResultUnit());
+                    changed = true;
+                }
+                if (vm.listOfValueId() != null && !vm.listOfValueId().equals(p.getListOfValueId())) {
+                    p.setListOfValueId(vm.listOfValueId());
                     changed = true;
                 }
 

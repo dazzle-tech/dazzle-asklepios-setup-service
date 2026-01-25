@@ -28,7 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/setup/diagnostic-test-profiles")
@@ -119,6 +121,13 @@ public class DiagnosticTestProfileController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @PostMapping("/by-test-ids/for-lab")
+    public ResponseEntity<Map<Long, List<DiagnosticTestProfile>>> getActiveLabProfilesByTestIds(
+            @RequestBody Collection<Long> testIds
+    ) {
+        return ResponseEntity.ok(service.findActiveProfilesForLabByTestIds(testIds));
     }
 
     // DELETE ONE

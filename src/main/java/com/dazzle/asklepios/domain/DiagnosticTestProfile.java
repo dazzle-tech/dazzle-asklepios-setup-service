@@ -52,7 +52,7 @@ public class DiagnosticTestProfile {
     private Boolean isDefault = false;
 
     @Column(name = "list_of_value_id")
-    private Long listOfValueId;
+    private String listOfValueId;
 
     @Builder.Default
     @Column(name ="is_active",nullable = false)

@@ -2,11 +2,11 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
-import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.profile.TestProfileCountVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -14,7 +14,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Transactional
@@ -23,6 +29,7 @@ public class DiagnosticTestProfileService {
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestProfileService.class);
     private final DiagnosticTestProfileRepository repository;
     private final DiagnosticTestRepository diagnosticTestRepository;
+
     public DiagnosticTestProfileService(DiagnosticTestProfileRepository repository, DiagnosticTestRepository diagnosticTestRepository) {
         this.repository = repository;
         this.diagnosticTestRepository = diagnosticTestRepository;
@@ -38,7 +45,7 @@ public class DiagnosticTestProfileService {
         DiagnosticTest test = diagnosticTestRepository.findById(testId)
                 .orElseThrow(() -> new BadRequestAlertException("Test not found", "diagnosticTest", "notfound"));
 
-        if (test.getType() != TestType.LABORATORY ) {
+        if (test.getType() != TestType.LABORATORY) {
             throw new BadRequestAlertException(
                     "Profiles are allowed only for LABORATORY tests",
                     "diagnosticTestProfile",
@@ -83,7 +90,7 @@ public class DiagnosticTestProfileService {
             return repository.save(entity);
         });
     }
-    
+
     @Transactional(readOnly = true)
     public Page<DiagnosticTestProfile> findAll(Pageable pageable) {
         return repository.findAll(pageable);
@@ -114,6 +121,32 @@ public class DiagnosticTestProfileService {
             return repository.findAllByTest_Id(testId, pageable);
         }
         return repository.findAllByTest_IdAndIsDefaultFalse(testId, pageable);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Map<Long, List<DiagnosticTestProfile>> findActiveProfilesForLabByTestIds(Collection<Long> testIds) {
+        if (testIds == null || testIds.isEmpty()) return Map.of();
+
+        List<Long> ids = testIds.stream().filter(Objects::nonNull).distinct().toList();
+        if (ids.isEmpty()) return Map.of();
+
+        Map<Long, Long> countsById = repository.countByTestIds(ids).stream()
+                .collect(Collectors.toMap(TestProfileCountVM::testId, TestProfileCountVM::cnt));
+
+        List<Long> idsCountLE1 = ids.stream().filter(id -> countsById.getOrDefault(id, 0L) <= 1).toList();
+        List<Long> idsCountGT1 = ids.stream().filter(id -> countsById.getOrDefault(id, 0L) > 1).toList();
+
+        List<DiagnosticTestProfile> allForLE1 = idsCountLE1.isEmpty()
+                ? List.of()
+                : repository.findAllByTest_IdInAndIsActiveTrue(idsCountLE1);
+
+        List<DiagnosticTestProfile> nonDefaultForGT1 = idsCountGT1.isEmpty()
+                ? List.of()
+                : repository.findAllByTest_IdInAndIsActiveTrueAndIsDefaultFalse(idsCountGT1);
+
+        return Stream.concat(allForLE1.stream(), nonDefaultForGT1.stream())
+                .collect(Collectors.groupingBy(p -> p.getTest().getId()));
     }
 
     public void deleteAllByTestId(Long testId) {
