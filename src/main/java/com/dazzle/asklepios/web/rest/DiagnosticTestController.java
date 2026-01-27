@@ -224,7 +224,7 @@ public class DiagnosticTestController {
         if (test.getType() != TestType.LABORATORY) return vm;
 
         return profileRepository.findFirstByTest_IdAndIsDefaultTrue(test.getId())
-                .map(p -> vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType()))
+                .map(p -> vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType(), p.getListOfValueId()))
                 .orElse(vm);
     }
 
@@ -247,7 +247,7 @@ public class DiagnosticTestController {
                     DiagnosticTestProfile p = defaults.get(t.getId());
                     if (p == null) return vm;
 
-                    return vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType());
+                    return vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType(), p.getListOfValueId());
                 })
                 .toList();
     }

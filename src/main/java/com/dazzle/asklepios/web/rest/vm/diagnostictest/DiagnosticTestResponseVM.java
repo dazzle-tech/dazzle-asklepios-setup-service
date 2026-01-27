@@ -32,7 +32,8 @@ public record DiagnosticTestResponseVM(
 
         Long defaultProfileId,
         String defaultProfileResultUnit,
-        TestResultType defaultProfileResultType
+        TestResultType defaultProfileResultType,
+        String listOfValueId
 ) implements Serializable {
 
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
@@ -56,18 +57,18 @@ public record DiagnosticTestResponseVM(
                 test.getCreatedDate(),
                 test.getLastModifiedDate(),
 
-                null, null, null
+                null, null, null,null
         );
     }
 
-    public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type) {
+    public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type,String listOfValueId) {
         return new DiagnosticTestResponseVM(
                 this.id, this.type, this.name, this.internalCode,
                 this.ageSpecific, this.ageGroupList, this.genderSpecific, this.gender,
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
                 this.specialNotes, this.isActive, this.isProfile, this.appointable,
                 this.createdDate, this.lastModifiedDate,
-                id, unit, type
+                id, unit, type,listOfValueId
         );
     }
 }
