@@ -218,4 +218,32 @@ public class DiagnosticTestNormalRangeController {
 
         return ResponseEntity.ok(lovs);
     }
+
+    /**
+     * Returns all normal ranges configured for the given profileTestId (non-paginated).
+     *
+     * <p>This endpoint is intended for internal service-to-service calls (e.g., patient-service),
+     * to resolve the best matching normal range for a patient. It returns all configured ranges;
+     * the matching logic is performed by the caller.</p>
+     *
+     * @param profileTestId profile test id
+     * @return list of normal ranges for the profile test (may be empty)
+     */
+    @GetMapping("/internal/by-profile-test")
+    public ResponseEntity<List<DiagnosticTestNormalRangeResponseVM>> findAllByProfileTestIdInternal(
+            @RequestParam("profileTestId") Long profileTestId
+    ) {
+        LOG.debug("[NormalRange] INTERNAL_LIST_BY_PROFILE_TEST - request received. profileTestId={}", profileTestId);
+
+        // NOTE: you'll need a non-paginated service method (see below)
+        List<DiagnosticTestNormalRangeResponseVM> body = service.findListByProfileTestId(profileTestId).stream()
+                .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
+                .toList();
+
+        LOG.debug("[NormalRange] INTERNAL_LIST_BY_PROFILE_TEST - response ready. profileTestId={} returned={}",
+                profileTestId, body.size());
+
+        return ResponseEntity.ok(body);
+    }
+
 }

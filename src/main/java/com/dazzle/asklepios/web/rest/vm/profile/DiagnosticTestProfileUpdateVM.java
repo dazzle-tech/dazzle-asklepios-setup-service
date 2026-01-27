@@ -13,7 +13,7 @@ public record DiagnosticTestProfileUpdateVM(
         String resultUnit,
         @NotNull TestResultType resultType,
         Boolean isDefault,
-        Long listOfValueId
+        String listOfValueId
 ) {
     public DiagnosticTestProfile toEntity() {
         return DiagnosticTestProfile.builder()

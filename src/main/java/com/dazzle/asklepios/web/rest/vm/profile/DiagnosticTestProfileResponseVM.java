@@ -11,7 +11,7 @@ public record DiagnosticTestProfileResponseVM(
         TestResultType resultType,
         Boolean isDefault,
         Boolean isActive,
-        Long listOfValueId
+        String listOfValueId
 ) {
     public static DiagnosticTestProfileResponseVM fromEntity(DiagnosticTestProfile e) {
         return new DiagnosticTestProfileResponseVM(

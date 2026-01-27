@@ -38,7 +38,6 @@ public class DiagnosticTestNormalRange {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // مرجعي فقط (nullable)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_id")
     private DiagnosticTest test;
@@ -72,7 +71,7 @@ public class DiagnosticTestNormalRange {
     private Double criticalValueLessThan;
     private Double criticalValueMoreThan;
 
-    // الأساس (NOT NULL)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_test_id", nullable = false)
     private DiagnosticTestProfile profileTest;

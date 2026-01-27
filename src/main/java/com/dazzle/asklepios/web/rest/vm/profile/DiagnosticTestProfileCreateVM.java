@@ -11,7 +11,7 @@ public record DiagnosticTestProfileCreateVM(
         @NotBlank String name,
         String resultUnit,
         @NotNull TestResultType resultType,
-        Long listOfValueId
+        String listOfValueId
 
 ) {
     public DiagnosticTestProfile toEntity() {
