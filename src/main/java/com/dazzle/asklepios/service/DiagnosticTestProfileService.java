@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
+import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
@@ -171,6 +172,9 @@ public class DiagnosticTestProfileService {
 
     }
 
+    public Optional<TestResultType> getResultTypeById(Long id) {
+        return repository.findById(id).map(DiagnosticTestProfile::getResultType);
+    }
     private void unsetOtherDefaults(Long savedProfileId, Long testId) {
         if (testId == null) return;
 
