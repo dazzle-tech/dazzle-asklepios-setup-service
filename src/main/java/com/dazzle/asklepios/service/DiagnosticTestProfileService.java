@@ -116,14 +116,18 @@ public class DiagnosticTestProfileService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTestProfile> findProfilesForLab(Long testId, Pageable pageable) {
-        long c = repository.countByTest_Id(testId);
-        if (c <= 1) {
-            return repository.findAllByTest_Id(testId, pageable);
-        }
-        return repository.findAllByTest_IdAndIsDefaultFalse(testId, pageable);
-    }
+    public List<DiagnosticTestProfile> findProfilesForLab(Long testId) {
 
+        long c = repository.countByTest_Id(testId);
+
+        if (c <= 1) {
+            // only active
+            return repository.findAllByTest_IdAndIsActiveTrue(testId);
+        }
+
+        // only active + not default
+        return repository.findAllByTest_IdAndIsActiveTrueAndIsDefaultFalse(testId);
+    }
 
     @Transactional(readOnly = true)
     public Map<Long, List<DiagnosticTestProfile>> findActiveProfilesForLabByTestIds(Collection<Long> testIds) {

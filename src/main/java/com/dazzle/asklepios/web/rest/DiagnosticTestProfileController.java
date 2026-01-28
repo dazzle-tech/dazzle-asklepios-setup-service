@@ -101,28 +101,36 @@ public class DiagnosticTestProfileController {
                 HttpStatus.OK
         );
     }
+    @GetMapping("/internal/by-test/{testId}/lab-profile-ids")
+    public ResponseEntity<List<Long>> findLabProfileIds(@PathVariable Long testId) {
+
+        LOG.debug("REST get LAB profile ids by testId={}", testId);
+
+        List<DiagnosticTestProfile> profiles = service.findProfilesForLab(testId);
+
+        List<Long> ids = profiles.stream()
+                .map(DiagnosticTestProfile::getId)
+                .toList();
+
+        return ResponseEntity.ok(ids);
+    }
 
     @GetMapping("/by-test/{testId}/for-lab")
-    public ResponseEntity<List<DiagnosticTestProfileResponseVM>> findProfilesForLab(
-            @PathVariable Long testId,
-            @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<DiagnosticTestProfileResponseVM>> findProfilesForLab(@PathVariable Long testId) {
 
-        LOG.debug("REST list DiagnosticTestProfiles for LAB by testId={} page={}", testId, pageable);
+        LOG.debug("REST list DiagnosticTestProfiles for LAB by testId={}", testId);
 
-        Page<DiagnosticTestProfile> page = service.findProfilesForLab(testId, pageable);
 
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page
-        );
+        List<DiagnosticTestProfile> profiles = service.findProfilesForLab(testId);
 
-        return new ResponseEntity<>(
-                page.getContent().stream()
-                        .map(DiagnosticTestProfileResponseVM::fromEntity)
-                        .toList(),
-                headers,
-                HttpStatus.OK
-        );
+
+        List<DiagnosticTestProfileResponseVM> body = profiles.stream()
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
     }
+
 
     @PostMapping("/by-test-ids/for-lab")
     public ResponseEntity<Map<Long, List<DiagnosticTestProfile>>> getActiveLabProfilesByTestIds(

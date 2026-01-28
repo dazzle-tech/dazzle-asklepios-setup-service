@@ -19,8 +19,6 @@ public interface DiagnosticTestProfileRepository extends JpaRepository<Diagnosti
 
     void deleteAllByTest_Id(Long testId);
 
-    Page<DiagnosticTestProfile> findAllByTest_IdAndIsDefaultFalse(Long testId, Pageable pageable);
-
     long countByTest_Id(Long testId);
 
     @Query("""
@@ -51,4 +49,9 @@ public interface DiagnosticTestProfileRepository extends JpaRepository<Diagnosti
     List<DiagnosticTestProfile> findAllByTest_IdInAndIsActiveTrue(Collection<Long> testIds);
 
     List<DiagnosticTestProfile> findAllByTest_IdInAndIsActiveTrueAndIsDefaultFalse(Collection<Long> testIds);
+
+
+    List<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrue(Long testId);
+
+    List<DiagnosticTestProfile> findAllByTest_IdAndIsActiveTrueAndIsDefaultFalse(Long testId);
 }
