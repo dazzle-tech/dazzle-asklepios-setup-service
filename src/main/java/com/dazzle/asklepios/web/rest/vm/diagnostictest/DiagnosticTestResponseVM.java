@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
-import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
@@ -10,6 +9,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+
 public record DiagnosticTestResponseVM(
         Long id,
         TestType type,
@@ -25,7 +25,6 @@ public record DiagnosticTestResponseVM(
         Currency currency,
         String specialNotes,
         Boolean isActive,
-        Boolean isProfile,
         Boolean appointable,
         Instant createdDate,
         Instant lastModifiedDate,
@@ -52,23 +51,22 @@ public record DiagnosticTestResponseVM(
                 test.getCurrency(),
                 test.getSpecialNotes(),
                 test.getIsActive(),
-                test.getIsProfile(),
                 test.getAppointable(),
                 test.getCreatedDate(),
                 test.getLastModifiedDate(),
 
-                null, null, null,null
+                null, null, null, null
         );
     }
 
-    public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type,String listOfValueId) {
+    public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type, String listOfValueId) {
         return new DiagnosticTestResponseVM(
                 this.id, this.type, this.name, this.internalCode,
                 this.ageSpecific, this.ageGroupList, this.genderSpecific, this.gender,
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
-                this.specialNotes, this.isActive, this.isProfile, this.appointable,
+                this.specialNotes, this.isActive, this.appointable,
                 this.createdDate, this.lastModifiedDate,
-                id, unit, type,listOfValueId
+                id, unit, type, listOfValueId
         );
     }
 }
