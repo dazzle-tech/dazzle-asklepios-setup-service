@@ -9,6 +9,7 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -40,7 +41,7 @@ public class DiagnosticTestController {
     }
 
     @PostMapping("/diagnostic-test")
-    public ResponseEntity<DiagnosticTestResponseVM> create(@RequestBody DiagnosticTestCreateVM vm) {
+    public ResponseEntity<DiagnosticTestResponseVM> create(@Valid @RequestBody DiagnosticTestCreateVM vm) {
         LOG.debug("REST request to create DiagnosticTest payload={}", vm);
 
         DiagnosticTest test = service.create(vm);
@@ -54,7 +55,7 @@ public class DiagnosticTestController {
     }
 
     @PutMapping("/diagnostic-test/{id}")
-    public ResponseEntity<DiagnosticTestResponseVM> update(@PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
+    public ResponseEntity<DiagnosticTestResponseVM> update(@Valid@PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
         LOG.debug("REST request to update DiagnosticTest id={} payload={}", id, vm);
 
         return service.update(id, vm)
