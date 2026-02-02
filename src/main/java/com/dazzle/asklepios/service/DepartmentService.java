@@ -211,4 +211,9 @@ public class DepartmentService {
     public List<Department> findDepartmentsLinkedToEmergencyResource() {
         return findDepartmentsLinkedToResourceType("EMERGENCY");
     }
+
+    @Transactional(readOnly = true)
+    public List<Department> findByIds(List<Long> ids) {
+        return departmentRepository.findAllById(ids);
+    }
 }

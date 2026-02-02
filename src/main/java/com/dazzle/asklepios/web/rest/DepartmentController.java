@@ -293,4 +293,12 @@ public class DepartmentController {
         return ResponseEntity.ok(departments);
     }
 
+    @PostMapping("/department/bulk")
+    public ResponseEntity<List<Department>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(departmentService.findByIds(ids));
+    }
+
 }

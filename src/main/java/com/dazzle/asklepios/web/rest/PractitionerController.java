@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -52,8 +53,8 @@ public class PractitionerController {
      *
      * @param practitionerVM the creation payload.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the created practitioner,
-     *         with a {@code Location} header pointing to the new resource;
-     *         or {@code 400 (Bad Request)} if the payload is invalid.
+     * with a {@code Location} header pointing to the new resource;
+     * or {@code 400 (Bad Request)} if the payload is invalid.
      */
     @PostMapping("/practitioner")
     public ResponseEntity<PractitionerResponseVM> createPractitioner(@Valid @RequestBody PractitionerCreateVM practitionerVM) {
@@ -72,13 +73,13 @@ public class PractitionerController {
      *
      * <p>Updates mutable fields of the practitioner identified by {@code id}.</p>
      *
-     * @param id the identifier of the practitioner to update.
+     * @param id                   the identifier of the practitioner to update.
      * @param practitionerUpdateVM the update payload.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated practitioner in the body,
-     *         or {@code 404 (Not Found)} if no practitioner exists with the given {@code id}.
+     * or {@code 404 (Not Found)} if no practitioner exists with the given {@code id}.
      */
     @PutMapping("/practitioner/{id}")
-    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@Valid@PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
+    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@Valid @PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
         LOG.debug("REST update Practitioner id={} payload={}", id, practitionerUpdateVM);
         return practitionerService.update(id, practitionerUpdateVM)
                 .map(p -> ResponseEntity.ok(PractitionerResponseVM.ofEntity(p)))
@@ -95,7 +96,7 @@ public class PractitionerController {
      *
      * @param pageable the pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of practitioner view models in the body,
-     *         and pagination headers.
+     * and pagination headers.
      */
     @GetMapping("/practitioner")
     public ResponseEntity<List<PractitionerResponseVM>> getAllPractitioners(@ParameterObject Pageable pageable) {
@@ -114,9 +115,9 @@ public class PractitionerController {
      * <p>Includes pagination headers {@code X-Total-Count} and {@code Link}.</p>
      *
      * @param facilityId the facility identifier.
-     * @param pageable pagination and sorting information.
+     * @param pageable   pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models,
-     *         plus pagination headers.
+     * plus pagination headers.
      */
     @GetMapping("/practitioner/by-facility/{facilityId:\\d+}")
     public ResponseEntity<List<PractitionerResponseVM>> getByFacility(
@@ -133,7 +134,7 @@ public class PractitionerController {
      * {@code GET /practitioner/by-specialty/{specialty}} : Get practitioners by specialty (paginated).
      *
      * @param specialty the specialty to filter by.
-     * @param pageable pagination and sorting information.
+     * @param pageable  pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models.
      */
     @GetMapping("/practitioner/by-specialty/{specialty}")
@@ -152,7 +153,7 @@ public class PractitionerController {
      *
      * @param id the identifier of the practitioner to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the practitioner view model,
-     *         or {@code 404 (Not Found)} if the practitioner does not exist.
+     * or {@code 404 (Not Found)} if the practitioner does not exist.
      */
     @GetMapping("/practitioner/{id}")
     public ResponseEntity<PractitionerResponseVM> getPractitioner(@PathVariable Long id) {
@@ -170,7 +171,7 @@ public class PractitionerController {
     @GetMapping("/practitioner/by-name/{name}")
     public ResponseEntity<List<PractitionerResponseVM>> findByName(@PathVariable String name, @ParameterObject Pageable pageable) {
         LOG.debug("REST request to search Practitioner by name='{}' page={}", name, pageable);
-        Page<Practitioner> page = practitionerService.findByFirstNameOrLastName(name,pageable);
+        Page<Practitioner> page = practitionerService.findByFirstNameOrLastName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         LOG.debug("REST found {} Practitioner matching name='{}'", page.getTotalElements(), name);
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
@@ -183,7 +184,7 @@ public class PractitionerController {
      *
      * @param id the identifier of the practitioner to toggle.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated practitioner view model,
-     *         or {@code 404 (Not Found)} if the practitioner does not exist.
+     * or {@code 404 (Not Found)} if the practitioner does not exist.
      */
     @PatchMapping("/practitioner/{id}/toggle-active")
     public ResponseEntity<PractitionerResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
@@ -193,11 +194,12 @@ public class PractitionerController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     /**
      * {@code GET /practitioner/active/by-specialty/{specialty}} : Get practitioners by specialty (paginated).
      *
      * @param specialty the sub specialty to filter by.
-     * @param pageable pagination and sorting information.
+     * @param pageable  pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models.
      */
     @GetMapping("/practitioner/active/by-sub-specialty/{specialty}")
@@ -218,7 +220,7 @@ public class PractitionerController {
     ) {
         LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
 
-        Page<Practitioner> page = practitionerService.findActiveAppointable( pageable);
+        Page<Practitioner> page = practitionerService.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -240,5 +242,30 @@ public class PractitionerController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/practitioner/bulk")
+    public ResponseEntity<List<Practitioner>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(practitionerService.findByIds(ids));
+    }
+
+    @GetMapping("/specialists")
+    public ResponseEntity<Page<Practitioner>> getSpecialists(
+            @RequestParam Long facilityId,
+            @RequestParam String subSpecialty,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                practitionerService
+                        .findSpecialistPractitionersByFacilityAndSubSpecialty(
+                                facilityId,
+                                subSpecialty,
+                                pageable
+                        )
+        );
+    }
+
 
 }

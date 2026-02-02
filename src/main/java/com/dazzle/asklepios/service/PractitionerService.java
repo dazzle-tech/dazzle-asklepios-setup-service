@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -94,7 +95,6 @@ public class PractitionerService {
     }
 
 
-
     @Transactional
     public Optional<Practitioner> update(Long id, PractitionerUpdateVM vm) {
         LOG.debug("Request to update Practitioner id={} with {}", id, vm);
@@ -127,7 +127,7 @@ public class PractitionerService {
             practitioner.setUser(null);
         }
 
-    
+
         if (vm.firstName() != null) practitioner.setFirstName(vm.firstName());
         if (vm.lastName() != null) practitioner.setLastName(vm.lastName());
         if (vm.email() != null && !vm.email().isBlank()) {
@@ -142,8 +142,10 @@ public class PractitionerService {
         if (vm.secondaryMedicalLicense() != null) practitioner.setSecondaryMedicalLicense(vm.secondaryMedicalLicense());
         if (vm.educationalLevel() != null) practitioner.setEducationalLevel(vm.educationalLevel());
         if (vm.appointable() != null) practitioner.setAppointable(vm.appointable());
-        if (vm.defaultLicenseValidUntil() != null) practitioner.setDefaultLicenseValidUntil(vm.defaultLicenseValidUntil());
-        if (vm.secondaryLicenseValidUntil() != null) practitioner.setSecondaryLicenseValidUntil(vm.secondaryLicenseValidUntil());
+        if (vm.defaultLicenseValidUntil() != null)
+            practitioner.setDefaultLicenseValidUntil(vm.defaultLicenseValidUntil());
+        if (vm.secondaryLicenseValidUntil() != null)
+            practitioner.setSecondaryLicenseValidUntil(vm.secondaryLicenseValidUntil());
         if (vm.dateOfBirth() != null) practitioner.setDateOfBirth(vm.dateOfBirth());
         if (vm.jobRole() != null) practitioner.setJobRole(vm.jobRole());
         if (vm.gender() != null) practitioner.setGender(vm.gender());
@@ -154,7 +156,6 @@ public class PractitionerService {
 
         return Optional.of(updated);
     }
-
 
 
     @Transactional(readOnly = true)
@@ -171,6 +172,7 @@ public class PractitionerService {
     public Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable) {
         return practitionerRepository.findBySpecialty(specialty, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Practitioner> findBySubSpecialty(String specialty, Pageable pageable) {
         return practitionerRepository.findBySubSpecialtyAndIsActiveTrue(specialty, pageable);
@@ -178,13 +180,15 @@ public class PractitionerService {
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findByFirstNameOrLastName(String name, Pageable pageable) {
-        return practitionerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name,name,pageable);
+        return practitionerRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(name, name, pageable);
     }
-    public Page<Practitioner> findActiveAppointable( Pageable pageable) {
+
+    public Page<Practitioner> findActiveAppointable(Pageable pageable) {
         LOG.debug("Fetching Active Appointable  Practitionerpageable={} is", pageable);
         return practitionerRepository
                 .findByIsActiveTrueAndAppointableTrue(pageable);
     }
+
     @Transactional(readOnly = true)
     public Optional<Practitioner> findOne(Long id) {
         return practitionerRepository.findById(id);
@@ -202,4 +206,41 @@ public class PractitionerService {
     public Optional<Practitioner> findByUser(Long userId) {
         return practitionerRepository.findByUserId(userId);
     }
+
+    @Transactional(readOnly = true)
+    public List<Practitioner> findByIds(List<Long> ids) {
+        return practitionerRepository.findAllById(ids);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findSpecialistPractitionersByFacilityAndSubSpecialty(
+            Long facilityId,
+            String subSpecialty,
+            Pageable pageable
+    ) {
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility id is required",
+                    "practitioner",
+                    "facility.required"
+            );
+        }
+
+        if (subSpecialty == null || subSpecialty.isBlank()) {
+            throw new BadRequestAlertException(
+                    "Sub specialty is required",
+                    "practitioner",
+                    "subSpecialty.required"
+            );
+        }
+
+        return practitionerRepository
+                .findByFacilityIdAndSubSpecialtyAndSpecialtyAndUserIdIsNotNullAndIsActiveTrue(
+                        facilityId,
+                        subSpecialty,
+                        Specialty.SPECIALIST,
+                        pageable
+                );
+    }
+
 }
