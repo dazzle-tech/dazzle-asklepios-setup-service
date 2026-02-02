@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum Screen {
     // Scheduling
     SCHEDULING_SCREEN,
+    AVAILABILITY_TEMPLATES_NEW,
+    APPOINTMENT,
 
     // Inventory Management
     INVENTORY_TRANSFER,
