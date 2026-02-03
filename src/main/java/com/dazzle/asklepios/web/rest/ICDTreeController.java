@@ -1,11 +1,13 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.ICDCategory;
+import com.dazzle.asklepios.domain.ICDDiagnosis;
 import com.dazzle.asklepios.service.ICDTreeService;
-import com.dazzle.asklepios.service.dto.icd10.ICDCategoryDTO;
-import com.dazzle.asklepios.service.dto.icd10.ICDDiagnosisDTO;
-import com.dazzle.asklepios.service.dto.icd10.ICDNodeDetailsDTO;
+import com.dazzle.asklepios.service.dto.icd10.ICDNodeDetailsEntityDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,8 @@ import java.util.List;
 @RequestMapping("/api/setup/icd")
 public class ICDTreeController {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ICDTreeController.class);
+
     private final ICDTreeService icdTreeService;
 
     public ICDTreeController(ICDTreeService icdTreeService) {
@@ -28,10 +32,11 @@ public class ICDTreeController {
     }
 
     @GetMapping("/tree/root")
-    public ResponseEntity<List<ICDCategoryDTO>> getRoot(
+    public ResponseEntity<List<ICDCategory>> getRoot(
             @RequestParam String icdCoding,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST getRoot icdCoding='{}' pageable={}", icdCoding, pageable);
 
         if (icdCoding == null || icdCoding.isBlank()) {
             throw new BadRequestAlertException("icdCoding is required", "icdTree", "icdCoding.required");
@@ -40,7 +45,7 @@ public class ICDTreeController {
             throw new BadRequestAlertException("pageable is required", "icdTree", "pageable.required");
         }
 
-        Page<ICDCategoryDTO> page = icdTreeService.getRootCategories(icdCoding, pageable);
+        Page<ICDCategory> page = icdTreeService.getRootCategories(icdCoding, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -51,11 +56,14 @@ public class ICDTreeController {
     }
 
     @GetMapping("/tree/children")
-    public ResponseEntity<List<ICDCategoryDTO>> getChildren(
+    public ResponseEntity<List<ICDCategory>> getChildren(
             @RequestParam String icdCoding,
             @RequestParam String parentCategoryCode,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST getChildren icdCoding='{}' parentCategoryCode='{}' pageable={}",
+                icdCoding, parentCategoryCode, pageable);
+
         if (icdCoding == null || icdCoding.isBlank()) {
             throw new BadRequestAlertException("icdCoding is required", "icdTree", "icdCoding.required");
         }
@@ -66,7 +74,7 @@ public class ICDTreeController {
             throw new BadRequestAlertException("pageable is required", "icdTree", "pageable.required");
         }
 
-        Page<ICDCategoryDTO> page = icdTreeService.getChildren(icdCoding, parentCategoryCode, pageable);
+        Page<ICDCategory> page = icdTreeService.getChildren(icdCoding, parentCategoryCode, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -77,11 +85,14 @@ public class ICDTreeController {
     }
 
     @GetMapping("/tree/node")
-    public ResponseEntity<ICDNodeDetailsDTO> getNodeDetails(
+    public ResponseEntity<ICDNodeDetailsEntityDTO> getNodeDetails(
             @RequestParam String icdCoding,
             @RequestParam String categoryCode,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST getNodeDetails icdCoding='{}' categoryCode='{}' pageable={}",
+                icdCoding, categoryCode, pageable);
+
         if (icdCoding == null || icdCoding.isBlank()) {
             throw new BadRequestAlertException("icdCoding is required", "icdTree", "icdCoding.required");
         }
@@ -92,16 +103,19 @@ public class ICDTreeController {
             throw new BadRequestAlertException("pageable is required", "icdTree", "pageable.required");
         }
 
-        ICDNodeDetailsDTO dto = icdTreeService.getNodeDetails(icdCoding, categoryCode, pageable);
+        ICDNodeDetailsEntityDTO dto = icdTreeService.getNodeDetails(icdCoding, categoryCode, pageable);
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/diagnoses")
-    public ResponseEntity<List<ICDDiagnosisDTO>> getDiagnosesByCategory(
+    public ResponseEntity<List<ICDDiagnosis>> getDiagnosesByCategory(
             @RequestParam String icdCoding,
             @RequestParam String categoryCode,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST getDiagnosesByCategory icdCoding='{}' categoryCode='{}' pageable={}",
+                icdCoding, categoryCode, pageable);
+
         if (icdCoding == null || icdCoding.isBlank()) {
             throw new BadRequestAlertException("icdCoding is required", "icdTree", "icdCoding.required");
         }
@@ -112,7 +126,7 @@ public class ICDTreeController {
             throw new BadRequestAlertException("pageable is required", "icdTree", "pageable.required");
         }
 
-        Page<ICDDiagnosisDTO> page = icdTreeService.getDiagnosesByCategory(icdCoding, categoryCode, pageable);
+        Page<ICDDiagnosis> page = icdTreeService.getDiagnosesByCategory(icdCoding, categoryCode, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -121,4 +135,46 @@ public class ICDTreeController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
+
+    @GetMapping("/diagnoses/search")
+    public ResponseEntity<List<ICDDiagnosis>> searchDiagnoses(
+            @RequestParam String keyword,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST searchDiagnoses keyword='{}' pageable={}", keyword, pageable);
+
+        if (keyword == null || keyword.isBlank()) {
+            throw new BadRequestAlertException(
+                    "keyword is required",
+                    "icdTree",
+                    "keyword.required"
+            );
+        }
+
+        if (keyword.trim().length() < 3) {
+            throw new BadRequestAlertException(
+                    "keyword must be at least 3 characters long",
+                    "icdTree",
+                    "keyword.tooShort"
+            );
+        }
+
+        if (pageable == null) {
+            throw new BadRequestAlertException(
+                    "pageable is required",
+                    "icdTree",
+                    "pageable.required"
+            );
+        }
+
+        Page<ICDDiagnosis> page = icdTreeService.searchDiagnoses(keyword, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
 }

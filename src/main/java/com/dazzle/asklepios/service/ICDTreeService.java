@@ -4,9 +4,7 @@ import com.dazzle.asklepios.domain.ICDCategory;
 import com.dazzle.asklepios.domain.ICDDiagnosis;
 import com.dazzle.asklepios.repository.ICDCategoryRepository;
 import com.dazzle.asklepios.repository.ICDDiagnosisRepository;
-import com.dazzle.asklepios.service.dto.icd10.ICDCategoryDTO;
-import com.dazzle.asklepios.service.dto.icd10.ICDDiagnosisDTO;
-import com.dazzle.asklepios.service.dto.icd10.ICDNodeDetailsDTO;
+import com.dazzle.asklepios.service.dto.icd10.ICDNodeDetailsEntityDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import lombok.RequiredArgsConstructor;
@@ -28,43 +26,63 @@ public class ICDTreeService {
     private final ICDDiagnosisRepository icdDiagnosisRepository;
 
     @Transactional(readOnly = true)
-    public Page<ICDCategoryDTO> getRootCategories(String icdCoding, Pageable pageable) {
+    public Page<ICDCategory> getRootCategories(String icdCoding, Pageable pageable) {
+        LOG.debug(
+                "[GET ROOT CATEGORIES] icdCoding='{}' pageable={}",
+                icdCoding, pageable
+        );
 
         return icdCategoryRepository
-                .findByIcdCodingAndParentCategoryCodeIsNull(icdCoding, pageable)
-                .map(this::toDTO);
+                .findByIcdCodingAndParentCategoryCodeIsNull(icdCoding, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ICDCategoryDTO> getChildren(String icdCoding, String parentCategoryCode, Pageable pageable) {
-
+    public Page<ICDCategory> getChildren(String icdCoding, String parentCategoryCode, Pageable pageable) {
+        LOG.debug(
+                "[GET CHILD CATEGORIES] icdCoding='{}' parentCategoryCode='{}' pageable={}",
+                icdCoding, parentCategoryCode, pageable
+        );
 
         return icdCategoryRepository
-                .findByIcdCodingAndParentCategoryCode(icdCoding, parentCategoryCode, pageable)
-                .map(this::toDTO);
+                .findByIcdCodingAndParentCategoryCode(icdCoding, parentCategoryCode, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ICDDiagnosisDTO> getDiagnosesByCategory(String icdCoding, String categoryCode, Pageable pageable) {
-
+    public Page<ICDDiagnosis> getDiagnosesByCategory(String icdCoding, String categoryCode, Pageable pageable) {
+        LOG.debug(
+                "[GET DIAGNOSES BY CATEGORY] icdCoding='{}' categoryCode='{}' pageable={}",
+                icdCoding, categoryCode, pageable
+        );
 
         return icdDiagnosisRepository
-                .findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable)
-                .map(this::toDTO);
+                .findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
     }
 
     @Transactional(readOnly = true)
-    public ICDNodeDetailsDTO getNodeDetails(String icdCoding, String categoryCode, Pageable pageable) {
-
+    public ICDNodeDetailsEntityDTO getNodeDetails(String icdCoding, String categoryCode, Pageable pageable) {
+        LOG.debug(
+                "[GET NODE DETAILS] icdCoding='{}' categoryCode='{}' pageable={}",
+                icdCoding, categoryCode, pageable
+        );
 
         ICDCategory selected = icdCategoryRepository.findById(categoryCode)
-                .orElseThrow(() -> new NotFoundAlertException(
-                        "ICD category not found with code " + categoryCode,
-                        "icdTree",
-                        "category.notfound"
-                ));
+                .orElseThrow(() -> {
+                    LOG.warn(
+                            "[GET NODE DETAILS] Category not found categoryCode='{}'",
+                            categoryCode
+                    );
+                    return new NotFoundAlertException(
+                            "ICD category not found with code " + categoryCode,
+                            "icdTree",
+                            "category.notfound"
+                    );
+                });
 
         if (!icdCoding.equalsIgnoreCase(selected.getIcdCoding())) {
+            LOG.warn(
+                    "[GET NODE DETAILS] Coding mismatch categoryCode='{}' expected='{}' actual='{}'",
+                    categoryCode, icdCoding, selected.getIcdCoding()
+            );
             throw new BadRequestAlertException(
                     "Category does not belong to icdCoding=" + icdCoding,
                     "icdTree",
@@ -72,42 +90,41 @@ public class ICDTreeService {
             );
         }
 
-        Page<ICDCategoryDTO> childrenPage =
-                icdCategoryRepository
-                        .findByIcdCodingAndParentCategoryCode(icdCoding, categoryCode, pageable)
-                        .map(this::toDTO);
+        Page<ICDCategory> childrenPage =
+                icdCategoryRepository.findByIcdCodingAndParentCategoryCode(icdCoding, categoryCode, pageable);
 
-        Page<ICDDiagnosisDTO> diagnosesPage =
-                icdDiagnosisRepository
-                        .findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable)
-                        .map(this::toDTO);
+        Page<ICDDiagnosis> diagnosesPage =
+                icdDiagnosisRepository.findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
 
-        return new ICDNodeDetailsDTO(
-                toDTO(selected),
+        LOG.debug(
+                "[GET NODE DETAILS] childrenCount={} diagnosesCount={}",
+                childrenPage.getTotalElements(),
+                diagnosesPage.getTotalElements()
+        );
+
+        return new ICDNodeDetailsEntityDTO(
+                selected,
                 childrenPage.getContent(),
                 diagnosesPage.getContent()
         );
     }
 
-    private ICDCategoryDTO toDTO(ICDCategory e) {
-        return new ICDCategoryDTO(
-                e.getCategoryCode(),
-                e.getIcdCoding(),
-                e.getCategoryName(),
-                e.getCategoryDescription(),
-                e.getParentCategoryCode()
-        );
-    }
+    @Transactional(readOnly = true)
+    public Page<ICDDiagnosis> searchDiagnoses(String keyword, Pageable pageable) {
+        LOG.debug("[FIND DIAGNOSIS BY KEYWORD] keyword='{}' pageable={}", keyword, pageable);
 
-    private ICDDiagnosisDTO toDTO(ICDDiagnosis e) {
-        return new ICDDiagnosisDTO(
-                e.getId(),
-                e.getIcdDiagnosisUid(),
-                e.getIcdCode(),
-                e.getIcdCoding(),
-                e.getCategoryCode(),
-                e.getIcdShortDescription(),
-                e.getIcdFullDescription()
-        );
+        Page<ICDDiagnosis> page =
+                icdDiagnosisRepository
+                        .findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCaseOrIcdShortDescriptionOtherLanguageContainingIgnoreCaseOrIcdFullDescriptionOtherLanguageContainingIgnoreCase(
+                                keyword,
+                                keyword,
+                                keyword,
+                                keyword,
+                                keyword,
+                                pageable
+                        );
+
+        LOG.debug("[FIND DIAGNOSIS BY KEYWORD] resultCount={}", page.getTotalElements());
+        return page;
     }
 }
