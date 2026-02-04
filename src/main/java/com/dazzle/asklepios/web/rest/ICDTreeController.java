@@ -176,5 +176,34 @@ public class ICDTreeController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
+    @GetMapping("/diagnoses/by-ids")
+    public ResponseEntity<List<ICDDiagnosis>> getDiagnosesByIds(@RequestParam List<Long> ids) {
+        LOG.debug("REST getDiagnosesByIds ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "ids is required",
+                    "icdTree",
+                    "ids.required"
+            );
+        }
+
+        return ResponseEntity.ok(icdTreeService.findByIds(ids));
+    }
+    @GetMapping("/diagnoses/{id}")
+    public ResponseEntity<ICDDiagnosis> getDiagnosisById(@PathVariable Long id) {
+        LOG.debug("REST getDiagnosisById id={}", id);
+
+        if (id == null) {
+            throw new BadRequestAlertException(
+                    "id is required",
+                    "icdTree",
+                    "diagnosisId.required"
+            );
+        }
+
+        ICDDiagnosis diagnosis = icdTreeService.getDiagnosisById(id);
+        return ResponseEntity.ok(diagnosis);
+    }
 
 }

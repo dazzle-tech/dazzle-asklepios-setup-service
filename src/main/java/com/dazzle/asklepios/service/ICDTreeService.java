@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -127,4 +129,29 @@ public class ICDTreeService {
         LOG.debug("[FIND DIAGNOSIS BY KEYWORD] resultCount={}", page.getTotalElements());
         return page;
     }
+
+
+
+    @Transactional(readOnly = true)
+    public List<ICDDiagnosis> findByIds(List<Long> ids) {
+        LOG.debug("Fetching ICDDiagnosis by ids: {}", ids);
+        return icdDiagnosisRepository.findAllById(ids);
+    }
+
+
+    @Transactional(readOnly = true)
+    public ICDDiagnosis getDiagnosisById(Long id) {
+        LOG.debug("[GET DIAGNOSIS BY ID] id={}", id);
+
+        return icdDiagnosisRepository.findById(id)
+                .orElseThrow(() -> {
+                    LOG.warn("[GET DIAGNOSIS BY ID] Diagnosis not found id={}", id);
+                    return new NotFoundAlertException(
+                            "ICD diagnosis not found with id " + id,
+                            "icdTree",
+                            "diagnosis.notfound"
+                    );
+                });
+    }
+
 }
