@@ -51,10 +51,4 @@ public class ICDDiagnosis implements Serializable {
 
     @Column(name = "icd_full_description", columnDefinition = "text")
     private String icdFullDescription;
-
-    @Column(name = "icd_short_description_other_language", length = 500)
-    private String icdShortDescriptionOtherLanguage;
-
-    @Column(name = "icd_full_description_other_language", columnDefinition = "text")
-    private String icdFullDescriptionOtherLanguage;
 }

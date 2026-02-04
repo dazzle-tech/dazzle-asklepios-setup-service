@@ -10,12 +10,10 @@ public interface ICDDiagnosisRepository extends JpaRepository<ICDDiagnosis, Long
     Page<ICDDiagnosis> findByIcdCodingAndCategoryCode(String icdCoding, String categoryCode, Pageable pageable);
 
     Page<ICDDiagnosis>
-    findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCaseOrIcdShortDescriptionOtherLanguageContainingIgnoreCaseOrIcdFullDescriptionOtherLanguageContainingIgnoreCase(
+    findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCase(
             String icdCode,
             String icdShortDescription,
             String icdFullDescription,
-            String icdShortDescriptionOtherLanguage,
-            String icdFullDescriptionOtherLanguage,
             Pageable pageable
     );
 

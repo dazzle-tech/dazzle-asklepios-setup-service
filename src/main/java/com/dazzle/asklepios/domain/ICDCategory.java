@@ -2,7 +2,10 @@ package com.dazzle.asklepios.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -39,6 +42,10 @@ public class ICDCategory implements Serializable {
     @Column(name = "category_description", columnDefinition = "text")
     private String categoryDescription;
 
-    @Column(name = "parent_category_code", length = 50)
-    private String parentCategoryCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "parent_category_code",
+            referencedColumnName = "category_code"
+    )
+    private ICDCategory parentCategory;
 }

@@ -7,7 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ICDCategoryRepository extends JpaRepository<ICDCategory, String> {
 
-    Page<ICDCategory> findByIcdCodingAndParentCategoryCodeIsNull(String icdCoding, Pageable pageable);
+    Page<ICDCategory> findByIcdCodingAndParentCategoryIsNull(String icdCoding, Pageable pageable);
 
-    Page<ICDCategory> findByIcdCodingAndParentCategoryCode(String icdCoding, String parentCategoryCode, Pageable pageable);
+    Page<ICDCategory> findByIcdCodingAndParentCategory_CategoryCode(
+            String icdCoding,
+            String parentCategoryCode,
+            Pageable pageable
+    );
 }

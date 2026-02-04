@@ -29,13 +29,8 @@ public class ICDTreeService {
 
     @Transactional(readOnly = true)
     public Page<ICDCategory> getRootCategories(String icdCoding, Pageable pageable) {
-        LOG.debug(
-                "[GET ROOT CATEGORIES] icdCoding='{}' pageable={}",
-                icdCoding, pageable
-        );
-
-        return icdCategoryRepository
-                .findByIcdCodingAndParentCategoryCodeIsNull(icdCoding, pageable);
+        LOG.debug("[GET ROOT CATEGORIES] icdCoding='{}' pageable={}", icdCoding, pageable);
+        return icdCategoryRepository.findByIcdCodingAndParentCategoryIsNull(icdCoding, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -45,8 +40,11 @@ public class ICDTreeService {
                 icdCoding, parentCategoryCode, pageable
         );
 
-        return icdCategoryRepository
-                .findByIcdCodingAndParentCategoryCode(icdCoding, parentCategoryCode, pageable);
+        return icdCategoryRepository.findByIcdCodingAndParentCategory_CategoryCode(
+                icdCoding,
+                parentCategoryCode,
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
@@ -56,8 +54,7 @@ public class ICDTreeService {
                 icdCoding, categoryCode, pageable
         );
 
-        return icdDiagnosisRepository
-                .findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
+        return icdDiagnosisRepository.findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -69,10 +66,7 @@ public class ICDTreeService {
 
         ICDCategory selected = icdCategoryRepository.findById(categoryCode)
                 .orElseThrow(() -> {
-                    LOG.warn(
-                            "[GET NODE DETAILS] Category not found categoryCode='{}'",
-                            categoryCode
-                    );
+                    LOG.warn("[GET NODE DETAILS] Category not found categoryCode='{}'", categoryCode);
                     return new NotFoundAlertException(
                             "ICD category not found with code " + categoryCode,
                             "icdTree",
@@ -93,7 +87,7 @@ public class ICDTreeService {
         }
 
         Page<ICDCategory> childrenPage =
-                icdCategoryRepository.findByIcdCodingAndParentCategoryCode(icdCoding, categoryCode, pageable);
+                icdCategoryRepository.findByIcdCodingAndParentCategory_CategoryCode(icdCoding, categoryCode, pageable);
 
         Page<ICDDiagnosis> diagnosesPage =
                 icdDiagnosisRepository.findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
@@ -113,31 +107,26 @@ public class ICDTreeService {
 
     @Transactional(readOnly = true)
     public Page<ICDDiagnosis> searchDiagnoses(String keyword, Pageable pageable) {
-        LOG.debug("[FIND DIAGNOSIS BY KEYWORD] keyword='{}' pageable={}", keyword, pageable);
+        LOG.debug("[FIND DIAGNOSES BY KEYWORD] keyword='{}' pageable={}", keyword, pageable);
 
         Page<ICDDiagnosis> page =
                 icdDiagnosisRepository
-                        .findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCaseOrIcdShortDescriptionOtherLanguageContainingIgnoreCaseOrIcdFullDescriptionOtherLanguageContainingIgnoreCase(
-                                keyword,
-                                keyword,
+                        .findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCase(
                                 keyword,
                                 keyword,
                                 keyword,
                                 pageable
                         );
 
-        LOG.debug("[FIND DIAGNOSIS BY KEYWORD] resultCount={}", page.getTotalElements());
+        LOG.debug("[FIND DIAGNOSES BY KEYWORD] resultCount={}", page.getTotalElements());
         return page;
     }
 
-
-
     @Transactional(readOnly = true)
     public List<ICDDiagnosis> findByIds(List<Long> ids) {
-        LOG.debug("Fetching ICDDiagnosis by ids: {}", ids);
+        LOG.debug("[GET DIAGNOSES BY IDS] ids={}", ids);
         return icdDiagnosisRepository.findAllById(ids);
     }
-
 
     @Transactional(readOnly = true)
     public ICDDiagnosis getDiagnosisById(Long id) {
@@ -153,5 +142,4 @@ public class ICDTreeService {
                     );
                 });
     }
-
 }
