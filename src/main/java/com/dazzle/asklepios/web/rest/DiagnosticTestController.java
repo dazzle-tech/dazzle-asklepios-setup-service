@@ -18,7 +18,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -48,14 +56,14 @@ public class DiagnosticTestController {
 
         // enrich single response too
         DiagnosticTestResponseVM response = enrichWithDefaultProfile(test);
-
+        LOG.debug("Result for  created DiagnosticTest id={} response={}", test.getId(), response);
         return ResponseEntity
                 .created(URI.create("/api/setup/diagnostic-test/" + test.getId()))
                 .body(response);
     }
 
     @PutMapping("/diagnostic-test/{id}")
-    public ResponseEntity<DiagnosticTestResponseVM> update(@Valid@PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
+    public ResponseEntity<DiagnosticTestResponseVM> update(@Valid @PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
         LOG.debug("REST request to update DiagnosticTest id={} payload={}", id, vm);
 
         return service.update(id, vm)
@@ -219,37 +227,65 @@ public class DiagnosticTestController {
         return ResponseEntity.ok(body);
     }
 
-    private DiagnosticTestResponseVM enrichWithDefaultProfile(DiagnosticTest test) {
-        DiagnosticTestResponseVM vm = DiagnosticTestResponseVM.ofEntity(test);
+    private DiagnosticTestResponseVM enrichWithDefaultProfile(DiagnosticTest diagnosticTest) {
+        DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
 
-        if (test.getType() != TestType.LABORATORY) return vm;
+        if (diagnosticTest.getType() != TestType.LABORATORY) {
+            return responseVM;
+        }
 
-        return profileRepository.findFirstByTest_IdAndIsDefaultTrue(test.getId())
-                .map(p -> vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType(), p.getListOfValueId()))
-                .orElse(vm);
+        return profileRepository
+                .findFirstByTest_IdAndIsDefaultTrue(diagnosticTest.getId())
+                .map(defaultProfile ->
+                        responseVM.withDefaultProfile(
+                                defaultProfile.getId(),
+                                defaultProfile.getResultUnit(),
+                                defaultProfile.getResultType(),
+                                defaultProfile.getListOfValueId()
+                        )
+                )
+                .orElse(responseVM);
     }
 
-    private List<DiagnosticTestResponseVM> enrichWithDefaultProfiles(List<DiagnosticTest> tests) {
-        if (tests == null || tests.isEmpty()) return List.of();
+    private List<DiagnosticTestResponseVM> enrichWithDefaultProfiles(List<DiagnosticTest> diagnosticTests) {
+        if (diagnosticTests == null || diagnosticTests.isEmpty()) {
+            return List.of();
+        }
 
-        List<Long> ids = tests.stream().map(DiagnosticTest::getId).toList();
+        List<Long> diagnosticTestIds = diagnosticTests.stream()
+                .map(DiagnosticTest::getId)
+                .toList();
 
-        Map<Long, DiagnosticTestProfile> defaults = profileRepository
-                .findAllByTest_IdInAndIsDefaultTrue(ids)
+        Map<Long, DiagnosticTestProfile> defaultProfileByTestId = profileRepository
+                .findAllByTest_IdInAndIsDefaultTrue(diagnosticTestIds)
                 .stream()
-                .collect(Collectors.toMap(p -> p.getTest().getId(), p -> p, (a, b) -> a));
+                .collect(Collectors.toMap(
+                        profile -> profile.getTest().getId(),
+                        profile -> profile,
+                        (existing, duplicate) -> existing
+                ));
 
-        return tests.stream()
-                .map(t -> {
-                    DiagnosticTestResponseVM vm = DiagnosticTestResponseVM.ofEntity(t);
+        return diagnosticTests.stream()
+                .map(diagnosticTest -> {
+                    DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
 
-                    if (t.getType() != TestType.LABORATORY) return vm;
+                    if (diagnosticTest.getType() != TestType.LABORATORY) {
+                        return responseVM;
+                    }
 
-                    DiagnosticTestProfile p = defaults.get(t.getId());
-                    if (p == null) return vm;
+                    DiagnosticTestProfile defaultProfile = defaultProfileByTestId.get(diagnosticTest.getId());
+                    if (defaultProfile == null) {
+                        return responseVM;
+                    }
 
-                    return vm.withDefaultProfile(p.getId(), p.getResultUnit(), p.getResultType(), p.getListOfValueId());
+                    return responseVM.withDefaultProfile(
+                            defaultProfile.getId(),
+                            defaultProfile.getResultUnit(),
+                            defaultProfile.getResultType(),
+                            defaultProfile.getListOfValueId()
+                    );
                 })
                 .toList();
     }
+
 }

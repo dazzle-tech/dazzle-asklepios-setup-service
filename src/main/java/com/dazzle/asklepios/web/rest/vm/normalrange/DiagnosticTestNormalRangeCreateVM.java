@@ -13,7 +13,7 @@ import java.util.List;
 
 @Builder
 public record DiagnosticTestNormalRangeCreateVM(
-        Long testId, // مرجعي فقط
+        @NotNull Long testId,
         String gender,
         Double ageFrom,
         AgeUnit ageFromUnit,

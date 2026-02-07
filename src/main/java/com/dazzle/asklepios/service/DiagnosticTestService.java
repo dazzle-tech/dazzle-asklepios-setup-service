@@ -106,7 +106,7 @@ public class DiagnosticTestService {
 
             if (saved.getType() == TestType.LABORATORY) {
 
-                DiagnosticTestProfile p = profileRepository
+                DiagnosticTestProfile defaultProfile = profileRepository
                         .findFirstByTest_IdAndIsDefaultTrue(saved.getId())
                         .orElseGet(() -> {
                             if (vm.defaultProfileResultType() == null) {
@@ -131,38 +131,38 @@ public class DiagnosticTestService {
                 boolean changed = false;
 
 
-                if (!saved.getName().equals(p.getName())) {
-                    p.setName(saved.getName());
+                if (!saved.getName().equals(defaultProfile.getName())) {
+                    defaultProfile.setName(saved.getName());
                     changed = true;
                 }
 
 
-                if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != p.getResultType()) {
-                    p.setResultType(vm.defaultProfileResultType());
+                if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != defaultProfile.getResultType()) {
+                    defaultProfile.setResultType(vm.defaultProfileResultType());
                     changed = true;
                 }
 
-                if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(p.getResultUnit())) {
-                    p.setResultUnit(vm.defaultProfileResultUnit());
+                if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(defaultProfile.getResultUnit())) {
+                    defaultProfile.setResultUnit(vm.defaultProfileResultUnit());
                     changed = true;
                 }
-                if (vm.listOfValueId() != null && !vm.listOfValueId().equals(p.getListOfValueId())) {
-                    p.setListOfValueId(vm.listOfValueId());
+                if (vm.listOfValueId() != null && !vm.listOfValueId().equals(defaultProfile.getListOfValueId())) {
+                    defaultProfile.setListOfValueId(vm.listOfValueId());
                     changed = true;
                 }
 
                 // enforce flags
-                if (!Boolean.TRUE.equals(p.getIsDefault())) {
-                    p.setIsDefault(true);
+                if (!Boolean.TRUE.equals(defaultProfile.getIsDefault())) {
+                    defaultProfile.setIsDefault(true);
                     changed = true;
                 }
-                if (p.getIsActive() == null) {
-                    p.setIsActive(true);
+                if (defaultProfile.getIsActive() == null) {
+                    defaultProfile.setIsActive(true);
                     changed = true;
                 }
 
                 if (changed) {
-                    profileRepository.save(p);
+                    profileRepository.save(defaultProfile);
                 }
             }
 

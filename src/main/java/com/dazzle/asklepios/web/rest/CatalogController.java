@@ -92,12 +92,14 @@ public class CatalogController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
-    @GetMapping("/catalog/by-department-and-not")
-    public ResponseEntity<List<CatalogResponseVM>> byDepartmentAndNot(
+    @GetMapping("/catalog/by-department-or-unassigned")
+    public ResponseEntity<List<CatalogResponseVM>> getByDepartmentOrUnassigned(
             @RequestParam Long departmentId,
             @ParameterObject Pageable pageable
     ) {
-        Page<Catalog> page = catalogService.findByDepartmentOrUnassigned(departmentId, pageable);
+        LOG.debug("REST get Catalog  By DepartmentId{}  with unassigned department");
+
+                Page<Catalog> page = catalogService.findByDepartmentOrUnassigned(departmentId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page

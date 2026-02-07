@@ -47,6 +47,7 @@ public class DiagnosticTestProfile {
     @Column(name = "result_type", nullable = false)
     private TestResultType resultType;
 
+    @NotNull
     @Builder.Default
     @Column(name = "is_default")
     private Boolean isDefault = false;

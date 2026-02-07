@@ -235,7 +235,6 @@ public class DiagnosticTestNormalRangeController {
     ) {
         LOG.debug("[NormalRange] INTERNAL_LIST_BY_PROFILE_TEST - request received. profileTestId={}", profileTestId);
 
-        // NOTE: you'll need a non-paginated service method (see below)
         List<DiagnosticTestNormalRangeResponseVM> body = service.findListByProfileTestId(profileTestId).stream()
                 .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
                 .toList();

@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 public record DiagnosticTestNormalRangeUpdateVM(
         @NotNull Long id,
-        Long testId,
+        @NotNull Long testId,
         String gender,
         Double ageFrom,
         AgeUnit ageFromUnit,

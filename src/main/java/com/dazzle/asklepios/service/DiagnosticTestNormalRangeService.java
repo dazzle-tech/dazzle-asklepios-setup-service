@@ -1,4 +1,3 @@
-// src/main/java/com/dazzle/asklepios/service/DiagnosticTestNormalRangeService.java
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTestNormalRange;
@@ -8,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.repository.DiagnosticTestNormalRangeLovRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestNormalRangeRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +40,6 @@ public class DiagnosticTestNormalRangeService {
     private final DiagnosticTestNormalRangeLovRepository lovRepository;
     private final DiagnosticTestProfileRepository profileRepository;
 
-    /**
-     * Creates a new service instance.
-     *
-     * @param rangeRepository repository for normal ranges
-     * @param lovRepository repository for normal range LOV rows
-     * @param profileRepository repository for profiles (to validate and load managed profile)
-     */
     public DiagnosticTestNormalRangeService(
             DiagnosticTestNormalRangeRepository rangeRepository,
             DiagnosticTestNormalRangeLovRepository lovRepository,
@@ -60,32 +53,39 @@ public class DiagnosticTestNormalRangeService {
     /**
      * Creates a normal range definition.
      *
-     * <p>Requires {@code profileTestId}. The profile is loaded to ensure it exists and to align {@code test_id}
-     * with {@code profile.test}. If the profile result type is {@link TestResultType#LOV}, LOV keys (if provided)
-     * are persisted into the LOV table.</p>
-     *
      * @param entity new normal range entity
      * @return persisted entity (with id)
-     * @throws IllegalArgumentException if profileTestId is missing or profile does not exist
      */
     public DiagnosticTestNormalRange create(DiagnosticTestNormalRange entity) {
-        if (entity.getProfileTest() == null || entity.getProfileTest().getId() == null) {
-            throw new IllegalArgumentException("profileTestId is required");
+        Long profileTestId = (entity.getProfileTest() != null) ? entity.getProfileTest().getId() : null;
+        LOG.debug("[NormalRange] CREATE - start. profileTestId={} entityId={}", profileTestId, entity.getId());
+
+        if (profileTestId == null) {
+            LOG.warn("[NormalRange] CREATE - missing profileTestId");
+            throw new BadRequestAlertException(
+                    "missing_profile_test_id",
+                    "diagnosticTestNormalRange",
+                    "profileTestId is required"
+            );
         }
 
-        DiagnosticTestProfile profile = profileRepository.findById(entity.getProfileTest().getId())
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + entity.getProfileTest().getId()));
+        DiagnosticTestProfile profile = profileRepository.findById(profileTestId)
+                .orElseThrow(() -> {
+                    LOG.warn("[NormalRange] CREATE - profile not found. profileTestId={}", profileTestId);
+                    return new BadRequestAlertException(
+                            "profile_not_found",
+                            "diagnosticTestProfile",
+                            "Profile not found: " + profileTestId
+                    );
+                });
 
         entity.setProfileTest(profile);
-
-        // keep test_id aligned with profile->test (reference only)
         entity.setTest(profile.getTest());
 
         DiagnosticTestNormalRange saved = rangeRepository.save(entity);
-
         persistLovsIfNeeded(saved, profile.getResultType(), entity.getLovKeys());
 
-        LOG.debug("[NormalRange] CREATE - saved id={} profileTestId={} testId={}",
+        LOG.info("[NormalRange] CREATE - done. id={} profileTestId={} testId={}",
                 saved.getId(),
                 saved.getProfileTest() != null ? saved.getProfileTest().getId() : null,
                 saved.getTest() != null ? saved.getTest().getId() : null);
@@ -96,36 +96,47 @@ public class DiagnosticTestNormalRangeService {
     /**
      * Updates an existing normal range definition by id.
      *
-     * <p>Replaces persisted LOVs for the range if the profile is {@link TestResultType#LOV}.</p>
-     *
-     * @param id range id
-     * @param entity update payload (must include profileTestId)
+     * @param id     range id
+     * @param entity update payload
      * @return updated entity if found, otherwise empty
-     * @throws IllegalArgumentException if profileTestId is missing or profile does not exist
      */
     public Optional<DiagnosticTestNormalRange> update(Long id, DiagnosticTestNormalRange entity) {
+        Long profileTestId = (entity.getProfileTest() != null) ? entity.getProfileTest().getId() : null;
+        LOG.debug("[NormalRange] UPDATE - start. id={} profileTestId={}", id, profileTestId);
+
         return rangeRepository.findById(id).map(existing -> {
 
-            if (entity.getProfileTest() == null || entity.getProfileTest().getId() == null) {
-                throw new IllegalArgumentException("profileTestId is required");
+            if (profileTestId == null) {
+                LOG.warn("[NormalRange] UPDATE - missing profileTestId. id={}", id);
+                throw new BadRequestAlertException(
+                        "missing_profile_test_id",
+                        "diagnosticTestNormalRange",
+                        "profileTestId is required"
+                );
             }
 
-            DiagnosticTestProfile profile = profileRepository.findById(entity.getProfileTest().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + entity.getProfileTest().getId()));
+            DiagnosticTestProfile profile = profileRepository.findById(profileTestId)
+                    .orElseThrow(() -> {
+                        LOG.warn("[NormalRange] UPDATE - profile not found. id={} profileTestId={}", id, profileTestId);
+                        return new BadRequestAlertException(
+                                "profile_not_found",
+                                "diagnosticTestProfile",
+                                "Profile not found: " + profileTestId
+                        );
+                    });
 
             entity.setId(id);
             entity.setProfileTest(profile);
-
-            // keep reference test_id aligned with profile->test
             entity.setTest(profile.getTest());
 
             DiagnosticTestNormalRange updated = rangeRepository.save(entity);
 
-            // refresh LOVs
             lovRepository.deleteByNormalRangeId(id);
+            LOG.debug("[NormalRange] UPDATE - cleared LOVs. rangeId={}", id);
+
             persistLovsIfNeeded(updated, profile.getResultType(), entity.getLovKeys());
 
-            LOG.debug("[NormalRange] UPDATE - updated id={} profileTestId={} testId={}",
+            LOG.info("[NormalRange] UPDATE - done. id={} profileTestId={} testId={}",
                     updated.getId(),
                     updated.getProfileTest() != null ? updated.getProfileTest().getId() : null,
                     updated.getTest() != null ? updated.getTest().getId() : null);
@@ -135,123 +146,143 @@ public class DiagnosticTestNormalRangeService {
     }
 
     /**
-     * Returns a paginated list of all normal ranges.
-     * LOV keys are loaded into {@code lovKeys}.
-     *
-     * @param pageable pagination and sorting
-     * @return page of normal ranges
+     * Returns a paginated list of all normal ranges (LOV keys populated).
      */
     public Page<DiagnosticTestNormalRange> findAll(Pageable pageable) {
-        return rangeRepository.findAll(pageable)
+        LOG.debug("[NormalRange] FIND_ALL - pageable={}", pageable);
+
+        Page<DiagnosticTestNormalRange> page = rangeRepository.findAll(pageable)
                 .map(range -> {
                     range.setLovKeys(findLovs(range.getId()));
                     return range;
                 });
+
+        LOG.info("[NormalRange] FIND_ALL - returned {} items (page {} of {})",
+                page.getNumberOfElements(), page.getNumber() + 1, page.getTotalPages());
+
+        return page;
     }
 
     /**
-     * Returns a single normal range by id.
-     * LOV keys are loaded into {@code lovKeys}.
-     *
-     * @param id range id
-     * @return optional range
+     * Returns a single normal range by id (LOV keys populated).
      */
     public Optional<DiagnosticTestNormalRange> findOne(Long id) {
-        return rangeRepository.findById(id)
+        LOG.debug("[NormalRange] FIND_ONE - id={}", id);
+
+        Optional<DiagnosticTestNormalRange> out = rangeRepository.findById(id)
                 .map(range -> {
                     range.setLovKeys(findLovs(id));
                     return range;
                 });
+
+        LOG.info("[NormalRange] FIND_ONE - id={} found={}", id, out.isPresent());
+        return out;
     }
 
     /**
      * Returns a paginated list of normal ranges by diagnostic test id (legacy/reporting use).
-     * LOV keys are loaded into {@code lovKeys}.
-     *
-     * @param testId diagnostic test id
-     * @param pageable pagination and sorting
-     * @return page of normal ranges
      */
     public Page<DiagnosticTestNormalRange> findAllByTestId(Long testId, Pageable pageable) {
-        return rangeRepository.findByTest_Id(testId, pageable)
+        LOG.debug("[NormalRange] FIND_BY_TEST - testId={} pageable={}", testId, pageable);
+
+        Page<DiagnosticTestNormalRange> page = rangeRepository.findByTest_Id(testId, pageable)
                 .map(range -> {
                     range.setLovKeys(findLovs(range.getId()));
                     return range;
                 });
+
+        LOG.info("[NormalRange] FIND_BY_TEST - testId={} returned {} items (page {} of {})",
+                testId, page.getNumberOfElements(), page.getNumber() + 1, page.getTotalPages());
+
+        return page;
     }
 
     /**
      * Returns a paginated list of normal ranges by profile test id (primary use).
-     * LOV keys are loaded into {@code lovKeys}.
-     *
-     * @param profileTestId profile test id
-     * @param pageable pagination and sorting
-     * @return page of normal ranges
      */
     public Page<DiagnosticTestNormalRange> findAllByProfileTestId(Long profileTestId, Pageable pageable) {
-        return rangeRepository.findByProfileTest_Id(profileTestId, pageable)
+        LOG.debug("[NormalRange] FIND_BY_PROFILE_TEST - profileTestId={} pageable={}", profileTestId, pageable);
+
+        Page<DiagnosticTestNormalRange> page = rangeRepository.findByProfileTest_Id(profileTestId, pageable)
                 .map(range -> {
                     range.setLovKeys(findLovs(range.getId()));
                     return range;
                 });
-    }
-    /**
-     * Returns all normal ranges for a given profileTestId (non-paginated).
-     *
-     * @param profileTestId profile test id
-     * @return list of matching normal ranges (may be empty)
-     */
-    public List<DiagnosticTestNormalRange> findListByProfileTestId(Long profileTestId) {
-        return rangeRepository.findAllByProfileTest_Id(profileTestId).stream()
-                .peek(r -> r.setLovKeys(findLovs(r.getId())))
-                .toList();
+
+        LOG.info("[NormalRange] FIND_BY_PROFILE_TEST - profileTestId={} returned {} items (page {} of {})",
+                profileTestId, page.getNumberOfElements(), page.getNumber() + 1, page.getTotalPages());
+
+        return page;
     }
 
     /**
-     * Returns all normal ranges for a profile test id (non-paginated).
-     * Intended for internal service-to-service use.
-     *
-     * @param profileTestId profile test id
-     * @return list of normal ranges with {@code lovKeys} populated
+     * Returns all normal ranges for a given profileTestId (non-paginated).
      */
-    public List<DiagnosticTestNormalRange> findAllByProfileTestId(Long profileTestId) {
-        return rangeRepository.findAllByProfileTest_Id(profileTestId).stream()
+    public List<DiagnosticTestNormalRange> findListByProfileTestId(Long profileTestId) {
+        LOG.debug("[NormalRange] LIST_BY_PROFILE_TEST - profileTestId={}", profileTestId);
+
+        List<DiagnosticTestNormalRange> list = rangeRepository.findAllByProfileTest_Id(profileTestId).stream()
                 .peek(r -> r.setLovKeys(findLovs(r.getId())))
                 .toList();
+
+        LOG.info("[NormalRange] LIST_BY_PROFILE_TEST - profileTestId={} size={}", profileTestId, list.size());
+        return list;
     }
+
+
 
     /**
      * Deletes a normal range and its LOV rows.
-     *
-     * @param id range id
      */
     public void delete(Long id) {
         LOG.debug("[NormalRange] DELETE - start. id={}", id);
+
         lovRepository.deleteByNormalRangeId(id);
+        LOG.debug("[NormalRange] DELETE - deleted LOVs. id={}", id);
+
         rangeRepository.deleteById(id);
-        LOG.debug("[NormalRange] DELETE - done. id={}", id);
+        LOG.info("[NormalRange] DELETE - done. id={}", id);
     }
 
     /**
      * Returns LOV keys associated with a normal range id.
+     */
+    public List<String> findLovsByNormalRangeId(Long normalRangeId) {
+        LOG.debug("[NormalRange] FIND_LOVS - normalRangeId={}", normalRangeId);
+        List<String> keys = findLovs(normalRangeId);
+        LOG.info("[NormalRange] FIND_LOVS - normalRangeId={} size={}", normalRangeId, keys.size());
+        return keys;
+    }
+    /**
+     * Loads LOV keys for a given normal range id.
+     *
+     * <p>Returns an empty list if there are no LOV rows.</p>
      *
      * @param normalRangeId normal range id
      * @return list of LOV keys (may be empty)
      */
-    public List<String> findLovsByNormalRangeId(Long normalRangeId) {
-        return findLovs(normalRangeId);
-    }
-
     private List<String> findLovs(Long normalRangeId) {
-        return lovRepository.findByNormalRangeId(normalRangeId)
+        LOG.debug("[NormalRange] LOV - load keys. normalRangeId={}", normalRangeId);
+
+        List<String> keys = lovRepository.findByNormalRangeId(normalRangeId)
                 .stream()
                 .map(DiagnosticTestNormalRangeLov::getLov)
                 .toList();
+
+        LOG.debug("[NormalRange] LOV - loaded {} keys. normalRangeId={}", keys.size(), normalRangeId);
+        return keys;
     }
 
+
     private void persistLovsIfNeeded(DiagnosticTestNormalRange range, TestResultType resultType, List<String> lovKeys) {
-        if (resultType != TestResultType.LOV) return;
-        if (lovKeys == null || lovKeys.isEmpty()) return;
+        if (resultType != TestResultType.LOV) {
+            LOG.debug("[NormalRange] LOV - skip (resultType={}) rangeId={}", resultType, range.getId());
+            return;
+        }
+        if (lovKeys == null || lovKeys.isEmpty()) {
+            LOG.debug("[NormalRange] LOV - skip (no keys) rangeId={}", range.getId());
+            return;
+        }
 
         List<DiagnosticTestNormalRangeLov> lovs = lovKeys.stream()
                 .map(key -> DiagnosticTestNormalRangeLov.builder()
@@ -261,6 +292,6 @@ public class DiagnosticTestNormalRangeService {
                 .toList();
 
         lovRepository.saveAll(lovs);
-        LOG.debug("[NormalRange] LOV - saved {} keys for rangeId={}", lovs.size(), range.getId());
+        LOG.info("[NormalRange] LOV - saved {} keys for rangeId={}", lovs.size(), range.getId());
     }
 }
