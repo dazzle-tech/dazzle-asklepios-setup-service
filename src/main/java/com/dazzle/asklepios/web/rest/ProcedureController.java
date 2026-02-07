@@ -7,6 +7,8 @@ import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -210,6 +212,29 @@ public class ProcedureController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/procedure/{id}")
+    public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
+        return procedureService.findOne(id)
+                .map(ProcedureResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/procedure/by-ids")
+    public ResponseEntity<List<ProcedureResponseVM>> getProceduresByIds(
+            @RequestParam @NotNull @Size(min = 1) List<Long> ids
+    ) {
+        LOG.debug("REST getProceduresByIds ids={}", ids);
+
+        List<ProcedureResponseVM> list =
+                procedureService.findByIds(ids)
+                        .stream()
+                        .map(ProcedureResponseVM::ofEntity)
+                        .toList();
+
+        return ResponseEntity.ok(list);
     }
 
 
