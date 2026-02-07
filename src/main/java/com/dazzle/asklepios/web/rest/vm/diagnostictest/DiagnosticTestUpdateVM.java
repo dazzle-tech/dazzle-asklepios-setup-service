@@ -29,7 +29,6 @@ public record DiagnosticTestUpdateVM(
         Currency currency,
         String specialNotes,
         Boolean isActive,
-        Boolean isProfile,
         Boolean appointable,
         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit,

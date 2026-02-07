@@ -50,7 +50,6 @@ public class DiagnosticTestService {
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
                 .isActive(vm.isActive())
-                .isProfile(vm.isProfile())
                 .appointable(vm.appointable())
                 .build();
 
@@ -101,7 +100,7 @@ public class DiagnosticTestService {
             existing.setSpecialNotes(vm.specialNotes());
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
-            existing.setIsProfile(vm.isProfile());
+
 
             DiagnosticTest saved = repository.save(existing);
 
