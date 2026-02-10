@@ -126,4 +126,18 @@ public class UserDepartmentService {
         return userDepartmentRepository.findFirstByUserIdAndDepartment_Facility_IdAndIsDefaultTrue(userId, facilityId);
     }
 
+    @Transactional(readOnly = true)
+    public String getFullNameByLogin(String login) {
+        LOG.debug("Request to get full name by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("User not found", ENTITY_NAME, "notfound"));
+
+        String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
+        String fullName = (firstName + " " + lastName).trim();
+
+        LOG.debug("Resolved full name for login={} -> {}", login, fullName.isEmpty() ? user.getLogin() : fullName);
+        return fullName.isEmpty() ? user.getLogin() : fullName;
+    }
+
 }
