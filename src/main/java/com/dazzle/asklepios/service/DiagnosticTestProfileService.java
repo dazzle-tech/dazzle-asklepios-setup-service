@@ -299,4 +299,22 @@ public class DiagnosticTestProfileService {
 
         LOG.debug("[TestProfile] VALIDATE - ok. testId={}", testId);
     }
+
+    public List<DiagnosticTestProfile> findAllByIds(Collection<Long> ids) {
+
+        LOG.debug("Request to find DiagnosticTestProfiles by ids={}, count={}",
+                ids,
+                ids != null ? ids.size() : 0
+        );
+
+        List<DiagnosticTestProfile> result = repository.findAllById(ids);
+
+        LOG.debug("Found DiagnosticTestProfiles count={}",
+                result != null ? result.size() : 0
+        );
+
+        return result;
+    }
+
+
 }

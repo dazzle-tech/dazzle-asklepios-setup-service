@@ -179,4 +179,25 @@ public class DiagnosticTestProfileController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/diagnostic-test-profiles/by-ids")
+    public ResponseEntity<List<DiagnosticTestProfileResponseVM>> getProfilesByIds(
+            @RequestBody Collection<Long> ids
+    ) {
+
+        LOG.debug("REST request to get DiagnosticTestProfiles by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<DiagnosticTestProfile> profiles = service.findAllByIds(ids);
+
+        List<DiagnosticTestProfileResponseVM> body = profiles.stream()
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
 }
