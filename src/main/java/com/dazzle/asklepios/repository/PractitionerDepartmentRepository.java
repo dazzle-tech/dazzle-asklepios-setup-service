@@ -24,4 +24,5 @@ public interface PractitionerDepartmentRepository extends JpaRepository<Practiti
     List<PractitionerDepartment> findByDepartmentId(Long departmentId);
 
     boolean existsByPractitionerIdAndDepartmentId(Long practitionerId, Long departmentId);
+
 }

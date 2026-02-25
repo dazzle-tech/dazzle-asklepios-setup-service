@@ -7,7 +7,9 @@ import com.dazzle.asklepios.repository.VaccineRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 
+import java.util.List;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -132,6 +134,25 @@ public class VaccineService {
     public Page<Vaccine> findByType(VaccineType type, Pageable pageable) {
         LOG.debug("Fetching Vaccines by type={}", type);
         return vaccineRepository.findByType(type, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Vaccine findOne(Long id) {
+        LOG.debug("Fetching Vaccine by id={}", id);
+
+        return vaccineRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Vaccine not found with id " + id,
+                        "vaccine",
+                        "notfound"
+                ));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Vaccine> findVaccinesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
+        return vaccineRepository.findByIdIn(cleaned); 
     }
 
     public Optional<Vaccine> toggleIsActive(Long id) {

@@ -33,5 +33,9 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     );
     Optional<Practitioner> findByUserId(Long userId);
 
+    Page<Practitioner> findByIdInAndIsActiveTrueAndAppointableTrue(
+            List<Long> ids,
+            Pageable pageable
+    );
 
 }

@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -112,6 +114,12 @@ public class VaccineBrandsService {
         return vaccineBrandsRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<VaccineBrands> findOne(Long id) {
+        LOG.debug("Fetching VaccineBrand by id={}", id);
+        return vaccineBrandsRepository.findById(id);
+    }
+
     public Optional<VaccineBrands> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineBrand id={}", id);
         return vaccineBrandsRepository.findById(id)
@@ -122,6 +130,13 @@ public class VaccineBrandsService {
                     LOG.info("VaccineBrand id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
+    }
+
+    @Transactional(readOnly = true)
+    public List<VaccineBrands> findVaccineBrandsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
+        return vaccineBrandsRepository.findByIdIn(cleaned);
     }
 
     private Vaccine refVaccine(Long vaccineId) {

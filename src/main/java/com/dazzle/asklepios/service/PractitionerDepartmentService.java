@@ -9,6 +9,8 @@ import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.web.rest.vm.practitionerDepartment.PractitionerDepartmentCreateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -53,6 +55,24 @@ public class PractitionerDepartmentService {
     @Transactional(readOnly = true)
     public List<PractitionerDepartment> findByPractitionerId(Long practitionerId) {
         return repo.findByPractitionerId(practitionerId);
+    }
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findPractitionersByDepartmentId(Long departmentId, Pageable pageable) {
+
+        if (!departmentRepo.existsById(departmentId)) {
+            throw new IllegalArgumentException("Department not found");
+        }
+
+        List<Long> ids = repo.findByDepartmentId(departmentId).stream()
+                .map(pd -> pd.getPractitioner().getId())
+                .distinct()
+                .toList();
+
+        if (ids.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepo.findByIdInAndIsActiveTrueAndAppointableTrue(ids, pageable);
     }
 
     @Transactional

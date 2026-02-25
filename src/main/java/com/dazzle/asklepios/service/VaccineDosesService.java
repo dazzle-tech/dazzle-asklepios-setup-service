@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -125,6 +126,19 @@ public class VaccineDosesService {
         return vaccineDosesRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<VaccineDoses> findOne(Long id) {
+        LOG.debug("Fetching VaccineDose by id={}", id);
+        return vaccineDosesRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<VaccineDoses> findVaccineDosesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
+        return vaccineDosesRepository.findByIdIn(cleaned);
+    }
+
     public Optional<VaccineDoses> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineDose id={}", id);
         return vaccineDosesRepository.findById(id)
@@ -202,4 +216,24 @@ public class VaccineDosesService {
                 .limit(count)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public Optional<VaccineDoses> getNextDose(Long currentDoseId) {
+
+        VaccineDoses currentDose = vaccineDosesRepository.findById(currentDoseId)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Vaccine dose not found",
+                        "vaccineDose",
+                        "notfound"
+                ));
+
+        Long vaccineId = currentDose.getVaccine().getId();
+        int currentOrder = currentDose.getDoseNumber().getOrder();
+
+        return vaccineDosesRepository.findByVaccine_IdAndIsActiveTrue(vaccineId).stream()
+                .filter(vd -> vd.getDoseNumber() != null)
+                .filter(vd -> vd.getDoseNumber().getOrder() > currentOrder)
+                .min(Comparator.comparingInt(vd -> vd.getDoseNumber().getOrder()));
+    }
+
 }
