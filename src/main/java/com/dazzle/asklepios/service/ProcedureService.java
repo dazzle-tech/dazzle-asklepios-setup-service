@@ -2,7 +2,6 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -155,7 +154,7 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(ProcedureCategoryType categoryType, Pageable pageable) {
+    public Page<Procedure> findByCategory(String categoryType, Pageable pageable) {
         LOG.debug("Fetching Procedures by categoryType={}", categoryType);
         return procedureRepository.findByCategoryType(categoryType, pageable);
     }
@@ -197,6 +196,19 @@ public class ProcedureService {
         }
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
+    @Transactional(readOnly = true)
+    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, String category, Pageable pageable) {
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
+        }
+
+        if (category != null) {
+            return procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable);
+        }
+
+        return procedureRepository.findByFacility_Id(facilityId, pageable);
+    }
+
     public Page<Procedure> findActiveAppointable( Pageable pageable) {
         LOG.debug("Fetching Active Appointable  Procedures  pageable={} is",  pageable);
         return procedureRepository

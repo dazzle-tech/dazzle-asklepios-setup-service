@@ -5,16 +5,20 @@ import com.dazzle.asklepios.domain.CdtServiceMapping;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.repository.CdtCodeRepository;
 import com.dazzle.asklepios.repository.CdtServiceMappingRepository;
+import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.service.dto.CdtServiceMappingSyncResultDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,21 +30,40 @@ public class CdtServiceMappingService {
 
     private final CdtServiceMappingRepository mappingRepository;
     private final CdtCodeRepository cdtRepository;
+    private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
 
     @Transactional(readOnly = true)
     public List<Long> getLinkedServiceIds(Long cdtId) {
+        if (cdtId == null) {
+            throw new BadRequestAlertException("cdtId is required", "cdtService", "cdt.required");
+        }
+
         return mappingRepository.findByCdtCode_Id(cdtId).stream()
                 .map(m -> m.getService().getId())
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<ServiceSetup> getLinkedServices(Long cdtId) {
-        return mappingRepository.findByCdtCode_Id(cdtId).stream()
-                .map(CdtServiceMapping::getService)
-                .toList();
+    public Page<ServiceSetup> getLinkedServicesPaged(Long cdtId, Pageable pageable) {
+        if (cdtId == null) {
+            throw new BadRequestAlertException("cdtId is required", "cdtService", "cdt.required");
+        }
+
+        Set<Long> idsOrdered = new LinkedHashSet<>();
+        for (CdtServiceMapping m : mappingRepository.findByCdtCode_Id(cdtId)) {
+            if (m.getService() != null && m.getService().getId() != null) {
+                idsOrdered.add(m.getService().getId());
+            }
+        }
+
+        if (idsOrdered.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return serviceRepository.findByIdIn(List.copyOf(idsOrdered), pageable);
     }
+
 
     public CdtServiceMappingSyncResultDTO sync(Long cdtId, List<Long> serviceIds) {
         if (cdtId == null) {
@@ -79,6 +102,9 @@ public class CdtServiceMappingService {
                 addedCount++;
             }
         }
+
+        entityManager.flush();
+        entityManager.clear();
 
         Integer afterCount = mappingRepository.findByCdtCode_Id(cdtId).size();
         log.info("[CDT-SYNC] cdtId={} added={} removed={} after={}", cdtId, addedCount, removedCount, afterCount);

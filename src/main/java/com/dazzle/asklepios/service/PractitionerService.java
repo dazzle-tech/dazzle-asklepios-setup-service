@@ -18,7 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+
 
 @Service
 @Transactional
@@ -185,13 +187,13 @@ public class PractitionerService {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
                     return practitionerRepository.save(p);
                 });
-    }
-
-    // ================================
-    // BULK FETCH — الكود المطلوب
-    // ================================
+}
     @Transactional(readOnly = true)
     public List<Practitioner> findByIds(List<Long> ids) {
-        return practitionerRepository.findAllById(ids);
+            return practitionerRepository.findAllById(ids);
+        }
+    @Transactional(readOnly = true)
+    public Optional<Practitioner> findByUser(Long userId) {
+        return practitionerRepository.findByUserId(userId);
     }
 }
