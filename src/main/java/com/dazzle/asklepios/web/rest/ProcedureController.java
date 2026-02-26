@@ -3,12 +3,11 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureUpdateVM;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -216,6 +215,7 @@ public class ProcedureController {
 
     @GetMapping("/procedure/{id}")
     public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
+        LOG.debug("REST get Procedure by id={}", id);
         return procedureService.findOne(id)
                 .map(ProcedureResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -224,9 +224,17 @@ public class ProcedureController {
 
     @GetMapping("/procedure/by-ids")
     public ResponseEntity<List<ProcedureResponseVM>> getProceduresByIds(
-            @RequestParam @NotNull @Size(min = 1) List<Long> ids
+            @RequestParam List<Long> ids
     ) {
         LOG.debug("REST getProceduresByIds ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Procedure ids list must not be empty",
+                    "procedure",
+                    "ids.empty"
+            );
+        }
 
         List<ProcedureResponseVM> list =
                 procedureService.findByIds(ids)

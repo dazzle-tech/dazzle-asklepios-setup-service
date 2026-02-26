@@ -219,14 +219,6 @@ public class ProcedureService {
     public List<Procedure> findByIds(List<Long> ids) {
         LOG.debug("[GET PROCEDURES BY IDS] ids={}", ids);
 
-        if (ids == null || ids.isEmpty()) {
-            throw new BadRequestAlertException(
-                    "Procedure ids list must not be empty",
-                    "procedure",
-                    "ids.empty"
-            );
-        }
-
         List<Procedure> results = procedureRepository.findAllById(ids);
 
         if (results.isEmpty()) {
