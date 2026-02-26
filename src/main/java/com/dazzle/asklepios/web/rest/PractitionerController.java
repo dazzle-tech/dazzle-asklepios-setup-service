@@ -218,6 +218,7 @@ public class PractitionerController {
             return ResponseEntity.ok(List.of());
         }
         return ResponseEntity.ok(practitionerService.findByIds(ids));
+    }
     @GetMapping("/practitioner/active-appointable")
     public ResponseEntity<List<PractitionerResponseVM>> getActiveAppointable(
 
