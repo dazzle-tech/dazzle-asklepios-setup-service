@@ -250,13 +250,6 @@ public class PractitionerController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/practitioner/bulk")
-    public ResponseEntity<List<Practitioner>> getBulk(@RequestBody List<Long> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return ResponseEntity.ok(List.of());
-        }
-        return ResponseEntity.ok(practitionerService.findByIds(ids));
-    }
 
     @GetMapping("/specialists")
     public ResponseEntity<Page<Practitioner>> getSpecialists(

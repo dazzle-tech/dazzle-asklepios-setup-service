@@ -201,10 +201,6 @@ public class PractitionerService {
         return practitionerRepository.findByUserId(userId);
     }
 
-    @Transactional(readOnly = true)
-    public List<Practitioner> findByIds(List<Long> ids) {
-        return practitionerRepository.findAllById(ids);
-    }
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findSpecialistPractitionersByFacilityAndSubSpecialty(
