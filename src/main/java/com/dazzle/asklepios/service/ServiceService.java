@@ -1,21 +1,27 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.ServiceItems;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
+import com.dazzle.asklepios.repository.ServiceItemsRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -27,10 +33,12 @@ public class ServiceService {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
     private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
+    private final ServiceItemsRepository serviceItemsRepository;
 
-    public ServiceService(ServiceRepository serviceRepository, EntityManager entityManager) {
+    public ServiceService(ServiceRepository serviceRepository, EntityManager entityManager, ServiceItemsRepository serviceItemsRepository) {
         this.serviceRepository = serviceRepository;
         this.entityManager = entityManager;
+        this.serviceItemsRepository = serviceItemsRepository;
     }
 
 
@@ -104,7 +112,7 @@ public class ServiceService {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        }catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             Throwable root = getRootCause(constraintException);
             String message = (root != null ? root.getMessage() : constraintException.getMessage()).toLowerCase();
 
@@ -179,6 +187,31 @@ public class ServiceService {
                     LOG.info("Service id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
+    }
+
+    // ServiceService.java
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
+        LOG.debug("Fetching paged Services by department sourceId={} pageable={}", sourceId, pageable);
+
+        List<ServiceItems> items =
+                serviceItemsRepository.findByTypeAndSourceId(ServiceItemsType.DEPARTMENTS, sourceId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        List<Long> serviceIds = items.stream()
+                .map(serviceItems -> serviceItems.getService().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+
+        if (serviceIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return serviceRepository.findByIdIn(serviceIds, pageable);
     }
 
 

@@ -179,4 +179,25 @@ public class ServiceController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/service/by-department")
+    public ResponseEntity<List<ServiceResponseVM>> getServicesByDepartment(
+            @RequestParam Long sourceId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by DEPARTMENTS sourceId={} pageable={}", sourceId, pageable);
+
+        Page<ServiceSetup> page = serviceService.findServicesByDepartmentSource(sourceId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
 }

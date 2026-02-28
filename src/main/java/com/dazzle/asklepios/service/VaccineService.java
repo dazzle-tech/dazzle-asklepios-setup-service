@@ -6,10 +6,6 @@ import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.repository.VaccineRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
-
-import java.time.Instant;
-import java.util.Optional;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -18,6 +14,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
@@ -132,6 +133,31 @@ public class VaccineService {
     public Page<Vaccine> findByType(VaccineType type, Pageable pageable) {
         LOG.debug("Fetching Vaccines by type={}", type);
         return vaccineRepository.findByType(type, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Vaccine findOne(Long id) {
+        LOG.debug("Fetching Vaccine by id={}", id);
+
+        return vaccineRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Vaccine not found with id " + id,
+                        "vaccine",
+                        "notfound"
+                ));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Vaccine> findVaccinesByIds(List<Long> ids) {
+        LOG.debug("Fetching Vaccines by ids={}", ids);
+        if (ids == null || ids.isEmpty()) {
+            LOG.debug("No ids provided for Vaccines lookup, returning empty list");
+            return List.of();
+        }
+        List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
+        List<Vaccine> result = vaccineRepository.findByIdIn(cleaned);
+        LOG.debug("Fetched {} Vaccines for {} distinct ids", result.size(), cleaned.size());
+        return result;
     }
 
     public Optional<Vaccine> toggleIsActive(Long id) {
