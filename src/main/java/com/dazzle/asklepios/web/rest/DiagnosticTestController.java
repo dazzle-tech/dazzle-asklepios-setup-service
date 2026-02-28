@@ -1,14 +1,15 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
-import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.service.DiagnosticTestService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -30,168 +31,261 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/setup")
 public class DiagnosticTestController {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestController.class);
-    private final DiagnosticTestService service;
 
-    public DiagnosticTestController(DiagnosticTestService service) {
+    private final DiagnosticTestService service;
+    private final DiagnosticTestProfileRepository profileRepository;
+
+    public DiagnosticTestController(DiagnosticTestService service, DiagnosticTestProfileRepository profileRepository) {
         this.service = service;
+        this.profileRepository = profileRepository;
     }
 
-    /**
-     * Create new diagnostic test.
-     */
     @PostMapping("/diagnostic-test")
-    public ResponseEntity<DiagnosticTestResponseVM> create(@RequestBody DiagnosticTestCreateVM vm) {
+    public ResponseEntity<DiagnosticTestResponseVM> create(@Valid @RequestBody DiagnosticTestCreateVM vm) {
         LOG.debug("REST request to create DiagnosticTest payload={}", vm);
+
         DiagnosticTest test = service.create(vm);
-        DiagnosticTestResponseVM response = DiagnosticTestResponseVM.ofEntity(test);
-        LOG.debug("REST created DiagnosticTest id={} response={}", test.getId(), response);
-        return ResponseEntity.created(URI.create("/api/setup/diagnostic-test/" + test.getId()))
+
+        // enrich single response too
+        DiagnosticTestResponseVM response = enrichWithDefaultProfile(test);
+        LOG.debug("Result for  created DiagnosticTest id={} response={}", test.getId(), response);
+        return ResponseEntity
+                .created(URI.create("/api/setup/diagnostic-test/" + test.getId()))
                 .body(response);
     }
 
-    /**
-     * Update existing diagnostic test.
-     */
     @PutMapping("/diagnostic-test/{id}")
-    public ResponseEntity<DiagnosticTestResponseVM> update(@PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
+    public ResponseEntity<DiagnosticTestResponseVM> update(@Valid @PathVariable Long id, @RequestBody DiagnosticTestUpdateVM vm) {
         LOG.debug("REST request to update DiagnosticTest id={} payload={}", id, vm);
+
         return service.update(id, vm)
-                .map(updated -> {
-                    LOG.debug("REST updated DiagnosticTest id={}", id);
-                    return ResponseEntity.ok(DiagnosticTestResponseVM.ofEntity(updated));
-                })
-                .orElseGet(() -> {
-                    LOG.debug("REST DiagnosticTest not found for id={}", id);
-                    return ResponseEntity.notFound().build();
-                });
-    }
-
-    /**
-     * List all diagnostic tests (paginated).
-     */
-    @GetMapping("/diagnostic-test")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> list(@ParameterObject Pageable pageable) {
-        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
-        Page<DiagnosticTest> page = service.findAll(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        LOG.debug("REST found {} DiagnosticTests", page.getTotalElements());
-        return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
-    }
-    @GetMapping("/diagnostic-test/active")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> getAllActiveTests(Pageable pageable) {
-        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
-        Page<DiagnosticTest> page = service.findAllActive(pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        LOG.debug("REST found {} DiagnosticTests", page.getTotalElements());
-        return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
-
-    }
-
-    /**
-     * Find diagnostic tests by type.
-     */
-    @GetMapping("/diagnostic-test/by-type/{type}")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> findByType(@PathVariable TestType type, @ParameterObject Pageable pageable) {
-        LOG.debug("REST request to find DiagnosticTests by type={} page={}", type, pageable);
-        Page<DiagnosticTest> page = service.findByType(type, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        LOG.debug("REST found {} DiagnosticTests of type={}", page.getTotalElements(), type);
-        return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
-    }
-
-    /**
-     * Search diagnostic tests by name (case-insensitive).
-     */
-    @GetMapping("/diagnostic-test/by-name/{name}")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> findByName(@PathVariable String name, @ParameterObject Pageable pageable) {
-        LOG.debug("REST request to search DiagnosticTests by name='{}' page={}", name, pageable);
-        Page<DiagnosticTest> page = service.findByName(name, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        LOG.debug("REST found {} DiagnosticTests matching name='{}'", page.getTotalElements(), name);
-        return new ResponseEntity<>(page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
-    }
-
-
-    /**
-     * Search diagnostic tests by type AND name (case-insensitive).
-     */
-    @GetMapping("/diagnostic-test/by-type-and-name")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
-            @RequestParam(required = false) TestType type,
-            @RequestParam(required = false) String name,
-            @ParameterObject Pageable pageable) {
-
-        LOG.debug("REST request to search DiagnosticTests by type={} and name='{}' page={}", type, name, pageable);
-
-        Page<DiagnosticTest> page = service.findByTypeAndName(type, name, pageable);
-
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(),
-                page
-        );
-
-        LOG.debug("REST found {} DiagnosticTests with type={} and name='{}'",
-                page.getTotalElements(), type, name);
-
-        return new ResponseEntity<>(
-                page.getContent()
-                        .stream()
-                        .map(DiagnosticTestResponseVM::ofEntity)
-                        .toList(),
-                headers,
-                HttpStatus.OK
-        );
-    }
-
-    /**
-     * Get single diagnostic test by id.
-     */
-    @GetMapping("/diagnostic-test/{id}")
-    public ResponseEntity<DiagnosticTestResponseVM> get(@PathVariable Long id) {
-        LOG.debug("REST request to get DiagnosticTest id={}", id);
-        return service.findOne(id)
-                .map(DiagnosticTestResponseVM::ofEntity)
-                .map(response -> {
-                    LOG.debug("REST found DiagnosticTest id={}", id);
-                    return ResponseEntity.ok(response);
-                })
-                .orElseGet(() -> {
-                    LOG.debug("REST DiagnosticTest not found id={}", id);
-                    return ResponseEntity.notFound().build();
-                });
-    }
-    @PatchMapping("/diagnostic-test/{id}/toggle-active")
-    public ResponseEntity<DiagnosticTestResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
-        LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
-        return service.toggleIsActive(id)
-                .map(DiagnosticTestResponseVM::ofEntity)
-                .map(ResponseEntity::ok)
+                .map(updated -> ResponseEntity.ok(enrichWithDefaultProfile(updated)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/diagnostic-test/active-appointable")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> getActiveAppointable(
+    @GetMapping("/diagnostic-test")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> list(@ParameterObject Pageable pageable) {
+        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
 
-            @ParameterObject Pageable pageable
-    ) {
-        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
-
-        Page<DiagnosticTest> page = service.findActiveAppointable( pageable);
+        Page<DiagnosticTest> page = service.findAll(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
 
         return new ResponseEntity<>(
-                page.getContent().stream().map(DiagnosticTestResponseVM::ofEntity).toList(),
+                enrichWithDefaultProfiles(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/diagnostic-test/active")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getAllActiveTests(@ParameterObject Pageable pageable) {
+        LOG.debug("REST request to list active DiagnosticTests page={}", pageable);
+
+        Page<DiagnosticTest> page = service.findAllActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/diagnostic-test/by-type/{type}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByType(
+            @PathVariable TestType type,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to find DiagnosticTests by type={} page={}", type, pageable);
+
+        Page<DiagnosticTest> page = service.findByType(type, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/diagnostic-test/by-name/{name}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByName(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to search DiagnosticTests by name='{}' page={}", name, pageable);
+
+        Page<DiagnosticTest> page = service.findByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/diagnostic-test/by-type-and-name")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to search DiagnosticTests by type={} and name='{}' page={}", type, name, pageable);
+
+        Page<DiagnosticTest> page = service.findByTypeAndName(type, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/diagnostic-test/{id}")
+    public ResponseEntity<DiagnosticTestResponseVM> get(@PathVariable Long id) {
+        LOG.debug("REST request to get DiagnosticTest id={}", id);
+
+        return service.findOne(id)
+                .map(this::enrichWithDefaultProfile)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/diagnostic-test/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
+        LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
+
+        return service.toggleIsActive(id)
+                .map(this::enrichWithDefaultProfile)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/diagnostic-test/active-appointable")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getActiveAppointable(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable DiagnosticTests pageable={}", pageable);
+
+        Page<DiagnosticTest> page = service.findActiveAppointable(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+// Add to DiagnosticTestController.java
+
+    @GetMapping("/diagnostic-test/by-ids")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> getByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST request to get DiagnosticTests by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<DiagnosticTest> tests = service.findAllByIds(ids);
+
+        // Optional: keep same input order
+        var map = tests.stream().collect(Collectors.toMap(DiagnosticTest::getId, t -> t, (a, b) -> a));
+        List<DiagnosticTestResponseVM> body = ids.stream()
+                .map(map::get)
+                .filter(java.util.Objects::nonNull)
+                .map(this::enrichWithDefaultProfile)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
+    private DiagnosticTestResponseVM enrichWithDefaultProfile(DiagnosticTest diagnosticTest) {
+        DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
+
+        if (diagnosticTest.getType() != TestType.LABORATORY) {
+            return responseVM;
+        }
+
+        return profileRepository
+                .findFirstByTest_IdAndIsDefaultTrue(diagnosticTest.getId())
+                .map(defaultProfile ->
+                        responseVM.withDefaultProfile(
+                                defaultProfile.getId(),
+                                defaultProfile.getResultUnit(),
+                                defaultProfile.getResultType(),
+                                defaultProfile.getListOfValueId()
+                        )
+                )
+                .orElse(responseVM);
+    }
+
+    private List<DiagnosticTestResponseVM> enrichWithDefaultProfiles(List<DiagnosticTest> diagnosticTests) {
+        if (diagnosticTests == null || diagnosticTests.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> diagnosticTestIds = diagnosticTests.stream()
+                .map(DiagnosticTest::getId)
+                .toList();
+
+        Map<Long, DiagnosticTestProfile> defaultProfileByTestId = profileRepository
+                .findAllByTest_IdInAndIsDefaultTrue(diagnosticTestIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getTest().getId(),
+                        profile -> profile,
+                        (existing, duplicate) -> existing
+                ));
+
+        return diagnosticTests.stream()
+                .map(diagnosticTest -> {
+                    DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
+
+                    if (diagnosticTest.getType() != TestType.LABORATORY) {
+                        return responseVM;
+                    }
+
+                    DiagnosticTestProfile defaultProfile = defaultProfileByTestId.get(diagnosticTest.getId());
+                    if (defaultProfile == null) {
+                        return responseVM;
+                    }
+
+                    return responseVM.withDefaultProfile(
+                            defaultProfile.getId(),
+                            defaultProfile.getResultUnit(),
+                            defaultProfile.getResultType(),
+                            defaultProfile.getListOfValueId()
+                    );
+                })
+                .toList();
+    }
+
 }

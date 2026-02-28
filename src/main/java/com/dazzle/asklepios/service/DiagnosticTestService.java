@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,13 +27,15 @@ public class DiagnosticTestService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestService.class);
     private final DiagnosticTestRepository repository;
-
-    public DiagnosticTestService(DiagnosticTestRepository repository) {
+    private final DiagnosticTestProfileRepository profileRepository;
+    public DiagnosticTestService(DiagnosticTestRepository repository, DiagnosticTestProfileRepository profileRepository) {
         this.repository = repository;
+        this.profileRepository = profileRepository;
     }
 
     public DiagnosticTest create(DiagnosticTestCreateVM vm) {
         LOG.debug("Create DiagnosticTest: {}", vm);
+
         DiagnosticTest test = DiagnosticTest.builder()
                 .type(vm.type())
                 .name(vm.name())
@@ -45,15 +50,42 @@ public class DiagnosticTestService {
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
                 .isActive(vm.isActive())
-                .isProfile(vm.isProfile())
                 .appointable(vm.appointable())
                 .build();
 
-        return repository.save(test);
+        DiagnosticTest saved = repository.save(test);
+
+
+        if (saved.getType() == TestType.LABORATORY ) {
+
+            if (vm.defaultProfileResultType() == null) {
+                throw new BadRequestAlertException(
+                        "defaultProfileResultType is required for LABORATORY tests",
+                        "diagnosticTest",
+                        "missing_default_profile_result_type"
+                );
+            }
+
+            DiagnosticTestProfile defaultProfile = DiagnosticTestProfile.builder()
+                    .test(saved)
+                    .name(saved.getName())
+                    .resultUnit(vm.defaultProfileResultUnit())
+                    .resultType(vm.defaultProfileResultType())
+                    .listOfValueId(vm.listOfValueId())
+                    .isDefault(true)
+                    .isActive(true)
+                    .build();
+
+            profileRepository.save(defaultProfile);
+        }
+
+        return saved;
     }
+
 
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
         return repository.findById(id).map(existing -> {
+
             existing.setType(vm.type());
             existing.setName(vm.name());
             existing.setInternalCode(vm.internalCode());
@@ -68,17 +100,81 @@ public class DiagnosticTestService {
             existing.setSpecialNotes(vm.specialNotes());
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
-            existing.setIsProfile(vm.isProfile());
 
-            return repository.save(existing);
+
+            DiagnosticTest saved = repository.save(existing);
+
+            if (saved.getType() == TestType.LABORATORY) {
+
+                DiagnosticTestProfile defaultProfile = profileRepository
+                        .findFirstByTest_IdAndIsDefaultTrue(saved.getId())
+                        .orElseGet(() -> {
+                            if (vm.defaultProfileResultType() == null) {
+                                throw new BadRequestAlertException(
+                                        "defaultProfileResultType is required to create default profile",
+                                        "diagnosticTest",
+                                        "missing_default_profile_result_type"
+                                );
+                            }
+                            DiagnosticTestProfile created = DiagnosticTestProfile.builder()
+                                    .test(saved)
+                                    .name(saved.getName())
+                                    .resultUnit(vm.defaultProfileResultUnit())
+                                    .resultType(vm.defaultProfileResultType())
+                                    .listOfValueId(vm.listOfValueId())
+                                    .isDefault(true)
+                                    .isActive(true)
+                                    .build();
+                            return profileRepository.save(created);
+                        });
+
+                boolean changed = false;
+
+
+                if (!saved.getName().equals(defaultProfile.getName())) {
+                    defaultProfile.setName(saved.getName());
+                    changed = true;
+                }
+
+
+                if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != defaultProfile.getResultType()) {
+                    defaultProfile.setResultType(vm.defaultProfileResultType());
+                    changed = true;
+                }
+
+                if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(defaultProfile.getResultUnit())) {
+                    defaultProfile.setResultUnit(vm.defaultProfileResultUnit());
+                    changed = true;
+                }
+                if (vm.listOfValueId() != null && !vm.listOfValueId().equals(defaultProfile.getListOfValueId())) {
+                    defaultProfile.setListOfValueId(vm.listOfValueId());
+                    changed = true;
+                }
+
+                // enforce flags
+                if (!Boolean.TRUE.equals(defaultProfile.getIsDefault())) {
+                    defaultProfile.setIsDefault(true);
+                    changed = true;
+                }
+                if (defaultProfile.getIsActive() == null) {
+                    defaultProfile.setIsActive(true);
+                    changed = true;
+                }
+
+                if (changed) {
+                    profileRepository.save(defaultProfile);
+                }
+            }
+
+            return saved;
         });
     }
-
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAll(Pageable pageable) {
         return repository.findAll(pageable);
     }
+
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
@@ -115,6 +211,12 @@ public class DiagnosticTestService {
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAllActive(Pageable pageable) {
         return repository.findByIsActiveTrue(pageable);
+    }
+// Add to DiagnosticTestService.java
+
+    @Transactional(readOnly = true)
+    public List<DiagnosticTest> findAllByIds(List<Long> ids) {
+        return repository.findAllById(ids);
     }
 
 }

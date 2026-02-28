@@ -21,8 +21,6 @@ public record DiagnosticTestLaboratoryCreateVM(
         Method method,
         Double testDurationTime,
         String timeUnit,
-        @NotBlank String resultUnit,
-        Boolean isProfile,
         String sampleContainer,
         Double sampleVolume,
         String sampleVolumeUnit,
@@ -50,8 +48,6 @@ public record DiagnosticTestLaboratoryCreateVM(
                 .method(method)
                 .testDurationTime(testDurationTime)
                 .timeUnit(timeUnit)
-                .resultUnit(resultUnit)
-                .isProfile(isProfile != null ? isProfile : false)
                 .sampleContainer(sampleContainer)
                 .sampleVolume(sampleVolume)
                 .sampleVolumeUnit(sampleVolumeUnit)

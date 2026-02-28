@@ -219,5 +219,8 @@ public class CatalogService {
         return new PageImpl<>(pageContent, pageable, filtered.size());
 
     }
+    public Page<Catalog> findByDepartmentOrUnassigned(Long departmentId, Pageable pageable) {
+        return catalogRepository.findByDepartmentIdOrDepartmentIdIsNull(departmentId, pageable);
+    }
 
 }
