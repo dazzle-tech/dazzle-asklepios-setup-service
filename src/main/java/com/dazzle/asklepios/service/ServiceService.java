@@ -12,12 +12,13 @@ import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +34,7 @@ public class ServiceService {
     private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
     private final ServiceItemsRepository serviceItemsRepository;
+
     public ServiceService(ServiceRepository serviceRepository, EntityManager entityManager, ServiceItemsRepository serviceItemsRepository) {
         this.serviceRepository = serviceRepository;
         this.entityManager = entityManager;
@@ -110,7 +112,7 @@ public class ServiceService {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        }catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             Throwable root = getRootCause(constraintException);
             String message = (root != null ? root.getMessage() : constraintException.getMessage()).toLowerCase();
 
@@ -186,6 +188,7 @@ public class ServiceService {
                     return saved;
                 });
     }
+
     // ServiceService.java
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
@@ -198,7 +201,7 @@ public class ServiceService {
             return Page.empty(pageable);
         }
         List<Long> serviceIds = items.stream()
-                .map(si -> si.getService().getId())
+                .map(serviceItems -> serviceItems.getService().getId())
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
@@ -210,7 +213,6 @@ public class ServiceService {
 
         return serviceRepository.findByIdIn(serviceIds, pageable);
     }
-
 
 
     private Facility refFacility(Long facilityId) {

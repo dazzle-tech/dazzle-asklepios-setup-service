@@ -40,9 +40,11 @@ public class VaccineBrandsService {
         LOG.info("[CREATE] Request to create VaccineBrand for vaccineId={} payload={}", vaccineId, incoming);
 
         if (vaccineId == null) {
+            LOG.debug("Create VaccineBrand rejected: vaccineId is null");
             throw new BadRequestAlertException("Vaccine id is required", "vaccineBrand", "vaccine.required");
         }
         if (incoming == null) {
+            LOG.debug("Create VaccineBrand rejected: payload is null for vaccineId={}", vaccineId);
             throw new BadRequestAlertException("Vaccine brand payload is required", "vaccineBrand", "payload.required");
         }
 
@@ -74,6 +76,7 @@ public class VaccineBrandsService {
         LOG.info("[UPDATE] Request to update VaccineBrand id={} vaccineId={} payload={}", id, vaccineId, incoming);
 
         if (incoming == null) {
+            LOG.debug("Update VaccineBrand rejected: payload is null for id={} vaccineId={}", id, vaccineId);
             throw new BadRequestAlertException("Vaccine brand payload is required", "vaccineBrand", "payload.required");
         }
 
@@ -117,12 +120,14 @@ public class VaccineBrandsService {
     @Transactional(readOnly = true)
     public Optional<VaccineBrands> findOne(Long id) {
         LOG.debug("Fetching VaccineBrand by id={}", id);
-        return vaccineBrandsRepository.findById(id);
+        Optional<VaccineBrands> result = vaccineBrandsRepository.findById(id);
+        LOG.debug("Fetch VaccineBrand by id={} found={}", id, result.isPresent());
+        return result;
     }
 
     public Optional<VaccineBrands> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineBrand id={}", id);
-        return vaccineBrandsRepository.findById(id)
+        Optional<VaccineBrands> updated = vaccineBrandsRepository.findById(id)
                 .map(entity -> {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
@@ -130,13 +135,23 @@ public class VaccineBrandsService {
                     LOG.info("VaccineBrand id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
+        if (updated.isEmpty()) {
+            LOG.debug("Toggle isActive skipped: VaccineBrand not found for id={}", id);
+        }
+        return updated;
     }
 
     @Transactional(readOnly = true)
     public List<VaccineBrands> findVaccineBrandsByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
+        LOG.debug("Fetching VaccineBrands by ids={}", ids);
+        if (ids == null || ids.isEmpty()) {
+            LOG.debug("No ids provided for VaccineBrands lookup, returning empty list");
+            return List.of();
+        }
         List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
-        return vaccineBrandsRepository.findByIdIn(cleaned);
+        List<VaccineBrands> result = vaccineBrandsRepository.findByIdIn(cleaned);
+        LOG.debug("Fetched {} VaccineBrands for {} distinct ids", result.size(), cleaned.size());
+        return result;
     }
 
     private Vaccine refVaccine(Long vaccineId) {

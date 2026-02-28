@@ -45,9 +45,11 @@ public class VaccineDosesService {
         LOG.info("[CREATE] Request to create VaccineDose for vaccineId={} payload={}", vaccineId, incoming);
 
         if (vaccineId == null) {
+            LOG.debug("Create VaccineDose rejected: vaccineId is null");
             throw new BadRequestAlertException("Vaccine id is required", "vaccineDose", "vaccine.required");
         }
         if (incoming == null) {
+            LOG.debug("Create VaccineDose rejected: payload is null for vaccineId={}", vaccineId);
             throw new BadRequestAlertException("Vaccine dose payload is required", "vaccineDose", "payload.required");
         }
 
@@ -83,6 +85,7 @@ public class VaccineDosesService {
         LOG.info("[UPDATE] Request to update VaccineDose id={} vaccineId={} payload={}", id, vaccineId, incoming);
 
         if (incoming == null) {
+            LOG.debug("Update VaccineDose rejected: payload is null for id={} vaccineId={}", id, vaccineId);
             throw new BadRequestAlertException("Vaccine dose payload is required", "vaccineDose", "payload.required");
         }
 
@@ -122,26 +125,34 @@ public class VaccineDosesService {
 
     @Transactional(readOnly = true)
     public Page<VaccineDoses> findAll(Pageable pageable) {
-        LOG.debug("Fetching VaccineDoses pageable={}",  pageable);
+        LOG.debug("Fetching VaccineDoses pageable={}", pageable);
         return vaccineDosesRepository.findAll(pageable);
     }
 
     @Transactional(readOnly = true)
     public Optional<VaccineDoses> findOne(Long id) {
         LOG.debug("Fetching VaccineDose by id={}", id);
-        return vaccineDosesRepository.findById(id);
+        Optional<VaccineDoses> result = vaccineDosesRepository.findById(id);
+        LOG.debug("Fetch VaccineDose by id={} found={}", id, result.isPresent());
+        return result;
     }
 
     @Transactional(readOnly = true)
     public List<VaccineDoses> findVaccineDosesByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty()) return List.of();
+        LOG.debug("Fetching VaccineDoses by ids={}", ids);
+        if (ids == null || ids.isEmpty()) {
+            LOG.debug("No ids provided for VaccineDoses lookup, returning empty list");
+            return List.of();
+        }
         List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
-        return vaccineDosesRepository.findByIdIn(cleaned);
+        List<VaccineDoses> result = vaccineDosesRepository.findByIdIn(cleaned);
+        LOG.debug("Fetched {} VaccineDoses for {} distinct ids", result.size(), cleaned.size());
+        return result;
     }
 
     public Optional<VaccineDoses> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineDose id={}", id);
-        return vaccineDosesRepository.findById(id)
+        Optional<VaccineDoses> updated = vaccineDosesRepository.findById(id)
                 .map(entity -> {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
@@ -149,6 +160,10 @@ public class VaccineDosesService {
                     LOG.info("VaccineDose id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
+        if (updated.isEmpty()) {
+            LOG.debug("Toggle isActive skipped: VaccineDose not found for id={}", id);
+        }
+        return updated;
     }
 
     private Vaccine refVaccine(Long vaccineId) {
@@ -203,11 +218,13 @@ public class VaccineDosesService {
         LOG.debug("Listing DoseNumber values up to {}", numberOfDoses);
 
         if (numberOfDoses == null) {
+            LOG.debug("Listing DoseNumber failed: numberOfDoses is null");
             throw new BadRequestAlertException("NumberOfDoses is required", "vaccineDose", "numberOfDoses.required");
         }
 
         final Integer count = numberOfDoses.getValue();
         if (count == null || count <= 0) {
+            LOG.debug("Listing DoseNumber failed: invalid numberOfDoses value={} resolvedCount={}", numberOfDoses, count);
             throw new BadRequestAlertException("Invalid NumberOfDoses value", "vaccineDose", "numberOfDoses.invalid");
         }
 
@@ -219,6 +236,7 @@ public class VaccineDosesService {
 
     @Transactional(readOnly = true)
     public Optional<VaccineDoses> getNextDose(Long currentDoseId) {
+        LOG.debug("Request to get next VaccineDose for currentDoseId={}", currentDoseId);
 
         VaccineDoses currentDose = vaccineDosesRepository.findById(currentDoseId)
                 .orElseThrow(() -> new NotFoundAlertException(
@@ -229,11 +247,14 @@ public class VaccineDosesService {
 
         Long vaccineId = currentDose.getVaccine().getId();
         int currentOrder = currentDose.getDoseNumber().getOrder();
+        LOG.debug("Resolved current dose id={} vaccineId={} order={}", currentDoseId, vaccineId, currentOrder);
 
-        return vaccineDosesRepository.findByVaccine_IdAndIsActiveTrue(vaccineId).stream()
-                .filter(vd -> vd.getDoseNumber() != null)
-                .filter(vd -> vd.getDoseNumber().getOrder() > currentOrder)
-                .min(Comparator.comparingInt(vd -> vd.getDoseNumber().getOrder()));
+        Optional<VaccineDoses> nextDose = vaccineDosesRepository.findByVaccine_IdAndIsActiveTrue(vaccineId).stream()
+                .filter(vaccineDoses -> vaccineDoses.getDoseNumber() != null)
+                .filter(vaccineDoses -> vaccineDoses.getDoseNumber().getOrder() > currentOrder)
+                .min(Comparator.comparingInt(vaccineDoses -> vaccineDoses.getDoseNumber().getOrder()));
+        LOG.debug("Next dose lookup for currentDoseId={} found={}", currentDoseId, nextDose.isPresent());
+        return nextDose;
     }
 
 }
