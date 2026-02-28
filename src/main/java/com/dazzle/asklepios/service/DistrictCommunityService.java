@@ -95,6 +95,13 @@ public class DistrictCommunityService {
     }
 
     @Transactional(readOnly = true)
+    public Page<DistrictCommunity> findActive(Long districtId, Pageable pageable) {
+        LOG.debug("Fetching active DistrictCommunities for districtId={} pageable={}", districtId, pageable);
+        return communityRepository.findByDistrict_IdAndIsActiveTrue(districtId, pageable);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<DistrictCommunity> findByDistrict(Long districtId, Pageable pageable) {
         LOG.debug("Fetching DistrictCommunities for districtId={} pageable={}", districtId, pageable);
 

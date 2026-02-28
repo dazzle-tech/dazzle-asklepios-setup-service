@@ -89,6 +89,14 @@ public class CommunityAreaService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CommunityArea> findActive(Long communityId, Pageable pageable) {
+        LOG.debug("Fetching active CommunityAreas for communityId={} pageable={}", communityId, pageable);
+        return areaRepository.findByCommunity_IdAndIsActiveTrue(communityId, pageable);
+    }
+
+
+
+    @Transactional(readOnly = true)
     public Page<CommunityArea> findByCommunity(Long communityId, Pageable pageable) {
         if (communityId == null) {
             throw new BadRequestAlertException("Community id is required", "communityArea", "community.required");

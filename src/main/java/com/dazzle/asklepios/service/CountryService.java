@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -87,6 +88,13 @@ public class CountryService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Country> findActive(Pageable pageable) {
+        LOG.debug("Fetching active Countries pageable={}", pageable);
+        return countryRepository.findByIsActiveTrue(pageable);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<Country> findByName(String name, Pageable pageable) {
         LOG.debug("Fetching Countries by name like='{}' pageable={}", name, pageable);
         if (name == null || name.trim().isEmpty()) {
@@ -144,4 +152,20 @@ public class CountryService {
                 "db.constraint"
         );
     }
+    @Transactional(readOnly = true)
+    public List<Country> findByIds(List<Long> ids) {
+        LOG.debug("[COUNTRY][FIND BY IDS] Request to find countries by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            LOG.warn("[COUNTRY][FIND BY IDS] Empty or null ids list received, returning empty list");
+            return java.util.Collections.emptyList();
+        }
+
+        List<Country> result = countryRepository.findAllById(ids);
+        LOG.info("[COUNTRY][FIND BY IDS] Found {} countries for {} requested ids",
+                result.size(), ids.size());
+
+        return result;
+    }
+
 }
