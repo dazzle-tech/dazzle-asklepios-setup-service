@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -226,7 +227,7 @@ public class PractitionerController {
     ) {
         LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
 
-        Page<Practitioner> page = practitionerService.findActiveAppointable( pageable);
+        Page<Practitioner> page = practitionerService.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -248,5 +249,30 @@ public class PractitionerController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @PostMapping("/practitioner/bulk")
+    public ResponseEntity<List<Practitioner>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(practitionerService.findByIds(ids));
+    }
+
+    @GetMapping("/specialists")
+    public ResponseEntity<Page<Practitioner>> getSpecialists(
+            @RequestParam Long facilityId,
+            @RequestParam String subSpecialty,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                practitionerService
+                        .findSpecialistPractitionersByFacilityAndSubSpecialty(
+                                facilityId,
+                                subSpecialty,
+                                pageable
+                        )
+        );
+    }
+
 
 }
