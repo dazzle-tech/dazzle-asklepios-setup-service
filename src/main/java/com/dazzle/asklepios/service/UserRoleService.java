@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserRole;
 import com.dazzle.asklepios.repository.UserRoleRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,9 @@ public class UserRoleService {
 
     public void delete(Long userId, Long roleId) {
         userRoleRepository.deleteById(new UserRole.UserRoleId(userId, roleId));
+    }
+    public List<User> findUsersByFacilityId(Long facilityId) {
+        return userRoleRepository.findDistinctUsersByFacilityId(facilityId);
     }
 }
 

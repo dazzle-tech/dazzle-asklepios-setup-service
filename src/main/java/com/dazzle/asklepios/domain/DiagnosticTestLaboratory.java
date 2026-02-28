@@ -69,12 +69,6 @@ public class DiagnosticTestLaboratory {
     @Column(length = 200)
     private String timeUnit;
 
-    @Column(length = 100, nullable = false)
-    private String resultUnit;
-
-    @Column(nullable = false)
-    private Boolean isProfile = false;
-
     @Column(length = 200)
     private String sampleContainer;
 

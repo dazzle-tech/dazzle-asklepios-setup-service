@@ -14,4 +14,7 @@ public interface CountryDistrictRepository extends JpaRepository<CountryDistrict
     Page<CountryDistrict> findByCountry_IdAndNameContainingIgnoreCase(Long countryId, String name, Pageable pageable);
 
     Page<CountryDistrict> findByCountry_IdAndCodeContainingIgnoreCase(Long countryId, String code, Pageable pageable);
+
+    Page<CountryDistrict> findByCountry_IdAndIsActiveTrue(Long countryId, Pageable pageable);
+
 }

@@ -8,6 +8,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface VaccineRepository extends JpaRepository<Vaccine, Long> {
 
@@ -17,4 +19,5 @@ public interface VaccineRepository extends JpaRepository<Vaccine, Long> {
 
     Page<Vaccine> findByType(VaccineType type, Pageable pageable);
 
+    List<Vaccine> findByIdIn(List<Long> ids);
 }

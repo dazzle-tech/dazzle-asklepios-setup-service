@@ -213,6 +213,13 @@ public class PractitionerController {
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
+    @PostMapping("/practitioner/bulk")
+    public ResponseEntity<List<Practitioner>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(practitionerService.findByIds(ids));
+    }
     @GetMapping("/practitioner/active-appointable")
     public ResponseEntity<List<PractitionerResponseVM>> getActiveAppointable(
 

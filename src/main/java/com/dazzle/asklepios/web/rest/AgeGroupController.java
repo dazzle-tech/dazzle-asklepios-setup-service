@@ -176,7 +176,7 @@ public class AgeGroupController {
 
         if (deleted) {
             LOG.info("Successfully deleted AgeGroup id={}", id);
-            return ResponseEntity.noContent().build(); 
+            return ResponseEntity.noContent().build();
         } else {
             LOG.warn("Failed to delete AgeGroup id={}, not found or constraint violation", id);
             return ResponseEntity.notFound().build();
@@ -196,6 +196,6 @@ public class AgeGroupController {
         }
 
         return ResponseEntity.ok(AgeGroupResponseVM.ofEntity(result));
-}
+    }
 
 }

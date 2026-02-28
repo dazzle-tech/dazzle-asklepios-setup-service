@@ -1,9 +1,7 @@
 package com.dazzle.asklepios.service;
 
-import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -16,13 +14,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
+
 
 @Service
 @Transactional
@@ -33,9 +30,11 @@ public class PractitionerService {
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
 
-    public PractitionerService(PractitionersRepository practitionerRepository,
-                               FacilityRepository facilityRepository,
-                               UserRepository userRepository) {
+    public PractitionerService(
+            PractitionersRepository practitionerRepository,
+            FacilityRepository facilityRepository,
+            UserRepository userRepository
+    ) {
         this.practitionerRepository = practitionerRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
@@ -94,11 +93,9 @@ public class PractitionerService {
         return practitionerRepository.save(practitioner);
     }
 
-
     @Transactional
     public Optional<Practitioner> update(Long id, PractitionerUpdateVM vm) {
         LOG.debug("Request to update Practitioner id={} with {}", id, vm);
-
 
         Practitioner practitioner = practitionerRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException(
@@ -106,7 +103,6 @@ public class PractitionerService {
                         "practitioner",
                         "notfound"
                 ));
-
 
         if (vm.facilityId() == null) {
             throw new BadRequestAlertException("Facility cannot be null", "facility", "null");
@@ -120,21 +116,17 @@ public class PractitionerService {
                 ));
         practitioner.setFacility(facility);
 
-
         if (vm.userId() != null && vm.userId() > 0) {
             userRepository.findById(vm.userId()).ifPresent(practitioner::setUser);
         } else {
             practitioner.setUser(null);
         }
 
-
         if (vm.firstName() != null) practitioner.setFirstName(vm.firstName());
         if (vm.lastName() != null) practitioner.setLastName(vm.lastName());
-        if (vm.email() != null && !vm.email().isBlank()) {
-            practitioner.setEmail(vm.email());
-        } else {
-            practitioner.setEmail(null);
-        }
+        if (vm.email() != null && !vm.email().isBlank()) practitioner.setEmail(vm.email());
+        else practitioner.setEmail(null);
+
         if (vm.phoneNumber() != null) practitioner.setPhoneNumber(vm.phoneNumber());
         if (vm.specialty() != null) practitioner.setSpecialty(vm.specialty());
         if (vm.subSpecialty() != null) practitioner.setSubSpecialty(vm.subSpecialty());
@@ -156,7 +148,6 @@ public class PractitionerService {
 
         return Optional.of(updated);
     }
-
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findAll(Pageable pageable) {
@@ -200,8 +191,11 @@ public class PractitionerService {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
                     return practitionerRepository.save(p);
                 });
-    }
-
+}
+    @Transactional(readOnly = true)
+    public List<Practitioner> findByIds(List<Long> ids) {
+            return practitionerRepository.findAllById(ids);
+        }
     @Transactional(readOnly = true)
     public Optional<Practitioner> findByUser(Long userId) {
         return practitionerRepository.findByUserId(userId);

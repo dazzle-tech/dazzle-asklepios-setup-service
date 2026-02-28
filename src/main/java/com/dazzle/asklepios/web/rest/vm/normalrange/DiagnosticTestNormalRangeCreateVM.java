@@ -6,7 +6,6 @@ import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.Condition;
 import com.dazzle.asklepios.domain.enumeration.NormalRangeType;
-import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
@@ -21,7 +20,6 @@ public record DiagnosticTestNormalRangeCreateVM(
         Double ageTo,
         AgeUnit ageToUnit,
         Condition condition,
-        @NotNull TestResultType resultType,
         String resultText,
         String resultLov,
         NormalRangeType normalRangeType,
@@ -30,20 +28,18 @@ public record DiagnosticTestNormalRangeCreateVM(
         Boolean criticalValue,
         Double criticalValueLessThan,
         Double criticalValueMoreThan,
-        Long profileTestId,
-        Boolean isProfile,
+        @NotNull Long profileTestId,
         List<String> lovKeys
 ) {
     public DiagnosticTestNormalRange toEntity() {
         return DiagnosticTestNormalRange.builder()
-                .test(DiagnosticTest.builder().id(testId).build())
+                .test(testId != null ? DiagnosticTest.builder().id(testId).build() : null)
                 .gender(gender)
                 .ageFrom(ageFrom)
                 .ageFromUnit(ageFromUnit)
                 .ageTo(ageTo)
                 .ageToUnit(ageToUnit)
                 .condition(condition)
-                .resultType(resultType)
                 .resultText(resultText)
                 .resultLov(resultLov)
                 .normalRangeType(normalRangeType)
@@ -52,8 +48,7 @@ public record DiagnosticTestNormalRangeCreateVM(
                 .criticalValue(criticalValue)
                 .criticalValueLessThan(criticalValueLessThan)
                 .criticalValueMoreThan(criticalValueMoreThan)
-                .profileTest(profileTestId != null ? DiagnosticTestProfile.builder().id(profileTestId).build() : null)
-                .isProfile(isProfile)
+                .profileTest(DiagnosticTestProfile.builder().id(profileTestId).build())
                 .lovKeys(lovKeys)
                 .build();
     }

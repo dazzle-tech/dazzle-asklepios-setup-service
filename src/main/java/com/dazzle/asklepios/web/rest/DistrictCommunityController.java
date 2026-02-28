@@ -98,6 +98,27 @@ public class DistrictCommunityController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/community/active")
+    public ResponseEntity<List<DistrictCommunityResponseVM>> getActiveCommunities(
+            @RequestParam("districtId") Long districtId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active DistrictCommunities for districtId={} pageable={}", districtId, pageable);
+
+        Page<DistrictCommunity> page = communityService.findActive(districtId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<DistrictCommunityResponseVM> body = page.getContent()
+                .stream()
+                .map(DistrictCommunityResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
     @GetMapping("/district/{districtId}/community")
     public ResponseEntity<List<DistrictCommunityResponseVM>> getByDistrict(
             @PathVariable Long districtId,
