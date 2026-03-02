@@ -20,7 +20,7 @@ public record FacilityUpdateVM(
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency,
+        @NotNull Currency defaultCurrency,
         Boolean isActive,
         Long ruleId
 ) implements Serializable {

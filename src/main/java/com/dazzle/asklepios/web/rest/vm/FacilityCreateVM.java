@@ -21,7 +21,7 @@ public record FacilityCreateVM(
         String phone2,
         String fax,
         String addressId,
-        Currency defaultCurrency,
+       @NotNull Currency defaultCurrency,
         Boolean isActive,
         LocalDate registrationDate
 ) implements Serializable {

@@ -23,6 +23,7 @@ public record DiagnosticTestCreateVM(
         String gender,
         Boolean specialPopulation,
         List<String> specialPopulationValues,
+        @NotNull(message = "Price cannot be null")
         BigDecimal price,
         Currency currency,
         String specialNotes,
