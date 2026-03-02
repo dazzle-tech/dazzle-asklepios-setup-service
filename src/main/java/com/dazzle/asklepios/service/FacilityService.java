@@ -64,8 +64,8 @@ public class FacilityService {
             if (vm.phone2() != null) existing.setPhone2(vm.phone2());
             if (vm.fax() != null) existing.setFax(vm.fax());
             if (vm.addressId() != null) existing.setAddressId(vm.addressId());
-            if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
             if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+               existing.setDefaultCurrency(vm.defaultCurrency());
             if (vm.ruleId() != null) {
 
                 DuplicationCandidate candidate = new DuplicationCandidate();

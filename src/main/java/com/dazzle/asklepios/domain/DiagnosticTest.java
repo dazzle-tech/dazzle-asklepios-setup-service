@@ -82,6 +82,7 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Transient
     private List<String> specialPopulationValues;
 
+    @NotNull(message = "Price cannot be null")
     @Column(name = "price", precision = 7, scale = 2)
     private BigDecimal price;
 
