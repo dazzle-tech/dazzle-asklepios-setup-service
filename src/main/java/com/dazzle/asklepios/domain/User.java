@@ -62,6 +62,7 @@ public class User implements Serializable {
     @Column(name="phone_number")
     private String phoneNumber;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "job_role")
     private JobRole jobRole;
