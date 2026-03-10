@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/setup")
@@ -148,10 +149,25 @@ public class PatientAttachmentsController {
     @GetMapping("/patients/{patientId}/profile-picture")
     public ResponseEntity<DownloadPatientAttachmentVM> getLatestProfilePicture(@PathVariable Long patientId) {
         LOG.debug("last profile picture for patient: {}", patientId);
-        PatientAttachments patientAttachments = repo.findFirstByPatientIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(patientId, PatientAttachmentSource.PATIENT_PROFILE_PICTURE)
-                .orElseThrow(() -> new BadRequestAlertException("No profile picture", ENTITY_NAME, "not_found"));
 
-        DownloadPatientAttachmentVM downloadTicket = service.downloadUrl(patientAttachments.getId());
-        return ResponseEntity.ok(new DownloadPatientAttachmentVM(downloadTicket.url(), downloadTicket.expiresInSeconds()));
+        Optional<PatientAttachments> patientAttachments =
+                repo.findFirstByPatientIdAndSourceAndDeletedAtIsNullOrderByCreatedDateDesc(
+                        patientId,
+                        PatientAttachmentSource.PATIENT_PROFILE_PICTURE
+                );
+
+        if (patientAttachments.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        DownloadPatientAttachmentVM downloadTicket =
+                service.downloadUrl(patientAttachments.get().getId());
+
+        return ResponseEntity.ok(
+                new DownloadPatientAttachmentVM(
+                        downloadTicket.url(),
+                        downloadTicket.expiresInSeconds()
+                )
+        );
     }
 }
