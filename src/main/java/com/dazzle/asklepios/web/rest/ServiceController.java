@@ -198,6 +198,28 @@ public class ServiceController {
                 HttpStatus.OK
         );
     }
+    @GetMapping("/service/{id}")
+    public ResponseEntity<ServiceResponseVM> getById(@PathVariable Long id) {
+        LOG.debug("REST get Service by id={}", id);
 
+        return serviceService.findOne(id)
+                .map(ServiceResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/service/bulk")
+    public ResponseEntity<List<ServiceResponseVM>> getBulkByIds(
+            @RequestParam List<Long> ids
+    ) {
+        LOG.debug("REST get Services by ids={}", ids);
+
+        List<ServiceResponseVM> body = serviceService.findAllByIds(ids)
+                .stream()
+                .map(ServiceResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 
 }

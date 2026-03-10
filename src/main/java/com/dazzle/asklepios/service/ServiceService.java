@@ -213,7 +213,11 @@ public class ServiceService {
 
         return serviceRepository.findByIdIn(serviceIds, pageable);
     }
+ 
 
+    public List<ServiceSetup> findAllByIds(List<Long> ids) {
+        return serviceRepository.findAllById(ids);
+    }
 
     private Facility refFacility(Long facilityId) {
         return entityManager.getReference(Facility.class, facilityId);
