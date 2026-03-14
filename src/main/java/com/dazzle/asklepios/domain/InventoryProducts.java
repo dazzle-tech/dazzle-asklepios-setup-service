@@ -54,11 +54,11 @@ public class InventoryProducts extends AbstractAuditingEntity<Long> implements S
     @Column(name = "uom_group_id")
     private Long uomGroupId;
 
-    @Column(name = "base_uom",nullable = false, length = 50)
-    private String baseUom;
+    @Column(name = "base_uom",nullable = false)
+    private Long baseUom;
 
-    @Column(name = "dispense_uom", length = 50)
-    private String dispenseUom;
+    @Column(name = "dispense_uom")
+    private Long dispenseUom;
 
     @Column(name = "controlled_substance")
     private Boolean controlledSubstance;
