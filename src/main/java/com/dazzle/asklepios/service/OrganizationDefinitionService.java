@@ -119,6 +119,7 @@ public class OrganizationDefinitionService {
 
     @Transactional(readOnly = true)
     public boolean exists() {
+        LOG.debug("organization definition exist");
         return organizationDefinitionRepository.count() > 0;
     }
 
