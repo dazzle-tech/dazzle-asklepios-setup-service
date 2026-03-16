@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
+import com.dazzle.asklepios.repository.LanguageRepository;
 import com.dazzle.asklepios.repository.OrganizationDefinitionRepository;
+import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionCreateVM;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionUpdateVM;
 import org.slf4j.Logger;
@@ -19,14 +22,16 @@ public class OrganizationDefinitionService {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationDefinitionService.class);
 
     private final OrganizationDefinitionRepository organizationDefinitionRepository;
+    private final LanguageRepository languageRepository;
 
-    public OrganizationDefinitionService(OrganizationDefinitionRepository organizationDefinitionRepository) {
+    public OrganizationDefinitionService(OrganizationDefinitionRepository organizationDefinitionRepository, LanguageRepository languageRepository) {
         this.organizationDefinitionRepository = organizationDefinitionRepository;
+        this.languageRepository = languageRepository;
     }
 
     public OrganizationDefinition create(OrganizationDefinitionCreateVM vm) {
         LOG.debug("Request to create OrganizationDefinition : {}", vm);
-
+        Language language = getLanguage(vm.defaultLanguageId());
         OrganizationDefinition org = new OrganizationDefinition();
         org.setName(vm.name());
         org.setDescription(vm.description());
@@ -39,6 +44,8 @@ public class OrganizationDefinitionService {
         org.setContactLandNumber(vm.contactLandNumber());
 
         org.setTaxValue(vm.taxValue());
+        org.setDefaultTimeZone(vm.defaultTimeZone());
+        org.setDefaultLanguage(language);
 
         return organizationDefinitionRepository.save(org);
     }
@@ -58,6 +65,8 @@ public class OrganizationDefinitionService {
             if (vm.contactLandNumber() != null) existing.setContactLandNumber(vm.contactLandNumber());
 
             if (vm.taxValue() != null) existing.setTaxValue(vm.taxValue());
+            if(vm.defaultTimeZone()!=null) existing.setDefaultTimeZone(vm.defaultTimeZone());
+            if(vm.defaultLanguageId()!=null) existing.setDefaultLanguage(getLanguage(vm.defaultLanguageId()));
 
             OrganizationDefinition updated =
                     organizationDefinitionRepository.save(existing);
@@ -81,5 +90,11 @@ public class OrganizationDefinitionService {
     @Transactional(readOnly = true)
     public boolean exists() {
         return organizationDefinitionRepository.count() > 0;
+    }
+
+    private Language getLanguage(Long id) {
+        LOG.debug("getLanguage for language: id={}", id);
+        return languageRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("language not found: " + id, "Language", "notfound"));
     }
 }
