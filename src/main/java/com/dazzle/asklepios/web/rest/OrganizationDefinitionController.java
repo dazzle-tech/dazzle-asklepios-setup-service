@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.OrganizationDefinition;
 import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.OrganizationDefinitionService;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionCreateVM;
+import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionResponseVM;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionUpdateVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -38,38 +39,35 @@ public class OrganizationDefinitionController {
      */
     @PostMapping("/organization-definition")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<OrganizationDefinition> createOrganizationDefinition(
+    public ResponseEntity<OrganizationDefinitionResponseVM> createOrganizationDefinition(
             @Valid @RequestBody OrganizationDefinitionCreateVM vm
     ) {
         LOG.debug("REST create OrganizationDefinition payload={}", vm);
 
         if (organizationDefinitionService.exists()) {
-            return ResponseEntity
-                    .status(409) // CONFLICT
-                    .build();
+            return ResponseEntity.status(409).build();
         }
 
         OrganizationDefinition created = organizationDefinitionService.create(vm);
 
         return ResponseEntity
                 .created(URI.create("/api/setup/organization-definition/" + created.getId()))
-                .body(created);
+                .body(OrganizationDefinitionResponseVM.ofEntity(created));
     }
-
 
     /**
      * {@code PUT /organization-definition/{id}} : Update an existing OrganizationDefinition.
      */
     @PutMapping("/organization-definition/{id}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<OrganizationDefinition> updateOrganizationDefinition(
+    public ResponseEntity<OrganizationDefinitionResponseVM> updateOrganizationDefinition(
             @PathVariable Long id,
             @Valid @RequestBody OrganizationDefinitionUpdateVM vm
     ) {
         LOG.debug("REST update OrganizationDefinition id={} payload={}", id, vm);
 
         return organizationDefinitionService.update(id, vm)
-                .map(ResponseEntity::ok)
+                .map(updated -> ResponseEntity.ok(OrganizationDefinitionResponseVM.ofEntity(updated)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -78,9 +76,15 @@ public class OrganizationDefinitionController {
      */
     @GetMapping("/organization-definition")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<List<OrganizationDefinition>> getAllOrganizationDefinitions() {
+    public ResponseEntity<List<OrganizationDefinitionResponseVM>> getAllOrganizationDefinitions() {
         LOG.debug("REST get all OrganizationDefinitions");
-        return ResponseEntity.ok(organizationDefinitionService.findAll());
+
+        List<OrganizationDefinitionResponseVM> result = organizationDefinitionService.findAll()
+                .stream()
+                .map(OrganizationDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -88,10 +92,11 @@ public class OrganizationDefinitionController {
      */
     @GetMapping("/organization-definition/{id}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<OrganizationDefinition> getOrganizationDefinition(@PathVariable Long id) {
+    public ResponseEntity<OrganizationDefinitionResponseVM> getOrganizationDefinition(@PathVariable Long id) {
         LOG.debug("REST get OrganizationDefinition id={}", id);
 
         return organizationDefinitionService.findOne(id)
+                .map(OrganizationDefinitionResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

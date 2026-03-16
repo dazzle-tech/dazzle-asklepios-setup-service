@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.TimeZone;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record OrganizationDefinitionCreateVM(
         @NotNull String name,
@@ -17,7 +18,8 @@ public record OrganizationDefinitionCreateVM(
         String contactLandNumber,
         @NotNull BigDecimal taxValue,
         @NotNull TimeZone defaultTimeZone,
-        @NotNull Long defaultLanguageId
+        @NotNull Long defaultLanguageId,
+        List<OrganizationWorkingDayCreateVM> workingDays
         ) {
     public static OrganizationDefinitionCreateVM ofEntity(OrganizationDefinition entity) {
         if (entity == null) return null;
@@ -32,7 +34,13 @@ public record OrganizationDefinitionCreateVM(
                 entity.getContactLandNumber(),
                 entity.getTaxValue(),
                 entity.getDefaultTimeZone(),
-                entity.getDefaultLanguage()!=null?entity.getDefaultLanguage().getId():null
+                entity.getDefaultLanguage()!=null?entity.getDefaultLanguage().getId():null,
+                entity.getWorkingDays() != null
+                        ? entity.getWorkingDays().stream()
+                        .map(OrganizationWorkingDayCreateVM::ofEntity)
+                        .toList()
+                        : List.of()
+
         );
     }
 }
