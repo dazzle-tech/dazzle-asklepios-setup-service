@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.VaccineBrands;
 import com.dazzle.asklepios.service.VaccineBrandsService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandCreateVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandResponseVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandUpdateVM;
@@ -119,6 +120,18 @@ public class VaccineBrandsController {
         );
     }
 
+    @GetMapping("/vaccine-brands/{id}")
+    public ResponseEntity<VaccineBrandResponseVM> getOne(@PathVariable Long id) {
+        if (id == null) {
+            throw new BadRequestAlertException("Vaccine brand id is required", "vaccineBrand", "id.required");
+        }
+        LOG.debug("REST get VaccineBrand id={}", id);
+        return vaccineBrandsService.findOne(id)
+                .map(VaccineBrandResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/vaccine-brands/{id}/toggle-active")
     public ResponseEntity<VaccineBrandResponseVM> toggleVaccineBrandActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle VaccineBrand isActive id={}", id);
@@ -126,5 +139,22 @@ public class VaccineBrandsController {
                 .map(VaccineBrandResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/vaccine-brands/by-ids")
+    public ResponseEntity<List<VaccineBrandResponseVM>> getVaccineBrandsByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST get VaccineBrands by ids={}", ids);
+
+        List<VaccineBrands> brands = vaccineBrandsService.findVaccineBrandsByIds(ids);
+
+        LOG.debug("REST get VaccineBrands by ids responseCount={}", brands.size());
+
+        return ResponseEntity.ok(
+                brands.stream()
+                        .map(VaccineBrandResponseVM::ofEntity)
+                        .toList()
+        );
     }
 }

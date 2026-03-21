@@ -95,6 +95,13 @@ public class CountryDistrictService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CountryDistrict> findActive(Long countryId, Pageable pageable) {
+        LOG.debug("Fetching active CountryDistricts for countryId={} pageable={}", countryId, pageable);
+        return districtRepository.findByCountry_IdAndIsActiveTrue(countryId, pageable);
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<CountryDistrict> findByCountry(Long countryId, Pageable pageable) {
         LOG.debug("Fetching CountryDistricts for countryId={} pageable={}", countryId, pageable);
         if (countryId == null) {

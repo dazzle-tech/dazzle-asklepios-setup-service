@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureUpdateVM;
@@ -210,6 +211,38 @@ public class ProcedureController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/procedure/{id}")
+    public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
+        LOG.debug("REST get Procedure by id={}", id);
+        return procedureService.findOne(id)
+                .map(ProcedureResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/procedure/by-ids")
+    public ResponseEntity<List<ProcedureResponseVM>> getProceduresByIds(
+            @RequestParam List<Long> ids
+    ) {
+        LOG.debug("REST getProceduresByIds ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Procedure ids list must not be empty",
+                    "procedure",
+                    "ids.empty"
+            );
+        }
+
+        List<ProcedureResponseVM> list =
+                procedureService.findByIds(ids)
+                        .stream()
+                        .map(ProcedureResponseVM::ofEntity)
+                        .toList();
+
+        return ResponseEntity.ok(list);
     }
 
 

@@ -3,12 +3,14 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.DepartmentService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -291,6 +293,42 @@ public class DepartmentController {
                 .toList();
 
         return ResponseEntity.ok(departments);
+    }
+    @GetMapping("/department/appointable/active/by-encounter-type/{encounterType}/{facilityId:\\d+}")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableActiveByEncounterTypeAndFacility(
+            @PathVariable @NotNull EncounterType encounterType,
+            @PathVariable @NotNull Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list appointable & active Departments by encounterType={} facilityId={} page={}",
+                encounterType, facilityId, pageable);
+
+        Page<Department> page = departmentService.findAppointableActiveByFacilityAndEncounterType(
+                facilityId,
+                encounterType,
+                pageable
+        );
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
+    @PostMapping("/department/bulk")
+    public ResponseEntity<List<Department>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(departmentService.findByIds(ids));
     }
 
 }

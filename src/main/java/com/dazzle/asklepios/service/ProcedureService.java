@@ -214,6 +214,26 @@ public class ProcedureService {
         return procedureRepository
                 .findByIsActiveTrueAndIsAppointableTrue( pageable);
     }
+
+    @Transactional(readOnly = true)
+    public List<Procedure> findByIds(List<Long> ids) {
+        LOG.debug("[GET PROCEDURES BY IDS] ids={}", ids);
+
+        List<Procedure> results = procedureRepository.findAllById(ids);
+
+        if (results.isEmpty()) {
+            throw new NotFoundAlertException(
+                    "No procedures found for given ids",
+                    "procedure",
+                    "notfound"
+            );
+        }
+
+        return results;
+    }
+
+
+
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
     }

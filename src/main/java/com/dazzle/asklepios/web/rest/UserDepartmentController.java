@@ -116,4 +116,15 @@ public class UserDepartmentController {
                 .orElse(ResponseEntity.noContent().build());
     }
 
+    /**
+     * GET /api/setup/user-departments/user/full-name?login= : Get user's full name by login.
+     */
+    @GetMapping("/user-departments/user/full-name")
+    public ResponseEntity<String> getFullNameByLogin(@RequestParam String login) {
+        log.debug("REST request to get full name by login={}", login);
+        String fullName = userDepartmentService.getFullNameByLogin(login);
+        log.debug("REST response full name for login={} -> {}", login, fullName);
+        return ResponseEntity.ok(fullName);
+    }
+
 }

@@ -92,6 +92,26 @@ public class CatalogController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
+    @GetMapping("/catalog/by-department-or-unassigned")
+    public ResponseEntity<List<CatalogResponseVM>> getByDepartmentOrUnassigned(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get Catalog  By DepartmentId{}  with unassigned department");
+
+                Page<Catalog> page = catalogService.findByDepartmentOrUnassigned(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<CatalogResponseVM> body = page.getContent()
+                .stream()
+                .map(CatalogResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
 
     @GetMapping("/catalog/by-type")
     public ResponseEntity<List<CatalogResponseVM>> byType(@RequestParam(required = false) TestType type,

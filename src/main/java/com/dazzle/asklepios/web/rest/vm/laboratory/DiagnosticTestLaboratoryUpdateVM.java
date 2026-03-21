@@ -21,8 +21,6 @@ public record DiagnosticTestLaboratoryUpdateVM(
         Method method,
         Double testDurationTime,
         String timeUnit,
-        @NotBlank  String resultUnit,
-        Boolean isProfile,
         String sampleContainer,
         Double sampleVolume,
         String sampleVolumeUnit,
@@ -42,7 +40,7 @@ public record DiagnosticTestLaboratoryUpdateVM(
     public DiagnosticTestLaboratory toEntity() {
         DiagnosticTestLaboratory entity = new DiagnosticTestLaboratoryCreateVM(
                 testId, property, system, scale, reagents, method,
-                testDurationTime, timeUnit, resultUnit, isProfile,
+                testDurationTime, timeUnit,
                 sampleContainer, sampleVolume, sampleVolumeUnit, tubeColor,
                 testDescription, sampleHandling, turnaroundTime, turnaroundTimeUnit,
                 preparationRequirements, medicalIndications, associatedRisks,

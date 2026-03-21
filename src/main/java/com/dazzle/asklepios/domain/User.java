@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.config.Constants;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -42,5 +45,26 @@ public class User implements Serializable {
     @NotNull
     private boolean activated = false;
 
+    @Size(max = 50)
+    @Column(name="first_name")
+    private String firstName;
+
+    @Size(max = 50)
+    @Column(name="last_name")
+    private String lastName;
+
+    @NotBlank(message = "Email can not to be Null")
+    @Email
+    @Size(min = 5, max = 254)
+    private String email;
+
+    @Size(max = 20)
+    @Column(name="phone_number")
+    private String phoneNumber;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "job_role")
+    private JobRole jobRole;
 
 }

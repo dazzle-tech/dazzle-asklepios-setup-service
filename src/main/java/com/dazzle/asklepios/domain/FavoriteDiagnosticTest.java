@@ -6,15 +6,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.io.Serial;
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -22,35 +23,25 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "user_sticky_notes")
-public class UserStickyNotes extends AbstractAuditingEntity<Long> implements Serializable {
+@Table(
+        name = "favorite_diagnostic_test"
+)
+@EqualsAndHashCode(callSuper = false)
+public class FavoriteDiagnosticTest extends AbstractAuditingEntity<Long>
+        implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "note")
-    @NotBlank
-    private String note;
-
-
-    @Column(name = "color", length = 30)
-    @NotBlank
-    private String color;
-
-    @Column(name = "priority")
-    @NotBlank
-    private String priority;
-
-    @Column(name = "priority_order", precision = 19, scale = 6)
     @NotNull
-    private BigDecimal priorityOrder;
-
-    @Column(name = "patient_id")
-    private Long patientId;
-
+    @Column(name = "test_id", nullable = false)
+    private Long testId;
 }

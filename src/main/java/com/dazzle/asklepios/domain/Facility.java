@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.dazzle.asklepios.domain.enumeration.patient.SecurityLevel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -67,10 +68,11 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(length = 100)
     private String addressId;
 
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private Currency defaultCurrency;
+
 
     @NotNull
     @Column(nullable = false, length = 10)

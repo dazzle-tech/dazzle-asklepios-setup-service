@@ -227,4 +227,18 @@ public class VaccineDosesIntervalService {
                 .sorted(Comparator.comparingInt(dose -> dose.getDoseNumber().getOrder()))
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public Optional<VaccineDosesInterval> findOne(Long id) {
+        LOG.debug("Fetching VaccineDosesInterval by id={}", id);
+        if (id == null) return Optional.empty();
+        return vaccineDosesIntervalRepository.findById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<VaccineDosesInterval> findOneByFromDoseId(Long fromDoseId) {
+        LOG.debug("Fetching VaccineDosesInterval by fromDoseId={}", fromDoseId);
+        return vaccineDosesIntervalRepository.findVaccineDosesIntervalByFromDose_Id(fromDoseId);
+    }
+
 }

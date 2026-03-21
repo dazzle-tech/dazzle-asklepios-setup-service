@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
@@ -188,6 +189,23 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Department> findAppointableActiveByFacilityAndEncounterType(
+            Long facilityId,
+            EncounterType encounterType,
+            Pageable pageable) {
+
+        LOG.debug("Request to get appointable & active Departments by facilityId={} encounterType={} pageable={}",
+                facilityId, encounterType, pageable);
+
+        return departmentRepository
+                .findByAppointableTrueAndIsActiveTrueAndFacilityIdAndEncounterType(
+                        facilityId,
+                        encounterType,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
     public List<Department> findDepartmentsLinkedToResourceType(String resourceType) {
         LOG.debug("Request to get Departments linked to resources of type={}", resourceType);
 
@@ -210,5 +228,10 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public List<Department> findDepartmentsLinkedToEmergencyResource() {
         return findDepartmentsLinkedToResourceType("EMERGENCY");
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> findByIds(List<Long> ids) {
+        return departmentRepository.findAllById(ids);
     }
 }

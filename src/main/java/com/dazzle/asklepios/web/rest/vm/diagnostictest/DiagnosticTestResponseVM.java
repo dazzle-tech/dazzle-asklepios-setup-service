@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 
 import java.io.Serializable;
@@ -24,11 +25,16 @@ public record DiagnosticTestResponseVM(
         Currency currency,
         String specialNotes,
         Boolean isActive,
-        Boolean isProfile,
         Boolean appointable,
         Instant createdDate,
-        Instant lastModifiedDate
+        Instant lastModifiedDate,
+
+        Long defaultProfileId,
+        String defaultProfileResultUnit,
+        TestResultType defaultProfileResultType,
+        String listOfValueId
 ) implements Serializable {
+
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
         return new DiagnosticTestResponseVM(
                 test.getId(),
@@ -45,10 +51,23 @@ public record DiagnosticTestResponseVM(
                 test.getCurrency(),
                 test.getSpecialNotes(),
                 test.getIsActive(),
-                test.getIsProfile(),
                 test.getAppointable(),
                 test.getCreatedDate(),
-                test.getLastModifiedDate()
+                test.getLastModifiedDate(),
+
+                null, null, null, null
+        );
+    }
+
+    public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type, String listOfValueId) {
+        return new DiagnosticTestResponseVM(
+                this.id, this.type, this.name, this.internalCode,
+                this.ageSpecific, this.ageGroupList, this.genderSpecific, this.gender,
+                this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
+                this.specialNotes, this.isActive, this.appointable,
+                this.createdDate, this.lastModifiedDate,
+                id, unit, type, listOfValueId
         );
     }
 }
+

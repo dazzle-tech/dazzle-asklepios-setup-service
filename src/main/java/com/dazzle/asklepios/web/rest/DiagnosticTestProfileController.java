@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
+import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.service.DiagnosticTestProfileService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.profile.DiagnosticTestProfileCreateVM;
@@ -15,14 +16,24 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/setup/diagnostic-test-profiles")
+@RequestMapping("/api/setup")
 public class DiagnosticTestProfileController {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestProfileController.class);
@@ -33,7 +44,7 @@ public class DiagnosticTestProfileController {
     }
 
     // CREATE
-    @PostMapping
+    @PostMapping("/diagnostic-test-profiles")
     public ResponseEntity<DiagnosticTestProfileResponseVM> create(
             @Valid @RequestBody DiagnosticTestProfileCreateVM vm) {
 
@@ -45,7 +56,7 @@ public class DiagnosticTestProfileController {
     }
 
     // UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("/diagnostic-test-profiles/{id}")
     public ResponseEntity<DiagnosticTestProfileResponseVM> update(
             @PathVariable Long id,
             @Valid @RequestBody DiagnosticTestProfileUpdateVM vm) {
@@ -58,7 +69,7 @@ public class DiagnosticTestProfileController {
     }
 
     // GET ALL (Paginated)
-    @GetMapping
+    @GetMapping("/diagnostic-test-profiles")
     public ResponseEntity<List<DiagnosticTestProfileResponseVM>> findAll(@ParameterObject Pageable pageable) {
         LOG.debug("REST list DiagnosticTestProfiles page={}", pageable);
         Page<DiagnosticTestProfile> page = service.findAll(pageable);
@@ -73,7 +84,7 @@ public class DiagnosticTestProfileController {
     }
 
     // GET ALL BY TEST ID (Paginated)
-    @GetMapping("/by-test/{testId}")
+    @GetMapping("/diagnostic-test-profiles/by-test/{testId}")
     public ResponseEntity<List<DiagnosticTestProfileResponseVM>> findAllByTestId(
             @PathVariable Long testId,
             @ParameterObject Pageable pageable) {
@@ -90,19 +101,103 @@ public class DiagnosticTestProfileController {
         );
     }
 
-    // DELETE ONE
-    @DeleteMapping("/{id}")
+    @GetMapping("/diagnostic-test-profiles/internal/by-test/{testId}/lab-profile-ids")
+    public ResponseEntity<List<Long>> findLabProfileIds(@PathVariable Long testId) {
+
+        LOG.debug("REST get LAB profile ids by testId={}", testId);
+
+        List<DiagnosticTestProfile> profiles = service.findProfilesForLab(testId);
+
+        List<Long> ids = profiles.stream()
+                .map(DiagnosticTestProfile::getId)
+                .toList();
+
+        return ResponseEntity.ok(ids);
+    }
+
+    @GetMapping("/diagnostic-test-profiles/by-test/{testId}/for-lab")
+    public ResponseEntity<List<DiagnosticTestProfileResponseVM>> findProfilesForLab(@PathVariable Long testId) {
+
+        LOG.debug("REST list DiagnosticTestProfiles for LAB by testId={}", testId);
+
+
+        List<DiagnosticTestProfile> profiles = service.findProfilesForLab(testId);
+
+
+        List<DiagnosticTestProfileResponseVM> body = profiles.stream()
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
+
+    @PostMapping("/diagnostic-test-profiles/by-test-ids/for-lab")
+    public ResponseEntity<Map<Long, List<DiagnosticTestProfile>>> getActiveLabProfilesByTestIds(
+            @RequestBody Collection<Long> testIds
+    ) {
+
+        LOG.debug("REST request to get active lab profiles by testIds:{}", testIds);
+
+        Map<Long, List<DiagnosticTestProfile>> result = service.findActiveProfilesForLabByTestIds(testIds);
+
+        int keys = (result == null) ? 0 : result.size();
+        int totalProfiles = (result == null) ? 0 : result.values().stream().mapToInt(list -> list == null ? 0 : list.size()).sum();
+
+        LOG.debug("REST response active lab profiles by testIds: keys={}, totalProfiles={}", keys, totalProfiles);
+
+        return ResponseEntity.ok(result);
+    }
+
+
+    @DeleteMapping("/diagnostic-test-profiles/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.debug("REST delete DiagnosticTestProfile id={}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    // DELETE ALL BY TEST ID
-    @DeleteMapping("/by-test/{testId}")
+    @DeleteMapping("/diagnostic-test-profiles/by-test/{testId}")
     public ResponseEntity<Void> deleteAllByTestId(@PathVariable Long testId) {
         LOG.debug("REST delete all DiagnosticTestProfiles for testId={}", testId);
         service.deleteAllByTestId(testId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/diagnostic-test-profiles/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestProfileResponseVM> toggleDiagnosticProfileActiveStatus(@PathVariable Long id) {
+        LOG.debug("REST toggle Diagnostic Profile Setup isActive id={}", id);
+        return service.toggleIsActive(id)
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/diagnostic-test-profiles/{id}/result-type")
+    public ResponseEntity<TestResultType> getResultTypeById(@PathVariable Long id) {
+        return service.getResultTypeById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/diagnostic-test-profiles/by-ids")
+    public ResponseEntity<List<DiagnosticTestProfileResponseVM>> getProfilesByIds(
+            @RequestBody Collection<Long> ids
+    ) {
+
+        LOG.debug("REST request to get DiagnosticTestProfiles by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        List<DiagnosticTestProfile> profiles = service.findAllByIds(ids);
+
+        List<DiagnosticTestProfileResponseVM> body = profiles.stream()
+                .map(DiagnosticTestProfileResponseVM::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
 }
