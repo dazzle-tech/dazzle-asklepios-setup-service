@@ -28,7 +28,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class OrganizationWorkingDay extends AbstractAuditingEntity<Long> implements Serializable {
+public class OrganizationWorkingDay implements Serializable {
 
 
     @Id
