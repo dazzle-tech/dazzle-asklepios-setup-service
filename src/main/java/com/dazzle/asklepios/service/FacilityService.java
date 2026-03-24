@@ -5,19 +5,16 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
