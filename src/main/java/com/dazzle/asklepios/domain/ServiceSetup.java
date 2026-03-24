@@ -32,6 +32,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = false)
 public class ServiceSetup extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
@@ -42,33 +43,49 @@ public class ServiceSetup extends AbstractAuditingEntity<Long> implements Serial
     private Long id;
 
     @NotNull
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 255)
     private String name;
 
-    @Column
+    @Column(length = 255)
     private String abbreviation;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String code;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "category")
+    @Column(name = "category", nullable = false, length = 255)
     private ServiceCategory category;
 
     @Column
     private BigDecimal price;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(length = 255)
     private Currency currency;
 
     @NotNull
-    @Column(name = "is_active")
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
 
+    @Column(name = "appointable")
+    private Boolean appointable;
+
+    @NotNull
+    @Column(name = "parallel_capacity_value", nullable = false)
+    private Integer parallelCapacityValue = 1;
+
+    @Column(name = "default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name = "default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes = 0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes = 0;
 }

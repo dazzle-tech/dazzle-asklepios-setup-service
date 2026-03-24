@@ -31,16 +31,20 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class ServiceService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
+
     private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
     private final ServiceItemsRepository serviceItemsRepository;
 
-    public ServiceService(ServiceRepository serviceRepository, EntityManager entityManager, ServiceItemsRepository serviceItemsRepository) {
+    public ServiceService(
+            ServiceRepository serviceRepository,
+            EntityManager entityManager,
+            ServiceItemsRepository serviceItemsRepository
+    ) {
         this.serviceRepository = serviceRepository;
         this.entityManager = entityManager;
         this.serviceItemsRepository = serviceItemsRepository;
     }
-
 
     public ServiceSetup create(Long facilityId, ServiceSetup incoming) {
         LOG.info("[CREATE] Request to create Service for facilityId={} payload={}", facilityId, incoming);
@@ -59,9 +63,23 @@ public class ServiceService {
                 .category(incoming.getCategory())
                 .price(incoming.getPrice())
                 .currency(incoming.getCurrency())
-                .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
+                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : true)
                 .facility(refFacility(facilityId))
+                .appointable(incoming.getAppointable())
+                .parallelCapacityValue(
+                        incoming.getParallelCapacityValue() != null ? incoming.getParallelCapacityValue() : 1
+                )
+                .defaultDurationMinutes(incoming.getDefaultDurationMinutes())
+                .defaultBufferBeforeMinutes(
+                        incoming.getDefaultBufferBeforeMinutes() != null ? incoming.getDefaultBufferBeforeMinutes() : 0
+                )
+                .defaultBufferAfterMinutes(
+                        incoming.getDefaultBufferAfterMinutes() != null ? incoming.getDefaultBufferAfterMinutes() : 0
+                )
                 .build();
+
+        validateAppointableRequirements(entity);
+
         try {
             ServiceSetup saved = serviceRepository.saveAndFlush(entity);
             LOG.info("Successfully created service id={} name='{}' for facilityId={}", saved.getId(), saved.getName(), facilityId);
@@ -82,13 +100,13 @@ public class ServiceService {
                         "unique.facility.name"
                 );
             }
+
             throw new BadRequestAlertException(
                     "Database constraint violated while creating service (check facility, unique name, or required fields).",
                     "service",
                     "db.constraint"
             );
         }
-
     }
 
     public Optional<ServiceSetup> update(Long id, Long facilityId, ServiceSetup incoming) {
@@ -100,6 +118,11 @@ public class ServiceService {
 
         ServiceSetup existing = serviceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Service not found with id " + id, "service", "notfound"));
+
+        if (facilityId != null) {
+            existing.setFacility(refFacility(facilityId));
+        }
+
         existing.setName(incoming.getName());
         existing.setCode(incoming.getCode());
         existing.setAbbreviation(incoming.getAbbreviation());
@@ -107,6 +130,22 @@ public class ServiceService {
         existing.setPrice(incoming.getPrice());
         existing.setCurrency(incoming.getCurrency());
         existing.setIsActive(incoming.getIsActive());
+        existing.setAppointable(incoming.getAppointable());
+
+        if (incoming.getParallelCapacityValue() != null) {
+            existing.setParallelCapacityValue(incoming.getParallelCapacityValue());
+        }
+        if (incoming.getDefaultDurationMinutes() != null) {
+            existing.setDefaultDurationMinutes(incoming.getDefaultDurationMinutes());
+        }
+        if (incoming.getDefaultBufferBeforeMinutes() != null) {
+            existing.setDefaultBufferBeforeMinutes(incoming.getDefaultBufferBeforeMinutes());
+        }
+        if (incoming.getDefaultBufferAfterMinutes() != null) {
+            existing.setDefaultBufferAfterMinutes(incoming.getDefaultBufferAfterMinutes());
+        }
+
+        validateAppointableRequirements(existing);
 
         try {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
@@ -116,7 +155,7 @@ public class ServiceService {
             Throwable root = getRootCause(constraintException);
             String message = (root != null ? root.getMessage() : constraintException.getMessage()).toLowerCase();
 
-            LOG.error("Database constraint violation while creating service: {}", message, constraintException);
+            LOG.error("Database constraint violation while updating service: {}", message, constraintException);
 
             if (message.contains("uk_service_facility_name") ||
                     message.contains("unique constraint") ||
@@ -128,13 +167,41 @@ public class ServiceService {
                         "unique.facility.name"
                 );
             }
+
             throw new BadRequestAlertException(
-                    "Database constraint violated while creating service (check facility, unique name, or required fields).",
+                    "Database constraint violated while updating service (check facility, unique name, or required fields).",
                     "service",
                     "db.constraint"
             );
         }
+    }
 
+    private void validateAppointableRequirements(ServiceSetup service) {
+        if (Boolean.TRUE.equals(service.getAppointable())) {
+            if (service.getDefaultDurationMinutes() == null || service.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "service",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (service.getDefaultBufferBeforeMinutes() == null || service.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "service",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (service.getDefaultBufferAfterMinutes() == null || service.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "service",
+                        "bufferafterinvalid"
+                );
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -151,7 +218,6 @@ public class ServiceService {
         LOG.debug("Fetching paged Services (no facility filter) pageable={}", pageable);
         return serviceRepository.findAll(pageable);
     }
-
 
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findByCategory(ServiceCategory category, Pageable pageable) {
@@ -189,7 +255,6 @@ public class ServiceService {
                 });
     }
 
-    // ServiceService.java
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
         LOG.debug("Fetching paged Services by department sourceId={} pageable={}", sourceId, pageable);
@@ -200,12 +265,12 @@ public class ServiceService {
         if (items == null || items.isEmpty()) {
             return Page.empty(pageable);
         }
+
         List<Long> serviceIds = items.stream()
                 .map(serviceItems -> serviceItems.getService().getId())
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
-
 
         if (serviceIds.isEmpty()) {
             return Page.empty(pageable);
@@ -213,7 +278,6 @@ public class ServiceService {
 
         return serviceRepository.findByIdIn(serviceIds, pageable);
     }
- 
 
     public List<ServiceSetup> findAllByIds(List<Long> ids) {
         return serviceRepository.findAllById(ids);

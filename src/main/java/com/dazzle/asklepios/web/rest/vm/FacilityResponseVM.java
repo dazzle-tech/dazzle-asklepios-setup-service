@@ -23,23 +23,25 @@ public record FacilityResponseVM(
         String addressId,
         Currency defaultCurrency,
         Boolean isActive,
-        Long ruleId
+        Long ruleId,
+        String timeZone
 ) implements Serializable {
 
-        public static FacilityResponseVM ofEntity(Facility facility) {
-                return new FacilityResponseVM(
-                        facility.getId(),
-                        facility.getName(),
-                        facility.getCode(),
-                        facility.getType(),
-                        facility.getEmailAddress(),
-                        facility.getPhone1(),
-                        facility.getPhone2(),
-                        facility.getFax(),
-                        facility.getAddressId(),
-                        facility.getDefaultCurrency(),
-                        facility.getIsActive(),
-                        facility.getRuleId()
-                );
-        }
+    public static FacilityResponseVM ofEntity(Facility facility) {
+        return new FacilityResponseVM(
+                facility.getId(),
+                facility.getName(),
+                facility.getCode(),
+                facility.getType(),
+                facility.getEmailAddress(),
+                facility.getPhone1(),
+                facility.getPhone2(),
+                facility.getFax(),
+                facility.getAddressId(),
+                facility.getDefaultCurrency(),
+                facility.getIsActive(),
+                facility.getRuleId(),
+                facility.getTimeZone()
+        );
+    }
 }

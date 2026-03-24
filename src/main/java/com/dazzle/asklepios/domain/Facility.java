@@ -2,9 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import com.dazzle.asklepios.domain.enumeration.patient.SecurityLevel;
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -31,6 +29,7 @@ import java.time.LocalDate;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Facility extends AbstractAuditingEntity<Long> implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
 
@@ -44,16 +43,17 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 255)
     private FacilityType type;
 
     @NotNull
     @Column(nullable = false, length = 50)
     private String code;
 
+    @Column(name = "registration_date")
     private LocalDate registrationDate;
 
-    @Column(length = 100)
+    @Column(name = "email_address", length = 100)
     private String emailAddress;
 
     @Column(length = 100)
@@ -65,24 +65,21 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(length = 100)
     private String fax;
 
-    @Column(length = 100)
+    @Column(name = "address_id", length = 100)
     private String addressId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 10)
+    @Column(name = "default_currency", nullable = false, length = 100)
     private Currency defaultCurrency;
 
-
-    @NotNull
-    @Column(nullable = false, length = 10)
+    @Column(name = "is_active")
     private Boolean isActive = true;
 
     @Column(name = "rule_id")
     private Long ruleId;
 
-
-
-
+    @Column(name = "time_zone", length = 100)
+    private String timeZone;
 
 }

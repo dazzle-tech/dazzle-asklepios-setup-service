@@ -4,7 +4,9 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 import java.time.LocalDate;
 
@@ -16,29 +18,31 @@ public record FacilityCreateVM(
         @NotNull String name,
         @NotNull String code,
         @NotNull FacilityType type,
-        String emailAddress,
+        @Email String emailAddress,
         String phone1,
         String phone2,
         String fax,
         String addressId,
-       @NotNull Currency defaultCurrency,
+        @NotNull Currency defaultCurrency,
         Boolean isActive,
-        LocalDate registrationDate
+        LocalDate registrationDate,
+        String timeZone
 ) implements Serializable {
 
-        public static FacilityCreateVM ofEntity(Facility facility) {
-                return new FacilityCreateVM(
-                        facility.getName(),
-                        facility.getCode(),
-                        facility.getType(),
-                        facility.getEmailAddress(),
-                        facility.getPhone1(),
-                        facility.getPhone2(),
-                        facility.getFax(),
-                        facility.getAddressId(),
-                        facility.getDefaultCurrency(),
-                        facility.getIsActive(),
-                        facility.getRegistrationDate()   
-                );
-        }
+    public static FacilityCreateVM ofEntity(Facility facility) {
+        return new FacilityCreateVM(
+                facility.getName(),
+                facility.getCode(),
+                facility.getType(),
+                facility.getEmailAddress(),
+                facility.getPhone1(),
+                facility.getPhone2(),
+                facility.getFax(),
+                facility.getAddressId(),
+                facility.getDefaultCurrency(),
+                facility.getIsActive(),
+                facility.getRegistrationDate(),
+                facility.getTimeZone()
+        );
+    }
 }

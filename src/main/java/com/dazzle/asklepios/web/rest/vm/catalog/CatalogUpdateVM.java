@@ -20,4 +20,10 @@ public class CatalogUpdateVM {
     private TestType type;
     private Long departmentId;
     private Long facilityId;
+
+    private Boolean appointable;
+    private Integer parallelCapacityValue;
+    private Integer defaultDurationMinutes;
+    private Integer defaultBufferBeforeMinutes;
+    private Integer defaultBufferAfterMinutes;
 }

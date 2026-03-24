@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -45,15 +46,15 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
 
     @NotNull(message = "Type cannot be null")
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", length = 255)
+    @Column(name = "type", length = 255, nullable = false)
     private TestType type;
 
     @NotNull(message = "Name cannot be null")
-    @Column(name = "name", length = 255)
+    @Column(name = "name", length = 255, nullable = false)
     private String name;
 
     @NotNull(message = "Code cannot be null")
-    @Column(name = "internal_code", length = 255)
+    @Column(name = "internal_code", length = 255, nullable = false, unique = true)
     private String internalCode;
 
     @Column(name = "age_specific")
@@ -65,17 +66,15 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Transient
     private List<String> ageGroupList;
 
-
     @Column(name = "gender_specific")
     private Boolean genderSpecific;
-
-
 
     @Column(name = "gender", length = 50)
     private String gender;
 
     @Column(name = "special_population")
-    private Boolean specialPopulation;
+    private Boolean specialPopulation = false;
+
     @Column(name = "special_population_values", columnDefinition = "text")
     private String specialPopulationValuesRaw;
 
@@ -83,7 +82,7 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     private List<String> specialPopulationValues;
 
     @NotNull(message = "Price cannot be null")
-    @Column(name = "price", precision = 7, scale = 2)
+    @Column(name = "price", precision = 7, scale = 2, nullable = false)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
@@ -96,10 +95,20 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-
     @Column(name = "appointable")
     private Boolean appointable;
 
+    @Column(name = "parallel_capacity_value", nullable = false)
+    private Integer parallelCapacityValue = 1;
+
+    @Column(name = "default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name = "default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes = 0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes = 0;
 
     @PostLoad
     private void fillListsFromRaw() {
@@ -137,6 +146,4 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
             this.ageGroup = null;
         }
     }
-
-
 }
