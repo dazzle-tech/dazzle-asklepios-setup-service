@@ -22,6 +22,11 @@ public class CatalogResponseVM {
     private String departmentName;
     private Long facilityId;
     private String facilityName;
+    private Boolean appointable;
+    private Integer parallelCapacityValue;
+    private Integer defaultDurationMinutes;
+    private Integer defaultBufferBeforeMinutes;
+    private Integer defaultBufferAfterMinutes;
 
     public static CatalogResponseVM ofEntity(Catalog c) {
         return CatalogResponseVM.builder()
@@ -33,6 +38,11 @@ public class CatalogResponseVM {
                 .departmentName(c.getDepartment() != null ? c.getDepartment().getName() : null)
                 .facilityId(c.getFacility() != null ? c.getFacility().getId() : null)
                 .facilityName(c.getFacility() != null ? c.getFacility().getName() : null)
+                .appointable(c.getAppointable())
+                .parallelCapacityValue(c.getParallelCapacityValue())
+                .defaultDurationMinutes(c.getDefaultDurationMinutes())
+                .defaultBufferBeforeMinutes(c.getDefaultBufferBeforeMinutes())
+                .defaultBufferAfterMinutes(c.getDefaultBufferAfterMinutes())
                 .build();
     }
 }
