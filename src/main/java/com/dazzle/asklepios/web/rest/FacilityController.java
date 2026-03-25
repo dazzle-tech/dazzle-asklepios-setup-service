@@ -1,12 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.enumeration.Currency;
-import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.FacilityService;
-import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityCreateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityUpdateVM;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.Arrays;

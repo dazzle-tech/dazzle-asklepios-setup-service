@@ -1,20 +1,22 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.facility;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
-import org.wildfly.common.annotation.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
- * View Model for updating a Facility via REST.
+ * View Model for creating a Facility via REST.
  */
-public record FacilityUpdateVM(
-        @NotNull Long id,
-        String name,
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record FacilityCreateVM(
+        @NotNull String name,
         @NotNull String code,
         @NotNull FacilityType type,
         @Email String emailAddress,
@@ -24,14 +26,13 @@ public record FacilityUpdateVM(
         String addressId,
         @NotNull Currency defaultCurrency,
         Boolean isActive,
-        Long ruleId,
         LocalDate registrationDate,
-        String timeZone
+        String timeZone,
+        List<FacilityWorkingDayCreateVM> workingDays
 ) implements Serializable {
 
-    public static FacilityUpdateVM ofEntity(Facility facility) {
-        return new FacilityUpdateVM(
-                facility.getId(),
+    public static FacilityCreateVM ofEntity(Facility facility) {
+        return new FacilityCreateVM(
                 facility.getName(),
                 facility.getCode(),
                 facility.getType(),
@@ -42,10 +43,13 @@ public record FacilityUpdateVM(
                 facility.getAddressId(),
                 facility.getDefaultCurrency(),
                 facility.getIsActive(),
-                facility.getRuleId(),
                 facility.getRegistrationDate(),
-                facility.getTimeZone()
-
+                facility.getTimeZone(),
+                facility.getWorkingDays() != null
+                        ? facility.getWorkingDays().stream()
+                        .map(FacilityWorkingDayCreateVM::ofEntity)
+                        .toList()
+                        : List.of()
         );
     }
 }

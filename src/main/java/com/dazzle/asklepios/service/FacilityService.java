@@ -2,11 +2,17 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.FacilityWorkingDay;
+import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
+import com.dazzle.asklepios.repository.FacilityWorkingDayRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityCreateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityWorkingDayCreateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityWorkingDayUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,9 +31,12 @@ public class FacilityService {
 
     private final FacilityRepository facilityRepository;
     private final DuplicationCandidateRepository duplicationCandidateRepository;
-    public FacilityService(FacilityRepository facilityRepository, DuplicationCandidateRepository duplicationCandidateRepository) {
+    private final FacilityWorkingDayRepository facilityWorkingDayRepository;
+
+    public FacilityService(FacilityRepository facilityRepository, DuplicationCandidateRepository duplicationCandidateRepository, FacilityWorkingDayRepository facilityWorkingDayRepository) {
         this.facilityRepository = facilityRepository;
         this.duplicationCandidateRepository = duplicationCandidateRepository;
+        this.facilityWorkingDayRepository = facilityWorkingDayRepository;
     }
 
 //     @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
@@ -47,6 +57,8 @@ public class FacilityService {
         facility.setRegistrationDate(vm.registrationDate());
 
         Facility saved = facilityRepository.save(facility);
+        saveWorkingDaysOnCreate(saved, vm.workingDays());
+        loadWorkingDays(saved);
         return FacilityResponseVM.ofEntity(saved);
     }
 
@@ -78,6 +90,11 @@ public class FacilityService {
             if (vm.timeZone() != null) existing.setTimeZone(vm.timeZone());
 
             Facility updated = facilityRepository.save(existing);
+            if (vm.workingDays() != null) {
+                replaceWorkingDays(updated, vm.workingDays());
+            }
+
+            loadWorkingDays(updated);
             LOG.debug("Facility updated successfully: {}", updated);
             return updated;
         });
@@ -125,6 +142,88 @@ public class FacilityService {
                 .toList();
     }
 
+    private void saveWorkingDaysOnCreate(Facility facility, List<FacilityWorkingDayCreateVM> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            facility.setWorkingDays(List.of());
+            return;
+        }
+
+        validateCreateWorkingDays(workingDays);
+
+        List<FacilityWorkingDay> entities = workingDays.stream()
+                .map(item -> {
+                    FacilityWorkingDay row = new FacilityWorkingDay();
+                    row.setFacility(facility);
+                    row.setDayOfWeek(item.dayOfWeek());
+                    row.setIsWorking(item.isWorking());
+                    return row;
+                })
+                .toList();
+
+        facilityWorkingDayRepository.saveAll(entities);
+
+    }
+
+    private void replaceWorkingDays(Facility facility, List<FacilityWorkingDayUpdateVM> workingDays) {
+        validateUpdateWorkingDays(workingDays);
+
+        facilityWorkingDayRepository.deleteAllByFacilityId(facility.getId());
+        facilityWorkingDayRepository.flush();
+
+        if (workingDays.isEmpty()) {
+            facility.setWorkingDays(List.of());
+            return;
+        }
+
+        List<FacilityWorkingDay> entities = workingDays.stream()
+                .map(item -> {
+                    FacilityWorkingDay row = new FacilityWorkingDay();
+                    row.setFacility(facility);
+                    row.setDayOfWeek(item.dayOfWeek());
+                    row.setIsWorking(item.isWorking());
+                    return row;
+                })
+                .toList();
+
+        facilityWorkingDayRepository.saveAll(entities);
+        facilityWorkingDayRepository.flush();
+    }
+
+    private void validateCreateWorkingDays(List<FacilityWorkingDayCreateVM> workingDays) {
+        Set<DayOfWeek> uniqueDays = workingDays.stream()
+                .map(FacilityWorkingDayCreateVM::dayOfWeek)
+                .collect(Collectors.toSet());
+
+        if (uniqueDays.size() != workingDays.size()) {
+            throw new BadRequestAlertException(
+                    "Duplicate working day entries",
+                    "facilityWorkingDay",
+                    "duplicate_day"
+            );
+        }
+    }
+
+    private void validateUpdateWorkingDays(List<FacilityWorkingDayUpdateVM> workingDays) {
+        Set<DayOfWeek> uniqueDays = workingDays.stream()
+                .map(FacilityWorkingDayUpdateVM::dayOfWeek)
+                .collect(Collectors.toSet());
+
+        if (uniqueDays.size() != workingDays.size()) {
+            throw new BadRequestAlertException(
+                    "Duplicate working day entries",
+                    "facilityWorkingDay",
+                    "duplicate_day"
+            );
+        }
+    }
+
+    private void loadWorkingDays(Facility facility) {
+        List<FacilityWorkingDay> workingDays =
+                facilityWorkingDayRepository.findAllByFacilityIdOrderByDayOfWeekAsc(
+                        facility.getId()
+                );
+        facility.setWorkingDays(workingDays);
+    }
 
 
 }

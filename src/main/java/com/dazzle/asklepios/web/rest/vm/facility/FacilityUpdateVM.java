@@ -1,21 +1,22 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.facility;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationWorkingDayUpdateVM;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
+import org.wildfly.common.annotation.NotNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
- * View Model for creating a Facility via REST.
+ * View Model for updating a Facility via REST.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public record FacilityCreateVM(
-        @NotNull String name,
+public record FacilityUpdateVM(
+        @NotNull Long id,
+        String name,
         @NotNull String code,
         @NotNull FacilityType type,
         @Email String emailAddress,
@@ -25,12 +26,15 @@ public record FacilityCreateVM(
         String addressId,
         @NotNull Currency defaultCurrency,
         Boolean isActive,
+        Long ruleId,
         LocalDate registrationDate,
-        String timeZone
+        String timeZone,
+        List<FacilityWorkingDayUpdateVM> workingDays
 ) implements Serializable {
 
-    public static FacilityCreateVM ofEntity(Facility facility) {
-        return new FacilityCreateVM(
+    public static FacilityUpdateVM ofEntity(Facility facility) {
+        return new FacilityUpdateVM(
+                facility.getId(),
                 facility.getName(),
                 facility.getCode(),
                 facility.getType(),
@@ -41,8 +45,15 @@ public record FacilityCreateVM(
                 facility.getAddressId(),
                 facility.getDefaultCurrency(),
                 facility.getIsActive(),
+                facility.getRuleId(),
                 facility.getRegistrationDate(),
-                facility.getTimeZone()
+                facility.getTimeZone(),
+                facility.getWorkingDays() != null
+                        ? facility.getWorkingDays().stream()
+                        .map(FacilityWorkingDayUpdateVM::ofEntity)
+                        .toList()
+                        : List.of()
+
         );
     }
 }

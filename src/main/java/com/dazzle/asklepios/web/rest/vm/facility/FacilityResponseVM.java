@@ -1,12 +1,12 @@
-package com.dazzle.asklepios.web.rest.vm;
+package com.dazzle.asklepios.web.rest.vm.facility;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import org.wildfly.common.annotation.NotNull;
 
-
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * View Model for reading a Facility via REST.
@@ -24,7 +24,9 @@ public record FacilityResponseVM(
         Currency defaultCurrency,
         Boolean isActive,
         Long ruleId,
-        String timeZone
+        String timeZone,
+        List<FacilityWorkingDayCreateVM> workingDays
+
 ) implements Serializable {
 
     public static FacilityResponseVM ofEntity(Facility facility) {
@@ -41,7 +43,12 @@ public record FacilityResponseVM(
                 facility.getDefaultCurrency(),
                 facility.getIsActive(),
                 facility.getRuleId(),
-                facility.getTimeZone()
+                facility.getTimeZone(),
+                facility.getWorkingDays() != null
+                        ? facility.getWorkingDays().stream()
+                        .map(FacilityWorkingDayCreateVM::ofEntity)
+                        .toList()
+                        : List.of()
         );
     }
 }

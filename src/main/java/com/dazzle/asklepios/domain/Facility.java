@@ -6,9 +6,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +22,7 @@ import lombok.Setter;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Getter
@@ -82,4 +85,6 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name = "time_zone", length = 100)
     private String timeZone;
 
+    @OneToMany(mappedBy = "facility" , fetch = FetchType.LAZY)
+    private List<FacilityWorkingDay> workingDays;
 }
