@@ -109,6 +109,7 @@ public class FacilityService {
         facilityRepository.deleteById(id);
         return true;
     }
+
     @Transactional(readOnly = true)
     public List<FacilityResponseVM> findUnlinkedOrLinkedToRule(Long ruleId) {
         LOG.debug("Request to get all Facilities unlinked or linked to roleId={}", ruleId);
@@ -124,6 +125,12 @@ public class FacilityService {
                 .toList();
     }
 
-
+    @Transactional(readOnly = true)
+    public List<FacilityResponseVM> findActiveFacilities() {
+        return facilityRepository.findByIsActiveTrue()
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .toList();
+    }
 
 }

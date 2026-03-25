@@ -126,4 +126,9 @@ public class FacilityController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<FacilityResponseVM>> getActiveFacilities() {
+        return ResponseEntity.ok(facilityService.findActiveFacilities());
+    }
+
 }
