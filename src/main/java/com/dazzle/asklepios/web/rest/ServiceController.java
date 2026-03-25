@@ -56,6 +56,11 @@ public class ServiceController {
                 .price(vm.price())
                 .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
+                .appointable(vm.appointable())
+                .parallelCapacityValue(vm.parallelCapacityValue())
+                .defaultDurationMinutes(vm.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes())
+                .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes())
                 .build();
 
         ServiceSetup created = serviceService.create(facilityId, toCreate);
@@ -82,7 +87,11 @@ public class ServiceController {
         patch.setPrice(vm.price());
         patch.setCurrency(vm.currency());
         patch.setIsActive(vm.isActive());
-        patch.setLastModifiedBy(vm.lastModifiedBy());
+        patch.setAppointable(vm.appointable());
+        patch.setParallelCapacityValue(vm.parallelCapacityValue());
+        patch.setDefaultDurationMinutes(vm.defaultDurationMinutes());
+        patch.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+        patch.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
 
         return serviceService.update(id, facilityId, patch)
                 .map(ServiceResponseVM::ofEntity)

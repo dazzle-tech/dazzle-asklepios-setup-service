@@ -15,7 +15,12 @@ public record ServiceResponseVM(
         BigDecimal price,
         Currency currency,
         Boolean isActive,
-        Long facilityId
+        Long facilityId,
+        Boolean appointable,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes
 ) implements Serializable {
 
     public static ServiceResponseVM ofEntity(ServiceSetup service) {
@@ -28,7 +33,12 @@ public record ServiceResponseVM(
                 service.getPrice(),
                 service.getCurrency(),
                 service.getIsActive(),
-                service.getFacility() != null ? service.getFacility().getId() : null
+                service.getFacility() != null ? service.getFacility().getId() : null,
+                service.getAppointable(),
+                service.getParallelCapacityValue(),
+                service.getDefaultDurationMinutes(),
+                service.getDefaultBufferBeforeMinutes(),
+                service.getDefaultBufferAfterMinutes()
         );
     }
 }
