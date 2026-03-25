@@ -150,7 +150,8 @@ public enum Screen {
     // System Configurations
     ORGANIZATION_DEFINITION,
     GENERAL_SETTINGS,
-    CONFIGURATIONS
+    CONFIGURATIONS,
+    ORGANIZATION_HOLIDAY,
     ;
     @JsonCreator
     public static Screen fromValue(String value) {

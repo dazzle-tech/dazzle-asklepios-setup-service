@@ -1,15 +1,15 @@
 package com.dazzle.asklepios.web.rest.vm.organizationDefinition;
 
+import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
 import com.dazzle.asklepios.domain.enumeration.TimeZone;
-import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public record OrganizationDefinitionUpdateVM(
-        @NotNull Long id,
-        @NotNull String name,
+public record OrganizationDefinitionResponseVM(
+        Long id,
+        String name,
         String description,
         String address,
         String contactName,
@@ -17,15 +17,15 @@ public record OrganizationDefinitionUpdateVM(
         String contactEmail,
         String contactMobile,
         String contactLandNumber,
-        @NotNull BigDecimal taxValue,
-        @NotNull TimeZone defaultTimeZone,
-        @NotNull Long defaultLanguageId,
-        List<OrganizationWorkingDayUpdateVM> workingDays
-
+        BigDecimal taxValue,
+        TimeZone defaultTimeZone,
+        Long defaultLanguageId,
+        String defaultLanguageName,
+        List<OrganizationWorkingDayCreateVM> workingDays
 ) {
-    public static OrganizationDefinitionUpdateVM ofEntity(OrganizationDefinition entity) {
+    public static OrganizationDefinitionResponseVM ofEntity(OrganizationDefinition entity) {
         if (entity == null) return null;
-        return new OrganizationDefinitionUpdateVM(
+        return new OrganizationDefinitionResponseVM(
                 entity.getId(),
                 entity.getName(),
                 entity.getDescription(),
@@ -37,12 +37,14 @@ public record OrganizationDefinitionUpdateVM(
                 entity.getContactLandNumber(),
                 entity.getTaxValue(),
                 entity.getDefaultTimeZone(),
-                entity.getDefaultLanguage()!=null?entity.getDefaultLanguage().getId():null,
+                entity.getDefaultLanguage() != null ? entity.getDefaultLanguage().getId() : null,
+                entity.getDefaultLanguage() != null ? entity.getDefaultLanguage().getLangName() : null,
                 entity.getWorkingDays() != null
                         ? entity.getWorkingDays().stream()
-                        .map(OrganizationWorkingDayUpdateVM::ofEntity)
+                        .map(OrganizationWorkingDayCreateVM::ofEntity)
                         .toList()
                         : List.of()
+
         );
     }
 }
