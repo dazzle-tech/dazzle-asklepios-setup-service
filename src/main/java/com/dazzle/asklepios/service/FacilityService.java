@@ -15,6 +15,8 @@ import com.dazzle.asklepios.web.rest.vm.facility.FacilityWorkingDayCreateVM;
 import com.dazzle.asklepios.web.rest.vm.facility.FacilityWorkingDayUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
 @Transactional
@@ -55,49 +59,58 @@ public class FacilityService {
         facility.setDefaultCurrency(vm.defaultCurrency());
         facility.setTimeZone(vm.timeZone());
         facility.setRegistrationDate(vm.registrationDate());
+        try {
+            Facility saved = facilityRepository.save(facility);
+            saveWorkingDaysOnCreate(saved, vm.workingDays());
+            loadWorkingDays(saved);
+            return FacilityResponseVM.ofEntity(saved);
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            throw handleConstraintViolation(constraintException);
 
-        Facility saved = facilityRepository.save(facility);
-        saveWorkingDaysOnCreate(saved, vm.workingDays());
-        loadWorkingDays(saved);
-        return FacilityResponseVM.ofEntity(saved);
+        }
     }
 
 
 //    @CacheEvict(cacheNames = FacilityRepository.FACILITIES, key = "'all'")
     public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
         LOG.debug("Request to update Facility id={} with {}", id, vm);
+        try {
+            return facilityRepository.findById(id).map(existing -> {
+                if (vm.name() != null) existing.setName(vm.name());
+                if (vm.type() != null) existing.setType(vm.type());
+                if (vm.code() != null) existing.setCode(vm.code());
+                if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
+                if (vm.registrationDate() != null) existing.setRegistrationDate(vm.registrationDate());
+                if (vm.phone1() != null) existing.setPhone1(vm.phone1());
+                if (vm.phone2() != null) existing.setPhone2(vm.phone2());
+                if (vm.fax() != null) existing.setFax(vm.fax());
+                if (vm.addressId() != null) existing.setAddressId(vm.addressId());
+                if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+                existing.setDefaultCurrency(vm.defaultCurrency());
+                if (vm.ruleId() != null) {
 
-        return facilityRepository.findById(id).map(existing -> {
-            if (vm.name() != null) existing.setName(vm.name());
-            if (vm.type() != null) existing.setType(vm.type());
-            if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
-            if (vm.registrationDate() != null) existing.setRegistrationDate(vm.registrationDate());
-            if (vm.phone1() != null) existing.setPhone1(vm.phone1());
-            if (vm.phone2() != null) existing.setPhone2(vm.phone2());
-            if (vm.fax() != null) existing.setFax(vm.fax());
-            if (vm.addressId() != null) existing.setAddressId(vm.addressId());
-            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
-            existing.setDefaultCurrency(vm.defaultCurrency());
-            if (vm.ruleId() != null) {
+                    DuplicationCandidate candidate = new DuplicationCandidate();
+                    candidate.setId(vm.ruleId());
+                    existing.setRuleId(candidate.getId());
+                } else {
 
-                DuplicationCandidate candidate = new DuplicationCandidate();
-                candidate.setId(vm.ruleId());
-                existing.setRuleId(candidate.getId());
-            } else {
+                    existing.setRuleId(null);
+                }
+                if (vm.timeZone() != null) existing.setTimeZone(vm.timeZone());
 
-                existing.setRuleId(null);
-            }
-            if (vm.timeZone() != null) existing.setTimeZone(vm.timeZone());
+                Facility updated = facilityRepository.save(existing);
+                if (vm.workingDays() != null) {
+                    replaceWorkingDays(updated, vm.workingDays());
+                }
 
-            Facility updated = facilityRepository.save(existing);
-            if (vm.workingDays() != null) {
-                replaceWorkingDays(updated, vm.workingDays());
-            }
+                loadWorkingDays(updated);
+                LOG.debug("Facility updated successfully: {}", updated);
+                return updated;
+            });
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            throw handleConstraintViolation(constraintException);
 
-            loadWorkingDays(updated);
-            LOG.debug("Facility updated successfully: {}", updated);
-            return updated;
-        });
+        }
     }
 
 
@@ -225,5 +238,26 @@ public class FacilityService {
         facility.setWorkingDays(workingDays);
     }
 
+    private BadRequestAlertException handleConstraintViolation(RuntimeException constraintException) {
+        Throwable root = getRootCause(constraintException);
+        String message = (root != null ? root.getMessage() : constraintException.getMessage());
+        String msgLower = message != null ? message.toLowerCase() : "";
 
+        LOG.error("Database constraint violation while saving facility: {}", message, constraintException);
+
+        if (msgLower.contains("uk_facility_code")) {
+
+            return new BadRequestAlertException(
+                    "code",
+                    "facility",
+                    "This code already exists"
+            );
+        }
+
+        return new BadRequestAlertException(
+                "db.constraint",
+                "facility",
+                "Database constraint violated while saving facility"
+        );
+    }
 }
