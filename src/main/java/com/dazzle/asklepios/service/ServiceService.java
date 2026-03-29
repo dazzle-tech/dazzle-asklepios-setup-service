@@ -213,7 +213,12 @@ public class ServiceService {
 
         return serviceRepository.findByIdIn(serviceIds, pageable);
     }
- 
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findActiveByFacility(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching active Services by facilityId={} pageable={}", facilityId, pageable);
+        return serviceRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
+    }
 
     public List<ServiceSetup> findAllByIds(List<Long> ids) {
         return serviceRepository.findAllById(ids);

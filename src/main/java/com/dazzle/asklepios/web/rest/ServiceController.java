@@ -222,4 +222,20 @@ public class ServiceController {
         return ResponseEntity.ok(body);
     }
 
+    @GetMapping("/service/active/by-facility/{facilityId}")
+    public ResponseEntity<List<ServiceSetup>> findActiveByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to get active Services by facilityId={} pageable={}", facilityId, pageable);
+
+        Page<ServiceSetup> page = serviceService.findActiveByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
 }

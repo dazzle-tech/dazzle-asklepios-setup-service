@@ -24,4 +24,6 @@ public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
 
     Page<ServiceSetup> findByIdIn(List<Long> ids, Pageable pageable);
 
+    Page<ServiceSetup> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
+
 }
