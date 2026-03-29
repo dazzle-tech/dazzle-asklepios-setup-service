@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
@@ -14,8 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -155,8 +158,10 @@ public class PractitionerService {
         if (vm.secondaryMedicalLicense() != null) practitioner.setSecondaryMedicalLicense(vm.secondaryMedicalLicense());
         if (vm.educationalLevel() != null) practitioner.setEducationalLevel(vm.educationalLevel());
         if (vm.appointable() != null) practitioner.setAppointable(vm.appointable());
-        if (vm.defaultLicenseValidUntil() != null) practitioner.setDefaultLicenseValidUntil(vm.defaultLicenseValidUntil());
-        if (vm.secondaryLicenseValidUntil() != null) practitioner.setSecondaryLicenseValidUntil(vm.secondaryLicenseValidUntil());
+        if (vm.defaultLicenseValidUntil() != null)
+            practitioner.setDefaultLicenseValidUntil(vm.defaultLicenseValidUntil());
+        if (vm.secondaryLicenseValidUntil() != null)
+            practitioner.setSecondaryLicenseValidUntil(vm.secondaryLicenseValidUntil());
         if (vm.dateOfBirth() != null) practitioner.setDateOfBirth(vm.dateOfBirth());
         if (vm.jobRole() != null) practitioner.setJobRole(vm.jobRole());
         if (vm.gender() != null) practitioner.setGender(vm.gender());
@@ -164,8 +169,10 @@ public class PractitionerService {
 
         if (vm.parallelCapacityValue() != null) practitioner.setParallelCapacityValue(vm.parallelCapacityValue());
         if (vm.defaultDurationMinutes() != null) practitioner.setDefaultDurationMinutes(vm.defaultDurationMinutes());
-        if (vm.defaultBufferBeforeMinutes() != null) practitioner.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
-        if (vm.defaultBufferAfterMinutes() != null) practitioner.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+        if (vm.defaultBufferBeforeMinutes() != null)
+            practitioner.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+        if (vm.defaultBufferAfterMinutes() != null)
+            practitioner.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
 
         validatePractitioner(practitioner);
 
@@ -233,6 +240,12 @@ public class PractitionerService {
         return practitionerRepository.findByIsActiveTrueAndAppointableTrue(pageable);
     }
 
+    public Page<Practitioner> findActiveAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Practitionerpageable={} is", pageable);
+        Long facilityId = getFacility();
+        return practitionerRepository.findByIsActiveTrueAndAppointableTrueAndFacility_Id(facilityId, pageable);
+    }
+
     @Transactional(readOnly = true)
     public Optional<Practitioner> findOne(Long id) {
         return practitionerRepository.findById(id);
@@ -285,5 +298,12 @@ public class PractitionerService {
                         Specialty.SPECIALIST,
                         pageable
                 );
+    }
+
+    private Long getFacility() {
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 }

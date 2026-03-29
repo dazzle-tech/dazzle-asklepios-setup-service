@@ -11,6 +11,7 @@ import com.dazzle.asklepios.repository.CatalogRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
@@ -23,8 +24,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -272,5 +275,16 @@ public class CatalogService {
     }
     public Page<Catalog> findByDepartmentOrUnassigned(Long departmentId, Pageable pageable) {
         return catalogRepository.findByDepartmentIdOrDepartmentIdIsNull(departmentId, pageable);
+    }
+    public Page<Catalog> findAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  catalog pageable={} is", pageable);
+        Long facilityId = getFacility();
+        return catalogRepository.findByAppointableTrueAndFacility_Id(facilityId, pageable);
+    }
+    private Long getFacility(){
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 }

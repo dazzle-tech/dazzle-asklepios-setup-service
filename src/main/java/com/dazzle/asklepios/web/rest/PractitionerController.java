@@ -266,6 +266,21 @@ public class PractitionerController {
                         )
         );
     }
+    @GetMapping("/practitioner/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<PractitionerResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
 
+        Page<Practitioner> page = practitionerService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
 
 }

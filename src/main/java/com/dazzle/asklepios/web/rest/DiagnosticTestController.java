@@ -177,7 +177,7 @@ public class DiagnosticTestController {
     }
 
     @PatchMapping("/diagnostic-test/{id}/toggle-active")
-    public ResponseEntity<DiagnosticTestResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
+    public ResponseEntity<DiagnosticTestResponseVM> toggleActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
 
         return service.toggleIsActive(id)

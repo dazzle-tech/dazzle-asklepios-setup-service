@@ -9,6 +9,7 @@ import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
@@ -16,8 +17,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Objects;
@@ -300,7 +303,12 @@ public class DepartmentService {
         LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
     }
-
+    @Transactional(readOnly = true)
+    public Page<Department> findAppointableDepartmentByLoggedInFacility(Pageable pageable) {
+        LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
+        Long facilityId=getFacility();
+        return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
+    }
     @Transactional(readOnly = true)
     public Page<Department> findAppointableActiveByFacilityAndEncounterType(
             Long facilityId,
@@ -346,5 +354,12 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public List<Department> findByIds(List<Long> ids) {
         return departmentRepository.findAllById(ids);
+    }
+
+    private Long getFacility(){
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 }
