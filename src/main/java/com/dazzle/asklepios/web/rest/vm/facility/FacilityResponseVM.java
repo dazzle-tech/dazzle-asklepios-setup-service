@@ -14,7 +14,7 @@ import java.util.List;
 public record FacilityResponseVM(
         Long id,
         String name,
-        @NotNull String code,
+        String code,
         FacilityType type,
         String emailAddress,
         String phone1,
