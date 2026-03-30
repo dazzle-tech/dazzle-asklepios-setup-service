@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
 import com.dazzle.asklepios.repository.ServiceItemsRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
@@ -15,9 +16,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -282,8 +285,20 @@ public class ServiceService {
     public List<ServiceSetup> findAllByIds(List<Long> ids) {
         return serviceRepository.findAllById(ids);
     }
+    public Page<ServiceSetup> findActiveAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Service pageable={} is", pageable);
+        Long facilityId = getFacility();
+        return serviceRepository.findByIsActiveTrueAndAppointableTrueAndFacility_Id(facilityId, pageable);
+    }
 
     private Facility refFacility(Long facilityId) {
         return entityManager.getReference(Facility.class, facilityId);
+    }
+
+    private Long getFacility(){
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 }

@@ -12,6 +12,8 @@ import com.dazzle.asklepios.web.rest.vm.facility.FacilityResponseVM;
 import com.dazzle.asklepios.web.rest.vm.facility.FacilityUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
 @Transactional
@@ -52,17 +56,17 @@ public class FacilityService {
         facility.setDefaultCurrency(vm.defaultCurrency());
         facility.setTimeZone(vm.timeZone());
         facility.setRegistrationDate(vm.registrationDate());
-
         validateWorkingDays(vm.workingDays());
         facility.setWorkingDays(vm.workingDays() == null ? List.of() : vm.workingDays());
 
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
+
     }
 
     public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
         LOG.debug("Request to update Facility id={} with {}", id, vm);
-
+        try {
         return facilityRepository.findById(id).map(existing -> {
             if (vm.name() != null) existing.setName(vm.name());
             if (vm.type() != null) existing.setType(vm.type());
@@ -94,6 +98,9 @@ public class FacilityService {
             LOG.debug("Facility updated successfully: {}", updated);
             return updated;
         });
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            throw handleConstraintViolation(constraintException);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -152,5 +159,28 @@ public class FacilityService {
                     "duplicate_day"
             );
         }
+    }
+
+    private BadRequestAlertException handleConstraintViolation(RuntimeException constraintException) {
+        Throwable root = getRootCause(constraintException);
+        String message = (root != null ? root.getMessage() : constraintException.getMessage());
+        String msgLower = message != null ? message.toLowerCase() : "";
+
+        LOG.error("Database constraint violation while saving facility: {}", message, constraintException);
+
+        if (msgLower.contains("uk_facility_code")) {
+
+            return new BadRequestAlertException(
+                    "code",
+                    "facility",
+                    "This code already exists"
+            );
+        }
+
+        return new BadRequestAlertException(
+                "db.constraint",
+                "facility",
+                "Database constraint violated while saving facility"
+        );
     }
 }

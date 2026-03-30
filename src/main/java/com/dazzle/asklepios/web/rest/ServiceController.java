@@ -230,5 +230,21 @@ public class ServiceController {
 
         return ResponseEntity.ok(body);
     }
+    @GetMapping("/service/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<ServiceResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable service pageable={}", pageable);
+
+        Page<ServiceSetup> page = serviceService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
 
 }
