@@ -10,6 +10,5 @@ public record PolicyDefinitionUpdateDTO(
         @NotNull Long facilityId,
         @NotBlank String code,
         @NotBlank String name,
-        String description,
-        @NotNull Boolean isActive
+        String description
 )implements Serializable {}

@@ -5,6 +5,7 @@ import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.PolicyDefinitionService;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionCreateDTO;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionUpdateDTO;
+import com.dazzle.asklepios.web.rest.vm.policyDefinition.PolicyDefinitionResponseVM;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +68,7 @@ public class PolicyDefinitionController {
     }
 
     @GetMapping("/policy-definition")
-    public ResponseEntity<List<PolicyDefinition>> getAllPolicyDefinition(
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinition(
             @ParameterObject Pageable pageable) {
         LOG.debug("REST get all policy definition");
         Page<PolicyDefinition> page = policyDefinitionService.findAll(pageable);
@@ -75,7 +76,62 @@ public class PolicyDefinitionController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
-        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/policy-definition/by-facility")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinitionByFacility(
+            @RequestParam Long facilityId,
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get policy definition by facilityId={}", facilityId);
+        Page<PolicyDefinition> page = policyDefinitionService.findByFacilityId(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/policy-definition/by-code")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinitionByCode(
+            @RequestParam String code,
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get policy definition by code='{}'", code);
+        Page<PolicyDefinition> page = policyDefinitionService.findByCode(code, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/policy-definition/by-name")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinitionByName(
+            @RequestParam String name,
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get policy definition by name='{}'", name);
+        Page<PolicyDefinition> page = policyDefinitionService.findByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/policy-definition/{id}")

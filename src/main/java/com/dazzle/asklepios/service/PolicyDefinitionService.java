@@ -45,7 +45,7 @@ public class PolicyDefinitionService {
                 .name(policyDefinitionCreateDTO.name())
                 .code(policyDefinitionCreateDTO.code())
                 .description(policyDefinitionCreateDTO.description())
-                .isActive(policyDefinitionCreateDTO.isActive())
+                .isActive(true)
                 .build();
 
         return policyDefinitionRepository.save(policyDefinitionToCreate);
@@ -70,7 +70,6 @@ public class PolicyDefinitionService {
         entity.setCode(policyDefinitionUpdateDTO.code());
         entity.setName(policyDefinitionUpdateDTO.name());
         entity.setDescription(policyDefinitionUpdateDTO.description());
-        entity.setIsActive(policyDefinitionUpdateDTO.isActive());  // اتأكد
 
         try {
             PolicyDefinition updated = policyDefinitionRepository.saveAndFlush(entity);
@@ -93,6 +92,24 @@ public class PolicyDefinitionService {
     public Page<PolicyDefinition> findAll(Pageable pageable) {
         LOG.debug("Request to get all PolicyDefinition");
        return policyDefinitionRepository.findAll(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get PolicyDefinition by facilityId={} pageable={}", facilityId, pageable);
+        return policyDefinitionRepository.findByFacility_Id(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findByCode(String code, Pageable pageable) {
+        LOG.debug("Request to get PolicyDefinition by code='{}' pageable={}", code, pageable);
+        return policyDefinitionRepository.findByCodeContainingIgnoreCase(code, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findByName(String name, Pageable pageable) {
+        LOG.debug("Request to get PolicyDefinition by name='{}' pageable={}", name, pageable);
+        return policyDefinitionRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
     public Optional<PolicyDefinition> toggleActive(Long id) {
