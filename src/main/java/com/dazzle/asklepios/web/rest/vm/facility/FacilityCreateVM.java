@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.facility;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
@@ -28,7 +29,7 @@ public record FacilityCreateVM(
         Boolean isActive,
         LocalDate registrationDate,
         String timeZone,
-        List<FacilityWorkingDayCreateVM> workingDays
+        List<WorkingDayJson> workingDays
 ) implements Serializable {
 
     public static FacilityCreateVM ofEntity(Facility facility) {
@@ -45,11 +46,7 @@ public record FacilityCreateVM(
                 facility.getIsActive(),
                 facility.getRegistrationDate(),
                 facility.getTimeZone(),
-                facility.getWorkingDays() != null
-                        ? facility.getWorkingDays().stream()
-                        .map(FacilityWorkingDayCreateVM::ofEntity)
-                        .toList()
-                        : List.of()
+                facility.getWorkingDays()
         );
     }
 }

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +19,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -85,6 +88,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name = "time_zone", length = 100)
     private String timeZone;
 
-    @OneToMany(mappedBy = "facility" , fetch = FetchType.LAZY)
-    private List<FacilityWorkingDay> workingDays;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "working_days", columnDefinition = "json")
+    private List<WorkingDayJson> workingDays;
 }
