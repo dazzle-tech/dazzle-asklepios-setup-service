@@ -137,7 +137,7 @@ public class PolicyDefinitionService {
         String message = (root != null ? root.getMessage() : constraintException.getMessage());
         String msgLower = message != null ? message.toLowerCase() : "";
 
-        LOG.error("Database constraint violation while saving patient allergy: {}", message, constraintException);
+        LOG.error("Database constraint violation while saving policy definition: {}", message, constraintException);
 
         if (msgLower.contains("uk_policy_definition_code")) {
 
@@ -151,7 +151,7 @@ public class PolicyDefinitionService {
         return new BadRequestAlertException(
                 "db.constraint",
                 "policy_definition",
-                "Database constraint violated while saving policy_definition"
+                "Database constraint violated while saving policy definition"
         );
     }
 
