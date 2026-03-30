@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.domain.enumeration;
+package com.dazzle.asklepios.domain.enumeration.patient;
 
 public enum SlotStrategy {
     FIXED_DURATION,
