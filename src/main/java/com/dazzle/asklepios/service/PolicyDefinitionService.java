@@ -151,7 +151,7 @@ public class PolicyDefinitionService {
         return new BadRequestAlertException(
                 "db.constraint",
                 "policy_definition",
-                "Database constraint violated while saving patient allergy"
+                "Database constraint violated while saving policy_definition"
         );
     }
 
