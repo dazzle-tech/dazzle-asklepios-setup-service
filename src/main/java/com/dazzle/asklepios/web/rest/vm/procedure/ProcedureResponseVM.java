@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 
@@ -15,7 +17,9 @@ public record ProcedureResponseVM(
         String preparationInstructions,
         String recoveryNotes,
         Boolean isActive,
-        Long facilityId
+        Long facilityId,
+       Currency currency,
+       Long price
 ) implements Serializable {
 
     public static ProcedureResponseVM ofEntity(Procedure procedure) {
@@ -30,7 +34,9 @@ public record ProcedureResponseVM(
                 procedure.getPreparationInstructions(),
                 procedure.getRecoveryNotes(),
                 procedure.getIsActive(),
-                procedure.getFacility() != null ? procedure.getFacility().getId() : null
+                procedure.getFacility() != null ? procedure.getFacility().getId() : null,
+                procedure.getCurrency(),
+                procedure.getPrice()
         );
     }
 }
