@@ -2,7 +2,6 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.PolicyDefinition;
-import com.dazzle.asklepios.domain.enumeration.AllergenTypes;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PolicyDefinitionRepository;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionCreateDTO;
