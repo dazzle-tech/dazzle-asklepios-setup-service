@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.PolicyDefinition;
+import com.dazzle.asklepios.domain.enumeration.AllergenTypes;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PolicyDefinitionRepository;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionCreateDTO;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
 @Transactional
@@ -48,8 +51,16 @@ public class PolicyDefinitionService {
                 .isActive(true)
                 .build();
 
-        return policyDefinitionRepository.save(policyDefinitionToCreate);
-        // add function for errors, add to gateway uniqueConstraints for code
+        try {
+            PolicyDefinition saved = policyDefinitionRepository.save(policyDefinitionToCreate);
+
+
+            LOG.debug("Created PolicyDefinition: {}", saved);
+            return saved;
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+            throw handleConstraintViolation(constraintException);
+
+        }
     }
 
     public PolicyDefinition update(PolicyDefinitionUpdateDTO policyDefinitionUpdateDTO) {
@@ -77,8 +88,7 @@ public class PolicyDefinitionService {
             return updated;
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             LOG.debug("Constraint violation caught during update");
-            return null;
-//            throw handleConstraintViolation(constraintException);   اعمله
+            throw handleConstraintViolation(constraintException);
         }
     }
 
@@ -120,6 +130,29 @@ public class PolicyDefinitionService {
                     existing.setIsActive(!Boolean.TRUE.equals(existing.getIsActive()));
                     return policyDefinitionRepository.save(existing);
                 });
+    }
+
+    private BadRequestAlertException handleConstraintViolation(RuntimeException constraintException) {
+        Throwable root = getRootCause(constraintException);
+        String message = (root != null ? root.getMessage() : constraintException.getMessage());
+        String msgLower = message != null ? message.toLowerCase() : "";
+
+        LOG.error("Database constraint violation while saving patient allergy: {}", message, constraintException);
+
+        if (msgLower.contains("uk_policy_definition_code")) {
+
+            return new BadRequestAlertException(
+                    "code",
+                    "policy_definition",
+                    "This code already exists"
+            );
+        }
+
+        return new BadRequestAlertException(
+                "db.constraint",
+                "policy_definition",
+                "Database constraint violated while saving patient allergy"
+        );
     }
 
 }

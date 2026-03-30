@@ -44,7 +44,7 @@ public class PolicyDefinitionController {
 
     @PostMapping("/policy-definition")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<PolicyDefinition> createPolicyDefinition(
+    public ResponseEntity<PolicyDefinitionResponseVM> createPolicyDefinition(
             @Valid @RequestBody PolicyDefinitionCreateDTO policyDefinitionCreateDTO
     ) {
         LOG.debug("REST request to create PolicyDefinition : {}", policyDefinitionCreateDTO);
@@ -53,18 +53,18 @@ public class PolicyDefinitionController {
 
         return ResponseEntity
                 .created(URI.create("/api/setup/policy-definition/" + created.getId()))
-                .body(created);
+                .body(PolicyDefinitionResponseVM.ofEntity(created));
     }
 
     @PutMapping("/policy-definition")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<PolicyDefinition> updatePolicyDefinition(
+    public ResponseEntity<PolicyDefinitionResponseVM> updatePolicyDefinition(
             @Valid @RequestBody PolicyDefinitionUpdateDTO policyDefinitionUpdateDTO
     ) {
         LOG.debug("REST request to update PolicyDefinition : {}", policyDefinitionUpdateDTO);
 
         PolicyDefinition updated = policyDefinitionService.update(policyDefinitionUpdateDTO);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(PolicyDefinitionResponseVM.ofEntity(updated));
     }
 
     @GetMapping("/policy-definition")
@@ -136,20 +136,23 @@ public class PolicyDefinitionController {
 
     @GetMapping("/policy-definition/{id}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<PolicyDefinition> getOnePolicyDefinitionById(@PathVariable Long id) {
+    public ResponseEntity<PolicyDefinitionResponseVM> getOnePolicyDefinitionById(@PathVariable Long id) {
         LOG.debug("REST request to get PolicyDefinition : {}", id);
 
         return policyDefinitionService.findOne(id)
+                .map(PolicyDefinitionResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/policy-definition/{id}/toggle-active")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<PolicyDefinition> togglePolicyDefinitionActive(@PathVariable Long id) {
+    public ResponseEntity<PolicyDefinitionResponseVM> togglePolicyDefinitionActive(@PathVariable Long id) {
         LOG.debug("REST request to toggle active PolicyDefinition : {}", id);
 
-        return policyDefinitionService.toggleActive(id).map(ResponseEntity::ok)
+        return policyDefinitionService.toggleActive(id)
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
