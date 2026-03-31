@@ -116,6 +116,14 @@ public class OrganizationHolidayService {
     }
 
     @Transactional(readOnly = true)
+    public List<OrganizationHoliday> getActiveHolidaysInRange(LocalDate start, LocalDate end) {
+        LOG.debug("Request to get active holidays between {} and {}", start, end);
+
+        return organizationHolidayRepository
+                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqual(start, end);
+    }
+
+    @Transactional(readOnly = true)
     public List<OrganizationHoliday> findAll() {
         LOG.debug("Request to get all OrganizationHolidays");
         return organizationHolidayRepository.findAllByOrderByStartDateDesc();

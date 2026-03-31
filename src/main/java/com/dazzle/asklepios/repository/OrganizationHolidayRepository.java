@@ -4,10 +4,15 @@ import com.dazzle.asklepios.domain.OrganizationHoliday;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 
 public interface OrganizationHolidayRepository extends JpaRepository<OrganizationHoliday, Long>, JpaSpecificationExecutor<OrganizationHoliday> {
     List<OrganizationHoliday> findAllByOrderByStartDateDesc();
 
     List<OrganizationHoliday> findAllByIsActiveTrueOrderByStartDateDesc();
+
+    List<OrganizationHoliday> findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqual(LocalDate start, LocalDate end);
+
 }

@@ -6,6 +6,7 @@ import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.OrganizationHolidayService;
 import com.dazzle.asklepios.service.dto.organizationHoliday.OrganizationHolidayCreateDTO;
 import com.dazzle.asklepios.service.dto.organizationHoliday.OrganizationHolidayUpdateDTO;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.OrganizationHolidayResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -83,6 +84,36 @@ public class OrganizationHolidayController {
                 .stream()
                 .map(OrganizationHolidayResponseVM::ofEntity)
                 .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/organization-holiday/by-date-range")
+    public ResponseEntity<List<OrganizationHoliday>> getActiveHolidaysInRange(
+            @RequestParam("fromDate") LocalDate fromDate,
+            @RequestParam("toDate") LocalDate toDate
+    ) {
+        LOG.debug("REST request to get active holidays between {} and {}", fromDate, toDate);
+
+        if (fromDate == null || toDate == null) {
+            throw new BadRequestAlertException(
+                    "From date and to date are required",
+                    "organizationHoliday",
+                    "datenull"
+            );
+        }
+
+        if (toDate.isBefore(fromDate)) {
+            throw new BadRequestAlertException(
+                    "To date cannot be before from date",
+                    "organizationHoliday",
+                    "dateinvalid"
+            );
+        }
+
+
+        List<OrganizationHoliday> result =
+                organizationHolidayService.getActiveHolidaysInRange(fromDate, toDate);
 
         return ResponseEntity.ok(result);
     }
