@@ -13,6 +13,9 @@ public interface OrganizationHolidayRepository extends JpaRepository<Organizatio
 
     List<OrganizationHoliday> findAllByIsActiveTrueOrderByStartDateDesc();
 
-    List<OrganizationHoliday> findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqual(LocalDate start, LocalDate end);
+    List<OrganizationHoliday> findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndAllFacilitiesFalse(LocalDate start, LocalDate end);
+
+    List<OrganizationHoliday> findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndFacilityIdsContainsIgnoreCase(LocalDate start, LocalDate end , String facility);
+
 
 }

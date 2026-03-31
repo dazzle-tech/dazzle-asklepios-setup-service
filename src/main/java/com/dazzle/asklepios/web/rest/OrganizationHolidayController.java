@@ -91,9 +91,18 @@ public class OrganizationHolidayController {
     @GetMapping("/organization-holiday/by-date-range")
     public ResponseEntity<List<OrganizationHoliday>> getActiveHolidaysInRange(
             @RequestParam("fromDate") LocalDate fromDate,
-            @RequestParam("toDate") LocalDate toDate
+            @RequestParam("toDate") LocalDate toDate,
+            @RequestParam Long facilityId
     ) {
         LOG.debug("REST request to get active holidays between {} and {}", fromDate, toDate);
+
+        if(facilityId == null ){
+            throw new BadRequestAlertException(
+                    "Facility are required",
+                    "organizationHoliday",
+                    "datenull"
+            );
+        }
 
         if (fromDate == null || toDate == null) {
             throw new BadRequestAlertException(
@@ -113,7 +122,7 @@ public class OrganizationHolidayController {
 
 
         List<OrganizationHoliday> result =
-                organizationHolidayService.getActiveHolidaysInRange(fromDate, toDate);
+                organizationHolidayService.getActiveHolidaysInRange(facilityId , fromDate, toDate);
 
         return ResponseEntity.ok(result);
     }

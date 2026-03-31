@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
 import com.dazzle.asklepios.domain.OrganizationHoliday;
 import com.dazzle.asklepios.domain.enumeration.HolidayType;
+import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.OrganizationDefinitionRepository;
 import com.dazzle.asklepios.repository.OrganizationHolidayRepository;
 import com.dazzle.asklepios.service.dto.organizationHoliday.OrganizationHolidayCreateDTO;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Transactional
@@ -29,13 +31,15 @@ public class OrganizationHolidayService {
 
     private final OrganizationHolidayRepository organizationHolidayRepository;
     private final OrganizationDefinitionRepository organizationDefinitionRepository;
+    private final FacilityRepository facilityRepository;
 
     public OrganizationHolidayService(
             OrganizationHolidayRepository organizationHolidayRepository,
-            OrganizationDefinitionRepository organizationDefinitionRepository
-    ) {
+            OrganizationDefinitionRepository organizationDefinitionRepository,
+            FacilityRepository facilityRepository) {
         this.organizationHolidayRepository = organizationHolidayRepository;
         this.organizationDefinitionRepository = organizationDefinitionRepository;
+        this.facilityRepository = facilityRepository;
     }
 
     public OrganizationHoliday create(OrganizationHolidayCreateDTO dto) {
@@ -116,11 +120,27 @@ public class OrganizationHolidayService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrganizationHoliday> getActiveHolidaysInRange(LocalDate start, LocalDate end) {
+    public List<OrganizationHoliday> getActiveHolidaysInRange(Long facilityId, LocalDate start, LocalDate end) {
         LOG.debug("Request to get active holidays between {} and {}", start, end);
+        
+        if (!facilityRepository.existsById(facilityId)) {
+            throw new BadRequestAlertException("Invalid facility id", facilityId.toString(), "facility");
+        }
+        String facilityIdAsText = String.valueOf(facilityId);
+        ;
 
-        return organizationHolidayRepository
-                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqual(start, end);
+        List<OrganizationHoliday> holidayForAllFacilities = organizationHolidayRepository
+                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndAllFacilitiesFalse(start, end);
+
+        List<OrganizationHoliday> holidayForMyFacility = organizationHolidayRepository
+                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndFacilityIdsContainsIgnoreCase(start, end, facilityIdAsText);
+
+
+        return Stream.concat(
+                holidayForAllFacilities.stream(),
+                holidayForMyFacility.stream()
+        ).distinct().toList();
+
     }
 
     @Transactional(readOnly = true)
@@ -143,7 +163,7 @@ public class OrganizationHolidayService {
 
 
     @Transactional(readOnly = true)
-    public List<OrganizationHoliday> search(String name, HolidayType holidayType, LocalDate startDate, LocalDate endDate, Boolean recurring, Boolean allFacilities, Long facilityId ) {
+    public List<OrganizationHoliday> search(String name, HolidayType holidayType, LocalDate startDate, LocalDate endDate, Boolean recurring, Boolean allFacilities, Long facilityId) {
         LOG.debug("Request to search OrganizationHolidays name={}, holidayType={}, startDate={}, endDate={}, recurring={}, allFacilities={}, facilityId={}",
                 name, holidayType, startDate, endDate, recurring, allFacilities, facilityId);
 
