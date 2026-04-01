@@ -127,14 +127,14 @@ public class OrganizationHolidayService {
             throw new BadRequestAlertException("Invalid facility id", facilityId.toString(), "facility");
         }
         String facilityIdAsText = String.valueOf(facilityId);
-        ;
 
         List<OrganizationHoliday> holidayForAllFacilities = organizationHolidayRepository
-                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndAllFacilitiesFalse(start, end);
+                .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndAllFacilitiesTrue(start, end);
 
         List<OrganizationHoliday> holidayForMyFacility = organizationHolidayRepository
                 .findAllByIsActiveTrueAndStartDateGreaterThanEqualAndEndDateLessThanEqualAndFacilityIdsContainsIgnoreCase(start, end, facilityIdAsText);
 
+        //TODO: add for recurring holidays
 
         return Stream.concat(
                 holidayForAllFacilities.stream(),
