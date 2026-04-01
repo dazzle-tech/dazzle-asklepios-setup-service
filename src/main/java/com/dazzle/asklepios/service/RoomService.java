@@ -3,7 +3,9 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Room;
+import com.dazzle.asklepios.domain.enumeration.BedStatus;
 import com.dazzle.asklepios.domain.enumeration.Gender;
+import com.dazzle.asklepios.repository.BedRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.RoomRepository;
@@ -20,6 +22,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
@@ -31,15 +35,17 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final FacilityRepository facilityRepository;
     private final DepartmentsRepository departmentRepository;
+    private final BedRepository bedRepository;
 
     public RoomService(
             RoomRepository roomRepository,
             FacilityRepository facilityRepository,
-            DepartmentsRepository departmentRepository
+            DepartmentsRepository departmentRepository, BedRepository bedRepository
     ) {
         this.roomRepository = roomRepository;
         this.facilityRepository = facilityRepository;
         this.departmentRepository = departmentRepository;
+        this.bedRepository = bedRepository;
     }
 
     public Room create(RoomCreateDTO roomCreateDTO) {
@@ -196,11 +202,25 @@ public class RoomService {
                         "notfound"
                 ));
 
+        boolean hasOccupiedBeds = bedRepository
+                .existsByRoom_IdAndStatus(id, BedStatus.OCCUPIED);
+
+        if (hasOccupiedBeds) {
+            throw new BadRequestAlertException(
+                    "Cannot deactivate room because it has occupied beds.",
+                    "room",
+                    "room.has.occupied.beds"
+            );
+        }
+
         existingRoom.setIsActive(false);
 
         try {
             Room deactivatedRoom = roomRepository.saveAndFlush(existingRoom);
-            LOG.info("Successfully deactivated room id={} name='{}'", deactivatedRoom.getId(), deactivatedRoom.getName());
+            LOG.info("Successfully deactivated room id={} name='{}'",
+                    deactivatedRoom.getId(),
+                    deactivatedRoom.getName()
+            );
             return deactivatedRoom;
 
         } catch (DataIntegrityViolationException | JpaSystemException exception) {
@@ -212,7 +232,6 @@ public class RoomService {
             );
         }
     }
-
     @Transactional(readOnly = true)
     public Room findById(Long id) {
         LOG.debug("[FIND BY ID] Fetching Room id={}", id);
@@ -280,7 +299,22 @@ public class RoomService {
 
         return roomsPage;
     }
+    @Transactional(readOnly = true)
+    public List<Room> findAllByIds(List<Long> ids) {
+        LOG.debug("[FIND ALL BY IDS] Fetching Rooms ids={}", ids);
 
+        List<Room> rooms = roomRepository.findAllByIdIn(ids);
+
+        if (rooms.isEmpty()) {
+            throw new NotFoundAlertException(
+                    "No rooms found for ids " + ids,
+                    "room",
+                    "list.notfound"
+            );
+        }
+
+        return rooms;
+    }
     private void handleConstraintsOnCreateOrUpdate(RuntimeException exception) {
         Throwable rootCause = getRootCause(exception);
         String errorMessage = rootCause != null ? rootCause.getMessage() : exception.getMessage();

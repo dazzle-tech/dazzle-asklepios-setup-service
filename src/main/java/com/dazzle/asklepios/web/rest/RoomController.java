@@ -165,6 +165,24 @@ public class RoomController {
         return ResponseEntity.ok(activatedRoom);
     }
 
+    @PostMapping("/room/by-ids")
+    public ResponseEntity<List<Room>> findAllByIds(
+            @RequestBody @NotNull List<Long> ids
+    ) {
+        LOG.debug("REST find Rooms by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Ids list must not be empty",
+                    "room",
+                    "ids.empty"
+            );
+        }
+
+        List<Room> rooms = roomService.findAllByIds(ids);
+        return ResponseEntity.ok(rooms);
+    }
+    
     @GetMapping("/room/available/by-department/{departmentId}/gender/{gender}")
     public ResponseEntity<List<Room>> findAvailableRoomsByDepartmentAndGender(
             @PathVariable @NotNull Long departmentId,

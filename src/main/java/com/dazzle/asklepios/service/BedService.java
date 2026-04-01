@@ -18,6 +18,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @Service
@@ -144,11 +146,24 @@ public class BedService {
                         "notfound"
                 ));
 
+        if (existingBed.getStatus() == BedStatus.OCCUPIED) {
+            LOG.warn("[DEACTIVATE] Cannot deactivate occupied bed id={}", id);
+
+            throw new BadRequestAlertException(
+                    "Cannot deactivate an occupied bed",
+                    "bed",
+                    "bed.occupied"
+            );
+        }
+
         existingBed.setIsActive(false);
 
         try {
             Bed deactivatedBed = bedRepository.saveAndFlush(existingBed);
-            LOG.info("Successfully deactivated bed id={} name='{}'", deactivatedBed.getId(), deactivatedBed.getName());
+            LOG.info("Successfully deactivated bed id={} name='{}'",
+                    deactivatedBed.getId(),
+                    deactivatedBed.getName());
+
             return deactivatedBed;
 
         } catch (DataIntegrityViolationException | JpaSystemException exception) {
@@ -174,8 +189,36 @@ public class BedService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Bed> findActiveByRoomId(Long roomId, Pageable pageable) {
-        LOG.debug("[FIND ACTIVE BY ROOM ID] roomId='{}' pageable={}", roomId, pageable);
+    public Page<Bed> findActiveByRoomIdAndStatusEmpty(Long roomId, Pageable pageable) {
+        LOG.debug("[FIND EMPTY ACTIVE BY ROOM ID] roomId='{}' pageable={}", roomId, pageable);
+
+        if (!roomRepository.existsById(roomId)) {
+            throw new NotFoundAlertException(
+                    "Room not found with id " + roomId,
+                    "bed",
+                    "room.notfound"
+            );
+        }
+
+        Page<Bed> bedsPage = bedRepository.findByRoom_IdAndIsActiveTrueAndStatus(
+                roomId,
+                BedStatus.EMPTY,
+                pageable
+        );
+
+        LOG.debug(
+                "[FIND EMPTY ACTIVE BY ROOM ID] Retrieved beds count={} pageNumber={} pageSize={}",
+                bedsPage.getNumberOfElements(),
+                bedsPage.getNumber(),
+                bedsPage.getSize()
+        );
+
+        return bedsPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Bed> findAllActiveByRoomId(Long roomId, Pageable pageable) {
+        LOG.debug("[FIND ACTIVE BEDS BY ROOM ID] roomId='{}' pageable={}", roomId, pageable);
 
         if (!roomRepository.existsById(roomId)) {
             throw new NotFoundAlertException(
@@ -188,15 +231,16 @@ public class BedService {
         Page<Bed> bedsPage = bedRepository.findByRoom_IdAndIsActiveTrue(roomId, pageable);
 
         LOG.debug(
-                "[FIND ACTIVE BY ROOM ID] Retrieved beds count={} pageNumber={} pageSize={}",
+                "[FIND ACTIVE BEDS BY ROOM ID] Retrieved beds count={} pageNumber={} pageSize={} totalElements={} totalPages={}",
                 bedsPage.getNumberOfElements(),
                 bedsPage.getNumber(),
-                bedsPage.getSize()
+                bedsPage.getSize(),
+                bedsPage.getTotalElements(),
+                bedsPage.getTotalPages()
         );
 
         return bedsPage;
     }
-
     public Bed markAsOccupied(Long id) {
         LOG.info("[MARK AS OCCUPIED] Request to mark Bed as OCCUPIED id={}", id);
 
@@ -238,12 +282,211 @@ public class BedService {
         }
     }
 
+    public Bed markAsInCleaning(Long id) {
+        LOG.info("[MARK AS IN_CLEANING] Request to mark Bed as IN_CLEANING id={}", id);
+
+        Bed existingBed = bedRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Bed not found with id " + id,
+                        "bed",
+                        "notfound"
+                ));
+
+        if (existingBed.getStatus() != BedStatus.OCCUPIED) {
+            LOG.warn(
+                    "[MARK AS IN_CLEANING] Failed: Bed id={} currentStatus={} is not OCCUPIED",
+                    existingBed.getId(),
+                    existingBed.getStatus()
+            );
+
+            throw new BadRequestAlertException(
+                    "Bed must be OCCUPIED to be marked as IN_CLEANING",
+                    "bed",
+                    "invalid.status.transition"
+            );
+        }
+
+        existingBed.setStatus(BedStatus.IN_CLEANING);
+
+        try {
+            Bed updatedBed = bedRepository.saveAndFlush(existingBed);
+            LOG.info("Successfully marked bed id={} as IN_CLEANING", updatedBed.getId());
+            return updatedBed;
+
+        } catch (DataIntegrityViolationException | JpaSystemException exception) {
+            handleConstraintsOnCreateOrUpdate(exception);
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating bed status.",
+                    "bed",
+                    "db.constraint"
+            );
+        }
+    }
+
+    public Bed markAsOutOfService(Long id) {
+        LOG.info("[MARK AS OUT_OF_SERVICE] Request id={}", id);
+
+        Bed bed = bedRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Bed not found with id " + id,
+                        "bed",
+                        "notfound"
+                ));
+
+        if (bed.getStatus() != BedStatus.EMPTY &&
+                bed.getStatus() != BedStatus.IN_CLEANING) {
+
+            LOG.warn(
+                    "[MARK AS OUT_OF_SERVICE] Failed id={} currentStatus={}",
+                    bed.getId(),
+                    bed.getStatus()
+            );
+
+            throw new BadRequestAlertException(
+                    "Bed must be EMPTY or IN_CLEANING to be marked as OUT_OF_SERVICE",
+                    "bed",
+                    "invalid.status.transition"
+            );
+        }
+
+        bed.setStatus(BedStatus.OUT_OF_SERVICE);
+
+        Bed updated = bedRepository.saveAndFlush(bed);
+
+        LOG.info("Successfully marked bed id={} as OUT_OF_SERVICE", updated.getId());
+
+        return updated;
+    }
+
+    public Bed markAsReady(Long id) {
+        LOG.info("[MARK AS READY] Request id={}", id);
+
+        Bed bed = bedRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Bed not found with id " + id,
+                        "bed",
+                        "notfound"
+                ));
+
+        if (bed.getStatus() != BedStatus.IN_CLEANING &&
+                bed.getStatus() != BedStatus.OUT_OF_SERVICE) {
+
+            LOG.warn(
+                    "[MARK AS READY] Failed id={} currentStatus={}",
+                    bed.getId(),
+                    bed.getStatus()
+            );
+
+            throw new BadRequestAlertException(
+                    "Bed must be IN_CLEANING or OUT_OF_SERVICE to be marked as READY",
+                    "bed",
+                    "invalid.status.transition"
+            );
+        }
+
+        bed.setStatus(BedStatus.EMPTY);
+
+        Bed updated = bedRepository.saveAndFlush(bed);
+
+        LOG.info("Successfully marked bed id={} as READY", updated.getId());
+
+        return updated;
+    }
+
     @Transactional(readOnly = true)
     public Page<Bed> findByRoomId(Long roomId, Pageable pageable) {
         LOG.debug("[FIND BY ROOM ID] Searching beds by roomId='{}' pageable={}", roomId, pageable);
         return bedRepository.findByRoom_Id(roomId, pageable);
     }
+    @Transactional(readOnly = true)
+    public List<Bed> findAllByIds(List<Long> ids) {
+        LOG.debug("[FIND ALL BY IDS] Fetching Beds ids={}", ids);
 
+        List<Bed> beds = bedRepository.findAllByIdIn(ids);
+
+        if (beds.isEmpty()) {
+            throw new NotFoundAlertException(
+                    "No beds found for ids " + ids,
+                    "bed",
+                    "list.notfound"
+            );
+        }
+
+        return beds;
+    }
+
+    @Transactional(readOnly = true)
+    public long countActiveBeds(Long departmentId) {
+        LOG.debug("[COUNT ACTIVE BEDS] departmentId={}", departmentId);
+
+        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrue(departmentId);
+
+        LOG.debug("[COUNT ACTIVE BEDS RESULT] departmentId={} count={}", departmentId, count);
+
+        return count;
+    }
+
+    @Transactional(readOnly = true)
+    public long countOccupiedBeds(Long departmentId) {
+        LOG.debug("[COUNT OCCUPIED BEDS] departmentId={}", departmentId);
+
+        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
+                departmentId,
+                BedStatus.OCCUPIED
+        );
+
+        LOG.debug("[COUNT OCCUPIED BEDS RESULT] departmentId={} count={}", departmentId, count);
+
+        return count;
+    }
+
+    @Transactional(readOnly = true)
+    public long countOutOfServiceBeds(Long departmentId) {
+        LOG.debug("[COUNT OUT_OF_SERVICE BEDS] departmentId={}", departmentId);
+
+        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
+                departmentId,
+                BedStatus.OUT_OF_SERVICE
+        );
+
+        LOG.debug("[COUNT OUT_OF_SERVICE BEDS RESULT] departmentId={} count={}", departmentId, count);
+
+        return count;
+    }
+
+    @Transactional(readOnly = true)
+    public long countEmptyBeds(Long departmentId) {
+        LOG.debug("[COUNT EMPTY BEDS] departmentId={}", departmentId);
+
+        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
+                departmentId,
+                BedStatus.EMPTY
+        );
+
+        LOG.debug("[COUNT EMPTY BEDS RESULT] departmentId={} count={}", departmentId, count);
+
+        return count;
+    }
+
+    @Transactional(readOnly = true)
+    public long countInCleaningBeds(Long departmentId) {
+        LOG.debug("[COUNT IN_CLEANING BEDS] departmentId={}", departmentId);
+
+        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
+                departmentId,
+                BedStatus.IN_CLEANING
+        );
+
+        LOG.debug("[COUNT IN_CLEANING BEDS RESULT] departmentId={} count={}", departmentId, count);
+
+        return count;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Bed> findActiveByDepartmentId(Long departmentId, Pageable pageable) {
+        LOG.debug("[FIND ACTIVE BY DEPARTMENT ID] Searching active beds by departmentId='{}' pageable={}", departmentId, pageable);
+        return bedRepository.findByRoom_Department_IdAndIsActiveTrue(departmentId, pageable);
+    }
     private void handleConstraintsOnCreateOrUpdate(RuntimeException exception) {
         Throwable rootCause = getRootCause(exception);
         String errorMessage = rootCause != null ? rootCause.getMessage() : exception.getMessage();

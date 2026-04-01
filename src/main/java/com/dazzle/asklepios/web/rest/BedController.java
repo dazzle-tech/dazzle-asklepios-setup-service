@@ -115,13 +115,13 @@ public class BedController {
     }
 
     @GetMapping("/bed/search/active/by-room/{roomId}")
-    public ResponseEntity<List<Bed>> findActiveByRoomId(
+    public ResponseEntity<List<Bed>> findActiveByRoomIdStatusEmpty(
             @PathVariable @NotNull Long roomId,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST find active Beds by roomId={} pageable={}", roomId, pageable);
 
-        Page<Bed> page = bedService.findActiveByRoomId(roomId, pageable);
+        Page<Bed> page = bedService.findActiveByRoomIdAndStatusEmpty(roomId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -131,6 +131,7 @@ public class BedController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
+
     @GetMapping("/bed/{id}")
     public ResponseEntity<Bed> findById(
             @PathVariable("id") @NotNull Long bedId
@@ -158,6 +159,7 @@ public class BedController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
+
     @PostMapping("/bed/{id}/occupy")
     public ResponseEntity<Bed> markAsOccupied(
             @PathVariable("id") @NotNull Long bedId
@@ -168,4 +170,154 @@ public class BedController {
 
         return ResponseEntity.ok(bed);
     }
+
+    @PostMapping("/bed/{id}/mark-in-cleaning")
+    public ResponseEntity<Bed> markAsInCleaning(
+            @PathVariable("id") @NotNull Long bedId
+    ) {
+        LOG.debug("REST request to mark Bed as IN_CLEANING id={}", bedId);
+
+        Bed bed = bedService.markAsInCleaning(bedId);
+
+        return ResponseEntity.ok(bed);
+    }
+
+    @PostMapping("/bed/by-ids")
+    public ResponseEntity<List<Bed>> findAllByIds(
+            @RequestBody @NotNull List<Long> ids
+    ) {
+        LOG.debug("REST find Beds by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Ids list must not be empty",
+                    "bed",
+                    "ids.empty"
+            );
+        }
+
+        List<Bed> beds = bedService.findAllByIds(ids);
+        return ResponseEntity.ok(beds);
+    }
+
+    @GetMapping("/bed/search/by-department/{departmentId}")
+    public ResponseEntity<List<Bed>> findByDepartmentId(
+            @PathVariable @NotNull Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Beds by departmentId={} pageable={}", departmentId, pageable);
+
+        Page<Bed> page = bedService.findActiveByDepartmentId(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/bed/count/active/{departmentId}")
+    public ResponseEntity<Long> countActiveBeds(
+            @PathVariable @NotNull Long departmentId
+    ) {
+        LOG.debug("REST request to count ACTIVE beds by departmentId={}", departmentId);
+
+        long count = bedService.countActiveBeds(departmentId);
+
+        LOG.debug("REST response ACTIVE beds count={}", count);
+
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/bed/count/occupied/{departmentId}")
+    public ResponseEntity<Long> countOccupiedBeds(
+            @PathVariable @NotNull Long departmentId
+    ) {
+        LOG.debug("REST request to count OCCUPIED beds by departmentId={}", departmentId);
+
+        long count = bedService.countOccupiedBeds(departmentId);
+
+        LOG.debug("REST response OCCUPIED beds count={}", count);
+
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/bed/count/out-of-service/{departmentId}")
+    public ResponseEntity<Long> countOutOfServiceBeds(
+            @PathVariable @NotNull Long departmentId
+    ) {
+        LOG.debug("REST request to count OUT_OF_SERVICE beds by departmentId={}", departmentId);
+
+        long count = bedService.countOutOfServiceBeds(departmentId);
+
+        LOG.debug("REST response OUT_OF_SERVICE beds count={}", count);
+
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/bed/count/empty/{departmentId}")
+    public ResponseEntity<Long> countEmptyBeds(
+            @PathVariable @NotNull Long departmentId
+    ) {
+        LOG.debug("REST request to count EMPTY beds by departmentId={}", departmentId);
+
+        long count = bedService.countEmptyBeds(departmentId);
+
+        LOG.debug("REST response EMPTY beds count={}", count);
+
+        return ResponseEntity.ok(count);
+    }
+
+    @GetMapping("/bed/count/in-cleaning/{departmentId}")
+    public ResponseEntity<Long> countInCleaningBeds(
+            @PathVariable @NotNull Long departmentId
+    ) {
+        LOG.debug("REST request to count IN_CLEANING beds by departmentId={}", departmentId);
+
+        long count = bedService.countInCleaningBeds(departmentId);
+
+        LOG.debug("REST response IN_CLEANING beds count={}", count);
+
+        return ResponseEntity.ok(count);
+    }
+
+    @PostMapping("/bed/{id}/mark-out-of-service")
+    public ResponseEntity<Bed> markAsOutOfService(
+            @PathVariable("id") @NotNull Long bedId
+    ) {
+        LOG.debug("REST request to mark Bed as OUT_OF_SERVICE id={}", bedId);
+
+        Bed bed = bedService.markAsOutOfService(bedId);
+
+        return ResponseEntity.ok(bed);
+    }
+
+    @PostMapping("/bed/{id}/mark-ready")
+    public ResponseEntity<Bed> markAsReady(
+            @PathVariable("id") @NotNull Long bedId
+    ) {
+        LOG.debug("REST request to mark Bed as READY id={}", bedId);
+
+        Bed bed = bedService.markAsReady(bedId);
+
+        return ResponseEntity.ok(bed);
+    }
+    @GetMapping("/bed/search/all-active/by-room/{roomId}")
+    public ResponseEntity<List<Bed>> findAllActiveByRoomId(
+            @PathVariable @NotNull Long roomId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find all active Beds by roomId={} pageable={}", roomId, pageable);
+
+        Page<Bed> page = bedService.findAllActiveByRoomId(roomId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
 }
