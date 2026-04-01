@@ -2,9 +2,11 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.PractitionerDepartment;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
 import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
@@ -21,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -31,15 +34,17 @@ public class PractitionerService {
     private final PractitionersRepository practitionerRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
+    private final PractitionerDepartmentRepository practitionerDepartmentRepository;
 
     public PractitionerService(
             PractitionersRepository practitionerRepository,
             FacilityRepository facilityRepository,
-            UserRepository userRepository
-    ) {
+            UserRepository userRepository,
+            PractitionerDepartmentRepository practitionerDepartmentRepository) {
         this.practitionerRepository = practitionerRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
+        this.practitionerDepartmentRepository = practitionerDepartmentRepository;
     }
 
     public Practitioner create(PractitionerCreateVM vm) {
@@ -298,6 +303,30 @@ public class PractitionerService {
                         Specialty.SPECIALIST,
                         pageable
                 );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findPractitionerByDepartment(Long departmentId, Pageable pageable) {
+        LOG.debug("Fetching paged practitioner by department departmentId={} pageable={}", departmentId, pageable);
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentId(departmentId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> practitionerIds = items.stream()
+                .map(serviceItems -> serviceItems.getPractitioner().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (practitionerIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepository.findByIdIn(practitionerIds, pageable);
     }
 
     private Long getFacility() {
