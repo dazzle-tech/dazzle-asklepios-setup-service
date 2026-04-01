@@ -58,6 +58,8 @@ public class ProcedureController {
                 .contraindications(vm.contraindications())
                 .preparationInstructions(vm.preparationInstructions())
                 .recoveryNotes(vm.recoveryNotes())
+                .price(vm.price())
+                .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
@@ -88,6 +90,8 @@ public class ProcedureController {
         patch.setRecoveryNotes(vm.recoveryNotes());
         patch.setIsActive(vm.isActive());
         patch.setLastModifiedBy(vm.lastModifiedBy());
+        patch.setPrice(vm.price());
+        patch.setCurrency(vm.currency());
 
         return procedureService.update(id, facilityId, patch)
                 .map(ProcedureResponseVM::ofEntity)

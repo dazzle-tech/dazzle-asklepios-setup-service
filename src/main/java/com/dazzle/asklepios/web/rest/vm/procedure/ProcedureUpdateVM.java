@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +22,8 @@ public record ProcedureUpdateVM(
         String contraindications,
         String preparationInstructions,
         String recoveryNotes,
+        @NotNull Currency currency,
+        @NotNull Long price,
         @NotNull Boolean isActive,
         String lastModifiedBy
 ) implements Serializable {
@@ -36,6 +39,8 @@ public record ProcedureUpdateVM(
                 procedure.getContraindications(),
                 procedure.getPreparationInstructions(),
                 procedure.getRecoveryNotes(),
+                procedure.getCurrency(),
+                procedure.getPrice(),
                 procedure.getIsActive(),
                 procedure.getLastModifiedBy());
     }

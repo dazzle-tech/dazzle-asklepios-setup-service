@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -44,12 +45,21 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     private String code;
 
     @NotNull
+    @Column(nullable = false)
+    private Currency currency;
+
+    @NotNull
+    @Column(nullable = false)
+    private  Long price;
+
+    @NotNull
     @Column(name = "category_type", nullable = false, length = 255)
     private String categoryType;
 
     @NotNull
     @Column(name = "is_appointable", nullable = false)
     private Boolean isAppointable;
+
 
 
     @Column(name = "indications", columnDefinition = "text")

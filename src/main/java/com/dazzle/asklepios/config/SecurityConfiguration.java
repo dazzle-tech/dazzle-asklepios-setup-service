@@ -36,6 +36,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(authz ->
                         // prettier-ignore
                         authz
+                                .requestMatchers("/api/setup/facility/active").permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/facility", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/languages", "GET")).permitAll()
                                 .requestMatchers(mvc.pattern("/setup/api/**")).permitAll()

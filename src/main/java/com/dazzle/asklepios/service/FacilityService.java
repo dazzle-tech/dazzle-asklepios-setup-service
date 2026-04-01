@@ -151,7 +151,6 @@ public class FacilityService {
         Set<DayOfWeek> uniqueDays = workingDays.stream()
                 .map(WorkingDayJson::getDayOfWeek)
                 .collect(Collectors.toSet());
-
         if (uniqueDays.size() != workingDays.size()) {
             throw new BadRequestAlertException(
                     "Duplicate working day entries",
@@ -182,5 +181,12 @@ public class FacilityService {
                 "facility",
                 "Database constraint violated while saving facility"
         );
+    }
+    @Transactional(readOnly = true)
+    public List<FacilityResponseVM> findActiveFacilities() {
+        return facilityRepository.findByIsActiveTrue()
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .toList();
     }
 }

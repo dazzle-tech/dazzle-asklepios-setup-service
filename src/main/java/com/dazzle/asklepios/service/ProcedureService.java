@@ -56,6 +56,8 @@ public class ProcedureService {
                 .recoveryNotes(incoming.getRecoveryNotes())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .facility(refFacility(facilityId))
+                .currency(incoming.getCurrency())
+                .price(incoming.getPrice())
                 .build();
 
         try {
@@ -111,6 +113,8 @@ public class ProcedureService {
         existing.setRecoveryNotes(incoming.getRecoveryNotes());
         existing.setIsActive(incoming.getIsActive());
         existing.setFacility(refFacility(facilityId));
+        existing.setCurrency(incoming.getCurrency());
+        existing.setPrice(incoming.getPrice());
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);

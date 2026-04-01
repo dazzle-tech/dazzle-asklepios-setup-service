@@ -46,13 +46,13 @@ public class UserDepartmentService {
         boolean wantDefault = Boolean.TRUE.equals(vm.isDefault());
 
         if (userDepartmentRepository.existsByUserIdAndDepartmentId(userId, departmentId)) {
-            throw new BadRequestAlertException("User already has this department", ENTITY_NAME, "departmentexists");
+            throw new BadRequestAlertException("departmentexists", ENTITY_NAME,"User already has this department" );
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestAlertException("User not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"User not found"));
         Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new BadRequestAlertException("Department not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME,"Department not found"));
 
         Long facilityId = department.getFacility().getId(); // or department.getFacilityId()
 
@@ -60,7 +60,7 @@ public class UserDepartmentService {
             boolean defaultInFacility =
                     userDepartmentRepository.existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(userId, facilityId);
             if (defaultInFacility) {
-                throw new BadRequestAlertException("User already has a default for this facility", ENTITY_NAME, "defaultexists");
+                throw new BadRequestAlertException( "defaultexists",ENTITY_NAME, "User already has a default for this facility");
             }
         }
 
@@ -93,7 +93,7 @@ public class UserDepartmentService {
     @Transactional
     public void hardDelete(Long id) {
         UserDepartment target = userDepartmentRepository.findById(id)
-                .orElseThrow(() -> new BadRequestAlertException("Mapping not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"Mapping not found"));
 
         Long userId = target.getUser().getId();
         Long facilityId = target.getDepartment().getFacility().getId();
@@ -130,7 +130,7 @@ public class UserDepartmentService {
     public String getFullNameByLogin(String login) {
         LOG.debug("Request to get full name by login={}", login);
         User user = userRepository.findByLogin(login)
-                .orElseThrow(() -> new BadRequestAlertException("User not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"User not found"));
 
         String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
         String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
