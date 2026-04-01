@@ -30,7 +30,11 @@ public record DiagnosticTestCreateVM(
         Boolean isActive,
 
         Boolean appointable,
-         TestResultType defaultProfileResultType,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes,
+        TestResultType defaultProfileResultType,
         String defaultProfileResultUnit,
         String listOfValueId
 ) implements Serializable {}

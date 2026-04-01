@@ -7,6 +7,7 @@ public enum Screen {
     // Scheduling
     SCHEDULING_SCREEN,
     AVAILABILITY_TEMPLATES_NEW,
+    APPLY_TEMPLATE,
     APPOINTMENT,
 
     // Inventory Management

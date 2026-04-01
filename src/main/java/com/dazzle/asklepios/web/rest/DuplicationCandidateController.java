@@ -5,7 +5,7 @@ import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.DuplicationCandidateService;
 import com.dazzle.asklepios.service.FacilityService;
 import com.dazzle.asklepios.web.rest.vm.DuplicationCandidateResponseVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityResponseVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;

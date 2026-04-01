@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.organizationDefinition;
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
 import com.dazzle.asklepios.domain.enumeration.TimeZone;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,7 +22,7 @@ public record OrganizationDefinitionResponseVM(
         TimeZone defaultTimeZone,
         Long defaultLanguageId,
         String defaultLanguageName,
-        List<OrganizationWorkingDayCreateVM> workingDays
+        List<WorkingDayJson> workingDays
 ) {
     public static OrganizationDefinitionResponseVM ofEntity(OrganizationDefinition entity) {
         if (entity == null) return null;
@@ -39,11 +40,7 @@ public record OrganizationDefinitionResponseVM(
                 entity.getDefaultTimeZone(),
                 entity.getDefaultLanguage() != null ? entity.getDefaultLanguage().getId() : null,
                 entity.getDefaultLanguage() != null ? entity.getDefaultLanguage().getLangName() : null,
-                entity.getWorkingDays() != null
-                        ? entity.getWorkingDays().stream()
-                        .map(OrganizationWorkingDayCreateVM::ofEntity)
-                        .toList()
-                        : List.of()
+                entity.getWorkingDays()
 
         );
     }
