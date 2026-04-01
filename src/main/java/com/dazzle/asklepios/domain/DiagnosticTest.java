@@ -95,8 +95,8 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @Column(name = "appointable")
-    private Boolean appointable;
+    @Column(name = "appointable", nullable = false)
+    private Boolean appointable = false;
 
     @Column(name = "parallel_capacity_value", nullable = false)
     private Integer parallelCapacityValue = 1;

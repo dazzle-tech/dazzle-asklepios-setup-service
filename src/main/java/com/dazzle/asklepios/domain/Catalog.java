@@ -59,8 +59,8 @@ public class Catalog implements Serializable {
     private Facility facility;
 
 
-    @Column(name = "appointable")
-    private Boolean appointable;
+    @Column(name = "appointable", nullable = false)
+    private Boolean appointable = false;
 
     @NotNull
     @Column(name = "parallel_capacity_value", nullable = false)
