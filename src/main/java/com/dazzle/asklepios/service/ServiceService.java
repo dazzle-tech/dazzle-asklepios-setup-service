@@ -49,6 +49,7 @@ public class ServiceService {
         this.serviceItemsRepository = serviceItemsRepository;
     }
 
+
     public ServiceSetup create(Long facilityId, ServiceSetup incoming) {
         LOG.info("[CREATE] Request to create Service for facilityId={} payload={}", facilityId, incoming);
 
@@ -103,13 +104,13 @@ public class ServiceService {
                         "unique.facility.name"
                 );
             }
-
             throw new BadRequestAlertException(
                     "Database constraint violated while creating service (check facility, unique name, or required fields).",
                     "service",
                     "db.constraint"
             );
         }
+
     }
 
     public Optional<ServiceSetup> update(Long id, Long facilityId, ServiceSetup incoming) {
@@ -170,7 +171,6 @@ public class ServiceService {
                         "unique.facility.name"
                 );
             }
-
             throw new BadRequestAlertException(
                     "Database constraint violated while updating service (check facility, unique name, or required fields).",
                     "service",
@@ -222,6 +222,7 @@ public class ServiceService {
         return serviceRepository.findAll(pageable);
     }
 
+
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findByCategory(ServiceCategory category, Pageable pageable) {
         LOG.debug("Fetching Services by category={} (no facility filter)", category);
@@ -258,6 +259,7 @@ public class ServiceService {
                 });
     }
 
+    // ServiceService.java
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
         LOG.debug("Fetching paged Services by department sourceId={} pageable={}", sourceId, pageable);
@@ -268,18 +270,24 @@ public class ServiceService {
         if (items == null || items.isEmpty()) {
             return Page.empty(pageable);
         }
-
         List<Long> serviceIds = items.stream()
                 .map(serviceItems -> serviceItems.getService().getId())
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
 
+
         if (serviceIds.isEmpty()) {
             return Page.empty(pageable);
         }
 
         return serviceRepository.findByIdIn(serviceIds, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findActiveByFacility(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching active Services by facilityId={} pageable={}", facilityId, pageable);
+        return serviceRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
     }
 
     public List<ServiceSetup> findAllByIds(List<Long> ids) {
