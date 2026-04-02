@@ -165,8 +165,8 @@ public class RoomService {
         }
     }
 
-    public Room activate(Long id) {
-        LOG.info("[ACTIVATE] Request to activate Room id={}", id);
+    public Room changeActivationStatus(Long id, boolean active) {
+        LOG.info("[CHANGE ACTIVATION STATUS] Request to set Room id={} active={}", id, active);
 
         Room existingRoom = roomRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException(
@@ -175,58 +175,34 @@ public class RoomService {
                         "notfound"
                 ));
 
-        existingRoom.setIsActive(true);
+        if (!active) {
+            boolean hasOccupiedBeds = bedRepository.existsByRoom_IdAndStatus(id, BedStatus.OCCUPIED);
 
-        try {
-            Room activatedRoom = roomRepository.saveAndFlush(existingRoom);
-            LOG.info("Successfully activated room id={} name='{}'", activatedRoom.getId(), activatedRoom.getName());
-            return activatedRoom;
-
-        } catch (DataIntegrityViolationException | JpaSystemException exception) {
-            handleConstraintsOnCreateOrUpdate(exception);
-            throw new BadRequestAlertException(
-                    "Database constraint violated while activating room.",
-                    "room",
-                    "db.constraint"
-            );
-        }
-    }
-
-    public Room deactivate(Long id) {
-        LOG.info("[DEACTIVATE] Request to deactivate Room id={}", id);
-
-        Room existingRoom = roomRepository.findById(id)
-                .orElseThrow(() -> new NotFoundAlertException(
-                        "Room not found with id " + id,
+            if (hasOccupiedBeds) {
+                throw new BadRequestAlertException(
+                        "Cannot deactivate room because it has occupied beds.",
                         "room",
-                        "notfound"
-                ));
-
-        boolean hasOccupiedBeds = bedRepository
-                .existsByRoom_IdAndStatus(id, BedStatus.OCCUPIED);
-
-        if (hasOccupiedBeds) {
-            throw new BadRequestAlertException(
-                    "Cannot deactivate room because it has occupied beds.",
-                    "room",
-                    "room.has.occupied.beds"
-            );
+                        "room.has.occupied.beds"
+                );
+            }
         }
 
-        existingRoom.setIsActive(false);
+        existingRoom.setIsActive(active);
 
         try {
-            Room deactivatedRoom = roomRepository.saveAndFlush(existingRoom);
-            LOG.info("Successfully deactivated room id={} name='{}'",
-                    deactivatedRoom.getId(),
-                    deactivatedRoom.getName()
+            Room updatedRoom = roomRepository.saveAndFlush(existingRoom);
+            LOG.info(
+                    "Successfully changed activation status for room id={} name='{}' active={}",
+                    updatedRoom.getId(),
+                    updatedRoom.getName(),
+                    updatedRoom.getIsActive()
             );
-            return deactivatedRoom;
+            return updatedRoom;
 
         } catch (DataIntegrityViolationException | JpaSystemException exception) {
             handleConstraintsOnCreateOrUpdate(exception);
             throw new BadRequestAlertException(
-                    "Database constraint violated while deactivating room.",
+                    "Database constraint violated while updating room activation status.",
                     "room",
                     "db.constraint"
             );

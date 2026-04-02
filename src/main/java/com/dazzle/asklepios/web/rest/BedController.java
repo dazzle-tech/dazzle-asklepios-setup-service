@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Bed;
+import com.dazzle.asklepios.domain.enumeration.BedStatus;
 import com.dazzle.asklepios.service.BedService;
 import com.dazzle.asklepios.service.dto.bed.BedCreateDTO;
 import com.dazzle.asklepios.service.dto.bed.BedUpdateDTO;
@@ -94,24 +95,15 @@ public class BedController {
         return ResponseEntity.ok(updatedBed);
     }
 
-    @PostMapping("/bed/{id}/activate")
-    public ResponseEntity<Bed> activate(
-            @PathVariable("id") @NotNull Long bedId
+    @PutMapping("/bed/{id}/activation-status/{active}")
+    public ResponseEntity<Bed> changeActivationStatus(
+            @PathVariable("id") @NotNull Long bedId,
+            @PathVariable("active") @NotNull Boolean active
     ) {
-        LOG.debug("REST activate Bed id={}", bedId);
+        LOG.debug("REST change activation status for Bed id={} active={}", bedId, active);
 
-        Bed activatedBed = bedService.activate(bedId);
-        return ResponseEntity.ok(activatedBed);
-    }
-
-    @PostMapping("/bed/{id}/deactivate")
-    public ResponseEntity<Bed> deactivate(
-            @PathVariable("id") @NotNull Long bedId
-    ) {
-        LOG.debug("REST deactivate Bed id={}", bedId);
-
-        Bed deactivatedBed = bedService.deactivate(bedId);
-        return ResponseEntity.ok(deactivatedBed);
+        Bed updatedBed = bedService.changeActivationStatus(bedId, active);
+        return ResponseEntity.ok(updatedBed);
     }
 
     @GetMapping("/bed/search/active/by-room/{roomId}")
@@ -141,7 +133,6 @@ public class BedController {
         Bed bed = bedService.findById(bedId);
         return ResponseEntity.ok(bed);
     }
-
 
     @GetMapping("/bed/search/by-room/{roomId}")
     public ResponseEntity<List<Bed>> findByRoomId(
@@ -230,54 +221,16 @@ public class BedController {
         return ResponseEntity.ok(count);
     }
 
-    @GetMapping("/bed/count/occupied/{departmentId}")
-    public ResponseEntity<Long> countOccupiedBeds(
+    @GetMapping("/bed/count/{status}/{departmentId}")
+    public ResponseEntity<Long> countBedsByStatus(
+            @PathVariable @NotNull BedStatus status,
             @PathVariable @NotNull Long departmentId
     ) {
-        LOG.debug("REST request to count OCCUPIED beds by departmentId={}", departmentId);
+        LOG.debug("REST request to count beds by status={} departmentId={}", status, departmentId);
 
-        long count = bedService.countOccupiedBeds(departmentId);
+        long count = bedService.countBedsByStatus(departmentId, status);
 
-        LOG.debug("REST response OCCUPIED beds count={}", count);
-
-        return ResponseEntity.ok(count);
-    }
-
-    @GetMapping("/bed/count/out-of-service/{departmentId}")
-    public ResponseEntity<Long> countOutOfServiceBeds(
-            @PathVariable @NotNull Long departmentId
-    ) {
-        LOG.debug("REST request to count OUT_OF_SERVICE beds by departmentId={}", departmentId);
-
-        long count = bedService.countOutOfServiceBeds(departmentId);
-
-        LOG.debug("REST response OUT_OF_SERVICE beds count={}", count);
-
-        return ResponseEntity.ok(count);
-    }
-
-    @GetMapping("/bed/count/empty/{departmentId}")
-    public ResponseEntity<Long> countEmptyBeds(
-            @PathVariable @NotNull Long departmentId
-    ) {
-        LOG.debug("REST request to count EMPTY beds by departmentId={}", departmentId);
-
-        long count = bedService.countEmptyBeds(departmentId);
-
-        LOG.debug("REST response EMPTY beds count={}", count);
-
-        return ResponseEntity.ok(count);
-    }
-
-    @GetMapping("/bed/count/in-cleaning/{departmentId}")
-    public ResponseEntity<Long> countInCleaningBeds(
-            @PathVariable @NotNull Long departmentId
-    ) {
-        LOG.debug("REST request to count IN_CLEANING beds by departmentId={}", departmentId);
-
-        long count = bedService.countInCleaningBeds(departmentId);
-
-        LOG.debug("REST response IN_CLEANING beds count={}", count);
+        LOG.debug("REST response beds count by status={} is {}", status, count);
 
         return ResponseEntity.ok(count);
     }
@@ -303,6 +256,7 @@ public class BedController {
 
         return ResponseEntity.ok(bed);
     }
+
     @GetMapping("/bed/search/all-active/by-room/{roomId}")
     public ResponseEntity<List<Bed>> findAllActiveByRoomId(
             @PathVariable @NotNull Long roomId,
@@ -319,5 +273,4 @@ public class BedController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
-
 }

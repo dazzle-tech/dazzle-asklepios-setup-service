@@ -155,14 +155,15 @@ public class RoomController {
         return ResponseEntity.ok(updatedRoom);
     }
 
-    @PostMapping("/room/{id}/activate")
-    public ResponseEntity<Room> activate(
-            @PathVariable("id") @NotNull Long roomId
+    @PutMapping("/room/{id}/activation-status/{active}")
+    public ResponseEntity<Room> changeActivationStatus(
+            @PathVariable("id") @NotNull Long roomId,
+            @PathVariable("active") @NotNull Boolean active
     ) {
-        LOG.debug("REST activate Room id={}", roomId);
+        LOG.debug("REST change activation status for Room id={} active={}", roomId, active);
 
-        Room activatedRoom = roomService.activate(roomId);
-        return ResponseEntity.ok(activatedRoom);
+        Room updatedRoom = roomService.changeActivationStatus(roomId, active);
+        return ResponseEntity.ok(updatedRoom);
     }
 
     @PostMapping("/room/by-ids")
@@ -182,7 +183,7 @@ public class RoomController {
         List<Room> rooms = roomService.findAllByIds(ids);
         return ResponseEntity.ok(rooms);
     }
-    
+
     @GetMapping("/room/available/by-department/{departmentId}/gender/{gender}")
     public ResponseEntity<List<Room>> findAvailableRoomsByDepartmentAndGender(
             @PathVariable @NotNull Long departmentId,
@@ -204,16 +205,6 @@ public class RoomController {
         );
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
-    }
-
-    @PostMapping("/room/{id}/deactivate")
-    public ResponseEntity<Room> deactivate(
-            @PathVariable("id") @NotNull Long roomId
-    ) {
-        LOG.debug("REST deactivate Room id={}", roomId);
-
-        Room deactivatedRoom = roomService.deactivate(roomId);
-        return ResponseEntity.ok(deactivatedRoom);
     }
 
     @GetMapping

@@ -114,24 +114,17 @@ public class BedRoomServiceController {
         return ResponseEntity.ok(updatedBedRoomService);
     }
 
-    @PostMapping("/bed-room-service/{id}/activate")
-    public ResponseEntity<BedRoomService> activate(
-            @PathVariable("id") @NotNull Long bedRoomServiceId
+    @PutMapping("/bed-room-service/{id}/activation-status/{active}")
+    public ResponseEntity<BedRoomService> changeActivationStatus(
+            @PathVariable("id") @NotNull Long bedRoomServiceId,
+            @PathVariable("active") @NotNull Boolean active
     ) {
-        LOG.debug("REST activate BedRoomService id={}", bedRoomServiceId);
+        LOG.debug("REST change activation status for BedRoomService id={} active={}", bedRoomServiceId, active);
 
-        BedRoomService activatedBedRoomService = bedRoomServiceService.activate(bedRoomServiceId);
-        return ResponseEntity.ok(activatedBedRoomService);
-    }
+        BedRoomService updatedBedRoomService =
+                bedRoomServiceService.changeActivationStatus(bedRoomServiceId, active);
 
-    @PostMapping("/bed-room-service/{id}/deactivate")
-    public ResponseEntity<BedRoomService> deactivate(
-            @PathVariable("id") @NotNull Long bedRoomServiceId
-    ) {
-        LOG.debug("REST deactivate BedRoomService id={}", bedRoomServiceId);
-
-        BedRoomService deactivatedBedRoomService = bedRoomServiceService.deactivate(bedRoomServiceId);
-        return ResponseEntity.ok(deactivatedBedRoomService);
+        return ResponseEntity.ok(updatedBedRoomService);
     }
 
     @GetMapping("/bed-room-service/room/{roomId}")

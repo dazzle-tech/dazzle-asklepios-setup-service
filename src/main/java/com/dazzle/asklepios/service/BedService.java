@@ -109,8 +109,8 @@ public class BedService {
         }
     }
 
-    public Bed activate(Long id) {
-        LOG.info("[ACTIVATE] Request to activate Bed id={}", id);
+    public Bed changeActivationStatus(Long id, boolean active) {
+        LOG.info("[CHANGE ACTIVATION STATUS] Request to set Bed id={} active={}", id, active);
 
         Bed existingBed = bedRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException(
@@ -119,35 +119,8 @@ public class BedService {
                         "notfound"
                 ));
 
-        existingBed.setIsActive(true);
-
-        try {
-            Bed activatedBed = bedRepository.saveAndFlush(existingBed);
-            LOG.info("Successfully activated bed id={} name='{}'", activatedBed.getId(), activatedBed.getName());
-            return activatedBed;
-
-        } catch (DataIntegrityViolationException | JpaSystemException exception) {
-            handleConstraintsOnCreateOrUpdate(exception);
-            throw new BadRequestAlertException(
-                    "Database constraint violated while activating bed.",
-                    "bed",
-                    "db.constraint"
-            );
-        }
-    }
-
-    public Bed deactivate(Long id) {
-        LOG.info("[DEACTIVATE] Request to deactivate Bed id={}", id);
-
-        Bed existingBed = bedRepository.findById(id)
-                .orElseThrow(() -> new NotFoundAlertException(
-                        "Bed not found with id " + id,
-                        "bed",
-                        "notfound"
-                ));
-
-        if (existingBed.getStatus() == BedStatus.OCCUPIED) {
-            LOG.warn("[DEACTIVATE] Cannot deactivate occupied bed id={}", id);
+        if (!active && existingBed.getStatus() == BedStatus.OCCUPIED) {
+            LOG.warn("[CHANGE ACTIVATION STATUS] Cannot deactivate occupied bed id={}", id);
 
             throw new BadRequestAlertException(
                     "Cannot deactivate an occupied bed",
@@ -156,20 +129,22 @@ public class BedService {
             );
         }
 
-        existingBed.setIsActive(false);
+        existingBed.setIsActive(active);
 
         try {
-            Bed deactivatedBed = bedRepository.saveAndFlush(existingBed);
-            LOG.info("Successfully deactivated bed id={} name='{}'",
-                    deactivatedBed.getId(),
-                    deactivatedBed.getName());
-
-            return deactivatedBed;
+            Bed updatedBed = bedRepository.saveAndFlush(existingBed);
+            LOG.info(
+                    "Successfully changed activation status for bed id={} name='{}' active={}",
+                    updatedBed.getId(),
+                    updatedBed.getName(),
+                    updatedBed.getIsActive()
+            );
+            return updatedBed;
 
         } catch (DataIntegrityViolationException | JpaSystemException exception) {
             handleConstraintsOnCreateOrUpdate(exception);
             throw new BadRequestAlertException(
-                    "Database constraint violated while deactivating bed.",
+                    "Database constraint violated while updating bed activation status.",
                     "bed",
                     "db.constraint"
             );
@@ -427,57 +402,20 @@ public class BedService {
     }
 
     @Transactional(readOnly = true)
-    public long countOccupiedBeds(Long departmentId) {
-        LOG.debug("[COUNT OCCUPIED BEDS] departmentId={}", departmentId);
+    public long countBedsByStatus(Long departmentId, BedStatus status) {
+        LOG.debug("[COUNT BEDS BY STATUS] departmentId={} status={}", departmentId, status);
 
         long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
                 departmentId,
-                BedStatus.OCCUPIED
+                status
         );
 
-        LOG.debug("[COUNT OCCUPIED BEDS RESULT] departmentId={} count={}", departmentId, count);
-
-        return count;
-    }
-
-    @Transactional(readOnly = true)
-    public long countOutOfServiceBeds(Long departmentId) {
-        LOG.debug("[COUNT OUT_OF_SERVICE BEDS] departmentId={}", departmentId);
-
-        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
+        LOG.debug(
+                "[COUNT BEDS BY STATUS RESULT] departmentId={} status={} count={}",
                 departmentId,
-                BedStatus.OUT_OF_SERVICE
+                status,
+                count
         );
-
-        LOG.debug("[COUNT OUT_OF_SERVICE BEDS RESULT] departmentId={} count={}", departmentId, count);
-
-        return count;
-    }
-
-    @Transactional(readOnly = true)
-    public long countEmptyBeds(Long departmentId) {
-        LOG.debug("[COUNT EMPTY BEDS] departmentId={}", departmentId);
-
-        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
-                departmentId,
-                BedStatus.EMPTY
-        );
-
-        LOG.debug("[COUNT EMPTY BEDS RESULT] departmentId={} count={}", departmentId, count);
-
-        return count;
-    }
-
-    @Transactional(readOnly = true)
-    public long countInCleaningBeds(Long departmentId) {
-        LOG.debug("[COUNT IN_CLEANING BEDS] departmentId={}", departmentId);
-
-        long count = bedRepository.countByRoom_Department_IdAndIsActiveTrueAndStatus(
-                departmentId,
-                BedStatus.IN_CLEANING
-        );
-
-        LOG.debug("[COUNT IN_CLEANING BEDS RESULT] departmentId={} count={}", departmentId, count);
 
         return count;
     }

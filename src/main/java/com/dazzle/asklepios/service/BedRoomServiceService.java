@@ -184,39 +184,29 @@ public class BedRoomServiceService {
         }
     }
 
-    public BedRoomService activate(Long id) {
-        LOG.info("[ACTIVATE] Request to activate BedRoomService id={}", id);
+    public BedRoomService changeActivationStatus(Long id, boolean active) {
+        LOG.info("[CHANGE ACTIVATION STATUS] Request to set BedRoomService id={} active={}", id, active);
 
         BedRoomService entity = findById(id);
-        entity.setIsActive(true);
+        entity.setIsActive(active);
 
         try {
             BedRoomService updated = bedRoomServiceRepository.saveAndFlush(entity);
-            LOG.info("[ACTIVATE] Successfully activated BedRoomService id={}", id);
+            LOG.info(
+                    "[CHANGE ACTIVATION STATUS] Successfully changed activation status for BedRoomService id={} active={}",
+                    id,
+                    updated.getIsActive()
+            );
             return updated;
 
         } catch (DataIntegrityViolationException | JpaSystemException exception) {
-            LOG.error("[ACTIVATE] DB error while activating BedRoomService id={}", id, exception);
+            LOG.error("[CHANGE ACTIVATION STATUS] DB error while updating BedRoomService id={}", id, exception);
             handleConstraints(exception);
-            throw new BadRequestAlertException("Database constraint violated.", "bedRoomService", "db.constraint");
-        }
-    }
-
-    public BedRoomService deactivate(Long id) {
-        LOG.info("[DEACTIVATE] Request to deactivate BedRoomService id={}", id);
-
-        BedRoomService entity = findById(id);
-        entity.setIsActive(false);
-
-        try {
-            BedRoomService updated = bedRoomServiceRepository.saveAndFlush(entity);
-            LOG.info("[DEACTIVATE] Successfully deactivated BedRoomService id={}", id);
-            return updated;
-
-        } catch (DataIntegrityViolationException | JpaSystemException exception) {
-            LOG.error("[DEACTIVATE] DB error while deactivating BedRoomService id={}", id, exception);
-            handleConstraints(exception);
-            throw new BadRequestAlertException("Database constraint violated.", "bedRoomService", "db.constraint");
+            throw new BadRequestAlertException(
+                    "Database constraint violated.",
+                    "bedRoomService",
+                    "db.constraint"
+            );
         }
     }
 
