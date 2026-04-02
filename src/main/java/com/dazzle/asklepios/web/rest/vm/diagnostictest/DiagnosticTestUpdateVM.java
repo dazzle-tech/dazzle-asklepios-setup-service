@@ -31,6 +31,10 @@ public record DiagnosticTestUpdateVM(
         String specialNotes,
         Boolean isActive,
         Boolean appointable,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes,
         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit,
         String listOfValueId

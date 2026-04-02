@@ -168,4 +168,21 @@ public class CatalogController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/catalog/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<CatalogResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable catalog pageable={}", pageable);
+
+        Page<Catalog> page = catalogService.findAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }

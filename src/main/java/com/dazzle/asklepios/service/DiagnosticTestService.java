@@ -2,14 +2,12 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
-import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
-import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -17,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,9 +23,14 @@ import java.util.Optional;
 public class DiagnosticTestService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestService.class);
+
     private final DiagnosticTestRepository repository;
     private final DiagnosticTestProfileRepository profileRepository;
-    public DiagnosticTestService(DiagnosticTestRepository repository, DiagnosticTestProfileRepository profileRepository) {
+
+    public DiagnosticTestService(
+            DiagnosticTestRepository repository,
+            DiagnosticTestProfileRepository profileRepository
+    ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
     }
@@ -49,14 +51,19 @@ public class DiagnosticTestService {
                 .price(vm.price())
                 .currency(vm.currency())
                 .specialNotes(vm.specialNotes())
-                .isActive(vm.isActive())
+                .isActive(vm.isActive() != null ? vm.isActive() : true)
                 .appointable(vm.appointable())
+                .parallelCapacityValue(vm.parallelCapacityValue() != null ? vm.parallelCapacityValue() : 1)
+                .defaultDurationMinutes(vm.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
+                .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
                 .build();
+
+        validateAppointableRequirements(test);
 
         DiagnosticTest saved = repository.save(test);
 
-
-        if (saved.getType() == TestType.LABORATORY ) {
+        if (saved.getType() == TestType.LABORATORY) {
 
             if (vm.defaultProfileResultType() == null) {
                 throw new BadRequestAlertException(
@@ -82,7 +89,6 @@ public class DiagnosticTestService {
         return saved;
     }
 
-
     public Optional<DiagnosticTest> update(Long id, DiagnosticTestUpdateVM vm) {
         return repository.findById(id).map(existing -> {
 
@@ -101,6 +107,20 @@ public class DiagnosticTestService {
             existing.setAppointable(vm.appointable());
             existing.setIsActive(vm.isActive());
 
+            if (vm.parallelCapacityValue() != null) {
+                existing.setParallelCapacityValue(vm.parallelCapacityValue());
+            }
+            if (vm.defaultDurationMinutes() != null) {
+                existing.setDefaultDurationMinutes(vm.defaultDurationMinutes());
+            }
+            if (vm.defaultBufferBeforeMinutes() != null) {
+                existing.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+            }
+            if (vm.defaultBufferAfterMinutes() != null) {
+                existing.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+            }
+
+            validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
 
@@ -130,12 +150,10 @@ public class DiagnosticTestService {
 
                 boolean changed = false;
 
-
                 if (!saved.getName().equals(defaultProfile.getName())) {
                     defaultProfile.setName(saved.getName());
                     changed = true;
                 }
-
 
                 if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != defaultProfile.getResultType()) {
                     defaultProfile.setResultType(vm.defaultProfileResultType());
@@ -146,16 +164,17 @@ public class DiagnosticTestService {
                     defaultProfile.setResultUnit(vm.defaultProfileResultUnit());
                     changed = true;
                 }
+
                 if (vm.listOfValueId() != null && !vm.listOfValueId().equals(defaultProfile.getListOfValueId())) {
                     defaultProfile.setListOfValueId(vm.listOfValueId());
                     changed = true;
                 }
 
-                // enforce flags
                 if (!Boolean.TRUE.equals(defaultProfile.getIsDefault())) {
                     defaultProfile.setIsDefault(true);
                     changed = true;
                 }
+
                 if (defaultProfile.getIsActive() == null) {
                     defaultProfile.setIsActive(true);
                     changed = true;
@@ -170,11 +189,38 @@ public class DiagnosticTestService {
         });
     }
 
+    private void validateAppointableRequirements(DiagnosticTest diagnosticTest) {
+        if (Boolean.TRUE.equals(diagnosticTest.getAppointable())) {
+            if (diagnosticTest.getDefaultDurationMinutes() == null || diagnosticTest.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "diagnosticTest",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (diagnosticTest.getDefaultBufferBeforeMinutes() == null || diagnosticTest.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "diagnosticTest",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (diagnosticTest.getDefaultBufferAfterMinutes() == null || diagnosticTest.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "diagnosticTest",
+                        "bufferafterinvalid"
+                );
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAll(Pageable pageable) {
         return repository.findAll(pageable);
     }
-
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
@@ -196,10 +242,10 @@ public class DiagnosticTestService {
     }
 
     public Page<DiagnosticTest> findActiveAppointable(Pageable pageable) {
-        LOG.debug("Fetching Active Appointable  DiagnosticTest  pageable={} is",  pageable);
-        return repository
-                .findByIsActiveTrueAndAppointableTrue( pageable);
+        LOG.debug("Fetching Active Appointable DiagnosticTest pageable={}", pageable);
+        return repository.findByIsActiveTrueAndAppointableTrue(pageable);
     }
+
     public Optional<DiagnosticTest> toggleIsActive(Long id) {
         return repository.findById(id)
                 .map(p -> {
@@ -212,11 +258,9 @@ public class DiagnosticTestService {
     public Page<DiagnosticTest> findAllActive(Pageable pageable) {
         return repository.findByIsActiveTrue(pageable);
     }
-// Add to DiagnosticTestService.java
 
     @Transactional(readOnly = true)
     public List<DiagnosticTest> findAllByIds(List<Long> ids) {
         return repository.findAllById(ids);
     }
-
 }

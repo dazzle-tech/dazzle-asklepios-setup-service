@@ -11,7 +11,8 @@ import com.dazzle.asklepios.repository.CatalogRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-import com.dazzle.asklepios.web.rest.CatalogController;
+import com.dazzle.asklepios.security.SecurityUtils;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
@@ -23,8 +24,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,22 +44,20 @@ public class CatalogService {
     private final FacilityRepository facilityRepository;
     private final DiagnosticTestRepository diagnosticTestRepository;
     private final CatalogDiagnosticTestRepository catalogDiagnosticTestRepository;
+
     private static final Logger LOG = LoggerFactory.getLogger(CatalogService.class);
 
     public Catalog create(CatalogCreateVM vm) {
-
         Department dept = null;
         if (vm.getDepartmentId() != null) {
             dept = departmentRepository.findById(vm.getDepartmentId())
                     .orElseThrow(() -> new RuntimeException("Department not found: " + vm.getDepartmentId()));
-
         }
 
         Facility facil = null;
         if (vm.getFacilityId() != null) {
             facil = facilityRepository.findById(vm.getFacilityId())
                     .orElseThrow(() -> new RuntimeException("Facility not found: " + vm.getFacilityId()));
-
         }
 
         Catalog c = Catalog.builder()
@@ -65,7 +66,14 @@ public class CatalogService {
                 .type(vm.getType())
                 .department(dept)
                 .facility(facil)
+                .appointable(vm.getAppointable())
+                .parallelCapacityValue(vm.getParallelCapacityValue() != null ? vm.getParallelCapacityValue() : 1)
+                .defaultDurationMinutes(vm.getDefaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.getDefaultBufferBeforeMinutes() != null ? vm.getDefaultBufferBeforeMinutes() : 0)
+                .defaultBufferAfterMinutes(vm.getDefaultBufferAfterMinutes() != null ? vm.getDefaultBufferAfterMinutes() : 0)
                 .build();
+
+        validateAppointableRequirements(c);
 
         return catalogRepository.save(c);
     }
@@ -73,14 +81,15 @@ public class CatalogService {
     public Optional<Catalog> update(Long id, CatalogUpdateVM vm) {
         return catalogRepository.findById(id).map(c -> {
             if (vm.getName() != null) c.setName(vm.getName());
+
             if (vm.getDescription() != null) {
                 c.setDescription(vm.getDescription());
-
             } else {
-
                 c.setDescription(null);
             }
+
             if (vm.getType() != null) c.setType(vm.getType());
+
             if (vm.getDepartmentId() != null) {
                 Department dept = departmentRepository.findById(vm.getDepartmentId())
                         .orElseThrow(() -> new EntityNotFoundException("Department not found: " + vm.getDepartmentId()));
@@ -88,6 +97,7 @@ public class CatalogService {
             } else {
                 c.setDepartment(null);
             }
+
             if (vm.getFacilityId() != null) {
                 Facility facil = facilityRepository.findById(vm.getFacilityId())
                         .orElseThrow(() -> new EntityNotFoundException("Facility not found: " + vm.getFacilityId()));
@@ -95,8 +105,55 @@ public class CatalogService {
             } else {
                 c.setFacility(null);
             }
+
+            if (vm.getAppointable() != null) {
+                c.setAppointable(vm.getAppointable());
+            }
+            if (vm.getParallelCapacityValue() != null) {
+                c.setParallelCapacityValue(vm.getParallelCapacityValue());
+            }
+            if (vm.getDefaultDurationMinutes() != null) {
+                c.setDefaultDurationMinutes(vm.getDefaultDurationMinutes());
+            }
+            if (vm.getDefaultBufferBeforeMinutes() != null) {
+                c.setDefaultBufferBeforeMinutes(vm.getDefaultBufferBeforeMinutes());
+            }
+            if (vm.getDefaultBufferAfterMinutes() != null) {
+                c.setDefaultBufferAfterMinutes(vm.getDefaultBufferAfterMinutes());
+            }
+
+            validateAppointableRequirements(c);
+
             return catalogRepository.save(c);
         });
+    }
+
+    private void validateAppointableRequirements(Catalog catalog) {
+        if (Boolean.TRUE.equals(catalog.getAppointable())) {
+            if (catalog.getDefaultDurationMinutes() == null || catalog.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "catalog",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (catalog.getDefaultBufferBeforeMinutes() == null || catalog.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "catalog",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (catalog.getDefaultBufferAfterMinutes() == null || catalog.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "catalog",
+                        "bufferafterinvalid"
+                );
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -171,9 +228,7 @@ public class CatalogService {
 
     public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {
         return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
-
     }
-
     /**
      * Get tests of given type that are NOT already selected in this catalog.
      * Also filter by name (search) if provided.
@@ -217,10 +272,19 @@ public class CatalogService {
                 start > end ? List.of() : filtered.subList(start, end);
 
         return new PageImpl<>(pageContent, pageable, filtered.size());
-
     }
     public Page<Catalog> findByDepartmentOrUnassigned(Long departmentId, Pageable pageable) {
         return catalogRepository.findByDepartmentIdOrDepartmentIdIsNull(departmentId, pageable);
     }
+    public Page<Catalog> findAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  catalog pageable={} is", pageable);
+        Long facilityId = getFacility();
+        return catalogRepository.findByAppointableTrueAndFacility_Id(facilityId, pageable);
+    }
+    private Long getFacility(){
 
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
+    }
 }

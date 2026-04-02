@@ -331,4 +331,23 @@ public class DepartmentController {
         return ResponseEntity.ok(departmentService.findByIds(ids));
     }
 
+    @GetMapping("/department/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<DepartmentResponseVM>> getAppointableDepartmentBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list appointable Departments page={}", pageable);
+
+        Page<Department> page = departmentService.findAppointableDepartmentByLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }

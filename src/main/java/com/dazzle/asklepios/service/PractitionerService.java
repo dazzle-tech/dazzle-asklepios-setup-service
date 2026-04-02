@@ -2,11 +2,14 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.PractitionerDepartment;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
 import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
@@ -14,12 +17,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-
 
 @Service
 @Transactional
@@ -29,15 +34,17 @@ public class PractitionerService {
     private final PractitionersRepository practitionerRepository;
     private final FacilityRepository facilityRepository;
     private final UserRepository userRepository;
+    private final PractitionerDepartmentRepository practitionerDepartmentRepository;
 
     public PractitionerService(
             PractitionersRepository practitionerRepository,
             FacilityRepository facilityRepository,
-            UserRepository userRepository
-    ) {
+            UserRepository userRepository,
+            PractitionerDepartmentRepository practitionerDepartmentRepository) {
         this.practitionerRepository = practitionerRepository;
         this.facilityRepository = facilityRepository;
         this.userRepository = userRepository;
+        this.practitionerDepartmentRepository = practitionerDepartmentRepository;
     }
 
     public Practitioner create(PractitionerCreateVM vm) {
@@ -88,7 +95,13 @@ public class PractitionerService {
                 .jobRole(vm.jobRole())
                 .gender(vm.gender())
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
+                .parallelCapacityValue(vm.parallelCapacityValue() != null ? vm.parallelCapacityValue() : 1)
+                .defaultDurationMinutes(vm.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
+                .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
                 .build();
+
+        validatePractitioner(practitioner);
 
         return practitionerRepository.save(practitioner);
     }
@@ -117,15 +130,31 @@ public class PractitionerService {
         practitioner.setFacility(facility);
 
         if (vm.userId() != null && vm.userId() > 0) {
-            userRepository.findById(vm.userId()).ifPresent(practitioner::setUser);
+            if (!vm.userId().equals(practitioner.getUser() != null ? practitioner.getUser().getId() : null)
+                    && practitionerRepository.existsByUserId(vm.userId())) {
+                throw new BadRequestAlertException(
+                        "User already linked to another practitioner",
+                        "practitioner",
+                        "userexists"
+                );
+            }
+
+            User user = userRepository.findById(vm.userId())
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "User not found with id " + vm.userId(),
+                            "user",
+                            "notfound"
+                    ));
+            practitioner.setUser(user);
         } else {
             practitioner.setUser(null);
         }
 
         if (vm.firstName() != null) practitioner.setFirstName(vm.firstName());
         if (vm.lastName() != null) practitioner.setLastName(vm.lastName());
+
         if (vm.email() != null && !vm.email().isBlank()) practitioner.setEmail(vm.email());
-        else practitioner.setEmail(null);
+        else if (vm.email() != null) practitioner.setEmail(null);
 
         if (vm.phoneNumber() != null) practitioner.setPhoneNumber(vm.phoneNumber());
         if (vm.specialty() != null) practitioner.setSpecialty(vm.specialty());
@@ -143,10 +172,47 @@ public class PractitionerService {
         if (vm.gender() != null) practitioner.setGender(vm.gender());
         if (vm.isActive() != null) practitioner.setIsActive(vm.isActive());
 
+        if (vm.parallelCapacityValue() != null) practitioner.setParallelCapacityValue(vm.parallelCapacityValue());
+        if (vm.defaultDurationMinutes() != null) practitioner.setDefaultDurationMinutes(vm.defaultDurationMinutes());
+        if (vm.defaultBufferBeforeMinutes() != null)
+            practitioner.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+        if (vm.defaultBufferAfterMinutes() != null)
+            practitioner.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+
+        validatePractitioner(practitioner);
+
         Practitioner updated = practitionerRepository.save(practitioner);
         LOG.debug("Updated Practitioner successfully: {}", updated);
 
         return Optional.of(updated);
+    }
+
+    private void validatePractitioner(Practitioner practitioner) {
+        if (Boolean.TRUE.equals(practitioner.getAppointable())) {
+            if (practitioner.getDefaultDurationMinutes() == null || practitioner.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "practitioner",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (practitioner.getDefaultBufferBeforeMinutes() == null || practitioner.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "practitioner",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (practitioner.getDefaultBufferAfterMinutes() == null || practitioner.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "practitioner",
+                        "bufferafterinvalid"
+                );
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -176,8 +242,13 @@ public class PractitionerService {
 
     public Page<Practitioner> findActiveAppointable(Pageable pageable) {
         LOG.debug("Fetching Active Appointable  Practitionerpageable={} is", pageable);
-        return practitionerRepository
-                .findByIsActiveTrueAndAppointableTrue(pageable);
+        return practitionerRepository.findByIsActiveTrueAndAppointableTrue(pageable);
+    }
+
+    public Page<Practitioner> findActiveAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Practitionerpageable={} is", pageable);
+        Long facilityId = getFacility();
+        return practitionerRepository.findByIsActiveTrueAndAppointableTrueAndFacility_Id(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -191,16 +262,17 @@ public class PractitionerService {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
                     return practitionerRepository.save(p);
                 });
-}
+    }
+
     @Transactional(readOnly = true)
     public List<Practitioner> findByIds(List<Long> ids) {
-            return practitionerRepository.findAllById(ids);
-        }
+        return practitionerRepository.findAllById(ids);
+    }
+
     @Transactional(readOnly = true)
     public Optional<Practitioner> findByUser(Long userId) {
         return practitionerRepository.findByUserId(userId);
     }
-
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findSpecialistPractitionersByFacilityAndSubSpecialty(
@@ -233,4 +305,34 @@ public class PractitionerService {
                 );
     }
 
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findPractitionerByDepartment(Long departmentId, Pageable pageable) {
+        LOG.debug("Fetching paged practitioner by department departmentId={} pageable={}", departmentId, pageable);
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentId(departmentId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> practitionerIds = items.stream()
+                .map(serviceItems -> serviceItems.getPractitioner().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (practitionerIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepository.findByIdIn(practitionerIds, pageable);
+    }
+
+    private Long getFacility() {
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
+    }
 }

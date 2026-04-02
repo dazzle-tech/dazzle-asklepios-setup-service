@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.domain;
 
-
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import jakarta.persistence.Column;
@@ -31,7 +30,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = false)
-public class Department  extends  AbstractAuditingEntity<Long> implements Serializable {
+public class Department extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -75,10 +74,33 @@ public class Department  extends  AbstractAuditingEntity<Long> implements Serial
     private Boolean isActive;
 
     @Column(name = "has_medical_sheets")
-    private  Boolean hasMedicalSheets=false;
+    private Boolean hasMedicalSheets = false;
 
     @Column(name = "has_nurse_medical_sheets")
-    private  Boolean hasNurseMedicalSheets=false;
+    private Boolean hasNurseMedicalSheets = false;
 
+    @NotNull
+    @Column(name = "parallel_capacity_enabled", nullable = false)
+    private Boolean parallelCapacityEnabled = false;
 
+    @Column(name = "parallel_capacity_value")
+    private Integer parallelCapacityValue = 1;
+
+    @Column(name = "default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name = "default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes = 0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes = 0;
+
+    @Column(name = "require_practitioner")
+    private Boolean requirePractitioner = false;
+
+    @Column(name = "require_billing")
+    private Boolean requireBilling = false;
+
+    @Column(name = "require_pre_assessment")
+    private Boolean requirePreAssessment = false;
 }

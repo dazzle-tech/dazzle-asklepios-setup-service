@@ -47,7 +47,11 @@ public record PractitionerCreateVM(
         LocalDate dateOfBirth,
         JobRole jobRole,
         Gender gender,
-        Boolean isActive
+        Boolean isActive,
+        @NotNull Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes
 ) implements Serializable {
 
     public static PractitionerCreateVM ofEntity(Practitioner practitioner) {
@@ -69,7 +73,11 @@ public record PractitionerCreateVM(
                 practitioner.getDateOfBirth(),
                 practitioner.getJobRole(),
                 practitioner.getGender(),
-                practitioner.getIsActive()
+                practitioner.getIsActive(),
+                practitioner.getParallelCapacityValue(),
+                practitioner.getDefaultDurationMinutes(),
+                practitioner.getDefaultBufferBeforeMinutes(),
+                practitioner.getDefaultBufferAfterMinutes()
         );
     }
 }

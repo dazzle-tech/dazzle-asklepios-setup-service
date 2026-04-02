@@ -6,6 +6,7 @@ import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.OrganizationHolidayService;
 import com.dazzle.asklepios.service.dto.organizationHoliday.OrganizationHolidayCreateDTO;
 import com.dazzle.asklepios.service.dto.organizationHoliday.OrganizationHolidayUpdateDTO;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.OrganizationHolidayResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -85,6 +86,47 @@ public class OrganizationHolidayController {
                 .toList();
 
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/organization-holiday/by-date-range")
+    public ResponseEntity<List<OrganizationHolidayResponseVM>> getActiveHolidaysInRange(
+            @RequestParam("fromDate") LocalDate fromDate,
+            @RequestParam("toDate") LocalDate toDate,
+            @RequestParam Long facilityId
+    ) {
+        LOG.debug("REST request to get active holidays between {} and {}", fromDate, toDate);
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility are required",
+                    "organizationHoliday",
+                    "datenull"
+            );
+        }
+
+        if (fromDate == null || toDate == null) {
+            throw new BadRequestAlertException(
+                    "From date and to date are required",
+                    "organizationHoliday",
+                    "datenull"
+            );
+        }
+
+        if (toDate.isBefore(fromDate)) {
+            throw new BadRequestAlertException(
+                    "To date cannot be before from date",
+                    "organizationHoliday",
+                    "dateinvalid"
+            );
+        }
+
+
+        List<OrganizationHoliday> result =
+                organizationHolidayService.getActiveHolidaysInRange(facilityId, fromDate, toDate);
+
+        return ResponseEntity.ok(result.stream()
+                .map(OrganizationHolidayResponseVM::ofEntity)
+                .toList());
     }
 
     /**

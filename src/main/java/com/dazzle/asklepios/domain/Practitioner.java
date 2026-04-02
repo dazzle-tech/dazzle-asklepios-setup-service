@@ -109,5 +109,17 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "parallel_capacity_value" , nullable = false)
+    private Integer parallelCapacityValue= 1;
+
+    @Column(name="default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name="default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes=0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes=0;
+
 
 }

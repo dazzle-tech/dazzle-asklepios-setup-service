@@ -18,7 +18,12 @@ public record ServiceCreateVM(
         @NotNull ServiceCategory category,
         BigDecimal price,
         @NotNull Currency currency,
-        Boolean isActive
+        Boolean isActive,
+        Boolean appointable,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes
 ) implements Serializable {
 
     public static ServiceCreateVM ofEntity(ServiceSetup service) {
@@ -29,7 +34,12 @@ public record ServiceCreateVM(
                 service.getCategory(),
                 service.getPrice(),
                 service.getCurrency(),
-                service.getIsActive()
+                service.getIsActive(),
+                service.getAppointable(),
+                service.getParallelCapacityValue(),
+                service.getDefaultDurationMinutes(),
+                service.getDefaultBufferBeforeMinutes(),
+                service.getDefaultBufferAfterMinutes()
         );
     }
 }
