@@ -4,11 +4,13 @@ import com.dazzle.asklepios.domain.BrandMedication;
 import com.dazzle.asklepios.service.BrandMedicationActiveIngredientService;
 import com.dazzle.asklepios.service.BrandMedicationService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.search.BrandWithActivesVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -279,6 +281,31 @@ public class BrandMedicationController {
         LOG.debug("REST search brands by keyword='{}'", keyword);
         return ResponseEntity.ok(brandMedicationService.searchBrandsByNameOrActive(keyword));
     }
+    @GetMapping("/brand-medication/by-ids")
+    public ResponseEntity<List<BrandMedicationResponseVM>> getBrandMedicationsByIds(
+            @RequestParam @NotNull List<Long> ids
+    ) {
+        LOG.debug("REST getBrandMedicationsByIds ids={}", ids);
 
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Brand medication ids list must not be empty",
+                    "brandMedication",
+                    "ids.empty"
+            );
+        }
+
+        List<BrandMedicationResponseVM> list =
+                brandMedicationService.findByIds(ids)
+                        .stream()
+                        .map(brand -> {
+                            boolean hasActiveIngredient =
+                                    brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                            return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                        })
+                        .toList();
+
+        return ResponseEntity.ok(list);
+    }
 
 }

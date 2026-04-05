@@ -85,6 +85,14 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @NotNull
+    @Column(name = "price", precision = 10, scale = 2, nullable = false)
+    private BigDecimal price;
+
+    @NotNull
+    @Column(name = "currency", length = 10, nullable = false)
+    private String currency;
+
    @NotNull
    @ManyToOne(optional = false)
    @JoinColumn(name = "uom_group_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_id"))

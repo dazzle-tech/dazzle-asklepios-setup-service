@@ -6,10 +6,12 @@ import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.service.DiagnosticTestService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -203,6 +205,33 @@ public class DiagnosticTestController {
         );
     }
 // Add to DiagnosticTestController.java
+@GetMapping("/diagnostic-test/active/by-type/{type}")
+public ResponseEntity<List<DiagnosticTestResponseVM>> findActiveByType(
+        @PathVariable @NotNull TestType type,
+        @ParameterObject Pageable pageable
+) {
+    LOG.debug("REST request to find ACTIVE DiagnosticTests by type={} page={}", type, pageable);
+
+    if (type == null) {
+        throw new BadRequestAlertException(
+                "typeRequired",
+                "diagnosticTest",
+                "Test type is required"
+        );
+    }
+
+    Page<DiagnosticTest> page = service.findActiveByType(type, pageable);
+
+    HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+            ServletUriComponentsBuilder.fromCurrentRequest(), page
+    );
+
+    return new ResponseEntity<>(
+            enrichWithDefaultProfiles(page.getContent()),
+            headers,
+            HttpStatus.OK
+    );
+}
 
     @GetMapping("/diagnostic-test/by-ids")
     public ResponseEntity<List<DiagnosticTestResponseVM>> getByIds(
