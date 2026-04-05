@@ -90,8 +90,8 @@ public class OrganizationHolidayController {
 
     @GetMapping("/organization-holiday/by-date-range")
     public ResponseEntity<List<OrganizationHolidayResponseVM>> getActiveHolidaysInRange(
-            @RequestParam("fromDate") LocalDate fromDate,
-            @RequestParam("toDate") LocalDate toDate,
+            @RequestParam("fromDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam("toDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
             @RequestParam Long facilityId
     ) {
         LOG.debug("REST request to get active holidays between {} and {}", fromDate, toDate);
