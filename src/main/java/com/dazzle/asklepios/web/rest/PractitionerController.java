@@ -216,7 +216,6 @@ public class PractitionerController {
         }
         return ResponseEntity.ok(practitionerService.findByIds(ids));
     }
-
     @GetMapping("/practitioner/active-appointable")
     public ResponseEntity<List<PractitionerResponseVM>> getActiveAppointable(
 
@@ -261,6 +260,18 @@ public class PractitionerController {
                                 subSpecialty,
                                 pageable
                         )
+        );
+    }
+
+    @GetMapping("/practitioner/active")
+    public ResponseEntity<List<PractitionerResponseVM>> getAllActivePractitioners(@ParameterObject Pageable pageable) {
+        Page<Practitioner> page = practitionerService.findAllActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
         );
     }
 
