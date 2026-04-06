@@ -1,6 +1,6 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
+import com.dazzle.asklepios.domain.enumeration.patient.EncounterReason;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,17 +20,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Entity
+@Table(name = "department_services")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class OrganizationWorkingDay implements Serializable {
+@EqualsAndHashCode(callSuper = false)
+public class DepartmentServices implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,16 +42,11 @@ public class OrganizationWorkingDay implements Serializable {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "organization_definition_id", nullable = false)
-    private OrganizationDefinition organizationDefinition;
+    @JoinColumn(name = "department_id", nullable = false)
+    private Department department;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "day_of_week", nullable = false, length = 50)
-    private DayOfWeek dayOfWeek;
-
-    @NotNull
-    @Column(name = "is_working", nullable = false)
-    private Boolean isWorking = true;
-
+    @Column(name = "service", nullable = false, length = 50)
+    private EncounterReason service;
 }

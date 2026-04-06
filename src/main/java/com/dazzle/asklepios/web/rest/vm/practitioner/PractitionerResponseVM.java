@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
+import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -32,7 +33,11 @@ public record PractitionerResponseVM(
         JobRole jobRole,
         Gender gender,
         Boolean isActive,
-        Facility facility
+        Facility facility,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes
 ) implements Serializable {
 
     public static PractitionerResponseVM ofEntity(Practitioner practitioner) {
@@ -56,7 +61,11 @@ public record PractitionerResponseVM(
                 practitioner.getJobRole(),
                 practitioner.getGender(),
                 practitioner.getIsActive(),
-                practitioner.getFacility()
+                practitioner.getFacility(),
+                practitioner.getParallelCapacityValue(),
+                practitioner.getDefaultDurationMinutes(),
+                practitioner.getDefaultBufferBeforeMinutes(),
+                practitioner.getDefaultBufferAfterMinutes()
         );
     }
 }

@@ -1,14 +1,12 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,17 +18,21 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     Page<Practitioner> findByFacilityId(Long facilityId, Pageable pageable);
 
     Page<Practitioner> findBySpecialty(Specialty specialty, Pageable pageable);
+
     Page<Practitioner> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
             String firstName,
             String lastName,
             Pageable pageable
     );
+
     boolean existsByUserId(Long userId);
 
     Page<Practitioner> findBySubSpecialtyAndIsActiveTrue(String specialty, Pageable pageable);
+
     Page<Practitioner> findByIsActiveTrueAndAppointableTrue(
-    Pageable pageable
+            Pageable pageable
     );
+
     Optional<Practitioner> findByUserId(Long userId);
 
     Page<Practitioner> findByFacilityIdAndSubSpecialtyAndSpecialtyAndUserIdIsNotNullAndIsActiveTrue(
@@ -44,6 +46,10 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
             List<Long> ids,
             Pageable pageable
     );
+
+    Page<Practitioner> findByIsActiveTrueAndAppointableTrueAndFacility_Id(Long facilityId, Pageable pageable);
+
+    Page<Practitioner> findByIdIn(List<Long> ids, Pageable pageable);
 
     Page<Practitioner> findByIsActiveTrue(Pageable pageable);
 

@@ -1,16 +1,12 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.PractitionerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,5 +275,40 @@ public class PractitionerController {
         );
     }
 
+    @GetMapping("/practitioner/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<PractitionerResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
+
+        Page<Practitioner> page = practitionerService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionerByDepartment(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list practitioner by DEPARTMENTS departmentId={} pageable={}", departmentId, pageable);
+
+        Page<Practitioner> page = practitionerService.findPractitionerByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
 
 }

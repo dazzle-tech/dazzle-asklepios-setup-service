@@ -26,7 +26,15 @@ public record DepartmentUpdateVM(
         EncounterType encounterType,
         Boolean isActive,
         Boolean hasMedicalSheets,
-        Boolean hasNurseMedicalSheets
+        Boolean hasNurseMedicalSheets,
+        Boolean parallelCapacityEnabled,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes,
+        Boolean requirePractitioner,
+        Boolean requireBilling,
+        Boolean requirePreAssessment
 ) implements Serializable {
 
         public static DepartmentUpdateVM ofEntity(Department department) {
@@ -42,7 +50,15 @@ public record DepartmentUpdateVM(
                         department.getEncounterType(),
                         department.getIsActive(),
                         department.getHasMedicalSheets(),
-                        department.getHasNurseMedicalSheets()
+                        department.getHasNurseMedicalSheets(),
+                        department.getParallelCapacityEnabled(),
+                        department.getParallelCapacityValue(),
+                        department.getDefaultDurationMinutes(),
+                        department.getDefaultBufferBeforeMinutes(),
+                        department.getDefaultBufferAfterMinutes(),
+                        department.getRequirePractitioner(),
+                        department.getRequireBilling(),
+                        department.getRequirePreAssessment()
                 );
         }
 }

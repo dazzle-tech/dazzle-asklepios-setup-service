@@ -56,6 +56,11 @@ public class ServiceController {
                 .price(vm.price())
                 .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
+                .appointable(vm.appointable())
+                .parallelCapacityValue(vm.parallelCapacityValue())
+                .defaultDurationMinutes(vm.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes())
+                .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes())
                 .build();
 
         ServiceSetup created = serviceService.create(facilityId, toCreate);
@@ -82,7 +87,11 @@ public class ServiceController {
         patch.setPrice(vm.price());
         patch.setCurrency(vm.currency());
         patch.setIsActive(vm.isActive());
-        patch.setLastModifiedBy(vm.lastModifiedBy());
+        patch.setAppointable(vm.appointable());
+        patch.setParallelCapacityValue(vm.parallelCapacityValue());
+        patch.setDefaultDurationMinutes(vm.defaultDurationMinutes());
+        patch.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+        patch.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
 
         return serviceService.update(id, facilityId, patch)
                 .map(ServiceResponseVM::ofEntity)
@@ -221,5 +230,37 @@ public class ServiceController {
 
         return ResponseEntity.ok(body);
     }
+    @GetMapping("/service/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<ServiceResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable service pageable={}", pageable);
 
+        Page<ServiceSetup> page = serviceService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/active/by-facility/{facilityId}")
+    public ResponseEntity<List<ServiceSetup>> findActiveByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to get active Services by facilityId={} pageable={}", facilityId, pageable);
+
+        Page<ServiceSetup> page = serviceService.findActiveByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
 }

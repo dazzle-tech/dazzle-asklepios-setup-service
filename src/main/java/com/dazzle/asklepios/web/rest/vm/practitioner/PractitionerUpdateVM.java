@@ -65,7 +65,12 @@ public record PractitionerUpdateVM(
 
         Gender gender,
 
-        Boolean isActive
+        Boolean isActive,
+
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes
 ) implements Serializable {
 
     public static PractitionerUpdateVM ofEntity(Practitioner practitioner) {
@@ -88,7 +93,11 @@ public record PractitionerUpdateVM(
                 practitioner.getDateOfBirth(),
                 practitioner.getJobRole(),
                 practitioner.getGender(),
-                practitioner.getIsActive()
+                practitioner.getIsActive(),
+                practitioner.getParallelCapacityValue(),
+                practitioner.getDefaultDurationMinutes(),
+                practitioner.getDefaultBufferBeforeMinutes(),
+                practitioner.getDefaultBufferAfterMinutes()
         );
     }
 }

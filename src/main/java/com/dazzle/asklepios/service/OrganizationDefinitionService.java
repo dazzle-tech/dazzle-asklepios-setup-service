@@ -2,22 +2,20 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
-import com.dazzle.asklepios.domain.OrganizationWorkingDay;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.repository.LanguageRepository;
 import com.dazzle.asklepios.repository.OrganizationDefinitionRepository;
-import com.dazzle.asklepios.repository.OrganizationWorkingDayRepository;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionCreateVM;
 import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationDefinitionUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationWorkingDayCreateVM;
-import com.dazzle.asklepios.web.rest.vm.organizationDefinition.OrganizationWorkingDayUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,12 +28,13 @@ public class OrganizationDefinitionService {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationDefinitionService.class);
 
     private final OrganizationDefinitionRepository organizationDefinitionRepository;
-    private final OrganizationWorkingDayRepository organizationWorkingDayRepository;
     private final LanguageRepository languageRepository;
 
-    public OrganizationDefinitionService(OrganizationDefinitionRepository organizationDefinitionRepository, OrganizationWorkingDayRepository organizationWorkingDayRepository, LanguageRepository languageRepository) {
+    public OrganizationDefinitionService(
+            OrganizationDefinitionRepository organizationDefinitionRepository,
+            LanguageRepository languageRepository
+    ) {
         this.organizationDefinitionRepository = organizationDefinitionRepository;
-        this.organizationWorkingDayRepository = organizationWorkingDayRepository;
         this.languageRepository = languageRepository;
     }
 
@@ -59,12 +58,10 @@ public class OrganizationDefinitionService {
         org.setDefaultTimeZone(vm.defaultTimeZone());
         org.setDefaultLanguage(language);
 
-        OrganizationDefinition saved = organizationDefinitionRepository.save(org);
+        validateWorkingDays(vm.workingDays());
+        org.setWorkingDays(normalizeWorkingDays(vm.workingDays()));
 
-        saveWorkingDaysOnCreate(saved, vm.workingDays());
-        loadWorkingDays(saved);
-
-        return saved;
+        return organizationDefinitionRepository.save(org);
     }
 
     public Optional<OrganizationDefinition> update(Long id, OrganizationDefinitionUpdateVM vm) {
@@ -83,38 +80,29 @@ public class OrganizationDefinitionService {
 
             if (vm.taxValue() != null) existing.setTaxValue(vm.taxValue());
             if (vm.defaultTimeZone() != null) existing.setDefaultTimeZone(vm.defaultTimeZone());
-            if (vm.defaultLanguageId() != null) existing.setDefaultLanguage(getLanguage(vm.defaultLanguageId()));
-
-            OrganizationDefinition updated = organizationDefinitionRepository.save(existing);
-
-            if (vm.workingDays() != null) {
-                replaceWorkingDays(updated, vm.workingDays());
+            if (vm.defaultLanguageId() != null) {
+                existing.setDefaultLanguage(getLanguage(vm.defaultLanguageId()));
             }
 
-            loadWorkingDays(updated);
-            return updated;
+            if (vm.workingDays() != null) {
+                validateWorkingDays(vm.workingDays());
+                existing.setWorkingDays(normalizeWorkingDays(vm.workingDays()));
+            }
+
+            return organizationDefinitionRepository.save(existing);
         });
     }
 
     @Transactional(readOnly = true)
     public List<OrganizationDefinition> findAll() {
         LOG.debug("Request to get all OrganizationDefinitions");
-
-        List<OrganizationDefinition> organizations = organizationDefinitionRepository.findAll();
-        organizations.forEach(this::loadWorkingDays);
-
-        return organizations;
+        return organizationDefinitionRepository.findAll();
     }
 
     @Transactional(readOnly = true)
     public Optional<OrganizationDefinition> findOne(Long id) {
         LOG.debug("Request to get OrganizationDefinition : {}", id);
-
-        return organizationDefinitionRepository.findById(id)
-                .map(org -> {
-                    loadWorkingDays(org);
-                    return org;
-                });
+        return organizationDefinitionRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
@@ -123,56 +111,26 @@ public class OrganizationDefinitionService {
         return organizationDefinitionRepository.count() > 0;
     }
 
-    private void saveWorkingDaysOnCreate(OrganizationDefinition organization, List<OrganizationWorkingDayCreateVM> workingDays) {
+    private List<WorkingDayJson> normalizeWorkingDays(List<WorkingDayJson> workingDays) {
         if (workingDays == null || workingDays.isEmpty()) {
-            organization.setWorkingDays(List.of());
+            return Collections.emptyList();
+        }
+
+        return workingDays.stream()
+                .map(item -> WorkingDayJson.builder()
+                        .dayOfWeek(item.getDayOfWeek())
+                        .isWorking(item.getIsWorking())
+                        .build())
+                .toList();
+    }
+
+    private void validateWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
             return;
         }
 
-        validateCreateWorkingDays(workingDays);
-
-        List<OrganizationWorkingDay> entities = workingDays.stream()
-                .map(item -> {
-                    OrganizationWorkingDay row = new OrganizationWorkingDay();
-                    row.setOrganizationDefinition(organization);
-                    row.setDayOfWeek(item.dayOfWeek());
-                    row.setIsWorking(item.isWorking());
-                    return row;
-                })
-                .toList();
-
-        organizationWorkingDayRepository.saveAll(entities);
-
-    }
-
-    private void replaceWorkingDays(OrganizationDefinition organization, List<OrganizationWorkingDayUpdateVM> workingDays) {
-        validateUpdateWorkingDays(workingDays);
-
-        organizationWorkingDayRepository.deleteAllByOrganizationDefinitionId(organization.getId());
-        organizationWorkingDayRepository.flush();
-
-        if (workingDays.isEmpty()) {
-            organization.setWorkingDays(List.of());
-            return;
-        }
-
-        List<OrganizationWorkingDay> entities = workingDays.stream()
-                .map(item -> {
-                    OrganizationWorkingDay row = new OrganizationWorkingDay();
-                    row.setOrganizationDefinition(organization);
-                    row.setDayOfWeek(item.dayOfWeek());
-                    row.setIsWorking(item.isWorking());
-                    return row;
-                })
-                .toList();
-
-        organizationWorkingDayRepository.saveAll(entities);
-        organizationWorkingDayRepository.flush();
-    }
-
-    private void validateCreateWorkingDays(List<OrganizationWorkingDayCreateVM> workingDays) {
         Set<DayOfWeek> uniqueDays = workingDays.stream()
-                .map(OrganizationWorkingDayCreateVM::dayOfWeek)
+                .map(WorkingDayJson::getDayOfWeek)
                 .collect(Collectors.toSet());
 
         if (uniqueDays.size() != workingDays.size()) {
@@ -182,28 +140,6 @@ public class OrganizationDefinitionService {
                     "duplicate_day"
             );
         }
-    }
-
-    private void validateUpdateWorkingDays(List<OrganizationWorkingDayUpdateVM> workingDays) {
-        Set<DayOfWeek> uniqueDays = workingDays.stream()
-                .map(OrganizationWorkingDayUpdateVM::dayOfWeek)
-                .collect(Collectors.toSet());
-
-        if (uniqueDays.size() != workingDays.size()) {
-            throw new BadRequestAlertException(
-                    "Duplicate working day entries",
-                    "organizationWorkingDay",
-                    "duplicate_day"
-            );
-        }
-    }
-
-    private void loadWorkingDays(OrganizationDefinition organization) {
-        List<OrganizationWorkingDay> workingDays =
-                organizationWorkingDayRepository.findAllByOrganizationDefinitionIdOrderByDayOfWeekAsc(
-                        organization.getId()
-                );
-        organization.setWorkingDays(workingDays);
     }
 
     private Language getLanguage(Long id) {
