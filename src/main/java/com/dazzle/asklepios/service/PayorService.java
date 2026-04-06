@@ -169,5 +169,10 @@ public class PayorService {
                     return repo.save(p);
                 });
     }
+
+    @Transactional(readOnly = true)
+    public Page<Payor> getAllActive(Pageable pageable) {
+        return repo.findByIsActiveTrue(pageable);
+    }
 }
 

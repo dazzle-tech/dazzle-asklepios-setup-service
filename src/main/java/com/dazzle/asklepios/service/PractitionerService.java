@@ -200,7 +200,10 @@ public class PractitionerService {
     public Optional<Practitioner> findByUser(Long userId) {
         return practitionerRepository.findByUserId(userId);
     }
-
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findAllActive(Pageable pageable) {
+        return practitionerRepository.findByIsActiveTrue(pageable);
+    }
 
     @Transactional(readOnly = true)
     public Page<Practitioner> findSpecialistPractitionersByFacilityAndSubSpecialty(

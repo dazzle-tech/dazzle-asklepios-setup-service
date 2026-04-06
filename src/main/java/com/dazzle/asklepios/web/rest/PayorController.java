@@ -99,4 +99,18 @@ public class PayorController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/payor/active")
+    public ResponseEntity<List<PayorResponseVM>> getAllActive(@ParameterObject Pageable pageable) {
+        Page<Payor> page = service.getAllActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PayorResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
 }

@@ -267,5 +267,17 @@ public class PractitionerController {
         );
     }
 
+    @GetMapping("/practitioner/active")
+    public ResponseEntity<List<PractitionerResponseVM>> getAllActivePractitioners(@ParameterObject Pageable pageable) {
+        Page<Practitioner> page = practitionerService.findAllActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 
 }
