@@ -7,11 +7,13 @@ import com.dazzle.asklepios.repository.ICDDiagnosisRepository;
 import com.dazzle.asklepios.service.dto.icd10.ICDNodeDetailsEntityDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,14 +111,38 @@ public class ICDTreeService {
     public Page<ICDDiagnosis> searchDiagnoses(String keyword, Pageable pageable) {
         LOG.debug("[FIND DIAGNOSES BY KEYWORD] keyword='{}' pageable={}", keyword, pageable);
 
-        Page<ICDDiagnosis> page =
-                icdDiagnosisRepository
-                        .findByIcdCodeContainingIgnoreCaseOrIcdShortDescriptionContainingIgnoreCaseOrIcdFullDescriptionContainingIgnoreCase(
-                                keyword,
-                                keyword,
-                                keyword,
-                                pageable
-                        );
+        String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
+
+        Specification<ICDDiagnosis> specification = (root, query, cb) -> {
+            Predicate excludeRanges = cb.or(
+                    cb.isNull(root.get("icdCode")),
+                    cb.notLike(root.get("icdCode"), "%-%")
+            );
+
+            Predicate excludeGroupRows = cb.or(
+                    cb.isNull(root.get("categoryCode")),
+                    cb.notEqual(root.get("categoryCode"), "1")
+            );
+
+            Predicate searchInCode =
+                    cb.like(cb.lower(cb.coalesce(root.get("icdCode"), "")), "%" + normalizedKeyword + "%");
+
+            Predicate searchInShortDescription =
+                    cb.like(cb.lower(cb.coalesce(root.get("icdShortDescription"), "")), "%" + normalizedKeyword + "%");
+
+            Predicate searchInFullDescription =
+                    cb.like(cb.lower(cb.coalesce(root.get("icdFullDescription"), "")), "%" + normalizedKeyword + "%");
+
+            Predicate searchPredicate = cb.or(
+                    searchInCode,
+                    searchInShortDescription,
+                    searchInFullDescription
+            );
+
+            return cb.and(excludeRanges, excludeGroupRows, searchPredicate);
+        };
+
+        Page<ICDDiagnosis> page = icdDiagnosisRepository.findAll(specification, pageable);
 
         LOG.debug("[FIND DIAGNOSES BY KEYWORD] resultCount={}", page.getTotalElements());
         return page;
