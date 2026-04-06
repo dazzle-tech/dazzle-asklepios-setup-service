@@ -200,6 +200,15 @@ public class ProcedureService {
         }
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> findActiveByFacility(Long facilityId, Pageable pageable) {
+
+        LOG.debug("Fetching ACTIVE Procedures by facilityId={} pageable={}", facilityId, pageable);
+
+        return procedureRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
+    }
+
     @Transactional(readOnly = true)
     public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, String category, Pageable pageable) {
         if (facilityId == null) {
