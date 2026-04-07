@@ -74,6 +74,7 @@ public class BrandMedicationService {
         BrandMedication entity = BrandMedication.builder()
                 .name(vm.name())
                 .manufacturer(vm.manufacturer())
+                .code(vm.code())
                 .dosageForm(vm.dosageForm())
                 .usageInstructions(vm.usageInstructions())
                 .storageRequirements(vm.storageRequirements())
@@ -87,6 +88,8 @@ public class BrandMedicationService {
                 .isActive(vm.isActive())
                 .uomGroup(uomGroup)
                 .uomGroupUnit(uomGroupUnit)
+                .price(vm.price())
+                .currency(vm.currency())
                 .build();
 
         BrandMedication saved = brandMedicationRepository.save(entity);
@@ -129,6 +132,8 @@ public class BrandMedicationService {
         if (vm.isActive() != null) entity.setIsActive(vm.isActive());
         if(vm.uomGroupId() != null) entity.setUomGroup(getUOMGroup(vm.uomGroupId()));
         if(vm.uomGroupUnitId()!=null) entity.setUomGroupUnit(getUOMGroupUnit(vm.uomGroupUnitId()));
+        if (vm.price() != null) entity.setPrice(vm.price());
+        if (vm.currency() != null) entity.setCurrency(vm.currency());
 
         BrandMedication updated = brandMedicationRepository.save(entity);
         LOG.debug("Updated BrandMedication: {}", updated);
@@ -203,6 +208,12 @@ public class BrandMedicationService {
     public Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by isActive={} {}", isActive, pageable);
         return brandMedicationRepository.findByIsActive(isActive, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BrandMedication> findByIds(List<Long> ids) {
+        LOG.debug("Request to get BrandMedications by ids={}", ids);
+        return brandMedicationRepository.findAllById(ids);
     }
 
     @Transactional(readOnly = true)

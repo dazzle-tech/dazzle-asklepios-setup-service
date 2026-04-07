@@ -8,6 +8,7 @@ import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -205,6 +206,34 @@ public class ProcedureController {
         LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
 
         Page<Procedure> page = procedureService.findActiveAppointable( pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}")
+    public ResponseEntity<List<ProcedureResponseVM>> getActiveByFacility(
+            @PathVariable @NotNull Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get ACTIVE Procedures by facilityId={} pageable={}", facilityId, pageable);
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility id is required",
+                    "procedure",
+                    "facility.required"
+            );
+        }
+
+        Page<Procedure> page = procedureService.findActiveByFacility(facilityId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page

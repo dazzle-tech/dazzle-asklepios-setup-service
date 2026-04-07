@@ -78,5 +78,6 @@ public enum MedicalSheets {
     MEDICATION_RECONCILIATION,
     WOUND_CARE_DOCUMENTATION,
     SERVICEANDPRODUCTS,
+    FORMS
 
     }

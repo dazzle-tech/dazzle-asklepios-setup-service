@@ -260,6 +260,14 @@ public class DiagnosticTestService {
     }
 
     @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findActiveByType(TestType type, Pageable pageable) {
+
+        LOG.debug("Fetch active DiagnosticTests by type: {}, pageable={}", type, pageable);
+
+        return repository.findByTypeAndIsActiveTrue(type, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public List<DiagnosticTest> findAllByIds(List<Long> ids) {
         return repository.findAllById(ids);
     }
