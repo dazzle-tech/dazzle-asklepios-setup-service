@@ -166,4 +166,21 @@ public class AllergensController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/allergen/active")
+    public ResponseEntity<List<AllergensResponseVM>> getActiveAllergens(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Allergens pageable={}", pageable);
+        Page<Allergens> page = allergenService.findActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<AllergensResponseVM> body = page.getContent()
+                .stream()
+                .map(AllergensResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
 }

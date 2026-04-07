@@ -20,4 +20,7 @@ public interface VaccineRepository extends JpaRepository<Vaccine, Long> {
     Page<Vaccine> findByType(VaccineType type, Pageable pageable);
 
     List<Vaccine> findByIdIn(List<Long> ids);
+
+    Page<Vaccine> findByNameContainingIgnoreCaseAndIsActiveTrue(String name, Pageable pageable);
+
 }

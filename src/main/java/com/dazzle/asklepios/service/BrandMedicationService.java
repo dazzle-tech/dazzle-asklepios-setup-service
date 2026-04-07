@@ -214,7 +214,7 @@ public class BrandMedicationService {
         // 1) brands matching by name/code
         List<Long> brandIdsFromName =
                 brandMedicationRepository
-                        .findByNameContainsIgnoreCaseOrCodeContainsIgnoreCase(kw, kw)
+                        .findByNameContainsIgnoreCaseAndIsActiveTrueOrCodeContainsIgnoreCaseAndIsActiveTrue(kw, kw)
                         .stream()
                         .map(BrandMedication::getId)
                         .toList();
@@ -259,6 +259,7 @@ public class BrandMedicationService {
         List<BrandMedication> orderedBrands = allBrandIds.stream()
                 .map(brandById::get)
                 .filter(Objects::nonNull)
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
                 .toList();
 
         // 9) map to VM using grouped relations

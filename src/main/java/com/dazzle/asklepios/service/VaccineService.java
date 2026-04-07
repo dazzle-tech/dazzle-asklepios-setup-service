@@ -172,6 +172,12 @@ public class VaccineService {
                 });
     }
 
+    @Transactional(readOnly = true)
+    public Page<Vaccine> findActiveByName(String name, Pageable pageable) {
+        LOG.debug("Fetching active Vaccines by name='{}'", name);
+        return vaccineRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(name, pageable);
+    }
+
     private void handleConstraintsOnCreateOrUpdate(RuntimeException constraintException) {
         Throwable root = getRootCause(constraintException);
         String message = (root != null ? root.getMessage() : constraintException.getMessage());

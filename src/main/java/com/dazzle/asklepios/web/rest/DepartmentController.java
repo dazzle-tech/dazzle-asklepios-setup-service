@@ -350,4 +350,22 @@ public class DepartmentController {
         );
     }
 
+    @GetMapping("/department/active")
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveDepartments(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Departments pageable={}", pageable);
+        Page<Department> page = departmentService.findActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }
