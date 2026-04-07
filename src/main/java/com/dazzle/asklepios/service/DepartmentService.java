@@ -362,4 +362,10 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
 
     }
+
+    @Transactional(readOnly = true)
+    public Page<Department> findActive(Pageable pageable) {
+        LOG.debug("Request to get Active Departments pageable={}", pageable);
+        return departmentRepository.findByIsActiveTrue(pageable);
+    }
 }

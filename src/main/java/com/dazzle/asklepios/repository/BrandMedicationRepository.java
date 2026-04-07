@@ -38,14 +38,14 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
              WHERE bai2.brandMedication.id = :brandId
              )
             AND bai.brandMedication.id <> :brandId
-                        """)
+            """)
     List<BrandMedication> findAllBrandMedicationsSharingActiveIngredients(Long brandId);
 
     List<BrandMedication> findByNameContainsIgnoreCaseOrCodeContainsIgnoreCase(String keyword, String ckeyword);
 
-
-
-
+    List<BrandMedication> findByNameContainsIgnoreCaseAndIsActiveTrueOrCodeContainsIgnoreCaseAndIsActiveTrue(
+            String name, String code
+    );
 
 }
 

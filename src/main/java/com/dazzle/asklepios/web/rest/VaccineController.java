@@ -210,4 +210,21 @@ public class VaccineController {
         );
     }
 
+    @GetMapping("/vaccine/active/by-name/{name}")
+    public ResponseEntity<List<VaccineResponseVM>> getActiveByName(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Vaccines by name='{}' pageable={}", name, pageable);
+        Page<Vaccine> page = vaccineService.findActiveByName(name, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(VaccineResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }

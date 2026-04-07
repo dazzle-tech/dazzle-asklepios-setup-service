@@ -45,4 +45,6 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
             Pageable pageable
     );
 
+    Page<Department> findByIsActiveTrue(Pageable pageable);
+
 }
