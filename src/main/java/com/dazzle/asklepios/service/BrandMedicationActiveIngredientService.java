@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -99,4 +101,23 @@ public class BrandMedicationActiveIngredientService {
     public boolean existsByBrandMedication(Long brandId) {
         return brandMedicationActiveIngredientRepository.existsByBrandMedicationId(brandId);
     }
+
+
+    @Transactional(readOnly = true)
+    public Map<Long, List<String>> findActiveIngredientsByBrandIds(List<Long> brandIds) {
+        LOG.debug("Request to get ActiveIngredients for brandIds={}", brandIds);
+
+        List<BrandMedicationActiveIngredient> relations =
+                brandMedicationActiveIngredientRepository.findAllByBrandMedicationIdIn(brandIds);
+
+        return relations.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getBrandMedication().getId(),
+                        Collectors.mapping(
+                                r -> r.getActiveIngredients().getName(),
+                                Collectors.toList()
+                        )
+                ));
+    }
+
 }
