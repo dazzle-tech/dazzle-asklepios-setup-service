@@ -314,7 +314,7 @@ public class PractitionerService {
         LOG.debug("Fetching paged practitioner by department departmentId={} pageable={}", departmentId, pageable);
 
         List<PractitionerDepartment> items =
-                practitionerDepartmentRepository.findByDepartmentId(departmentId);
+                practitionerDepartmentRepository.findByDepartmentIdAndPractitioner_AppointableIsTrue(departmentId);
 
         if (items == null || items.isEmpty()) {
             return Page.empty(pageable);
