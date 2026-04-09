@@ -54,7 +54,7 @@ public class BedService {
                 .name(bedCreateDTO.name())
                 .locationDetails(bedCreateDTO.locationDetails())
                 .type(bedCreateDTO.type())
-                .status(BedStatus.EMPTY)
+                .status(BedStatus.READY)
                 .build();
 
         try {
@@ -177,7 +177,7 @@ public class BedService {
 
         Page<Bed> bedsPage = bedRepository.findByRoom_IdAndIsActiveTrueAndStatus(
                 roomId,
-                BedStatus.EMPTY,
+                BedStatus.READY,
                 pageable
         );
 
@@ -226,7 +226,7 @@ public class BedService {
                         "notfound"
                 ));
 
-        if (existingBed.getStatus() != BedStatus.EMPTY) {
+        if (existingBed.getStatus() != BedStatus.READY) {
             LOG.warn(
                     "[MARK AS OCCUPIED] Failed: Bed id={} currentStatus={} is not EMPTY",
                     existingBed.getId(),
@@ -308,7 +308,7 @@ public class BedService {
                         "notfound"
                 ));
 
-        if (bed.getStatus() != BedStatus.EMPTY &&
+        if (bed.getStatus() != BedStatus.READY &&
                 bed.getStatus() != BedStatus.IN_CLEANING) {
 
             LOG.warn(
@@ -359,7 +359,7 @@ public class BedService {
             );
         }
 
-        bed.setStatus(BedStatus.EMPTY);
+        bed.setStatus(BedStatus.READY);
 
         Bed updated = bedRepository.saveAndFlush(bed);
 

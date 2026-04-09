@@ -53,7 +53,7 @@ public class Bed extends AbstractAuditingEntity<Long> {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
-    private BedStatus status = BedStatus.EMPTY;
+    private BedStatus status = BedStatus.READY;
 
     @Builder.Default
     @NotNull

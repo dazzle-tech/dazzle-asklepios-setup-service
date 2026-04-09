@@ -1,7 +1,7 @@
 package com.dazzle.asklepios.domain.enumeration;
 
 public enum BedStatus {
-    EMPTY,
+    READY,
     OCCUPIED,
     IN_CLEANING,
     OUT_OF_SERVICE
