@@ -22,4 +22,7 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
             Pageable pageable
     );
     Page<Procedure> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
+
+    Page<Procedure> findByFacility_IdAndIsActiveTrueAndCategoryType(
+            Long facilityId, String categoryType, Pageable pageable);
 }
