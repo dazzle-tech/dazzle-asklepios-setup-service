@@ -17,7 +17,7 @@ public record ActiveIngredientsUpdateVM(
         Boolean otc,
         Boolean hasSynonyms,
         Boolean antimicrobial,
-        Boolean highRiskMed,
+        Boolean highAlert,
         Boolean abortiveMedication,
         Boolean laborInducingMed,
         Boolean isControlled,
@@ -52,7 +52,8 @@ public record ActiveIngredientsUpdateVM(
         Boolean doseAdjustmentHepatic,
         String doseAdjustmentPugA,
         String doseAdjustmentPugB,
-        String doseAdjustmentPugC
+        String doseAdjustmentPugC,
+        boolean isLASA
 ) implements Serializable {
 
     public static ActiveIngredientsUpdateVM ofEntity(ActiveIngredients entity) {
@@ -64,7 +65,7 @@ public record ActiveIngredientsUpdateVM(
                 entity.getOtc(),
                 entity.getHasSynonyms(),
                 entity.getAntimicrobial(),
-                entity.getHighRiskMed(),
+                entity.getHighAlert(),
                 entity.getAbortiveMedication(),
                 entity.getLaborInducingMed(),
                 entity.getIsControlled(),
@@ -95,7 +96,8 @@ public record ActiveIngredientsUpdateVM(
                 entity.getDoseAdjustmentHepatic(),
                 entity.getDoseAdjustmentPugA(),
                 entity.getDoseAdjustmentPugB(),
-                entity.getDoseAdjustmentPugC()
+                entity.getDoseAdjustmentPugC(),
+                entity.getIsLASA()
         );
     }
 }
