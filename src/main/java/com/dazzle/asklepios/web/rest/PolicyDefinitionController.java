@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.PolicyDefinition;
-import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.PolicyDefinitionService;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionCreateDTO;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionUpdateDTO;
@@ -17,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,7 +41,6 @@ public class PolicyDefinitionController {
     private final PolicyDefinitionService policyDefinitionService;
 
     @PostMapping("/policy-definition")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PolicyDefinitionResponseVM> createPolicyDefinition(
             @Valid @RequestBody PolicyDefinitionCreateDTO policyDefinitionCreateDTO
     ) {
@@ -57,7 +54,6 @@ public class PolicyDefinitionController {
     }
 
     @PutMapping("/policy-definition")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PolicyDefinitionResponseVM> updatePolicyDefinition(
             @Valid @RequestBody PolicyDefinitionUpdateDTO policyDefinitionUpdateDTO
     ) {
@@ -135,7 +131,6 @@ public class PolicyDefinitionController {
     }
 
     @GetMapping("/policy-definition/{id}")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PolicyDefinitionResponseVM> getOnePolicyDefinitionById(@PathVariable Long id) {
         LOG.debug("REST request to get PolicyDefinition : {}", id);
 
@@ -146,7 +141,6 @@ public class PolicyDefinitionController {
     }
 
     @PatchMapping("/policy-definition/{id}/toggle-active")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<PolicyDefinitionResponseVM> togglePolicyDefinitionActive(@PathVariable Long id) {
         LOG.debug("REST request to toggle active PolicyDefinition : {}", id);
 
