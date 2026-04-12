@@ -222,10 +222,26 @@ public class ProcedureService {
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
 
-    public Page<Procedure> findActiveAppointable( Pageable pageable) {
-        LOG.debug("Fetching Active Appointable  Procedures  pageable={} is",  pageable);
-        return procedureRepository
-                .findByIsActiveTrueAndIsAppointableTrue( pageable);
+
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> findActiveByFacilityAndOptionalCategory(Long facilityId, String category, Pageable pageable) {
+        LOG.debug("Fetching ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
+        }
+
+        if (category != null && !category.isBlank()) {
+            return procedureRepository.findByFacility_IdAndIsActiveTrueAndCategoryType(facilityId, category, pageable);
+        }
+
+        return procedureRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
+    }
+
+    public Page<Procedure> findActiveAppointable(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable Procedures pageable={}", pageable);
+        return procedureRepository.findByIsActiveTrueAndIsAppointableTrue(pageable);
     }
 
     @Transactional(readOnly = true)

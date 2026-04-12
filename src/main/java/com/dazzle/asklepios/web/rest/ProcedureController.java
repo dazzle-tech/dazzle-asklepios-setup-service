@@ -184,6 +184,7 @@ public class ProcedureController {
             @RequestParam(required = false) String category,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST list Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
         Page<Procedure> page = procedureService.findByFacilityAndOptionalCategory(facilityId, category, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
@@ -203,9 +204,9 @@ public class ProcedureController {
 
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
+        LOG.debug("REST list active appointable Procedures  pageable={}", pageable);
 
-        Page<Procedure> page = procedureService.findActiveAppointable( pageable);
+        Page<Procedure> page = procedureService.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -238,6 +239,26 @@ public class ProcedureController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}/by-category")
+    public ResponseEntity<List<ProcedureResponseVM>> getActiveByFacilityAndCategory(
+            @PathVariable @NotNull Long facilityId,
+            @RequestParam String category,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
+
+        Page<Procedure> page = procedureService.findActiveByFacilityAndOptionalCategory(facilityId, category, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
 
         return new ResponseEntity<>(
                 page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),

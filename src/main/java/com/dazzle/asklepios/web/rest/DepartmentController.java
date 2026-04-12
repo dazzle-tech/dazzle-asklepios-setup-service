@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -118,6 +119,22 @@ public class DepartmentController {
     ) {
         LOG.debug("REST list Departments by type={} page={}", type, pageable);
         Page<Department> page = departmentService.findByDepartmentType(type, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/active/department/by-type/{type}")
+    public ResponseEntity<List<DepartmentResponseVM>> getByActiveType(
+            @PathVariable DepartmentType type,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Departments by type={} page={}", type, pageable);        Page<Department> page = departmentService.findByActiveDepartmentType(type, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -359,6 +376,28 @@ public class DepartmentController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/department/appointable/active")
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveAppointableDepartments(
+            @RequestParam Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active appointable Departments by facilityId={} pageable={}", facilityId, pageable);
+
+        Page<Department> page = departmentService.findActiveAppointableDepartmentsByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
         return new ResponseEntity<>(
                 page.getContent().stream()
                         .map(DepartmentResponseVM::ofEntity)

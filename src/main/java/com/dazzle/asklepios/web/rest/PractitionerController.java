@@ -311,4 +311,20 @@ public class PractitionerController {
         );
     }
 
+    @GetMapping("/practitioner/active/by-facility/{facilityId:\\d+}")
+    public ResponseEntity<List<PractitionerResponseVM>> getActiveByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list ACTIVE Practitioners by facilityId={} page={}", facilityId, pageable);
+        Page<Practitioner> page = practitionerService.findActiveByFacilityId(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }
