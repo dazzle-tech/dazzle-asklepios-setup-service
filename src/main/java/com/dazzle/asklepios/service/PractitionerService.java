@@ -333,6 +333,12 @@ public class PractitionerService {
         return practitionerRepository.findByIdIn(practitionerIds, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findActiveByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching ACTIVE Practitioners by facilityId={} pageable={}", facilityId, pageable);
+        return practitionerRepository.findByFacilityIdAndIsActiveTrue(facilityId, pageable);
+    }
+
     private Long getFacility() {
 
         return SecurityUtils.getCurrentUserFacility()
