@@ -376,10 +376,4 @@ public class DepartmentService {
         return departmentRepository.findByIsActiveTrue(pageable);
     }
 
-    @Transactional(readOnly = true)
-    public Page<Department> findActiveAppointableDepartmentsByFacility(Long facilityId, Pageable pageable) {
-        LOG.debug("Request to get Active Appointable Departments by facilityId={} pageable={}", facilityId, pageable);
-        return departmentRepository.findByFacilityIdAndAppointableTrueAndIsActiveTrue(facilityId, pageable);
-    }
-
 }

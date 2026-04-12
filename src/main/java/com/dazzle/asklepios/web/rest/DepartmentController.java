@@ -392,7 +392,7 @@ public class DepartmentController {
     ) {
         LOG.debug("REST list active appointable Departments by facilityId={} pageable={}", facilityId, pageable);
 
-        Page<Department> page = departmentService.findActiveAppointableDepartmentsByFacility(facilityId, pageable);
+        Page<Department> page = departmentService.findAppointableDepartment(facilityId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
