@@ -154,7 +154,8 @@ public enum Screen {
     GENERAL_SETTINGS,
     CONFIGURATIONS,
     ORGANIZATION_HOLIDAY,
-    URGENT_CARE_TRIAGE
+    URGENT_CARE_TRIAGE,
+    NURSE_ASSESSMENT
     ;
     @JsonCreator
     public static Screen fromValue(String value) {
