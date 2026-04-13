@@ -307,5 +307,17 @@ public class BrandMedicationController {
 
         return ResponseEntity.ok(list);
     }
+    @GetMapping("/brand-medications/by-active")
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByActiveIds(
+            @RequestParam List<Long> activeIds
+    ) {
+        LOG.debug("REST request to get BrandMedications by activeIds={}", activeIds);
 
+        List<BrandMedicationResponseVM> body = brandMedicationService.findByActiveIds(activeIds)
+                .stream()
+                .map(BrandMedicationResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 }
