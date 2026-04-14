@@ -82,6 +82,7 @@ public enum Screen {
     ER_TRIAGE,
 
     ER_DEPARTMENT,
+    URGENT_CARE_DEPARTMENT,
     ER_DASHBOARD,
 
     // Purchasing
