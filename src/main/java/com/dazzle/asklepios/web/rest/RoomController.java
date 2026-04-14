@@ -266,4 +266,21 @@ public class RoomController {
 
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
+
+    @GetMapping("/room/active-appointable/by-department/{departmentId}")
+    public ResponseEntity<List<Room>> findActiveAndAppointableRoomsByDepartmentId(
+            @PathVariable @NotNull Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find  Rooms by appointable and active and departmentId={} pageable={}",departmentId, pageable);
+
+        Page<Room> page = roomService.findActiveAndAppointableByDepartmentId(departmentId,pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
 }
