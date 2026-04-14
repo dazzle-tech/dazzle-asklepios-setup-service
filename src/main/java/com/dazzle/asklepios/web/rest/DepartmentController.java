@@ -129,22 +129,6 @@ public class DepartmentController {
         );
     }
 
-    @GetMapping("/active/department/by-type/{type}")
-    public ResponseEntity<List<DepartmentResponseVM>> getByActiveType(
-            @PathVariable DepartmentType type,
-            @ParameterObject Pageable pageable
-    ) {
-        LOG.debug("REST list active Departments by type={} page={}", type, pageable);        Page<Department> page = departmentService.findByActiveDepartmentType(type, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page
-        );
-        return new ResponseEntity<>(
-                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
-                headers,
-                HttpStatus.OK
-        );
-    }
-
     @GetMapping("/department/by-type-and-facility/{type}/{facilityId:\\d+}")
     public ResponseEntity<List<DepartmentResponseVM>> getByTypeAndFacility(
             @PathVariable DepartmentType type,
@@ -385,26 +369,6 @@ public class DepartmentController {
         );
     }
 
-    @GetMapping("/department/appointable/active")
-    public ResponseEntity<List<DepartmentResponseVM>> getActiveAppointableDepartments(
-            @RequestParam Long facilityId,
-            @ParameterObject Pageable pageable
-    ) {
-        LOG.debug("REST list active appointable Departments by facilityId={} pageable={}", facilityId, pageable);
 
-        Page<Department> page = departmentService.findAppointableDepartment(facilityId, pageable);
-
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page
-        );
-
-        return new ResponseEntity<>(
-                page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
-                        .toList(),
-                headers,
-                HttpStatus.OK
-        );
-    }
 
 }
