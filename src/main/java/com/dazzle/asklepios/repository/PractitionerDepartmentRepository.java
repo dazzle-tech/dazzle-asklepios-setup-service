@@ -1,13 +1,9 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.PractitionerDepartment;
-import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Department;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -22,7 +18,7 @@ public interface PractitionerDepartmentRepository extends JpaRepository<Practiti
     List<PractitionerDepartment> findByPractitionerId(Long practitionerId);
     List<PractitionerDepartment> findByDepartmentId(Long departmentId);
 
-    List<PractitionerDepartment> findByDepartmentIdAndPractitioner_AppointableIsTrue(Long departmentId);
+    List<PractitionerDepartment> findByDepartmentIdAndPractitioner_AppointableIsTrueAndPractitioner_IsActiveIsTrue(Long departmentId);
 
     boolean existsByPractitionerIdAndDepartmentId(Long practitionerId, Long departmentId);
 
