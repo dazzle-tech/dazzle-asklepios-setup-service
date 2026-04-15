@@ -315,7 +315,11 @@ public class BrandMedicationController {
 
         List<BrandMedicationResponseVM> body = brandMedicationService.findByActiveIds(activeIds)
                 .stream()
-                .map(BrandMedicationResponseVM::ofEntity)
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
                 .toList();
 
         return ResponseEntity.ok(body);

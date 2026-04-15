@@ -15,7 +15,7 @@ public record ActiveIngredientsCreateVM(
         Boolean otc,
         Boolean hasSynonyms,
         Boolean antimicrobial,
-        Boolean highAlert,
+        Boolean isHighAlert,
         Boolean abortiveMedication,
         Boolean laborInducingMed,
         Boolean isControlled,
@@ -54,7 +54,7 @@ public record ActiveIngredientsCreateVM(
         String doseAdjustmentPugA,
         String doseAdjustmentPugB,
         String doseAdjustmentPugC,
-        boolean isLASA
+        boolean isLookAlikeSoundAlike
 ) implements Serializable {
 
     public static ActiveIngredientsCreateVM ofEntity(ActiveIngredients entity) {
@@ -65,7 +65,7 @@ public record ActiveIngredientsCreateVM(
                 entity.getOtc(),
                 entity.getHasSynonyms(),
                 entity.getAntimicrobial(),
-                entity.getHighAlert(),
+                entity.getIshighAlert(),
                 entity.getAbortiveMedication(),
                 entity.getLaborInducingMed(),
                 entity.getIsControlled(),
@@ -97,7 +97,7 @@ public record ActiveIngredientsCreateVM(
                 entity.getDoseAdjustmentPugA(),
                 entity.getDoseAdjustmentPugB(),
                 entity.getDoseAdjustmentPugC(),
-                entity.getIsLASA()
+                entity.getIsLookAlikeSoundAlike()
         );
     }
 }

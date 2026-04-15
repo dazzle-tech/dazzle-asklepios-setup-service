@@ -146,7 +146,7 @@ public class ActiveIngredientsService {
         ai.setOtc(vm.otc());
         ai.setHasSynonyms(vm.hasSynonyms());
         ai.setAntimicrobial(vm.antimicrobial());
-        ai.setHighAlert(vm.highAlert());
+        ai.setIshighAlert(vm.isHighAlert());
         ai.setAbortiveMedication(vm.abortiveMedication());
         ai.setLaborInducingMed(vm.laborInducingMed());
         ai.setIsControlled(vm.isControlled());
@@ -179,7 +179,7 @@ public class ActiveIngredientsService {
         ai.setDoseAdjustmentPugA(vm.doseAdjustmentPugA());
         ai.setDoseAdjustmentPugB(vm.doseAdjustmentPugB());
         ai.setDoseAdjustmentPugC(vm.doseAdjustmentPugC());
-        ai.setIsLASA(vm.isLASA());
+        ai.setIsLookAlikeSoundAlike(vm.isLookAlikeSoundAlike());
         return ai;
     }
 
@@ -190,7 +190,7 @@ public class ActiveIngredientsService {
         if (vm.otc() != null) ai.setOtc(vm.otc());
         if (vm.hasSynonyms() != null) ai.setHasSynonyms(vm.hasSynonyms());
         if (vm.antimicrobial() != null) ai.setAntimicrobial(vm.antimicrobial());
-        if (vm.highAlert() != null) ai.setHighAlert(vm.highAlert());
+        if (vm.isHighAlert() != null) ai.setIshighAlert(vm.isHighAlert());
         if (vm.abortiveMedication() != null) ai.setAbortiveMedication(vm.abortiveMedication());
         if (vm.laborInducingMed() != null) ai.setLaborInducingMed(vm.laborInducingMed());
         if (vm.isControlled() != null) ai.setIsControlled(vm.isControlled());

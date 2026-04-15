@@ -55,9 +55,9 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
     private Boolean antimicrobial;
 
     @Column(name = "high_alert")
-    private Boolean highAlert=false;
+    private Boolean ishighAlert=false;
     @Column(name="is_lasa")
-     private Boolean isLASA=false;
+     private Boolean isLookAlikeSoundAlike=false;
 
     @Column(name = "abortive_medication")
     private Boolean abortiveMedication;
