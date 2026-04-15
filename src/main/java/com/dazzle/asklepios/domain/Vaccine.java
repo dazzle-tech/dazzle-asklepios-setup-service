@@ -8,9 +8,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
@@ -88,9 +91,9 @@ public class Vaccine extends AbstractAuditingEntity<Long> implements Serializabl
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @NotNull
-    @Column(name = "facility_id", nullable = false)
-    private Long facilityId;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "facility_id", nullable = false)
+    private Facility facilityId;
 
     @NotNull
     @Column(name = "price", nullable = false, precision = 15, scale = 2)
