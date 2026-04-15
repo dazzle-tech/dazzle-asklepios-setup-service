@@ -207,4 +207,21 @@ public class ActiveIngredientsController {
 
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
+
+    /**
+     * {@code POST /active-ingredients/by-ids} : Get active ingredients by IDs.
+     */
+    @PostMapping("/active-ingredients/by-ids")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByIds(
+            @RequestBody List<Long> ids
+    ) {
+        LOG.debug("REST list ActiveIngredients by ids={}", ids);
+
+        List<ActiveIngredientsResponseVM> body = activeIngredientsService.getByIds(ids)
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 }

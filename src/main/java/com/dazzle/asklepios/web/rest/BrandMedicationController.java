@@ -9,6 +9,7 @@ import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.search.BrandWithActivesVM;
+import com.dazzle.asklepios.web.rest.vm.country.CountryResponseVM;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
@@ -307,9 +308,9 @@ public class BrandMedicationController {
 
         return ResponseEntity.ok(list);
     }
-    @GetMapping("/brand-medications/by-active")
+    @PostMapping("/brand-medication/by-active-ids")
     public ResponseEntity<List<BrandMedicationResponseVM>> getByActiveIds(
-            @RequestParam List<Long> activeIds
+            @RequestBody List<Long> activeIds
     ) {
         LOG.debug("REST request to get BrandMedications by activeIds={}", activeIds);
 

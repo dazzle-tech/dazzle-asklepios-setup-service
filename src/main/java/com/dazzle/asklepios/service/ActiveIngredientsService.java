@@ -249,4 +249,8 @@ public class ActiveIngredientsService {
 
         return activeRepo.findByIsActiveTrue(pageable);
     }
+    @Transactional(readOnly = true)
+    public List<ActiveIngredients> getByIds(List<Long> ids) {
+        return activeRepo.findByIdIn(ids);
+    }
 }

@@ -17,5 +17,6 @@ public interface ActiveIngredientsRepository  extends JpaRepository<ActiveIngred
 
     Page<ActiveIngredients> findByIsActiveTrueAndNameContainingIgnoreCase(String name,Pageable pageable);
     Page<ActiveIngredients> findByIsActiveTrue(Pageable pageable);
+    List<ActiveIngredients> findByIdIn(List<Long> ids);
 
 }
