@@ -88,4 +88,12 @@ public class Vaccine extends AbstractAuditingEntity<Long> implements Serializabl
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @NotNull
+    @Column(name = "facility_id", nullable = false)
+    private Long facilityId;
+
+    @NotNull
+    @Column(name = "price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal price;
+
 }

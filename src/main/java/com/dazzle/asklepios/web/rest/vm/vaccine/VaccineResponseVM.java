@@ -23,6 +23,8 @@ public record VaccineResponseVM(
         String possibleReactions,
         String contraindicationsAndPrecautions,
         String storageAndHandling,
+        Long facilityId,
+        BigDecimal price,
         Boolean isActive
 ) implements Serializable {
 
@@ -41,6 +43,8 @@ public record VaccineResponseVM(
                 vaccine.getPossibleReactions(),
                 vaccine.getContraindicationsAndPrecautions(),
                 vaccine.getStorageAndHandling(),
+                vaccine.getFacilityId(),
+                vaccine.getPrice(),
                 vaccine.getIsActive()
         );
     }

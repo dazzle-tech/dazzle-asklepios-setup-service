@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.DurationUnit;
 import com.dazzle.asklepios.domain.enumeration.NumberOfDoses;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -28,6 +29,10 @@ public record VaccineUpdateVM(
         String possibleReactions,
         String contraindicationsAndPrecautions,
         String storageAndHandling,
+        @NotNull Long facilityId,
+        @NotNull
+        @Positive
+        BigDecimal price,
         @NotNull Boolean isActive
 ) implements Serializable {
 
@@ -46,6 +51,8 @@ public record VaccineUpdateVM(
                 vaccine.getPossibleReactions(),
                 vaccine.getContraindicationsAndPrecautions(),
                 vaccine.getStorageAndHandling(),
+                vaccine.getFacilityId(),
+                vaccine.getPrice(),
                 vaccine.getIsActive()
         );
     }
