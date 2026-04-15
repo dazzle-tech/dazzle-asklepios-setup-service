@@ -146,7 +146,7 @@ public class ActiveIngredientsService {
         ai.setOtc(vm.otc());
         ai.setHasSynonyms(vm.hasSynonyms());
         ai.setAntimicrobial(vm.antimicrobial());
-        ai.setIshighAlert(vm.isHighAlert());
+        ai.setHighAlert(vm.highAlert());
         ai.setAbortiveMedication(vm.abortiveMedication());
         ai.setLaborInducingMed(vm.laborInducingMed());
         ai.setIsControlled(vm.isControlled());
@@ -190,7 +190,7 @@ public class ActiveIngredientsService {
         if (vm.otc() != null) ai.setOtc(vm.otc());
         if (vm.hasSynonyms() != null) ai.setHasSynonyms(vm.hasSynonyms());
         if (vm.antimicrobial() != null) ai.setAntimicrobial(vm.antimicrobial());
-        if (vm.isHighAlert() != null) ai.setIshighAlert(vm.isHighAlert());
+        if (vm.highAlert() != null) ai.setHighAlert(vm.highAlert());
         if (vm.abortiveMedication() != null) ai.setAbortiveMedication(vm.abortiveMedication());
         if (vm.laborInducingMed() != null) ai.setLaborInducingMed(vm.laborInducingMed());
         if (vm.isControlled() != null) ai.setIsControlled(vm.isControlled());
