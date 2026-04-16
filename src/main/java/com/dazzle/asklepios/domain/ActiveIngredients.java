@@ -56,7 +56,7 @@ public class ActiveIngredients extends AbstractAuditingEntity<Long> implements S
 
     @Column(name = "high_alert")
     private Boolean highAlert=false;
-    @Column(name="is_look_alike_sound_alike")
+    @Column(name="is_look-alike-sound-alike")
      private Boolean isLookAlikeSoundAlike=false;
 
     @Column(name = "abortive_medication")
