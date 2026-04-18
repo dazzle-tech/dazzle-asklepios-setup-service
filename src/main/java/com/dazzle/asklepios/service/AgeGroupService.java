@@ -18,9 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +33,7 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class AgeGroupService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AgeGroupService.class);
+
     private final AgeGroupRepository ageGroupRepository;
     private final EntityManager entityManager;
 
@@ -41,12 +44,15 @@ public class AgeGroupService {
 
     public AgeGroup create(Long facilityId, AgeGroup incoming) {
         LOG.info("[CREATE] Request to create AgeGroup for facilityId={} payload={}", facilityId, incoming);
+
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "ageGroup", "facility.required");
         }
+
         if (incoming == null) {
             throw new BadRequestAlertException("AgeGroup payload is required", "ageGroup", "payload.required");
         }
+
         AgeGroup entity = AgeGroup.builder()
                 .ageGroup(incoming.getAgeGroup())
                 .fromAge(incoming.getFromAge())
@@ -55,6 +61,7 @@ public class AgeGroupService {
                 .toAgeUnit(incoming.getToAgeUnit())
                 .facility(refFacility(facilityId))
                 .build();
+
         try {
             AgeGroup saved = ageGroupRepository.saveAndFlush(entity);
             LOG.info("Successfully created AgeGroup id={} label='{}' for facilityId={}", saved.getId(), saved.getAgeGroup(), facilityId);
@@ -62,7 +69,9 @@ public class AgeGroupService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
+
             LOG.error("Database constraint violation while creating AgeGroup: {}", message, ex);
+
             if (message.contains("uq_facility_age_range") ||
                     message.contains("uq_facility_age_group_label") ||
                     message.contains("unique constraint") ||
@@ -74,6 +83,7 @@ public class AgeGroupService {
                         "unique.facility.ageGroup"
                 );
             }
+
             throw new BadRequestAlertException(
                     "Database constraint violated while creating age group (check facility, unique name, or required fields).",
                     "ageGroup",
@@ -84,19 +94,24 @@ public class AgeGroupService {
 
     public Optional<AgeGroup> update(Long id, Long facilityId, AgeGroup incoming) {
         LOG.info("[UPDATE] Request to update AgeGroup id={} facilityId={} payload={}", id, facilityId, incoming);
+
         if (incoming == null) {
             throw new BadRequestAlertException("AgeGroup payload is required", "ageGroup", "payload.required");
         }
+
         AgeGroup existing = ageGroupRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("AgeGroup not found with id " + id, "ageGroup", "notfound"));
+
         if (facilityId != null && (existing.getFacility() == null || !facilityId.equals(existing.getFacility().getId()))) {
             throw new BadRequestAlertException("AgeGroup does not belong to the provided facility", "ageGroup", "facility.mismatch");
         }
+
         existing.setAgeGroup(incoming.getAgeGroup());
         existing.setFromAge(incoming.getFromAge());
         existing.setToAge(incoming.getToAge());
         existing.setFromAgeUnit(incoming.getFromAgeUnit());
         existing.setToAgeUnit(incoming.getToAgeUnit());
+
         try {
             AgeGroup updated = ageGroupRepository.saveAndFlush(existing);
             LOG.info("Successfully updated AgeGroup id={} (label='{}')", updated.getId(), updated.getAgeGroup());
@@ -104,7 +119,9 @@ public class AgeGroupService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage()).toLowerCase();
+
             LOG.error("Database constraint violation while updating AgeGroup: {}", message, ex);
+
             if (message.contains("uq_facility_age_range") ||
                     message.contains("uq_facility_age_group_label") ||
                     message.contains("unique constraint") ||
@@ -116,6 +133,7 @@ public class AgeGroupService {
                         "unique.facility.ageGroup"
                 );
             }
+
             throw new BadRequestAlertException(
                     "Database constraint violated while updating age group (check facility, unique name, or required fields).",
                     "ageGroup",
@@ -130,13 +148,14 @@ public class AgeGroupService {
         return ageGroupRepository.findAll(pageable);
     }
 
-
     @Transactional(readOnly = true)
     public Page<AgeGroup> findByFacility(Long facilityId, Pageable pageable) {
         LOG.debug("Fetching paged AgeGroups for facilityId={} pageable={}", facilityId, pageable);
+
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "ageGroup", "facility.required");
         }
+
         return ageGroupRepository.findByFacility_Id(facilityId, pageable);
     }
 
@@ -157,7 +176,6 @@ public class AgeGroupService {
         LOG.debug("Fetching AgeGroups by toAge='{}' (no facility filter)", toAge);
         return ageGroupRepository.findByToAge(toAge, pageable);
     }
-
 
     @Transactional(readOnly = true)
     public Optional<AgeGroup> findOne(Long id) {
@@ -199,57 +217,97 @@ public class AgeGroupService {
 
     @Transactional(readOnly = true)
     public AgeGroup findAgeGroupByBirthDate(LocalDate birthDate) {
-
         LOG.info("[FIND AGE GROUP] Request to find AgeGroup for birthDate={}", birthDate);
 
         if (birthDate == null) {
-            LOG.warn("[FIND AGE GROUP] Birth date is NULL — throwing exception");
             throw new BadRequestAlertException("Birth date is required", "ageGroup", "birthdate.required");
         }
 
-        long ageInDays = ChronoUnit.DAYS.between(birthDate, LocalDate.now());
-        LOG.debug("[FIND AGE GROUP] Calculated ageInDays={}", ageInDays);
+        LocalDate today = LocalDate.now();
 
         List<AgeGroup> groups = ageGroupRepository.findAll();
         LOG.debug("[FIND AGE GROUP] Loaded {} AgeGroups from database", groups.size());
 
         AgeGroup result = groups.stream()
-                .filter(g -> {
-                    long fromDays = convertToDays(g.getFromAge(), g.getFromAgeUnit());
-                    long toDays = convertToDays(g.getToAge(), g.getToAgeUnit());
-
-                    boolean matches = ageInDays >= fromDays && ageInDays <= toDays;
-
-                    LOG.trace("[FIND AGE GROUP] Checking AgeGroup id={} label={} rangeDays=[{}-{}] matches={}",
-                            g.getId(), g.getAgeGroup(), fromDays, toDays, matches);
-
-                    return matches;
-                })
+                .filter(this::isAgeGroupValid)
+                .sorted(Comparator.comparing(this::getLowerBoundPoint).reversed())
+                .filter(group -> matchesBirthDate(birthDate, today, group))
                 .findFirst()
                 .orElse(null);
 
         if (result == null) {
-            LOG.info("[FIND AGE GROUP] No AgeGroup matched for ageInDays={}", ageInDays);
+            LOG.info("[FIND AGE GROUP] No AgeGroup matched for birthDate={}", birthDate);
         } else {
-            LOG.info("[FIND AGE GROUP] Found AgeGroup id={} label={} for ageInDays={}",
-                    result.getId(), result.getAgeGroup(), ageInDays);
+            LOG.info("[FIND AGE GROUP] Found AgeGroup id={} label={} for birthDate={}",
+                    result.getId(), result.getAgeGroup(), birthDate);
         }
 
         return result;
     }
 
+    private boolean matchesBirthDate(LocalDate birthDate, LocalDate today, AgeGroup group) {
 
+        LocalDate youngerBoundary = subtractFromDate(today, group.getFromAge(), group.getFromAgeUnit());
+        LocalDate olderBoundary = subtractFromDate(today, group.getToAge(), group.getToAgeUnit());
 
-    private long convertToDays(BigDecimal value, AgeUnit unit) {
-        return switch (unit) {
-            case YEARS -> value.longValue() * 365;
-            case MONTHS -> value.longValue() * 30;
-            case WEEKS -> value.longValue() * 7;
-            case DAYS -> value.longValue();
-            case HOURS -> value.longValue()/24;
-        };
+        boolean matches =
+                (birthDate.isEqual(olderBoundary) || birthDate.isAfter(olderBoundary)) &&
+                        (birthDate.isEqual(youngerBoundary) || birthDate.isBefore(youngerBoundary));
+
+        LOG.trace(
+                "[FIND AGE GROUP] Checking AgeGroup id={} label={} birthDate={} olderBoundary={} youngerBoundary={} matches={}",
+                group.getId(),
+                group.getAgeGroup(),
+                birthDate,
+                olderBoundary,
+                youngerBoundary,
+                matches
+        );
+
+        return matches;
     }
 
+    private boolean isAgeGroupValid(AgeGroup group) {
+        if (group == null ||
+                group.getFromAge() == null ||
+                group.getToAge() == null ||
+                group.getFromAgeUnit() == null ||
+                group.getToAgeUnit() == null) {
 
+            LOG.warn("[FIND AGE GROUP] Skipping invalid AgeGroup: {}", group);
+            return false;
+        }
 
+        LocalDate today = LocalDate.now();
+
+        LocalDate youngerBoundary = subtractFromDate(today, group.getFromAge(), group.getFromAgeUnit());
+        LocalDate olderBoundary = subtractFromDate(today, group.getToAge(), group.getToAgeUnit());
+
+        return !olderBoundary.isAfter(youngerBoundary);
+    }
+
+    private LocalDate getLowerBoundPoint(AgeGroup group) {
+        return subtractFromDate(LocalDate.now(), group.getToAge(), group.getToAgeUnit());
+    }
+
+    private LocalDate subtractFromDate(LocalDate baseDate, BigDecimal value, AgeUnit unit) {
+
+        if (baseDate == null || value == null || unit == null) {
+            throw new BadRequestAlertException("Invalid age group data", "ageGroup", "invalid.data");
+        }
+
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case YEARS -> baseDate.minusYears(amount);
+            case MONTHS -> baseDate.minusMonths(amount);
+            case WEEKS -> baseDate.minusWeeks(amount);
+            case DAYS -> baseDate.minusDays(amount);
+            case HOURS -> throw new BadRequestAlertException(
+                    "HOURS not supported with LocalDate",
+                    "ageGroup",
+                    "invalid.unit"
+            );
+        };
+    }
 }
