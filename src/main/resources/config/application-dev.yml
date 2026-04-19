@@ -25,15 +25,9 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-<<<<<<< Updated upstream
     url: jdbc:postgresql://localhost:5432/ask
     username: postgres
     password: 123
-=======
-    url: jdbc:postgresql://localhost:5432/postgres
-    username: postgres
-    password: 123123
->>>>>>> Stashed changes
     hikari:
       poolName: Hikari
       auto-commit: false
