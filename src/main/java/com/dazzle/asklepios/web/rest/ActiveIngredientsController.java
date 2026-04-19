@@ -170,4 +170,58 @@ public class ActiveIngredientsController {
         ActiveIngredients activeIngredient = activeIngredientsService.toggleActive(id);
         return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(activeIngredient));
     }
+
+    /**
+     * {@code GET /active-ingredients/active/by-name/{name}} : Get ACTIVE active ingredients by name (paginated).
+     *
+     * <p>Returns only active ingredients where {@code isActive = true} and the name contains {@code name} (ignore case).</p>
+     *
+     * <p>Includes pagination headers {@code X-Total-Count} and {@code Link}.</p>
+     *
+     * @param name the name identifier.
+     * @param pageable pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of active ingredient view models,
+     *         plus pagination headers. Returns an empty list if none found.
+     */
+    @GetMapping("/active-ingredients/active")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getActiveIngredients(
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list ACTIVE ActiveIngredients by name='{}' page={}", name, pageable);
+
+        Page<ActiveIngredients> page =
+                (name == null || name.isBlank())
+                        ? activeIngredientsService.getAllActive(pageable)
+                        : activeIngredientsService.getActiveByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<ActiveIngredientsResponseVM> body = page.getContent()
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    /**
+     * {@code POST /active-ingredients/by-ids} : Get active ingredients by IDs.
+     */
+    @PostMapping("/active-ingredients/by-ids")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByIds(
+            @RequestBody List<Long> ids
+    ) {
+        LOG.debug("REST list ActiveIngredients by ids={}", ids);
+
+        List<ActiveIngredientsResponseVM> body = activeIngredientsService.getByIds(ids)
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 }

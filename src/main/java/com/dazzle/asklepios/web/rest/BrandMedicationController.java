@@ -9,6 +9,7 @@ import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationResponseVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.BrandMedicationUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.brandMedication.search.BrandWithActivesVM;
+import com.dazzle.asklepios.web.rest.vm.country.CountryResponseVM;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
@@ -307,5 +308,21 @@ public class BrandMedicationController {
 
         return ResponseEntity.ok(list);
     }
+    @PostMapping("/brand-medication/by-active-ids")
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByActiveIds(
+            @RequestBody List<Long> activeIds
+    ) {
+        LOG.debug("REST request to get BrandMedications by activeIds={}", activeIds);
 
+        List<BrandMedicationResponseVM> body = brandMedicationService.findByActiveIds(activeIds)
+                .stream()
+                .map(brand -> {
+                    boolean hasActiveIngredient =
+                            brandMedicationActiveIngredientService.existsByBrandMedication(brand.getId());
+                    return BrandMedicationResponseVM.ofEntity(brand, hasActiveIngredient);
+                })
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
 }

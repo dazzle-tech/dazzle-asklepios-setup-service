@@ -19,6 +19,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/setup")
@@ -73,5 +74,12 @@ public class BrandMedicationActiveIngredientController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
+    @PostMapping("/brand-medication-active-ingredient/by-brands")
+    public ResponseEntity<Map<Long, List<String>>> listByBrands(@RequestBody List<Long> brandIds) {
+        LOG.debug("REST get ActiveIngredients by brandIds={}", brandIds);
 
+        Map<Long, List<String>> result = service.findActiveIngredientsByBrandIds(brandIds);
+
+        return ResponseEntity.ok(result);
+    }
 }

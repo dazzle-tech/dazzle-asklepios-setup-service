@@ -250,13 +250,6 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Department> findByActiveDepartmentType(DepartmentType type, Pageable pageable) {
-        LOG.debug("Request to get Active Departments by Type with pagination type={} pageable={}", type, pageable);
-        return departmentRepository.findByTypeAndIsActiveTrue(type, pageable);
-    }
-
-
-    @Transactional(readOnly = true)
     public Page<Department> findActiveAppointableByDepartmentType(DepartmentType type, Pageable pageable) {
         LOG.debug("Request to get Active Appointable Departments by Type with pagination type={} pageable={}", type, pageable);
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndType(type, pageable);
@@ -375,11 +368,4 @@ public class DepartmentService {
         LOG.debug("Request to get Active Departments pageable={}", pageable);
         return departmentRepository.findByIsActiveTrue(pageable);
     }
-
-    @Transactional(readOnly = true)
-    public Page<Department> findActiveAppointableDepartmentsByFacility(Long facilityId, Pageable pageable) {
-        LOG.debug("Request to get Active Appointable Departments by facilityId={} pageable={}", facilityId, pageable);
-        return departmentRepository.findByFacilityIdAndAppointableTrueAndIsActiveTrue(facilityId, pageable);
-    }
-
 }

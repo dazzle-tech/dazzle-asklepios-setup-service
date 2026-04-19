@@ -208,6 +208,7 @@ public class RoomService {
             );
         }
     }
+
     @Transactional(readOnly = true)
     public Room findById(Long id) {
         LOG.debug("[FIND BY ID] Fetching Room id={}", id);
@@ -275,6 +276,7 @@ public class RoomService {
 
         return roomsPage;
     }
+
     @Transactional(readOnly = true)
     public List<Room> findAllByIds(List<Long> ids) {
         LOG.debug("[FIND ALL BY IDS] Fetching Rooms ids={}", ids);
@@ -291,6 +293,16 @@ public class RoomService {
 
         return rooms;
     }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findActiveAndAppointableByDepartmentId(Long departmentId, Pageable pageable) {
+        LOG.debug("[FIND findActiveAndAppointableByDepartmentId] Fetching rooms departmentId={}, pageable={}", departmentId, pageable);
+
+        Page<Room> roomsPage = roomRepository.findByIsActiveTrueAndAppointableIsTrueAndDepartment_Id(departmentId, pageable);
+
+        return roomsPage;
+    }
+
     private void handleConstraintsOnCreateOrUpdate(RuntimeException exception) {
         Throwable rootCause = getRootCause(exception);
         String errorMessage = rootCause != null ? rootCause.getMessage() : exception.getMessage();

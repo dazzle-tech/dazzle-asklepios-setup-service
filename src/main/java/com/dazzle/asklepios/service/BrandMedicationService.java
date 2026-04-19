@@ -292,5 +292,25 @@ public class BrandMedicationService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<BrandMedication> findByActiveIds(List<Long> activeIds) {
+        LOG.debug("Request to get BrandMedications by activeIds={}", activeIds);
+
+        if (activeIds == null || activeIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> brandIds = relRepository.findDistinctBrandIdsByActiveIngredientIds(activeIds);
+
+        if (brandIds.isEmpty()) {
+            return List.of();
+        }
+
+        return brandMedicationRepository.findAllById(brandIds)
+                .stream()
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                .toList();
+    }
+
 
 }

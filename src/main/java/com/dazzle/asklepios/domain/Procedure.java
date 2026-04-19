@@ -3,6 +3,8 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -45,6 +47,7 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     private String code;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Currency currency;
 
