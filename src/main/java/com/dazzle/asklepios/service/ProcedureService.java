@@ -175,12 +175,6 @@ public class ProcedureService {
         return procedureRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Procedure> findOne(Long id) {
-        LOG.debug("Fetching single Procedure by id={}", id);
-        return procedureRepository.findById(id);
-    }
-
     public Optional<Procedure> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for Procedure id={}", id);
         return procedureRepository.findById(id)
@@ -222,6 +216,11 @@ public class ProcedureService {
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Procedure> findOne(Long id) {
+        LOG.debug("Fetching single Procedure by id={}", id);
+        return procedureRepository.findById(id);
+    }
 
 
     @Transactional(readOnly = true)
