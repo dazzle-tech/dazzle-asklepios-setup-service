@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,9 +20,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -103,4 +108,9 @@ public class Department extends AbstractAuditingEntity<Long> implements Serializ
 
     @Column(name = "require_pre_assessment")
     private Boolean requirePreAssessment = false;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "working_days", columnDefinition = "json", nullable = false)
+    @Builder.Default
+    private List<WorkingDayJson> workingDays = new ArrayList<>();
 }
