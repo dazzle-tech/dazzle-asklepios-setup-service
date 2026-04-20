@@ -4,12 +4,14 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.PractitionerDepartment;
 import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
 import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
@@ -25,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -99,6 +103,7 @@ public class PractitionerService {
                 .defaultDurationMinutes(vm.defaultDurationMinutes())
                 .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
                 .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
+                .workingDays(normalizeWorkingDays(vm.workingDays()))
                 .build();
 
         validatePractitioner(practitioner);
@@ -178,6 +183,9 @@ public class PractitionerService {
             practitioner.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
         if (vm.defaultBufferAfterMinutes() != null)
             practitioner.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+        if (vm.workingDays() != null) {
+            practitioner.setWorkingDays(normalizeWorkingDays(vm.workingDays()));
+        }
 
         validatePractitioner(practitioner);
 
@@ -212,6 +220,39 @@ public class PractitionerService {
                         "bufferafterinvalid"
                 );
             }
+        }
+
+        validateWorkingDays(practitioner.getWorkingDays());
+    }
+
+    private List<WorkingDayJson> normalizeWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return List.of();
+        }
+
+        return workingDays.stream()
+                .map(item -> WorkingDayJson.builder()
+                        .dayOfWeek(item.getDayOfWeek())
+                        .isWorking(item.getIsWorking())
+                        .build())
+                .toList();
+    }
+
+    private void validateWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return;
+        }
+
+        Set<DayOfWeek> uniqueDays = workingDays.stream()
+                .map(WorkingDayJson::getDayOfWeek)
+                .collect(Collectors.toSet());
+
+        if (uniqueDays.size() != workingDays.size()) {
+            throw new BadRequestAlertException(
+                    "Duplicate working day entries",
+                    "practitionerWorkingDay",
+                    "duplicateworkingday"
+            );
         }
     }
 
