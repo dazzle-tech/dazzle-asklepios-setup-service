@@ -3,6 +3,7 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,10 +22,14 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -120,6 +125,11 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
 
     @Column(name = "default_buffer_after_minutes")
     private Integer defaultBufferAfterMinutes=0;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "working_days", columnDefinition = "json", nullable = false)
+    @Builder.Default
+    private List<WorkingDayJson> workingDays = new ArrayList<>();
 
 
 }

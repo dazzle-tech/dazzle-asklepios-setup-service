@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -14,6 +15,7 @@ import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * View Model for creating a Practitioner via REST.
@@ -51,7 +53,8 @@ public record PractitionerCreateVM(
         @NotNull Integer parallelCapacityValue,
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
-        Integer defaultBufferAfterMinutes
+        Integer defaultBufferAfterMinutes,
+        List<WorkingDayJson> workingDays
 ) implements Serializable {
 
     public static PractitionerCreateVM ofEntity(Practitioner practitioner) {
@@ -77,7 +80,8 @@ public record PractitionerCreateVM(
                 practitioner.getParallelCapacityValue(),
                 practitioner.getDefaultDurationMinutes(),
                 practitioner.getDefaultBufferBeforeMinutes(),
-                practitioner.getDefaultBufferAfterMinutes()
+                practitioner.getDefaultBufferAfterMinutes(),
+                practitioner.getWorkingDays()
         );
     }
 }
