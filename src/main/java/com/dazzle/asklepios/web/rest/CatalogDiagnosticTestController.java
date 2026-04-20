@@ -50,6 +50,13 @@ public class CatalogDiagnosticTestController {
     }
 
 
+    @GetMapping("/catalog/diagnostic-test/{catalogId}")
+    public ResponseEntity<List<CatalogDiagnosticTest>> listAllTestByCatalog(@PathVariable Long catalogId) {
+        List<CatalogDiagnosticTest> tests = catalogService.getTestsForCatalog(catalogId);
+        return new ResponseEntity<>(tests, HttpStatus.OK);
+    }
+
+
     /** BULK ADD tests to a catalog */
     @PostMapping("/catalog/{catalogId:\\d+}/tests")
     public ResponseEntity<Void> addTests(@PathVariable Long catalogId,
