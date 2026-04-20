@@ -89,7 +89,8 @@ class DepartmentControllerTest {
 
         DepartmentCreateVM createVM = new DepartmentCreateVM(
                 "Neurology", 1L, DepartmentType.INPATIENT_WARD, true, "NEU01",
-                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester",true,true
+                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester",true,true,
+                List.of()
         );
 
         when(departmentService.create(createVM)).thenReturn(dept);
@@ -125,7 +126,8 @@ class DepartmentControllerTest {
 
         DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
                 5000L, "Oncology", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
-                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true,true,true
+                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true,true,true,
+                List.of()
         );
 
         when(departmentService.update(5000L, updateVM)).thenReturn(Optional.of(dept));
