@@ -170,25 +170,6 @@ public class CdtCodeService {
         String kw = keyword == null ? "" : keyword.trim();
         return repository.findByCodeContainingIgnoreCaseOrDescriptionContainingIgnoreCase(kw, kw, pageable);
     }
-
-    @Transactional(value = Transactional.TxType.SUPPORTS)
-    public Page<CdtCode> filter(String code, String description, CdtClass cdtClass, Boolean isActive, Pageable pageable) {
-        LOG.debug("CDT filter code='{}', description='{}', class='{}', isActive='{}', pageable={}",
-                code, description, cdtClass, isActive, pageable);
-
-        if (cdtClass != null) return findByClass(cdtClass, pageable);
-
-        boolean hasCode = code != null && !code.isBlank();
-        boolean hasDesc = description != null && !description.isBlank();
-
-        if (hasCode && hasDesc && isActive != null) return search(code, description, isActive, pageable);
-        if (hasCode) return findByCodeContainingIgnoreCase(code, pageable);
-        if (hasDesc) return findByDescriptionContainingIgnoreCase(description, pageable);
-        if (isActive != null) return findByIsActive(isActive, pageable);
-
-        return findAll(pageable);
-    }
-
     private record CsvRow(String code, String description, CdtClass cdtClass, Boolean isActive) {}
 
     private static final Set<String> REQUIRED_HEADERS = Set.of("code", "description", "class", "is active");

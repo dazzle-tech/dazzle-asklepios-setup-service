@@ -90,18 +90,6 @@ public class CdtCodeController {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
-    @GetMapping("/cdt/search")
-    public ResponseEntity<List<CdtCode>> search(
-            @RequestParam(required = false) String code,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) Boolean isActive,
-            @ParameterObject Pageable pageable) {
-        Page<CdtCode> page = service.search(code, description, isActive, pageable);
-        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-                ServletUriComponentsBuilder.fromCurrentRequest(), page);
-        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
-    }
-
     @GetMapping("/cdt/keyword/{keyword}")
     public ResponseEntity<List<CdtCode>> searchByKeyword(
             @PathVariable String keyword,
