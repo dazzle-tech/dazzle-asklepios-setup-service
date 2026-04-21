@@ -4,10 +4,12 @@ import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.validation.constraints.*;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * View Model for updating a Practitioner via REST.
@@ -70,7 +72,8 @@ public record PractitionerUpdateVM(
         Integer parallelCapacityValue,
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
-        Integer defaultBufferAfterMinutes
+        Integer defaultBufferAfterMinutes,
+        List<WorkingDayJson> workingDays
 ) implements Serializable {
 
     public static PractitionerUpdateVM ofEntity(Practitioner practitioner) {
@@ -97,7 +100,8 @@ public record PractitionerUpdateVM(
                 practitioner.getParallelCapacityValue(),
                 practitioner.getDefaultDurationMinutes(),
                 practitioner.getDefaultBufferBeforeMinutes(),
-                practitioner.getDefaultBufferAfterMinutes()
+                practitioner.getDefaultBufferAfterMinutes(),
+                practitioner.getWorkingDays()
         );
     }
 }
