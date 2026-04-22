@@ -1,4 +1,4 @@
-package com.dazzle.asklepios.domain.enumeration;
+package com.dazzle.asklepios.domain.enumeration.patient;
 
 public enum ToothNumber {
     Tooth1, Tooth2, Tooth3, Tooth4, Tooth5, Tooth6, Tooth7, Tooth8,
