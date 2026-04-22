@@ -146,7 +146,7 @@ public class ActiveIngredientsService {
         ai.setOtc(vm.otc());
         ai.setHasSynonyms(vm.hasSynonyms());
         ai.setAntimicrobial(vm.antimicrobial());
-        ai.setHighRiskMed(vm.highRiskMed());
+        ai.setHighAlert(vm.highAlert());
         ai.setAbortiveMedication(vm.abortiveMedication());
         ai.setLaborInducingMed(vm.laborInducingMed());
         ai.setIsControlled(vm.isControlled());
@@ -179,6 +179,7 @@ public class ActiveIngredientsService {
         ai.setDoseAdjustmentPugA(vm.doseAdjustmentPugA());
         ai.setDoseAdjustmentPugB(vm.doseAdjustmentPugB());
         ai.setDoseAdjustmentPugC(vm.doseAdjustmentPugC());
+        ai.setIsLookAlikeSoundAlike(vm.isLookAlikeSoundAlike());
         return ai;
     }
 
@@ -189,7 +190,7 @@ public class ActiveIngredientsService {
         if (vm.otc() != null) ai.setOtc(vm.otc());
         if (vm.hasSynonyms() != null) ai.setHasSynonyms(vm.hasSynonyms());
         if (vm.antimicrobial() != null) ai.setAntimicrobial(vm.antimicrobial());
-        if (vm.highRiskMed() != null) ai.setHighRiskMed(vm.highRiskMed());
+        if (vm.highAlert() != null) ai.setHighAlert(vm.highAlert());
         if (vm.abortiveMedication() != null) ai.setAbortiveMedication(vm.abortiveMedication());
         if (vm.laborInducingMed() != null) ai.setLaborInducingMed(vm.laborInducingMed());
         if (vm.isControlled() != null) ai.setIsControlled(vm.isControlled());
@@ -232,5 +233,24 @@ public class ActiveIngredientsService {
         }
         return classRepo.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Medical category class not found: " + id, "MedicalCategoriesClass", "notfound"));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ActiveIngredients> getActiveByName(String name, Pageable pageable) {
+        LOG.debug("get ACTIVE active ingredients by name: q='{}' page={} size={}",
+                name, pageable.getPageNumber(), pageable.getPageSize());
+
+        return activeRepo.findByIsActiveTrueAndNameContainingIgnoreCase(name, pageable);
+    }
+    @Transactional(readOnly = true)
+    public Page<ActiveIngredients> getAllActive(Pageable pageable) {
+        LOG.debug("get all ACTIVE active ingredients: page={} size={}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+        return activeRepo.findByIsActiveTrue(pageable);
+    }
+    @Transactional(readOnly = true)
+    public List<ActiveIngredients> getByIds(List<Long> ids) {
+        return activeRepo.findByIdIn(ids);
     }
 }

@@ -74,7 +74,8 @@ class DepartmentServiceTest {
     void testCreateDepartment_Success() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true
+                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true,
+                List.of()
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
@@ -92,7 +93,8 @@ class DepartmentServiceTest {
     void testCreateDepartment_FacilityNotFound() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", 99L, DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true
+                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true,
+                List.of()
         );
 
         when(facilityRepository.findById(99L)).thenReturn(Optional.empty());
@@ -106,7 +108,8 @@ class DepartmentServiceTest {
     void testUpdateDepartment_Success() {
         var vm = new DepartmentUpdateVM(
                 5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "NEW01", "111", "new@test.com", null, false,true,true
+                true, "NEW01", "111", "new@test.com", null, false,true,true,
+                List.of()
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));

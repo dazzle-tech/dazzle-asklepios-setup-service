@@ -3,12 +3,14 @@ package com.dazzle.asklepios.web.rest.vm.department;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * View Model for updating a Department via REST.
@@ -34,7 +36,8 @@ public record DepartmentUpdateVM(
         Integer defaultBufferAfterMinutes,
         Boolean requirePractitioner,
         Boolean requireBilling,
-        Boolean requirePreAssessment
+        Boolean requirePreAssessment,
+        List<WorkingDayJson> workingDays
 ) implements Serializable {
 
         public static DepartmentUpdateVM ofEntity(Department department) {
@@ -58,7 +61,8 @@ public record DepartmentUpdateVM(
                         department.getDefaultBufferAfterMinutes(),
                         department.getRequirePractitioner(),
                         department.getRequireBilling(),
-                        department.getRequirePreAssessment()
+                        department.getRequirePreAssessment(),
+                        department.getWorkingDays()
                 );
         }
 }

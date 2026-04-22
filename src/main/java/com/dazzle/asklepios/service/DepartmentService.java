@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
+import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
@@ -10,6 +11,7 @@ import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
@@ -23,8 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -79,6 +83,7 @@ public class DepartmentService {
                 .requirePractitioner(departmentVM.requirePractitioner())
                 .requireBilling(departmentVM.requireBilling())
                 .requirePreAssessment(departmentVM.requirePreAssessment())
+                .workingDays(normalizeWorkingDays(departmentVM.workingDays()))
                 .build();
 
         validateDepartment(department);
@@ -147,6 +152,9 @@ public class DepartmentService {
         if (departmentVM.requirePreAssessment() != null) {
             department.setRequirePreAssessment(departmentVM.requirePreAssessment());
         }
+        if (departmentVM.workingDays() != null) {
+            department.setWorkingDays(normalizeWorkingDays(departmentVM.workingDays()));
+        }
 
         validateDepartment(department);
 
@@ -159,6 +167,7 @@ public class DepartmentService {
     private void validateDepartment(Department department) {
         validateParallelCapacity(department);
         validateAppointableRequirements(department);
+        validateWorkingDays(department.getWorkingDays());
     }
 
     private void validateParallelCapacity(Department department) {
@@ -222,6 +231,37 @@ public class DepartmentService {
                         "requirepreassessmentinvalid"
                 );
             }
+        }
+    }
+
+    private List<WorkingDayJson> normalizeWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return List.of();
+        }
+
+        return workingDays.stream()
+                .map(item -> WorkingDayJson.builder()
+                        .dayOfWeek(item.getDayOfWeek())
+                        .isWorking(item.getIsWorking())
+                        .build())
+                .toList();
+    }
+
+    private void validateWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return;
+        }
+
+        Set<DayOfWeek> uniqueDays = workingDays.stream()
+                .map(WorkingDayJson::getDayOfWeek)
+                .collect(Collectors.toSet());
+
+        if (uniqueDays.size() != workingDays.size()) {
+            throw new BadRequestAlertException(
+                    "Duplicate working day entries",
+                    "departmentWorkingDay",
+                    "duplicateworkingday"
+            );
         }
     }
 
