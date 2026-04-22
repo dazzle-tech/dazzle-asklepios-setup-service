@@ -263,6 +263,13 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Department> findByTypeAndFacilityIdAndIsActive(DepartmentType type, Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get Active Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
+                type, facilityId, pageable);
+        return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Department> findByDepartmentName(String name, Pageable pageable) {
         LOG.debug("Request to get Departments by Name with pagination name='{}' pageable={}", name, pageable);
         return departmentRepository.findByNameContainingIgnoreCase(name, pageable);
