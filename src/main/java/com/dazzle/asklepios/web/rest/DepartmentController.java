@@ -129,6 +129,30 @@ public class DepartmentController {
         );
     }
 
+    @GetMapping("/department/by-type-and-facility-and-active/{type}/{facilityId:\\d+}")
+    public ResponseEntity<List<DepartmentResponseVM>> getByTypeAndFacilityAndActive(
+            @PathVariable DepartmentType type,
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Departments Active by type={} and facilityId={} page={}", type, facilityId, pageable);
+
+        Page<Department> page = departmentService.findByTypeAndFacilityIdAndIsActive(type, facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
     @GetMapping("/department/by-type-and-facility/{type}/{facilityId:\\d+}")
     public ResponseEntity<List<DepartmentResponseVM>> getByTypeAndFacility(
             @PathVariable DepartmentType type,
