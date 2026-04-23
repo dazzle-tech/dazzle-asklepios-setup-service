@@ -192,7 +192,7 @@ public class AgeGroupController {
 
         if (result == null) {
             LOG.warn("No matching AgeGroup found for birthDate={}", birthDate);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
         }
 
         return ResponseEntity.ok(AgeGroupResponseVM.ofEntity(result));
