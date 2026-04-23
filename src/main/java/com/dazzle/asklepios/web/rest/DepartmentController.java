@@ -394,5 +394,19 @@ public class DepartmentController {
     }
 
 
+    @GetMapping("/department/active/by-type-and-facility/{type}/{facilityId}")
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveByTypeAndFacility(
+            @PathVariable DepartmentType type,
+            @PathVariable Long facilityId
+    ) {
+        LOG.debug("REST list ACTIVE Departments by type={} and facilityId={}", type, facilityId);
 
+        List<DepartmentResponseVM> departments = departmentService
+                .findActiveByTypeAndFacility(type, facilityId)
+                .stream()
+                .map(DepartmentResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(departments);
+    }
 }

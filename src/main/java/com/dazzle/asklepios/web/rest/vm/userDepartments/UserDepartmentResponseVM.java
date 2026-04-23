@@ -10,7 +10,9 @@ public record UserDepartmentResponseVM(
         Long id,
         Long userId,
         Long facilityId,
+        String facilityName,
         Long departmentId,
+        String departmentName,
         Boolean isActive,
         Boolean isDefault
 ) implements Serializable {
@@ -19,10 +21,23 @@ public record UserDepartmentResponseVM(
         return new UserDepartmentResponseVM(
                 entity.getId(),
                 entity.getUser() != null ? entity.getUser().getId() : null,
-                (entity.getDepartment() != null && entity.getDepartment().getFacility() != null)
+
+                entity.getDepartment() != null && entity.getDepartment().getFacility() != null
                         ? entity.getDepartment().getFacility().getId()
                         : null,
-                entity.getDepartment() != null ? entity.getDepartment().getId() : null,
+
+                entity.getDepartment() != null && entity.getDepartment().getFacility() != null
+                        ? entity.getDepartment().getFacility().getName()
+                        : null,
+
+                entity.getDepartment() != null
+                        ? entity.getDepartment().getId()
+                        : null,
+
+                entity.getDepartment() != null
+                        ? entity.getDepartment().getName()
+                        : null,
+
                 entity.getIsActive(),
                 entity.getIsDefault()
         );
