@@ -48,7 +48,7 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
     );
 
     Page<Department> findByIsActiveTrue(Pageable pageable);
-    List<Department> findByDepartmentTypeAndFacilityIdAndIsActiveTrue(
+    List<Department> findByTypeAndFacilityIdAndIsActiveTrue(
             DepartmentType type,
             Long facilityId
     );

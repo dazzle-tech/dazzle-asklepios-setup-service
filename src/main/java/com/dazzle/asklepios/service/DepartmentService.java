@@ -312,7 +312,7 @@ public class DepartmentService {
     public List<Department> findActiveByTypeAndFacility(DepartmentType type, Long facilityId) {
         LOG.debug("Request to get Active Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
                 type, facilityId);
-        return departmentRepository.findByDepartmentTypeAndFacilityIdAndIsActiveTrue(type, facilityId);
+        return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId);
     }
 
     @Transactional(readOnly = true)
