@@ -91,15 +91,42 @@ public class UserDepartmentController {
      */
     @GetMapping("/user-departments/user/{userId}/active")
     public ResponseEntity<List<UserDepartmentResponseVM>> getActiveByUserInFacility(@PathVariable Long userId) {
-        Long facilityId = SecurityUtils.getCurrentUserFacility()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+        log.warn(">>> ENTER /active endpoint, userId={}", userId);
 
-        log.debug("REST request to get active UserDepartments by userId={} facilityId={}", userId, facilityId);
+        Long facilityId = SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> {
+                    log.error(">>> Missing mandatory claim 'tenant' in JWT for userId={}", userId);
+                    return new ResponseStatusException(
+                            HttpStatus.UNAUTHORIZED,
+                            "Missing mandatory claim 'tenant' in JWT."
+                    );
+                });
+
+        log.warn(">>> Resolved facilityId from JWT = {}", facilityId);
+
         List<UserDepartmentResponseVM> result = userDepartmentService
                 .getActiveUserDepartmentsByUserInFacility(userId, facilityId);
+
+        log.warn(">>> Service returned {} active departments", result != null ? result.size() : null);
+
+        if (result != null) {
+            result.forEach(item -> log.warn(
+                    ">>> item: id={}, userId={}, facilityId={}, facilityName={}, departmentId={}, departmentName={}, isActive={}, isDefault={}",
+                    item.id(),
+                    item.userId(),
+                    item.facilityId(),
+                    item.facilityName(),
+                    item.departmentId(),
+                    item.departmentName(),
+                    item.isActive(),
+                    item.isDefault()
+            ));
+        }
+
+        log.warn(">>> EXIT /active endpoint");
+
         return ResponseEntity.ok(result);
     }
-
 
     /**
      * GET /api/setup/user-departments/user/{userId}/default :

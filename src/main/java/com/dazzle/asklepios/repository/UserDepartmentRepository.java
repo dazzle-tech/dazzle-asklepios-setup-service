@@ -2,6 +2,7 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.UserDepartment;
 import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -20,11 +21,10 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
     boolean existsByUserIdAndDepartmentId(Long userId, Long departmentId);
 
     boolean existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(Long userId, Long facilityId);
-
+    @EntityGraph(attributePaths = {"department"})
     Optional<UserDepartment> findFirstByUserIdAndDepartment_Facility_IdAndIsDefaultTrue(Long userId, Long facilityId);
-
+    @EntityGraph(attributePaths = {"department"})
     Optional<UserDepartment> findFirstByUserIdAndDepartment_Facility_IdAndIsActiveTrueOrderByIdAsc(Long userId, Long facilityId);
-
     List<UserDepartment> findByUserIdAndDepartment_FacilityIdAndIsActiveTrueOrderByIsDefaultDescIdAsc(Long userId, Long facilityId);
 
     @Modifying
