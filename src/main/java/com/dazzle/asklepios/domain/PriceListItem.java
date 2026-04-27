@@ -1,14 +1,16 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.biling.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.inventory.ProductTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -27,7 +29,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(callSuper = false)
 @Table(name = "price_list_item")
 public class PriceListItem extends AbstractAuditingEntity<Long> implements Serializable {
 
@@ -42,21 +43,23 @@ public class PriceListItem extends AbstractAuditingEntity<Long> implements Seria
     @NotNull(message = "Item type cannot be null")
     @Enumerated(EnumType.STRING)
     @Column(name = "item_type", length = 20, nullable = false)
-    private PriceListItemType itemType;
+    private BillingItemTypes itemType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id")
+    private ServiceSetup service;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_medication_id")
+    private BrandMedication brandMedication;
 
-    // polymorphic target
-    @Column(name = "service_id")
-    private Long serviceId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "diagnostic_test_id")
+    private DiagnosticTest diagnosticTest;
 
-    @Column(name = "product_id")
-    private Long productId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "product_type", length = 30)
-    private ProductTypes productType;
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procedure_id")
+    private Procedure procedure;
 
     @NotNull(message = "Price cannot be null")
     @Column(name = "price", precision = 19, scale = 4, nullable = false)

@@ -1,12 +1,13 @@
 package com.dazzle.asklepios.web.rest.vm.pricelist;
 
-import com.dazzle.asklepios.domain.enumeration.biling.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.inventory.ProductTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record PriceListItemUpdateVM(
         @NotNull(message = "id cannot be null")
         Long id,
@@ -15,13 +16,15 @@ public record PriceListItemUpdateVM(
         Long priceListId,
 
         @NotNull(message = "itemType cannot be null")
-        PriceListItemType itemType,
-
-        ProductTypes productType,
+        BillingItemTypes itemType,
 
         Long serviceId,
-        Long productId,
 
+        Long brandMedicationId,
+
+        Long diagnosticTestId,
+
+        Long procedureId,
 
         @NotNull(message = "price cannot be null")
         BigDecimal price,
