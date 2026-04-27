@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.ActiveIngredients;
+import com.dazzle.asklepios.domain.Bed;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
 import com.dazzle.asklepios.repository.MedicationCategoriesClassRepository;
@@ -252,5 +253,16 @@ public class ActiveIngredientsService {
     @Transactional(readOnly = true)
     public List<ActiveIngredients> getByIds(List<Long> ids) {
         return activeRepo.findByIdIn(ids);
+    }
+    @Transactional(readOnly = true)
+    public ActiveIngredients findById(Long id) {
+        LOG.debug("[FIND BY ID] Fetching Active Ingredient id={}", id);
+
+        return activeRepo.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Active Ingredient not found with id " + id,
+                        "activeIngredient",
+                        "notfound"
+                ));
     }
 }
