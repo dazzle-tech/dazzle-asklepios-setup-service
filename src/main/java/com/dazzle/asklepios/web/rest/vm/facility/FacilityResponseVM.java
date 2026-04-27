@@ -7,6 +7,7 @@ import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import org.wildfly.common.annotation.NotNull;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -23,6 +24,7 @@ public record FacilityResponseVM(
         String fax,
         String addressId,
         Currency defaultCurrency,
+        LocalDate registrationDate,
         Boolean isActive,
         Long ruleId,
         String timeZone,
@@ -42,6 +44,7 @@ public record FacilityResponseVM(
                 facility.getFax(),
                 facility.getAddressId(),
                 facility.getDefaultCurrency(),
+                facility.getRegistrationDate(),
                 facility.getIsActive(),
                 facility.getRuleId(),
                 facility.getTimeZone(),
