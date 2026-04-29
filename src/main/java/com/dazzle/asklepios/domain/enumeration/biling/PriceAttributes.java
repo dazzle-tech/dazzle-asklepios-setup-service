@@ -1,15 +1,15 @@
 package com.dazzle.asklepios.domain.enumeration.biling;
 
 public enum PriceAttributes {
-    ENCOUNTERTYPE,
+    ENCOUNTER_TYPE,
 
-    VISITTYPE,
+    VISIT_TYPE,
 
-    PATIENTCLASS,
-    VISITTIME,
+    PATIENT_CLASS,
+    VISIT_TIME,
 
-    AGECATEGORY,
-    ENCOUNTERPRIORITY,
+    AGE_CATEGORY,
+    ENCOUNTER_PRIORITY,
 
-    BEDCLASS,
+    BED_CLASS,
 }
