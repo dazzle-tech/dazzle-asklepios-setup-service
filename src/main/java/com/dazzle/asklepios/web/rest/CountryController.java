@@ -159,6 +159,7 @@ public class CountryController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     @PostMapping("/country/bulk")
     public ResponseEntity<List<CountryResponseVM>> getCountriesBulk(@RequestBody List<Long> ids) {
         List<Country> countries = countryService.findByIds(ids);
@@ -170,4 +171,13 @@ public class CountryController {
         return ResponseEntity.ok(body);
     }
 
+    /**
+     * {@code GET /country/{id}} : Get a single country by id.
+     */
+    @GetMapping("/country/{id}")
+    public ResponseEntity<Country> getOne(@PathVariable Long id) {
+        LOG.debug("REST get country id={}", id);
+        Country country = countryService.findById(id);
+        return ResponseEntity.ok(country);
+    }
 }
