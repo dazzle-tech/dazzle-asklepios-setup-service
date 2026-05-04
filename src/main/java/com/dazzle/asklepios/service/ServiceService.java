@@ -262,26 +262,29 @@ public class ServiceService {
     // ServiceService.java
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
-        LOG.debug("Fetching paged Services by department sourceId={} pageable={}", sourceId, pageable);
+        LOG.debug("Fetching paged active Services by department sourceId={} pageable={}", sourceId, pageable);
 
         List<ServiceItems> items =
-                serviceItemsRepository.findByTypeAndSourceId(ServiceItemsType.DEPARTMENTS, sourceId);
+                serviceItemsRepository.findByTypeAndSourceIdAndIsActiveTrue(
+                        ServiceItemsType.DEPARTMENTS,
+                        sourceId
+                );
 
         if (items == null || items.isEmpty()) {
             return Page.empty(pageable);
         }
+
         List<Long> serviceIds = items.stream()
                 .map(serviceItems -> serviceItems.getService().getId())
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList();
 
-
         if (serviceIds.isEmpty()) {
             return Page.empty(pageable);
         }
 
-        return serviceRepository.findByIdIn(serviceIds, pageable);
+        return serviceRepository.findByIdInAndIsActiveTrue(serviceIds, pageable);
     }
 
     @Transactional(readOnly = true)
