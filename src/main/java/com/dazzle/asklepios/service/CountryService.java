@@ -125,7 +125,20 @@ public class CountryService {
                     return saved;
                 });
     }
+    @Transactional(readOnly = true)
+    public Country findById(Long id) {
+        LOG.debug("[GET country BY ID] id={}", id);
 
+        return countryRepository.findById(id)
+                .orElseThrow(() -> {
+                    LOG.warn("[GET country BY ID] country not found id={}", id);
+                    return new NotFoundAlertException(
+                            "country not found with id " + id,
+                            "country",
+                            "country.notfound"
+                    );
+                });
+    }
     private BadRequestAlertException handleConstraintViolationOnCreateOrUpdate(Exception ex, String operation) {
         Throwable root = getRootCause(ex);
         String message = (root != null ? root.getMessage() : ex.getMessage());

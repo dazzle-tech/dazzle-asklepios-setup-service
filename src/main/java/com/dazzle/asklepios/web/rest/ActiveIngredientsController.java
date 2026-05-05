@@ -1,12 +1,14 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.ActiveIngredients;
+import com.dazzle.asklepios.domain.Bed;
 import com.dazzle.asklepios.service.ActiveIngredientsService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsCreateVM;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsResponseVM;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -223,5 +225,15 @@ public class ActiveIngredientsController {
                 .toList();
 
         return ResponseEntity.ok(body);
+    }
+    @GetMapping("/active-ingredients/{id}")
+    public ResponseEntity<ActiveIngredientsResponseVM> findById(
+            @PathVariable("id") @NotNull Long activeIngredientId
+    ) {
+        LOG.debug("REST find activeIngredient by id={}", activeIngredientId);
+
+        ActiveIngredients activeIngredients = activeIngredientsService.findById(activeIngredientId);
+
+        return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(activeIngredients));
     }
 }
