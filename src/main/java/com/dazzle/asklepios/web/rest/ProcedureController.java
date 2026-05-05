@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -118,7 +119,7 @@ public class ProcedureController {
 
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
-            @PathVariable String categoryType,
+            @PathVariable ProcedureCategory categoryType,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by categoryType={} pageable={}", categoryType, pageable);
@@ -181,7 +182,7 @@ public class ProcedureController {
     @GetMapping("/procedure/by-facility/{facilityId}")
     public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
             @PathVariable Long facilityId,
-            @RequestParam(required = false) String category,
+            @RequestParam(required = false) ProcedureCategory category,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
@@ -250,7 +251,7 @@ public class ProcedureController {
     @GetMapping("/procedure/active/by-facility/{facilityId}/by-category")
     public ResponseEntity<List<ProcedureResponseVM>> getActiveByFacilityAndCategory(
             @PathVariable @NotNull Long facilityId,
-            @RequestParam String category,
+            @RequestParam ProcedureCategory category,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST get ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
