@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -56,8 +57,9 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     private  Long price;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "category_type", nullable = false, length = 255)
-    private String categoryType;
+    private ProcedureCategory categoryType;
 
     @NotNull
     @Column(name = "is_appointable", nullable = false)

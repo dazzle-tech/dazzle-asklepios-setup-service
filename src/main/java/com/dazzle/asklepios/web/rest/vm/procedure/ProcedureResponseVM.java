@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
@@ -10,7 +11,7 @@ public record ProcedureResponseVM(
         Long id,
         String name,
         String code,
-        String categoryType,
+        ProcedureCategory categoryType,
         Boolean isAppointable,
         String indications,
         String contraindications,

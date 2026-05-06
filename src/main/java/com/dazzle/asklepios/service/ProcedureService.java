@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -158,7 +159,7 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(String categoryType, Pageable pageable) {
+    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Pageable pageable) {
         LOG.debug("Fetching Procedures by categoryType={}", categoryType);
         return procedureRepository.findByCategoryType(categoryType, pageable);
     }
@@ -204,7 +205,7 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, String category, Pageable pageable) {
+    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
         }
@@ -224,14 +225,14 @@ public class ProcedureService {
 
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findActiveByFacilityAndOptionalCategory(Long facilityId, String category, Pageable pageable) {
+    public Page<Procedure> findActiveByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
         LOG.debug("Fetching ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
 
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
         }
 
-        if (category != null && !category.isBlank()) {
+        if (category != null) {
             return procedureRepository.findByFacility_IdAndIsActiveTrueAndCategoryType(facilityId, category, pageable);
         }
 
