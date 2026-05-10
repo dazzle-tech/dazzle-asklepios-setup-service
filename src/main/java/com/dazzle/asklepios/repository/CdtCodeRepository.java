@@ -21,4 +21,10 @@ public interface CdtCodeRepository extends JpaRepository<CdtCode, Long> {
     Page<CdtCode> findByDescriptionContainingIgnoreCase(String description, Pageable pageable);
 
     Page<CdtCode> findByIsActive(boolean isActive, Pageable pageable);
+
+    Page<CdtCode> findByCodeContainingIgnoreCaseAndDescriptionContainingIgnoreCaseAndIsActive(
+            String code, String description, boolean isActive, Pageable pageable);
+
+    Page<CdtCode> findByCodeContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+            String code, String description, Pageable pageable);
 }

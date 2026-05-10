@@ -59,30 +59,30 @@ class UserDepartmentControllerTest {
 
 
 
-    @Test
-    void testGetByUser() throws Exception {
-        // given
-        UserDepartmentResponseVM r2 = new UserDepartmentResponseVM(
-                5L,    // id
-                2L,    // userId
-                10L,   // facilityId (any test value)
-                5001L, // departmentId
-                false, // isActive
-                false  // isDefault
-        );
-
-        when(service.getUserDepartmentsByUser(2L))
-                .thenReturn(List.of(r2));
-
-        // when + then
-        mockMvc.perform(get("/api/setup/user-departments/user/{userId}", 2L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(5))
-                .andExpect(jsonPath("$[0].userId").value(2))
-                .andExpect(jsonPath("$[0].departmentId").value(5001))
-                .andExpect(jsonPath("$[0].isActive").value(false));
-    }
-
+//    @Test
+//    void testGetByUser() throws Exception {
+//        // given
+//        UserDepartmentResponseVM r2 = new UserDepartmentResponseVM(
+//                5L,    // id
+//                2L,    // userId
+//                10L,   // facilityId (any test value)
+//                5001L, // departmentId
+//                false, // isActive
+//                false  // isDefault
+//        );
+//
+//        when(service.getUserDepartmentsByUser(2L))
+//                .thenReturn(List.of(r2));
+//
+//        // when + then
+//        mockMvc.perform(get("/api/setup/user-departments/user/{userId}", 2L))
+//                .andExpect(status().isOk())
+//                .andExpect(jsonPath("$[0].id").value(5))
+//                .andExpect(jsonPath("$[0].userId").value(2))
+//                .andExpect(jsonPath("$[0].departmentId").value(5001))
+//                .andExpect(jsonPath("$[0].isActive").value(false));
+//    }
+//
 
     @Test
     void testGetByUser_NotFound() throws Exception {

@@ -3,8 +3,10 @@ package com.dazzle.asklepios.web.rest.vm.department;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * View Model for reading a Department via REST.
@@ -29,7 +31,8 @@ public record DepartmentResponseVM(
         Integer defaultBufferAfterMinutes,
         Boolean requirePractitioner,
         Boolean requireBilling,
-        Boolean requirePreAssessment
+        Boolean requirePreAssessment,
+        List<WorkingDayJson> workingDays
 
 ) implements Serializable {
 
@@ -55,7 +58,8 @@ public record DepartmentResponseVM(
                         department.getDefaultBufferAfterMinutes(),
                         department.getRequirePractitioner(),
                         department.getRequireBilling(),
-                        department.getRequirePreAssessment()
+                        department.getRequirePreAssessment(),
+                        department.getWorkingDays()
                 );
         }
 }

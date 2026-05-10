@@ -219,11 +219,11 @@ public class CatalogService {
         catalogDiagnosticTestRepository.deleteByCatalog_IdAndTest_Id(catalogId, testId);
     }
 
-    public CatalogTestVM getTestsForCatalog(Long catalogId, Pageable pageable) {
-        Page<CatalogDiagnosticTest> page =
-                catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
-
-        return CatalogTestVM.ofPage(page);
+    public List<DiagnosticTest> getTestsForCatalog(Long catalogId) {
+        return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId)
+                .stream()
+                .map(CatalogDiagnosticTest::getTest)
+                .toList();
     }
 
     public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {

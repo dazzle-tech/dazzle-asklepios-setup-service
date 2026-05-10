@@ -1,12 +1,14 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.ActiveIngredients;
+import com.dazzle.asklepios.domain.Bed;
 import com.dazzle.asklepios.service.ActiveIngredientsService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsCreateVM;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsResponseVM;
 import com.dazzle.asklepios.web.rest.vm.activeIngredients.ActiveIngredientsUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -169,5 +171,69 @@ public class ActiveIngredientsController {
         LOG.debug("REST toggle ActiveIngredients isActive id={}", id);
         ActiveIngredients activeIngredient = activeIngredientsService.toggleActive(id);
         return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(activeIngredient));
+    }
+
+    /**
+     * {@code GET /active-ingredients/active/by-name/{name}} : Get ACTIVE active ingredients by name (paginated).
+     *
+     * <p>Returns only active ingredients where {@code isActive = true} and the name contains {@code name} (ignore case).</p>
+     *
+     * <p>Includes pagination headers {@code X-Total-Count} and {@code Link}.</p>
+     *
+     * @param name the name identifier.
+     * @param pageable pagination and sorting information.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of active ingredient view models,
+     *         plus pagination headers. Returns an empty list if none found.
+     */
+    @GetMapping("/active-ingredients/active")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getActiveIngredients(
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list ACTIVE ActiveIngredients by name='{}' page={}", name, pageable);
+
+        Page<ActiveIngredients> page =
+                (name == null || name.isBlank())
+                        ? activeIngredientsService.getAllActive(pageable)
+                        : activeIngredientsService.getActiveByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<ActiveIngredientsResponseVM> body = page.getContent()
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    /**
+     * {@code POST /active-ingredients/by-ids} : Get active ingredients by IDs.
+     */
+    @PostMapping("/active-ingredients/by-ids")
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getByIds(
+            @RequestBody List<Long> ids
+    ) {
+        LOG.debug("REST list ActiveIngredients by ids={}", ids);
+
+        List<ActiveIngredientsResponseVM> body = activeIngredientsService.getByIds(ids)
+                .stream()
+                .map(ActiveIngredientsResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+    @GetMapping("/active-ingredients/{id}")
+    public ResponseEntity<ActiveIngredientsResponseVM> findById(
+            @PathVariable("id") @NotNull Long activeIngredientId
+    ) {
+        LOG.debug("REST find activeIngredient by id={}", activeIngredientId);
+
+        ActiveIngredients activeIngredients = activeIngredientsService.findById(activeIngredientId);
+
+        return ResponseEntity.ok(ActiveIngredientsResponseVM.ofEntity(activeIngredients));
     }
 }

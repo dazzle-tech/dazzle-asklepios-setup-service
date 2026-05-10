@@ -37,6 +37,8 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
     );
     Page<Department> findByTypeAndFacilityId(DepartmentType type, Long facilityId, Pageable pageable);
 
+    Page<Department> findByTypeAndFacilityIdAndIsActiveTrue(DepartmentType type, Long facilityId, Pageable pageable);
+
     List<Department> findByIdIn(List<Long> ids);
 
     Page<Department> findByAppointableTrueAndIsActiveTrueAndFacilityIdAndEncounterType(
@@ -46,5 +48,8 @@ public interface DepartmentsRepository extends JpaRepository<Department, Long> {
     );
 
     Page<Department> findByIsActiveTrue(Pageable pageable);
-
+    List<Department> findByTypeAndFacilityIdAndIsActiveTrue(
+            DepartmentType type,
+            Long facilityId
+    );
 }

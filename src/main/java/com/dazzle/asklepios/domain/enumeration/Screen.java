@@ -32,7 +32,7 @@ public enum Screen {
     MODULES_AND_SCREENS,
     DATA_VALIDATION_MANAGER,
     DVM,
-
+    FORM_TEMPLATE,
     ACCESS_ROLES,
     FACILITIES,
     DEPARTMENTS,
@@ -71,6 +71,7 @@ public enum Screen {
     COUNTRY_SETUP,
     DIAGNOSTICS_SETUP_OLD,
     PAYER,
+    POLICY_DEFINITION,
     // Front Desk Office
     QUICK_APPOINTMENT,
     PATIENT_REGISTRATION,
@@ -81,6 +82,7 @@ public enum Screen {
     ER_TRIAGE,
 
     ER_DEPARTMENT,
+    URGENT_CARE_DEPARTMENT,
     ER_DASHBOARD,
 
     // Purchasing
@@ -153,7 +155,8 @@ public enum Screen {
     GENERAL_SETTINGS,
     CONFIGURATIONS,
     ORGANIZATION_HOLIDAY,
-    URGENT_CARE_TRIAGE
+    URGENT_CARE_TRIAGE,
+    NURSE_ASSESSMENT
     ;
     @JsonCreator
     public static Screen fromValue(String value) {

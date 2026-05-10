@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -127,6 +128,30 @@ public class DepartmentController {
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/department/by-type-and-facility-and-active/{type}/{facilityId:\\d+}")
+    public ResponseEntity<List<DepartmentResponseVM>> getByTypeAndFacilityAndActive(
+            @PathVariable DepartmentType type,
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Departments Active by type={} and facilityId={} page={}", type, facilityId, pageable);
+
+        Page<Department> page = departmentService.findByTypeAndFacilityIdAndIsActive(type, facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(DepartmentResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 
     @GetMapping("/department/by-type-and-facility/{type}/{facilityId:\\d+}")
     public ResponseEntity<List<DepartmentResponseVM>> getByTypeAndFacility(
@@ -368,4 +393,20 @@ public class DepartmentController {
         );
     }
 
+
+    @GetMapping("/department/active/by-type-and-facility/{type}/{facilityId}")
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveByTypeAndFacility(
+            @PathVariable DepartmentType type,
+            @PathVariable Long facilityId
+    ) {
+        LOG.debug("REST list ACTIVE Departments by type={} and facilityId={}", type, facilityId);
+
+        List<DepartmentResponseVM> departments = departmentService
+                .findActiveByTypeAndFacility(type, facilityId)
+                .stream()
+                .map(DepartmentResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(departments);
+    }
 }

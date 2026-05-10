@@ -24,5 +24,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             Pageable pageable
     );
 
+    Page<Room> findByIsActiveTrueAndAppointableIsTrueAndDepartment_Id(Long departmentId, Pageable pageable);
+
     List<Room> findAllByIdIn(List<Long> ids);
 }
