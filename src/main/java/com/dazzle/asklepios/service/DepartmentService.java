@@ -167,6 +167,19 @@ public class DepartmentService {
     private void validateDepartment(Department department) {
         validateParallelCapacity(department);
         validateAppointableRequirements(department);
+        validateEncounterType(department);
+    }
+
+    private void validateEncounterType(Department department) {
+        if (Boolean.TRUE.equals(department.getAppointable())) {
+            if (department.getEncounterType() == null) {
+                throw new BadRequestAlertException(
+                        "encounterType",
+                        "department",
+                        "Encounter Type is required for appointable department"
+                );
+            }
+        }
         validateWorkingDays(department.getWorkingDays());
     }
 
