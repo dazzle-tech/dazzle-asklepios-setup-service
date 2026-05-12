@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Country;
+import com.dazzle.asklepios.domain.enumeration.CountryName;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -39,8 +40,8 @@ public class CountryService {
         }
 
         Country entity = Country.builder()
-                .name(countryRequest.getName().trim())
-                .code(countryRequest.getCode().trim())
+                .name(countryRequest.getName())
+                .code(countryRequest.getCode() != null ? countryRequest.getCode().trim() : null)
                 .isActive(countryRequest.getIsActive() != null ? countryRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
@@ -67,8 +68,8 @@ public class CountryService {
         Country existing = countryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Country not found with id " + id, "country", "notfound"));
 
-        existing.setName(countryRequest.getName().trim());
-        existing.setCode(countryRequest.getCode().trim());
+        existing.setName(countryRequest.getName());
+        existing.setCode(countryRequest.getCode() != null ? countryRequest.getCode().trim() : null);
         existing.setIsActive(countryRequest.getIsActive());
 
         try {
@@ -95,12 +96,12 @@ public class CountryService {
 
 
     @Transactional(readOnly = true)
-    public Page<Country> findByName(String name, Pageable pageable) {
-        LOG.debug("Fetching Countries by name like='{}' pageable={}", name, pageable);
-        if (name == null || name.trim().isEmpty()) {
+    public Page<Country> findByName(CountryName name, Pageable pageable) {
+        LOG.debug("Fetching Countries by name='{}' pageable={}", name, pageable);
+        if (name == null) {
             return countryRepository.findAll(pageable);
         }
-        return countryRepository.findByName(name.trim(), pageable);
+        return countryRepository.findByName(name, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -109,7 +110,7 @@ public class CountryService {
         if (code == null || code.trim().isEmpty()) {
             return countryRepository.findAll(pageable);
         }
-        return countryRepository.findByCodeContainingIgnoreCase(code.trim(), pageable);
+        return countryRepository.findByCode(code.trim(), pageable);
     }
 
     @Transactional
