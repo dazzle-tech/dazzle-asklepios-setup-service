@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Country;
+import com.dazzle.asklepios.domain.enumeration.CountryName;
 import com.dazzle.asklepios.service.CountryService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.country.CountryCreateVM;
@@ -117,7 +118,7 @@ public class CountryController {
 
     @GetMapping("/country/by-name/{name}")
     public ResponseEntity<List<CountryResponseVM>> getByName(
-            @PathVariable String name,
+            @PathVariable CountryName name,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Countries by name='{}' pageable={}", name, pageable);
