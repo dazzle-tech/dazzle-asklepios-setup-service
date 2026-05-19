@@ -96,6 +96,19 @@ public class Payor extends AbstractAuditingEntity<Long> implements Serializable 
     @Column(name = "force_preapproval", nullable = false)
     private Boolean forcePreApproval = false;
 
+    @Column(name = "nphies_id", length = 100, unique = true)
+    private String nphiesId;
+
+    @Column(name = "waseel_payer_id", length = 100)
+    private String waseelPayerId;
+
+    @Column(name = "tpa_nphies_id", length = 100)
+    private String tpaNphiesId;
+
+    @NotNull
+    @Column(name = "is_waseel_enabled", nullable = false)
+    private Boolean isWaseelEnabled = true;
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

@@ -47,6 +47,18 @@ public class PayorPlan extends AbstractAuditingEntity<Long> implements Serializa
     @Column(name = "plan_type", nullable = false, length = 50)
     private PayorPlanType planType;
 
+    @Column(name = "network_id", length = 100)
+    private String networkId;
+
+    @Column(name = "coverage_type", length = 50)
+    private String coverageType;
+
+    @Column(name = "payer_nphies_id", length = 100)
+    private String payerNphiesId;
+
+    @Column(name = "waseel_plan_id", length = 100)
+    private String waseelPlanId;
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
