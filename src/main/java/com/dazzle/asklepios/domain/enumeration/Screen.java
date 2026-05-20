@@ -72,6 +72,7 @@ public enum Screen {
     DIAGNOSTICS_SETUP_OLD,
     PAYER,
     POLICY_DEFINITION,
+    SKILL_DEFINITION,
     // Front Desk Office
     QUICK_APPOINTMENT,
     PATIENT_REGISTRATION,

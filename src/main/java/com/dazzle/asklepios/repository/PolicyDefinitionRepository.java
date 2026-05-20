@@ -1,15 +1,15 @@
 package com.dazzle.asklepios.repository;
 
-import com.dazzle.asklepios.domain.OrganizationHoliday;
 import com.dazzle.asklepios.domain.PolicyDefinition;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 import java.util.Optional;
 
-public interface PolicyDefinitionRepository extends JpaRepository<PolicyDefinition, Long>, JpaSpecificationExecutor<OrganizationHoliday> {
+public interface PolicyDefinitionRepository extends JpaRepository<PolicyDefinition, Long>, JpaSpecificationExecutor<PolicyDefinition> {
     @Override
     @EntityGraph(attributePaths = "facility")
     Page<PolicyDefinition> findAll(Pageable pageable);
