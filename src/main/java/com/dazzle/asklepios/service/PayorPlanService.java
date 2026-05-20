@@ -34,6 +34,10 @@ public class PayorPlanService {
                 .payorId(vm.payorId())
                 .name(vm.name())
                 .planType(vm.planType())
+                .networkId(vm.networkId())
+                .coverageType(vm.coverageType())
+                .payerNphiesId(vm.payerNphiesId())
+                .waseelPlanId(vm.waseelPlanId())
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
                 .build();
         return planRepo.save(p);
@@ -49,7 +53,16 @@ public class PayorPlanService {
         existing.setName(vm.name());
         existing.setPlanType(vm.planType());
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
+        existing.setPayorId(vm.payorId());
+        existing.setName(vm.name());
+        existing.setPlanType(vm.planType());
 
+        existing.setNetworkId(vm.networkId());
+        existing.setCoverageType(vm.coverageType());
+        existing.setPayerNphiesId(vm.payerNphiesId());
+        existing.setWaseelPlanId(vm.waseelPlanId());
+
+        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
         return planRepo.save(existing);
     }
 
