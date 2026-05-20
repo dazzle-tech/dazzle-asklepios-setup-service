@@ -55,7 +55,10 @@ public class PayorService {
                 .startDate(vm.startDate())
                 .expiryDate(vm.expiryDate())
                 .renewable(vm.renewable() != null ? vm.renewable() : false)
-
+                .nphiesId(vm.nphiesId())
+                .waseelPayerId(vm.waseelPayerId())
+                .tpaNphiesId(vm.tpaNphiesId())
+                .isWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : false)
                 .allowPartialCoverage(bool(vm.allowPartialCoverage()))
                 .acceptCopay(bool(vm.acceptCopay()))
                 .acceptDeductibles(bool(vm.acceptDeductibles()))
@@ -79,8 +82,6 @@ public class PayorService {
                         "payor",
                         "Payor not found."
                 ));
-
-        // إذا غيّر الكود وتكرر
         if (!existing.getCode().equalsIgnoreCase(vm.code())
                 && repo.existsByCodeIgnoreCase(vm.code())) {
             throw new BadRequestAlertException(
@@ -104,7 +105,10 @@ public class PayorService {
         existing.setStartDate(vm.startDate());
         existing.setExpiryDate(vm.expiryDate());
         existing.setRenewable(vm.renewable() != null ? vm.renewable() : existing.getRenewable());
-
+        existing.setNphiesId(vm.nphiesId());
+        existing.setWaseelPayerId(vm.waseelPayerId());
+        existing.setTpaNphiesId(vm.tpaNphiesId());
+        existing.setIsWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : existing.getIsWaseelEnabled());
         existing.setAllowPartialCoverage(vm.allowPartialCoverage() != null ? vm.allowPartialCoverage() : existing.getAllowPartialCoverage());
         existing.setAcceptCopay(vm.acceptCopay() != null ? vm.acceptCopay() : existing.getAcceptCopay());
         existing.setAcceptDeductibles(vm.acceptDeductibles() != null ? vm.acceptDeductibles() : existing.getAcceptDeductibles());

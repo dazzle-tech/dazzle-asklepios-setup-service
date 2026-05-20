@@ -28,6 +28,11 @@ public record PayorResponseVM(
         Boolean allowDrgBilling,
         Boolean forcePreApproval,
 
+        String nphiesId,
+        String waseelPayerId,
+        String tpaNphiesId,
+        Boolean isWaseelEnabled,
+
         Boolean isActive,
         Instant createdDate,
         Instant lastModifiedDate
@@ -55,10 +60,14 @@ public record PayorResponseVM(
                 p.getAllowDrgBilling(),
                 p.getForcePreApproval(),
 
+                p.getNphiesId(),
+                p.getWaseelPayerId(),
+                p.getTpaNphiesId(),
+                p.getIsWaseelEnabled(),
+
                 p.getIsActive(),
                 p.getCreatedDate(),
                 p.getLastModifiedDate()
         );
     }
 }
-

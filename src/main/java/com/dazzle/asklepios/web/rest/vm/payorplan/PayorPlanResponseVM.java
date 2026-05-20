@@ -1,16 +1,22 @@
 package com.dazzle.asklepios.web.rest.vm.payorplan;
 
 import com.dazzle.asklepios.domain.PayorPlan;
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorPlanType;
-import com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanItemResponseVM;
+
 import java.time.Instant;
-import java.util.List;
 
 public record PayorPlanResponseVM(
         Long id,
         Long payorId,
         String name,
         PayorPlanType planType,
+
+        String networkId,
+        CoverageType coverageType,
+        String payerNphiesId,
+        String waseelPlanId,
+
         Boolean isActive,
         Instant createdDate,
         Instant lastModifiedDate
@@ -21,10 +27,15 @@ public record PayorPlanResponseVM(
                 p.getPayorId(),
                 p.getName(),
                 p.getPlanType(),
+
+                p.getNetworkId(),
+                p.getCoverageType(),
+                p.getPayerNphiesId(),
+                p.getWaseelPlanId(),
+
                 p.getIsActive(),
                 p.getCreatedDate(),
                 p.getLastModifiedDate()
-
         );
     }
 }

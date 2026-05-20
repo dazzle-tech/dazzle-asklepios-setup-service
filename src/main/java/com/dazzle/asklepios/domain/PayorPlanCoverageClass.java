@@ -1,14 +1,16 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.CoverageType;
-import com.dazzle.asklepios.domain.enumeration.biling.PayorPlanType;
+import com.dazzle.asklepios.domain.enumeration.CoverageClassType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -27,44 +29,31 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = false)
-@Table(name = "payor_plan")
-public class PayorPlan extends AbstractAuditingEntity<Long> implements Serializable {
+@Table(name = "payor_plan_coverage_class")
+public class PayorPlanCoverageClass extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // FK to payor (real FK in DB)
     @NotNull
-    @Column(name = "payor_id", nullable = false)
-    private Long payorId;
-
-    @NotNull
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private PayorPlan plan;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "plan_type", nullable = false, length = 50)
-    private PayorPlanType planType;
-
-    @Column(name = "network_id", length = 100)
-    private String networkId;
+    @Column(name = "coverage_class_type", nullable = false, length = 50)
+    private CoverageClassType coverageClassType;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "coverage_type", nullable = false, length = 50)
-    private CoverageType coverageType;
+    @Column(name = "coverage_class_value", nullable = false, length = 100)
+    private String coverageClassValue;
 
-    @Column(name = "payer_nphies_id", length = 100)
-    private String payerNphiesId;
-
-    @Column(name = "waseel_plan_id", length = 100)
-    private String waseelPlanId;
+    @Column(name = "coverage_class_name", length = 255)
+    private String coverageClassName;
 
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-
-
 }
