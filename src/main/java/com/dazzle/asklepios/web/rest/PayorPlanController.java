@@ -207,12 +207,12 @@ public class PayorPlanController {
         );
     }
 
-    @PostMapping("/payor-plan/cchi/upsert")
-    public ResponseEntity<PayorPlanResponseVM> upsertCchiPayorPlan(@RequestBody CchiPayorPlanUpsertVM vm) {
-        LOG.debug("REST upsert CCHI PayorPlan payload={}", vm);
-
-        PayorPlan saved = service.upsertCchiPayorPlan(vm);
-
-        return ResponseEntity.ok(PayorPlanResponseVM.ofEntity(saved));
-    }
+//    @PostMapping("/payor-plan/cchi/upsert")
+//    public ResponseEntity<PayorPlanResponseVM> upsertCchiPayorPlan(@RequestBody CchiPayorPlanUpsertVM vm) {
+//        LOG.debug("REST upsert CCHI PayorPlan payload={}", vm);
+//
+//        PayorPlan saved = service.upsertCchiPayorPlan(vm);
+//
+//        return ResponseEntity.ok(PayorPlanResponseVM.ofEntity(saved));
+//    }
 }
