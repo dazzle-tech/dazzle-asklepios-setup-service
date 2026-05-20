@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.service.PayorService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorResponseVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
@@ -112,5 +113,14 @@ public class PayorController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @PostMapping("/payor/cchi/upsert")
+    public ResponseEntity<PayorResponseVM> upsertCchiPayor(@RequestBody CchiPayorUpsertVM vm) {
+        LOG.debug("REST upsert CCHI Payor payload={}", vm);
+
+        Payor saved = service.upsertCchiPayor(vm);
+
+        return ResponseEntity.ok(PayorResponseVM.ofEntity(saved));
     }
 }

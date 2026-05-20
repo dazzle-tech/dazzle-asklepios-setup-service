@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
 import org.slf4j.Logger;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 @Service
 @Transactional
@@ -174,5 +177,73 @@ public class PayorService {
     public Page<Payor> getAllActive(Pageable pageable) {
         return repo.findByIsActiveTrue(pageable);
     }
+
+    @Transactional
+    public Payor upsertCchiPayor(CchiPayorUpsertVM vm) {
+        String payerNphiesId = clean(vm.payerNphiesId());
+        String payerId = clean(vm.payerId());
+        String payerName = clean(vm.payerName());
+
+        String code = firstNonBlank(payerNphiesId, payerId);
+
+        if (isBlank(code)) {
+            throw new IllegalArgumentException("Missing payerNphiesId/payerId from Waseel");
+        }
+
+        Payor payor = null;
+
+        if (!isBlank(payerNphiesId)) {
+            payor = repo.findFirstByNphiesId(payerNphiesId).orElse(null);
+        }
+
+        if (payor == null) {
+            payor = repo.findFirstByCode(truncate(code, 50)).orElseGet(Payor::new);
+        }
+
+        payor.setCode(truncate(code, 50));
+        payor.setName(firstNonBlank(payerName, code));
+
+        payor.setNphiesId(payerNphiesId);
+        payor.setWaseelPayerId(payerId);
+        payor.setTpaNphiesId(clean(vm.tpaNphiesId()));
+
+        payor.setIsWaseelEnabled(true);
+        payor.setIsActive(true);
+
+        if (payor.getCategory() == null) {
+            payor.setCategory(PayorCategory.INSURANCE);
+        }
+
+        if (payor.getRenewable() == null) {
+            payor.setRenewable(false);
+        }
+
+        if (payor.getAllowPartialCoverage() == null) {
+            payor.setAllowPartialCoverage(false);
+        }
+
+        if (payor.getAcceptCopay() == null) {
+            payor.setAcceptCopay(false);
+        }
+
+        if (payor.getAcceptDeductibles() == null) {
+            payor.setAcceptDeductibles(false);
+        }
+
+        if (payor.getAllowPackagePricing() == null) {
+            payor.setAllowPackagePricing(false);
+        }
+
+        if (payor.getAllowDrgBilling() == null) {
+            payor.setAllowDrgBilling(false);
+        }
+
+        if (payor.getForcePreApproval() == null) {
+            payor.setForcePreApproval(false);
+        }
+
+        return repo.save(payor);
+    }
+
 }
 
