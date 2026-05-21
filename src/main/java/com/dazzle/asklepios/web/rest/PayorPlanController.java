@@ -207,12 +207,48 @@ public class PayorPlanController {
         );
     }
 
-//    @PostMapping("/payor-plan/cchi/upsert")
-//    public ResponseEntity<PayorPlanResponseVM> upsertCchiPayorPlan(@RequestBody CchiPayorPlanUpsertVM vm) {
-//        LOG.debug("REST upsert CCHI PayorPlan payload={}", vm);
-//
-//        PayorPlan saved = service.upsertCchiPayorPlan(vm);
-//
-//        return ResponseEntity.ok(PayorPlanResponseVM.ofEntity(saved));
-//    }
+    @GetMapping("/payor-plan/cchi/by-payor/{payorId}/waseel-plan/{waseelPlanId}")
+    public ResponseEntity<PayorPlanResponseVM> getCchiPayorPlanByWaseelPlanId(
+            @PathVariable Long payorId,
+            @PathVariable String waseelPlanId
+    ) {
+        LOG.debug(
+                "REST get CCHI PayorPlan by payorId={}, waseelPlanId={}",
+                payorId,
+                waseelPlanId
+        );
+
+        return service.findCchiPlanByPayorAndWaseelPlanId(payorId, waseelPlanId)
+                .map(PayorPlanResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/payor-plan/cchi/by-payor/{payorId}/match")
+    public ResponseEntity<PayorPlanResponseVM> getCchiPayorPlanByMatch(
+            @PathVariable Long payorId,
+            @RequestParam(required = false) String coverageType,
+            @RequestParam(required = false) String networkId,
+            @RequestParam(required = false) String policyClassName
+    ) {
+        LOG.debug(
+                "REST get CCHI PayorPlan match payorId={}, coverageType={}, networkId={}, policyClassName={}",
+                payorId,
+                coverageType,
+                networkId,
+                policyClassName
+        );
+
+        return service.findCchiPlanByMatch(
+                        payorId,
+                        coverageType,
+                        networkId,
+                        policyClassName
+                )
+                .map(PayorPlanResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
 }

@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class PayorPlanService {
@@ -167,5 +169,62 @@ public class PayorPlanService {
     @Transactional(readOnly = true)
     public Page<PayorPlanItem> getActiveItemsByPlan(Long planId, Pageable pageable) {
         return itemRepo.findByPlan_IdAndIsActiveTrue(planId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<PayorPlan> findCchiPlanByPayorAndWaseelPlanId(
+            Long payorId,
+            String waseelPlanId
+    ) {
+        if (payorId == null || isBlank(waseelPlanId)) {
+            return Optional.empty();
+        }
+
+        return planRepo.findFirstByPayorIdAndWaseelPlanIdAndIsActiveTrue(
+                payorId,
+                waseelPlanId.trim()
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<PayorPlan> findCchiPlanByMatch(
+            Long payorId,
+            String coverageType,
+            String networkId,
+            String policyClassName
+    ) {
+        if (payorId == null) {
+            return Optional.empty();
+        }
+
+        String cleanCoverageType = clean(coverageType);
+        String cleanNetworkId = clean(networkId);
+        String cleanPolicyClassName = clean(policyClassName);
+
+        if (isBlank(cleanCoverageType) && isBlank(cleanNetworkId) && isBlank(cleanPolicyClassName)) {
+            return Optional.empty();
+        }
+
+        return planRepo.findFirstByPayorIdAndCoverageTypeAndNetworkIdAndPolicyClassNameAndIsActiveTrue(
+                payorId,
+                cleanCoverageType,
+                cleanNetworkId,
+                cleanPolicyClassName
+        );
+    }
+
+    private String clean(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String text = value.trim();
+
+        return text.isEmpty() ? null : text;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

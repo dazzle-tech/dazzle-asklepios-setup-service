@@ -115,12 +115,11 @@ public class PayorController {
         );
     }
 
-    @PostMapping("/payor/cchi/upsert")
-    public ResponseEntity<PayorResponseVM> upsertCchiPayor(@RequestBody CchiPayorUpsertVM vm) {
-        LOG.debug("REST upsert CCHI Payor payload={}", vm);
-
-        Payor saved = service.upsertCchiPayor(vm);
-
-        return ResponseEntity.ok(PayorResponseVM.ofEntity(saved));
+    @GetMapping("/payor/cchi/by-nphies/{nphiesId}")
+    public ResponseEntity<PayorResponseVM> getByNphiesId(@PathVariable String nphiesId) {
+        return service.findByNphiesId(nphiesId)
+                .map(PayorResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
