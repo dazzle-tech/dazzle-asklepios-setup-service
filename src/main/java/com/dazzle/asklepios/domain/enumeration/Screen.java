@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Screen {
+    //Waseel Integration
+    WASEEL_ELIGIBILITY_REQUESTS,
+    WASEEL_PRE_AUTHORIZATION_REQUESTS,
+
     // Scheduling
     SCHEDULING_SCREEN,
     AVAILABILITY_TEMPLATES_NEW,
