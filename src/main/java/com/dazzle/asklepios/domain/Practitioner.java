@@ -131,6 +131,8 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "working_days", columnDefinition = "json", nullable = false)
     @Builder.Default
     private List<WorkingDayJson> workingDays = new ArrayList<>();
+    @Column(name = "national_number", length = 50)
+    private String nationalNumber;
 
 
 }
