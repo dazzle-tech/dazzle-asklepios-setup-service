@@ -95,4 +95,12 @@ public class PolicyAssignmentController {
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/policy-assignments/active/effective")
+    public ResponseEntity<List<PolicyAssignment>> getEffectiveActivePolicyAssignments(@RequestParam Long facilityId, @RequestParam Long departmentId, @RequestParam PolicyResourceType resourceType, @RequestParam Long resourceId) {
+        LOG.debug("REST request to get effective active PolicyAssignments by facilityId={}, departmentId={}, resourceType={}, resourceId={}", facilityId, departmentId, resourceType, resourceId);
+
+        List<PolicyAssignment> result = policyAssignmentService.getEffectiveActivePolicyAssignments(facilityId, departmentId, resourceType, resourceId);
+        return ResponseEntity.ok(result);
+    }
 }

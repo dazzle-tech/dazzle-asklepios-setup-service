@@ -20,7 +20,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -116,6 +119,59 @@ public class PolicyAssignmentService {
         assignment.setIsActive(!currentValue);
 
         return policyAssignmentRepository.save(assignment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PolicyAssignment> getEffectiveActivePolicyAssignments(Long facilityId, Long departmentId, PolicyResourceType resourceType, Long resourceId) {
+        LOG.debug("Get effective active policy assignments facilityId={}, departmentId={}, resourceType={}, resourceId={}", facilityId, departmentId, resourceType, resourceId);
+
+        if (resourceType == PolicyResourceType.DEPARTMENT) {
+            return policyAssignmentRepository.findAllByFacilityIdAndResourceTypeAndResourceIdAndIsActiveTrue(
+                    facilityId,
+                    PolicyResourceType.DEPARTMENT,
+                    departmentId
+            );
+        }
+
+        List<PolicyAssignment> departmentAssignments = policyAssignmentRepository.findAllByFacilityIdAndResourceTypeAndResourceIdAndIsActiveTrue(facilityId, PolicyResourceType.DEPARTMENT, departmentId);
+
+        List<PolicyAssignment> resourceAssignments = policyAssignmentRepository.findAllByFacilityIdAndResourceTypeAndResourceIdAndIsActiveTrue(facilityId, resourceType, resourceId);
+
+        Map<Long, PolicyAssignment> uniqueByPolicyId = new LinkedHashMap<>();
+
+        for (PolicyAssignment departmentAssignment : departmentAssignments) {
+            Long policyId = extractPolicyId(departmentAssignment);
+
+            if (policyId != null) {
+                uniqueByPolicyId.put(policyId, departmentAssignment);
+            }
+        }
+
+        /*
+         * Resource-level assignment is more specific.
+         * If same policy exists in department and resource, this will override department assignment.
+         */
+        for (PolicyAssignment resourceAssignment : resourceAssignments) {
+            Long policyId = extractPolicyId(resourceAssignment);
+
+            if (policyId != null) {
+                uniqueByPolicyId.put(policyId, resourceAssignment);
+            }
+        }
+
+        return new ArrayList<>(uniqueByPolicyId.values());
+    }
+
+    private Long extractPolicyId(PolicyAssignment policyAssignment) {
+        if (policyAssignment == null) {
+            return null;
+        }
+
+        if (policyAssignment.getPolicy() != null) {
+            return policyAssignment.getPolicy().getId();
+        }
+
+        return policyAssignment.getPolicy().getId();
     }
 
     private PolicyAssignment getById(Long id) {
