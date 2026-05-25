@@ -7,10 +7,27 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 public record PayorPlanItemUpdateVM(
+
         @NotNull Long id,
+
         @NotNull Long planId,
+
         @NotNull BillingItemTypes itemType,
+
         BigDecimal amount,
+
         @NotNull InsuranceCoverageType coverageType,
-        Boolean isActive
+
+        Boolean isActive,
+
+        Boolean preAuthorization,
+
+        Long brandMedicationId,
+
+        Long diagnosticTestId,
+
+        Long serviceId,
+
+        Long procedureId
+
 ) implements Serializable {}
