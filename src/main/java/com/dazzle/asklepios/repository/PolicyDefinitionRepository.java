@@ -26,4 +26,10 @@ public interface PolicyDefinitionRepository extends JpaRepository<PolicyDefiniti
 
     @EntityGraph(attributePaths = "facility")
     Page<PolicyDefinition> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    @EntityGraph(attributePaths = "facility")
+    Page<PolicyDefinition> findAllByIsActiveTrue(Pageable pageable);
+
+    @EntityGraph(attributePaths = "facility")
+    Page<PolicyDefinition> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
 }

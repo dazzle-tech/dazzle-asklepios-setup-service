@@ -78,7 +78,37 @@ public class PolicyDefinitionController {
 
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
+    @GetMapping("/policy-definition/active")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllActivePolicyDefinition(
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get all active policy definition");
+        Page<PolicyDefinition> page = policyDefinitionService.findAllActive(pageable);
 
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+    @GetMapping("/policy-definition/active/by-facility")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllActivePolicyDefinitionByFacility(
+            @RequestParam Long facilityId,
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get active policy definition by facilityId={}", facilityId);
+        Page<PolicyDefinition> page = policyDefinitionService.findByFacilityIdAndActive(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
     @GetMapping("/policy-definition/by-facility")
     public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinitionByFacility(
             @RequestParam Long facilityId,
