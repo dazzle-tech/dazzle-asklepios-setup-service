@@ -4,6 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Screen {
+    //Waseel Integration
+    WASEEL_ELIGIBILITY_REQUESTS,
+    WASEEL_PRE_AUTHORIZATION_REQUESTS,
+
+
     // Scheduling
     SCHEDULING_SCREEN,
     AVAILABILITY_TEMPLATES_NEW,
@@ -150,6 +155,7 @@ public enum Screen {
     PATIENT_CHART_OLD,
     PATIENT_EMR_OLD,
     MERGE_PATIENT_FILES_OLD,
+
 
     // System Configurations
     ORGANIZATION_DEFINITION,
