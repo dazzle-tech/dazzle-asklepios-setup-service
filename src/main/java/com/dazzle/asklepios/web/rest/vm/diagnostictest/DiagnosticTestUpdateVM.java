@@ -3,14 +3,12 @@ package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
-import com.dazzle.asklepios.service.validation.ValidDiagnosticTest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
-@ValidDiagnosticTest
 
 public record DiagnosticTestUpdateVM(
         @NotNull(message = "id cannot be null")
@@ -39,6 +37,5 @@ public record DiagnosticTestUpdateVM(
         Integer defaultBufferAfterMinutes,
         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit,
-        String listOfValueId,
-        String modality
+        String listOfValueId
 ) implements Serializable {}

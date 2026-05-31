@@ -109,8 +109,7 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
 
     @Column(name = "default_buffer_after_minutes")
     private Integer defaultBufferAfterMinutes = 0;
-    @Column(name = "modality", length = 100)
-    private String modality;
+
     @PostLoad
     private void fillListsFromRaw() {
         if (ageGroup != null && !ageGroup.isBlank()) {

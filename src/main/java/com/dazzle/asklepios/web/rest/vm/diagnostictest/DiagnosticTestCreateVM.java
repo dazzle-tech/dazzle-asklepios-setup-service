@@ -3,14 +3,13 @@ package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
-import com.dazzle.asklepios.service.validation.ValidDiagnosticTest;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
-@ValidDiagnosticTest
+
 public record DiagnosticTestCreateVM(
         @NotNull(message = "Type cannot be null")
         TestType type,
@@ -37,6 +36,5 @@ public record DiagnosticTestCreateVM(
         Integer defaultBufferAfterMinutes,
         TestResultType defaultProfileResultType,
         String defaultProfileResultUnit,
-        String listOfValueId,
-        String modality
+        String listOfValueId
 ) implements Serializable {}

@@ -57,7 +57,6 @@ public class DiagnosticTestService {
                 .defaultDurationMinutes(vm.defaultDurationMinutes())
                 .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
                 .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
-                .modality(vm.modality())
                 .build();
 
         validateAppointableRequirements(test);
@@ -121,7 +120,6 @@ public class DiagnosticTestService {
                 existing.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
             }
 
-            existing.setModality(vm.modality());
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
@@ -272,23 +270,5 @@ public class DiagnosticTestService {
     @Transactional(readOnly = true)
     public List<DiagnosticTest> findAllByIds(List<Long> ids) {
         return repository.findAllById(ids);
-    }
-
-
-    private void validateDiagnosticTest(DiagnosticTest diagnosticTest) {
-
-        if (requiresModality(diagnosticTest.getType())
-                && (diagnosticTest.getModality() == null
-                || diagnosticTest.getModality().isBlank())) {
-
-            throw new BadRequestAlertException(
-                    "Modality is required for this diagnostic test type",
-                    "diagnosticTest",
-                    "modalityrequired"
-            );
-        }
-    }
-    private boolean requiresModality(TestType type) {
-        return type == TestType.RADIOLOGY;
     }
 }
