@@ -61,6 +61,8 @@ public class FormEntriesService {
         formEntries.setFacility(facility);
         formEntries.setDepartment(department);
         formEntries.setDataJson(dto.dataJson());
+        formEntries.setPatientId(dto.patientId());
+        formEntries.setEncounterId(dto.encounterId());
 
         return toVM(formEntriesRepository.save(formEntries));
     }
