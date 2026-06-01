@@ -50,4 +50,10 @@ public class FormEntries extends AbstractAuditingEntity<Long> implements Seriali
     @Column(name = "data_json", nullable = false)
     private String dataJson;
 
+    @Column(name = "patient_id")
+    private Long patientId;
+
+    @Column(name = "encounter_id")
+    private Long encounterId;
+
 }

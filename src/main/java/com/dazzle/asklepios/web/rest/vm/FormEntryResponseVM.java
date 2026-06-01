@@ -13,5 +13,7 @@ public record FormEntryResponseVM(
         Instant createdDate,
         String createdBy,
         Instant lastModifiedDate,
-        String lastModifiedBy
+        String lastModifiedBy,
+        Long patientId,
+        Long encounterId
 ) {}

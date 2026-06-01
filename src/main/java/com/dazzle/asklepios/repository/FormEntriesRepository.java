@@ -24,4 +24,8 @@ public interface FormEntriesRepository extends JpaRepository<FormEntries, Long> 
     Page<FormEntries> findByDepartment_IdAndTitleContainingIgnoreCase(Long departmentId, String title, Pageable pageable);
 
     Page<FormEntries> findByFacility_IdAndDepartment_IdAndTitleContainingIgnoreCase(Long facilityId, Long departmentId, String title, Pageable pageable);
+
+    Page<FormEntries> findByPatientId(Long patientId, Pageable pageable);
+
+    Page<FormEntries> findByEncounterId(Long encounterId, Pageable pageable);
 }

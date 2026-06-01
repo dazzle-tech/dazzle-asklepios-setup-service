@@ -70,6 +70,26 @@ public class FormEntriesController {
         return ResponseEntity.ok(page.getContent());
     }
 
+    @GetMapping("/by-patient/{patientId}")
+    public ResponseEntity<List<FormEntryResponseVM>> listByPatient(
+            @PathVariable Long patientId,
+            Pageable pageable
+    ) {
+        LOG.debug("REST request to list FormEntries by patientId={}", patientId);
+        Page<FormEntryResponseVM> page = service.listByPatient(patientId, pageable);
+        return ResponseEntity.ok(page.getContent());
+    }
+
+    @GetMapping("/by-encounter/{encounterId}")
+    public ResponseEntity<List<FormEntryResponseVM>> listByEncounter(
+            @PathVariable Long encounterId,
+            Pageable pageable
+    ) {
+        LOG.debug("REST request to list FormEntries by encounterId={}", encounterId);
+        Page<FormEntryResponseVM> page = service.listByEncounter(encounterId, pageable);
+        return ResponseEntity.ok(page.getContent());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         LOG.info("REST request to delete FormEntry id={}", id);
