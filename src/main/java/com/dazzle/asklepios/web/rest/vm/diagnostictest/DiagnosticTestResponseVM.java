@@ -36,7 +36,9 @@ public record DiagnosticTestResponseVM(
         Integer parallelCapacityValue,
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
-        Integer defaultBufferAfterMinutes
+        Integer defaultBufferAfterMinutes,
+        String modality
+
 ) implements Serializable {
 
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
@@ -60,7 +62,8 @@ public record DiagnosticTestResponseVM(
                 test.getLastModifiedDate(),
 
                 null, null, null, null,
-                test.getParallelCapacityValue(),test.getDefaultDurationMinutes(),test.getDefaultBufferBeforeMinutes(), test.getDefaultBufferAfterMinutes()
+                test.getParallelCapacityValue(),test.getDefaultDurationMinutes(),test.getDefaultBufferBeforeMinutes(), test.getDefaultBufferAfterMinutes(),
+                test.getModality()
         );
     }
 
@@ -71,7 +74,7 @@ public record DiagnosticTestResponseVM(
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
                 this.specialNotes, this.isActive, this.appointable,
                 this.createdDate, this.lastModifiedDate,
-                id, unit, type, listOfValueId,this.parallelCapacityValue,this.defaultDurationMinutes,this.defaultBufferBeforeMinutes,this.defaultBufferAfterMinutes
+                id, unit, type, listOfValueId,this.parallelCapacityValue,this.defaultDurationMinutes,this.defaultBufferBeforeMinutes,this.defaultBufferAfterMinutes,this.modality
         );
     }
 }
