@@ -5,5 +5,7 @@ public record FormEntryCreateDTO(
         Long templateId,
         Long facilityId,
         Long departmentId,
-        String dataJson
+        String dataJson,
+        Long patientId,
+        Long encounterId
 ) {}
