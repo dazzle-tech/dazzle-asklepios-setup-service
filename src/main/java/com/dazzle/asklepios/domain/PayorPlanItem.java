@@ -57,6 +57,26 @@ public class PayorPlanItem implements Serializable {
     private InsuranceCoverageType coverageType;
 
     @NotNull
+    @Column(name = "pre_authorization", nullable = false)
+    private Boolean preAuthorization = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_medication_id")
+    private BrandMedication brandMedication;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "diagnostic_test_id")
+    private DiagnosticTest diagnosticTest;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id")
+    private ServiceSetup service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procedure_id")
+    private Procedure procedure;
+
+    @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 }

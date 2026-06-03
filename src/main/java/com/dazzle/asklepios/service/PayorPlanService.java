@@ -1,16 +1,27 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.PayorPlan;
 import com.dazzle.asklepios.domain.PayorPlanItem;
+import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.repository.BrandMedicationRepository;
+import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.PayorPlanItemRepository;
 import com.dazzle.asklepios.repository.PayorPlanRepository;
+import com.dazzle.asklepios.repository.ProcedureRepository;
+import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.payorplan.*;
+import com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanItemSaveVM;
+import com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanItemUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanSaveVM;
+import com.dazzle.asklepios.web.rest.vm.payorplan.PayorPlanUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.dazzle.asklepios.domain.PayorPlanCoverageClass;
 import com.dazzle.asklepios.domain.enumeration.CoverageClassType;
@@ -20,6 +31,8 @@ import com.dazzle.asklepios.repository.PayorPlanCoverageClassRepository;
 import java.util.List;
 
 import java.util.Optional;
+
+import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
@@ -31,19 +44,34 @@ public class PayorPlanService {
     private final PayorPlanItemRepository itemRepo;
     private final PayorPlanCoverageClassRepository coverageClassRepo;
 
+    private final BrandMedicationRepository brandMedicationRepo;
+    private final DiagnosticTestRepository diagnosticTestRepo;
+    private final ServiceRepository serviceRepo;
+    private final ProcedureRepository procedureRepo;
+
     public PayorPlanService(
             PayorPlanRepository planRepo,
             PayorPlanItemRepository itemRepo,
-            PayorPlanCoverageClassRepository coverageClassRepo
+            PayorPlanCoverageClassRepository coverageClassRepo,
+            BrandMedicationRepository brandMedicationRepo,
+            DiagnosticTestRepository diagnosticTestRepo,
+            ServiceRepository serviceRepo,
+            ProcedureRepository procedureRepo
     ) {
         this.planRepo = planRepo;
         this.itemRepo = itemRepo;
         this.coverageClassRepo = coverageClassRepo;
+        this.brandMedicationRepo = brandMedicationRepo;
+        this.diagnosticTestRepo = diagnosticTestRepo;
+        this.serviceRepo = serviceRepo;
+        this.procedureRepo = procedureRepo;
+
     }
 
     // ---------------- PLAN CRUD ----------------
 
     public PayorPlan createPlan(PayorPlanSaveVM vm) {
+
         PayorPlan p = PayorPlan.builder()
                 .payorId(vm.payorId())
                 .name(vm.name())
@@ -54,29 +82,30 @@ public class PayorPlanService {
                 .waseelPlanId(vm.waseelPlanId())
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
                 .build();
+
         return planRepo.save(p);
     }
 
     public PayorPlan updatePlan(PayorPlanUpdateVM vm) {
+
         PayorPlan existing = planRepo.findById(vm.id())
                 .orElseThrow(() -> new BadRequestAlertException(
-                        "notFound", "payorPlan", "Plan not found."
+                        "notFound",
+                        "payorPlan",
+                        "Plan not found."
                 ));
 
         existing.setPayorId(vm.payorId());
         existing.setName(vm.name());
         existing.setPlanType(vm.planType());
-        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
-        existing.setPayorId(vm.payorId());
-        existing.setName(vm.name());
-        existing.setPlanType(vm.planType());
-
         existing.setNetworkId(vm.networkId());
         existing.setCoverageType(vm.coverageType());
         existing.setPayerNphiesId(vm.payerNphiesId());
         existing.setWaseelPlanId(vm.waseelPlanId());
+        existing.setIsActive(
+                vm.isActive() != null ? vm.isActive() : existing.getIsActive()
+        );
 
-        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
         return planRepo.save(existing);
     }
 
@@ -86,16 +115,22 @@ public class PayorPlanService {
     }
 
     public void deletePlan(Long id) {
-        // delete items first (orphanRemoval already, but safe)
+
         itemRepo.deleteByPlan_Id(id);
+
         planRepo.deleteById(id);
     }
 
     public java.util.Optional<PayorPlan> togglePlanActive(Long id) {
+
         return planRepo.findById(id)
-                .map(p -> {
-                    p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
-                    return planRepo.save(p);
+                .map(plan -> {
+
+                    plan.setIsActive(
+                            !Boolean.TRUE.equals(plan.getIsActive())
+                    );
+
+                    return planRepo.save(plan);
                 });
     }
 
@@ -121,42 +156,83 @@ public class PayorPlanService {
         return planRepo.findByPayorIdAndIsActiveTrue(payorId, pageable);
     }
 
-
     // ---------------- ITEMS CRUD ----------------
 
     public PayorPlanItem createItem(PayorPlanItemSaveVM vm) {
+
         PayorPlan plan = planRepo.findById(vm.planId())
                 .orElseThrow(() -> new BadRequestAlertException(
-                        "planNotFound", "payorPlanItem", "Plan not found."
+                        "planNotFound",
+                        "payorPlanItem",
+                        "Plan not found."
                 ));
 
-        PayorPlanItem i = PayorPlanItem.builder()
+        PayorPlanItem item = PayorPlanItem.builder()
                 .plan(plan)
                 .itemType(vm.itemType())
                 .amount(vm.amount())
                 .coverageType(vm.coverageType())
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
+                .preAuthorization(
+                        vm.preAuthorization() != null
+                                ? vm.preAuthorization()
+                                : false
+                )
                 .build();
 
-        return itemRepo.save(i);
+        applyItemReference(
+                item,
+                vm.itemType(),
+                vm.brandMedicationId(),
+                vm.diagnosticTestId(),
+                vm.serviceId(),
+                vm.procedureId()
+        );
+
+        return itemRepo.save(item);
     }
 
     public PayorPlanItem updateItem(PayorPlanItemUpdateVM vm) {
+
         PayorPlanItem existing = itemRepo.findById(vm.id())
                 .orElseThrow(() -> new BadRequestAlertException(
-                        "notFound", "payorPlanItem", "Plan item not found."
+                        "notFound",
+                        "payorPlanItem",
+                        "Plan item not found."
                 ));
 
         PayorPlan plan = planRepo.findById(vm.planId())
                 .orElseThrow(() -> new BadRequestAlertException(
-                        "planNotFound", "payorPlanItem", "Plan not found."
+                        "planNotFound",
+                        "payorPlanItem",
+                        "Plan not found."
                 ));
 
         existing.setPlan(plan);
         existing.setItemType(vm.itemType());
         existing.setAmount(vm.amount());
         existing.setCoverageType(vm.coverageType());
-        existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
+
+        existing.setIsActive(
+                vm.isActive() != null
+                        ? vm.isActive()
+                        : existing.getIsActive()
+        );
+
+        existing.setPreAuthorization(
+                vm.preAuthorization() != null
+                        ? vm.preAuthorization()
+                        : existing.getPreAuthorization()
+        );
+
+        applyItemReference(
+                existing,
+                vm.itemType(),
+                vm.brandMedicationId(),
+                vm.diagnosticTestId(),
+                vm.serviceId(),
+                vm.procedureId()
+        );
 
         return itemRepo.save(existing);
     }
@@ -166,10 +242,15 @@ public class PayorPlanService {
     }
 
     public java.util.Optional<PayorPlanItem> toggleItemActive(Long id) {
+
         return itemRepo.findById(id)
-                .map(i -> {
-                    i.setIsActive(!Boolean.TRUE.equals(i.getIsActive()));
-                    return itemRepo.save(i);
+                .map(item -> {
+
+                    item.setIsActive(
+                            !Boolean.TRUE.equals(item.getIsActive())
+                    );
+
+                    return itemRepo.save(item);
                 });
     }
 
@@ -284,5 +365,115 @@ public class PayorPlanService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+}
+    // ---------------- HELPERS ----------------
+
+    private void applyItemReference(
+            PayorPlanItem item,
+            BillingItemTypes itemType,
+            Long brandMedicationId,
+            Long diagnosticTestId,
+            Long serviceId,
+            Long procedureId
+    ) {
+
+        item.setBrandMedication(null);
+        item.setDiagnosticTest(null);
+        item.setService(null);
+        item.setProcedure(null);
+
+        switch (itemType) {
+
+            case MEDICATION -> {
+
+                if (brandMedicationId == null) {
+                    throw new BadRequestAlertException(
+                            "brandMedicationRequired",
+                            "payorPlanItem",
+                            "Brand medication is required."
+                    );
+                }
+
+                BrandMedication brandMedication =
+                        brandMedicationRepo.findById(brandMedicationId)
+                                .orElseThrow(() -> new BadRequestAlertException(
+                                        "brandMedicationNotFound",
+                                        "payorPlanItem",
+                                        "Brand medication not found."
+                                ));
+
+                item.setBrandMedication(brandMedication);
+            }
+
+            case LABORATORY, RADIOLOGY, PATHOLOGY -> {
+
+                if (diagnosticTestId == null) {
+                    throw new BadRequestAlertException(
+                            "diagnosticTestRequired",
+                            "payorPlanItem",
+                            "Diagnostic test is required."
+                    );
+                }
+
+                DiagnosticTest diagnosticTest =
+                        diagnosticTestRepo.findById(diagnosticTestId)
+                                .orElseThrow(() -> new BadRequestAlertException(
+                                        "diagnosticTestNotFound",
+                                        "payorPlanItem",
+                                        "Diagnostic test not found."
+                                ));
+
+                item.setDiagnosticTest(diagnosticTest);
+            }
+
+            case SERVICE -> {
+
+                if (serviceId == null) {
+                    throw new BadRequestAlertException(
+                            "serviceRequired",
+                            "payorPlanItem",
+                            "Service is required."
+                    );
+                }
+
+                ServiceSetup service =
+                        serviceRepo.findById(serviceId)
+                                .orElseThrow(() -> new BadRequestAlertException(
+                                        "serviceNotFound",
+                                        "payorPlanItem",
+                                        "Service not found."
+                                ));
+
+                item.setService(service);
+            }
+
+            case PROCEDURE -> {
+
+                if (procedureId == null) {
+                    throw new BadRequestAlertException(
+                            "procedureRequired",
+                            "payorPlanItem",
+                            "Procedure is required."
+                    );
+                }
+
+                Procedure procedure =
+                        procedureRepo.findById(procedureId)
+                                .orElseThrow(() -> new BadRequestAlertException(
+                                        "procedureNotFound",
+                                        "payorPlanItem",
+                                        "Procedure not found."
+                                ));
+
+                item.setProcedure(procedure);
+            }
+
+            default -> throw new BadRequestAlertException(
+                    "unsupportedItemType",
+                    "payorPlanItem",
+                    "Unsupported item type."
+            );
+        }
     }
 }
