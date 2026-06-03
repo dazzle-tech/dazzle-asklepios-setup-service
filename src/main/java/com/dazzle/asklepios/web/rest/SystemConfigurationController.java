@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/setup/system-config")
+@RequestMapping("/api/setup")
 @Slf4j
 @RequiredArgsConstructor
 public class SystemConfigurationController {
@@ -31,7 +31,7 @@ public class SystemConfigurationController {
             LoggerFactory.getLogger(SystemConfigurationController.class);
     private final SystemConfigurationService service;
 
-    @GetMapping
+    @GetMapping("/system-config")
     public ResponseEntity<Map<SystemConfigKey, String>> getAll() {
         LOG.info("REST request to get all system configurations");
 
@@ -42,7 +42,7 @@ public class SystemConfigurationController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/details")
+    @GetMapping("/system-config/details")
     public ResponseEntity<List<SystemConfiguration>> getAllDetails() {
         LOG.info("REST request to get all system configuration details");
 
@@ -53,7 +53,7 @@ public class SystemConfigurationController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{key}")
+    @GetMapping("/system-config/{key}")
     public ResponseEntity<String> getOne(@PathVariable SystemConfigKey key) {
         LOG.info("REST request to get system configuration [{}]", key);
 
@@ -64,7 +64,7 @@ public class SystemConfigurationController {
         return ResponseEntity.ok(value);
     }
 
-    @PutMapping("/{key}")
+    @PutMapping("/system-config/{key}")
     public ResponseEntity<SystemConfiguration> updateOne(
             @PathVariable SystemConfigKey key,
             @Valid @RequestBody UpdateSystemConfigVM vm
@@ -86,7 +86,7 @@ public class SystemConfigurationController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping
+    @PutMapping("/system-config")
     public ResponseEntity<List<SystemConfiguration>> updateMany(
             @RequestBody Map<SystemConfigKey, String> values
     ) {
@@ -109,7 +109,7 @@ public class SystemConfigurationController {
     public record UpdateSystemConfigVM(String value) {
     }
 
-    @PostMapping(value = "/logo", consumes = "multipart/form-data")
+    @PostMapping(value = "/system-config/logo", consumes = "multipart/form-data")
     public ResponseEntity<SystemConfiguration> uploadLogo(
             @RequestParam("file") MultipartFile file
     ) {
@@ -130,7 +130,7 @@ public class SystemConfigurationController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping(value = "/favicon", consumes = "multipart/form-data")
+    @PostMapping(value = "/system-config/favicon", consumes = "multipart/form-data")
     public ResponseEntity<SystemConfiguration> uploadFavicon(
             @RequestParam("file") MultipartFile file
     ) {
