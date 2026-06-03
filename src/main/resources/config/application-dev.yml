@@ -25,9 +25,9 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://localhost:5432/test
+    url: jdbc:postgresql://localhost:5433/ask
     username: postgres
-    password: 123456
+    password: qse123H
     hikari:
       poolName: Hikari
       auto-commit: false
@@ -74,6 +74,7 @@ setup:
     bucket: asklepios
     region: sfo3
     endpoint: https://sfo3.digitaloceanspaces.com
+    cdnEndpoint: https://asklepios.sfo3.cdn.digitaloceanspaces.com
     accessKeyId: DO00TRNC7U4TLLL6ZAN2
     secretAccessKey: mNFZKBA/BPXTHVUsde8y/2MslOn7zZEiPzwfIuhLrx4
     presignExpirySeconds: 300
