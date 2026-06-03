@@ -12,6 +12,7 @@ public class AttachmentProperties {
     private String bucket;
     private Region region;
     private String endpoint;
+    private String cdnEndpoint;
     private int presignExpirySeconds;
     private long maxBytes;
     private java.util.Set<String> allowed;

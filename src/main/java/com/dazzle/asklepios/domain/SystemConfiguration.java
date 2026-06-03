@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SystemConfiguration {
+public class SystemConfiguration extends AbstractAuditingEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,9 +30,10 @@ public class SystemConfiguration {
     @Column(name = "config_key", nullable = false, unique = true)
     private SystemConfigKey configKey;
 
-    @Column(name = "config_value", columnDefinition = "TEXT")
+    @NotNull
+    @Column(name = "config_value", columnDefinition = "TEXT" , nullable = false)
     private String configValue;
-
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "config_type", nullable = false)
     private SystemConfigType configType;

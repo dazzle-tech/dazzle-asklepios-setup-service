@@ -1,10 +1,11 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.attachments.AttachmentProperties;
 import com.dazzle.asklepios.domain.SystemConfiguration;
 import com.dazzle.asklepios.domain.enumeration.SystemConfigKey;
+import com.dazzle.asklepios.domain.enumeration.SystemConfigType;
 import com.dazzle.asklepios.repository.SystemConfigurationRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -15,13 +16,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class SystemConfigurationService {
+
     private static final Logger LOG =
             LoggerFactory.getLogger(SystemConfigurationService.class);
-    private static final String CDN_BASE_URL = "https://asklepios.sfo3.cdn.digitaloceanspaces.com/";
 
+    private final AttachmentProperties attachmentProperties;
     private final AttachmentStorageService storage;
     private final SystemConfigurationRepository repository;
 
@@ -33,7 +34,8 @@ public class SystemConfigurationService {
                 .filter(config -> config.getConfigKey() != null)
                 .collect(Collectors.toMap(
                         SystemConfiguration::getConfigKey,
-                        this::resolveValue
+                        this::resolveValue,
+                        (oldValue, newValue) -> oldValue
                 ));
 
         LOG.info("Loaded {} system configurations", configs.size());
@@ -52,17 +54,13 @@ public class SystemConfigurationService {
             return value;
         }
 
-        if (config.getConfigKey() == SystemConfigKey.FAVICON ||
-                config.getConfigKey() == SystemConfigKey.SYSTEM_LOGO ||
-                config.getConfigKey() == SystemConfigKey.LOGIN_BACKGROUND) {
+        if (isImageKey(config.getConfigKey())) {
+            String resolvedUrl =
+                    attachmentProperties.getCdnEndpoint().replaceAll("/$", "")
+                            + "/"
+                            + value;
 
-            String resolvedUrl = CDN_BASE_URL + value;
-
-            LOG.debug(
-                    "Resolved image url for [{}]: {}",
-                    config.getConfigKey(),
-                    resolvedUrl
-            );
+            LOG.debug("Resolved image url for [{}]: {}", config.getConfigKey(), resolvedUrl);
 
             return resolvedUrl;
         }
@@ -75,7 +73,7 @@ public class SystemConfigurationService {
 
         String value = repository.findByConfigKey(key)
                 .map(SystemConfiguration::getConfigValue)
-                .orElse(null);
+                .orElse("");
 
         LOG.info("Loaded system configuration [{}]", key);
 
@@ -93,32 +91,29 @@ public class SystemConfigurationService {
     }
 
     public SystemConfiguration updateValue(SystemConfigKey key, String value) {
-        LOG.info("Updating system configuration [{}] with value [{}]", key, value);
+        LOG.info("Saving system configuration [{}] with value [{}]", key, value);
 
         SystemConfiguration config = repository.findByConfigKey(key)
-                .orElseThrow(() -> {
-                    LOG.warn("System configuration not found: {}", key);
-                    return new RuntimeException("System config not found: " + key);
-                });
+                .orElseGet(() -> createDefaultConfig(key));
 
         config.setConfigValue(value);
 
         SystemConfiguration saved = repository.save(config);
 
-        LOG.info("System configuration [{}] updated successfully", key);
+        LOG.info("System configuration [{}] saved successfully", key);
 
         return saved;
     }
 
     public List<SystemConfiguration> updateMany(Map<SystemConfigKey, String> values) {
-        LOG.info("Updating {} system configurations", values.size());
+        LOG.info("Bulk saving {} system configurations", values.size());
 
         List<SystemConfiguration> result = values.entrySet()
                 .stream()
                 .map(entry -> updateValue(entry.getKey(), entry.getValue()))
                 .toList();
 
-        LOG.info("Bulk system configuration update completed successfully");
+        LOG.info("Bulk system configuration save completed successfully");
 
         return result;
     }
@@ -147,10 +142,7 @@ public class SystemConfigurationService {
         }
 
         SystemConfiguration config = repository.findByConfigKey(key)
-                .orElseThrow(() -> {
-                    LOG.warn("System configuration not found while uploading image: {}", key);
-                    return new RuntimeException("System config not found: " + key);
-                });
+                .orElseGet(() -> createDefaultConfig(key));
 
         String extension = getExtension(file.getOriginalFilename());
         String storageKey = buildSystemConfigImageKey(key, extension);
@@ -166,23 +158,66 @@ public class SystemConfigurationService {
             );
 
             LOG.info("Image uploaded successfully to storage: {}", storageKey);
-
         } catch (Exception e) {
             LOG.error("Failed to upload image for system configuration key [{}]", key, e);
             throw new RuntimeException("Failed to upload system config image", e);
         }
 
         config.setConfigValue(storageKey);
+        config.setConfigType(SystemConfigType.IMAGE);
 
         SystemConfiguration saved = repository.save(config);
 
-        LOG.info(
-                "System configuration [{}] updated with image key [{}]",
-                key,
-                storageKey
-        );
+        LOG.info("System configuration [{}] updated with image key [{}]", key, storageKey);
 
         return saved;
+    }
+
+    private SystemConfiguration createDefaultConfig(SystemConfigKey key) {
+        LOG.info("System configuration [{}] not found. Creating default record.", key);
+
+        SystemConfiguration config = new SystemConfiguration();
+        config.setConfigKey(key);
+        config.setConfigValue("");
+        config.setConfigType(resolveDefaultType(key));
+        config.setDescription(resolveDefaultDescription(key));
+
+        return config;
+    }
+
+    private SystemConfigType resolveDefaultType(SystemConfigKey key) {
+        if (isImageKey(key)) {
+            return SystemConfigType.IMAGE;
+        }
+
+        if (key.name().contains("COLOR")) {
+            return SystemConfigType.COLOR;
+        }
+
+        if (key.name().startsWith("ENABLE_")) {
+            return SystemConfigType.BOOLEAN;
+        }
+
+        return SystemConfigType.STRING;
+    }
+
+    private String resolveDefaultDescription(SystemConfigKey key) {
+        return switch (key) {
+            case SYSTEM_TITLE -> "System title shown in browser and header";
+            case PRIMARY_COLOR -> "Main system color";
+//            case SECONDARY_COLOR -> "Secondary system color";
+            case FONT_FAMILY -> "Main system font family";
+            case SYSTEM_LOGO -> "System logo";
+            case FAVICON -> "Browser favicon";
+            case LOGIN_BACKGROUND -> "Login page background";
+//            case ENABLE_DARK_MODE -> "Enable dark mode by default";
+        };
+    }
+
+    private boolean isImageKey(SystemConfigKey key) {
+        return key == SystemConfigKey.FAVICON ||
+                key == SystemConfigKey.SYSTEM_LOGO ||
+                key == SystemConfigKey.LOGIN_BACKGROUND;
     }
 
     private String buildSystemConfigImageKey(SystemConfigKey key, String extension) {
