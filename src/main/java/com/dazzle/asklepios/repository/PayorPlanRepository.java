@@ -1,10 +1,12 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.PayorPlan;
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PayorPlanRepository extends JpaRepository<PayorPlan, Long> {
@@ -20,10 +22,20 @@ public interface PayorPlanRepository extends JpaRepository<PayorPlan, Long> {
             String waseelPlanId
     );
 
-    Optional<PayorPlan> findFirstByPayorIdAndCoverageTypeAndNetworkIdAndPolicyClassNameAndIsActiveTrue(
+    Optional<PayorPlan> findFirstByPayorIdAndCoverageTypeAndNetworkIdAndIsActiveTrue(
             Long payorId,
-            String coverageType,
-            String networkId,
-            String policyClassName
+            CoverageType coverageType,
+            String networkId
+    );
+
+    List<PayorPlan> findByPayorIdAndCoverageTypeAndNetworkIdAndIsActiveTrue(
+            Long payorId,
+            CoverageType coverageType,
+            String networkId
+    );
+
+    List<PayorPlan> findByPayorIdAndCoverageTypeAndIsActiveTrue(
+            Long payorId,
+            CoverageType coverageType
     );
 }

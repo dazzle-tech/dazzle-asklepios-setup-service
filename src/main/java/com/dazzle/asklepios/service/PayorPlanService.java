@@ -12,6 +12,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.dazzle.asklepios.domain.PayorPlanCoverageClass;
+import com.dazzle.asklepios.domain.enumeration.CoverageClassType;
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
+import com.dazzle.asklepios.repository.PayorPlanCoverageClassRepository;
+
+import java.util.List;
 
 import java.util.Optional;
 
@@ -23,10 +29,16 @@ public class PayorPlanService {
 
     private final PayorPlanRepository planRepo;
     private final PayorPlanItemRepository itemRepo;
+    private final PayorPlanCoverageClassRepository coverageClassRepo;
 
-    public PayorPlanService(PayorPlanRepository planRepo, PayorPlanItemRepository itemRepo) {
+    public PayorPlanService(
+            PayorPlanRepository planRepo,
+            PayorPlanItemRepository itemRepo,
+            PayorPlanCoverageClassRepository coverageClassRepo
+    ) {
         this.planRepo = planRepo;
         this.itemRepo = itemRepo;
+        this.coverageClassRepo = coverageClassRepo;
     }
 
     // ---------------- PLAN CRUD ----------------
@@ -206,12 +218,58 @@ public class PayorPlanService {
             return Optional.empty();
         }
 
-        return planRepo.findFirstByPayorIdAndCoverageTypeAndNetworkIdAndPolicyClassNameAndIsActiveTrue(
-                payorId,
-                cleanCoverageType,
-                cleanNetworkId,
-                cleanPolicyClassName
-        );
+        CoverageType coverageTypeEnum = parseCoverageType(cleanCoverageType);
+
+        List<PayorPlan> candidatePlans;
+
+        if (!isBlank(cleanNetworkId)) {
+            candidatePlans = planRepo.findByPayorIdAndCoverageTypeAndNetworkIdAndIsActiveTrue(
+                    payorId,
+                    coverageTypeEnum,
+                    cleanNetworkId
+            );
+        } else {
+            candidatePlans = planRepo.findByPayorIdAndCoverageTypeAndIsActiveTrue(
+                    payorId,
+                    coverageTypeEnum
+            );
+        }
+
+        if (candidatePlans.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (isBlank(cleanPolicyClassName)) {
+            return Optional.of(candidatePlans.get(0));
+        }
+
+        return candidatePlans.stream()
+                .filter(plan -> coverageClassRepo.existsByPlan_IdAndCoverageClassTypeAndCoverageClassValueIgnoreCase(
+                        plan.getId(),
+                        CoverageClassType.PLAN,
+                        cleanPolicyClassName
+                ))
+                .findFirst();
+    }
+
+    private CoverageType parseCoverageType(String value) {
+        if (isBlank(value)) {
+            throw new BadRequestAlertException(
+                    "coverageTypeRequired",
+                    "payorPlan",
+                    "Coverage type is required."
+            );
+        }
+
+        try {
+            return CoverageType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestAlertException(
+                    "invalidCoverageType",
+                    "payorPlan",
+                    "Invalid coverage type: " + value
+            );
+        }
     }
 
     private String clean(String value) {
