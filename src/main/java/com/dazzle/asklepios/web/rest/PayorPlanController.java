@@ -142,7 +142,23 @@ public class PayorPlanController {
         );
     }
 
+    @GetMapping("/payor-plan-items/procedure/{procedureId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isProcedurePreAuthorizationRequired(
+            @PathVariable Long procedureId
+    ) {
+        return ResponseEntity.ok(
+                service.isProcedurePreAuthorizationRequired(procedureId)
+        );
+    }
 
+    @GetMapping("/payor-plan-items/service/{serviceId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isServicePreAuthorizationRequired(
+            @PathVariable Long serviceId
+    ) {
+        return ResponseEntity.ok(
+                service.isServicePreAuthorizationRequired(serviceId)
+        );
+    }
     // ---------------- ITEMS ----------------
 
     @PostMapping("/payor-plan-item")
@@ -190,6 +206,23 @@ public class PayorPlanController {
         );
     }
 
+    @GetMapping("/payor-plan-items/diagnostic-test/{diagnosticTestId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isDiagnosticTestPreAuthorizationRequired(
+            @PathVariable Long diagnosticTestId
+    ) {
+        return ResponseEntity.ok(
+                service.isDiagnosticTestPreAuthorizationRequired(diagnosticTestId)
+        );
+    }
+
+    @GetMapping("/payor-plan-items/brand-medication/{brandMedicationId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isBrandMedicationPreAuthorizationRequired(
+            @PathVariable Long brandMedicationId
+    ) {
+        return ResponseEntity.ok(
+                service.isBrandMedicationPreAuthorizationRequired(brandMedicationId)
+        );
+    }
     @GetMapping("/payor-plan-item/by-plan/{planId}/active")
     public ResponseEntity<List<PayorPlanItemResponseVM>> getActiveItemsByPlan(
             @PathVariable Long planId,

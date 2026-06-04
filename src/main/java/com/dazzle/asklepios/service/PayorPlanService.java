@@ -222,6 +222,25 @@ public class PayorPlanService {
         return itemRepo.save(existing);
     }
 
+    @Transactional(readOnly = true)
+    public boolean isProcedurePreAuthorizationRequired(Long procedureId) {
+        return itemRepo.existsByProcedure_IdAndPreAuthorizationTrueAndIsActiveTrue(procedureId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isServicePreAuthorizationRequired(Long serviceId) {
+        return itemRepo.existsByService_IdAndPreAuthorizationTrueAndIsActiveTrue(serviceId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isDiagnosticTestPreAuthorizationRequired(Long diagnosticTestId) {
+        return itemRepo.existsByDiagnosticTest_IdAndPreAuthorizationTrueAndIsActiveTrue(diagnosticTestId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isBrandMedicationPreAuthorizationRequired(Long brandMedicationId) {
+        return itemRepo.existsByBrandMedication_IdAndPreAuthorizationTrueAndIsActiveTrue(brandMedicationId);
+    }
     public void deleteItem(Long id) {
         itemRepo.deleteById(id);
     }

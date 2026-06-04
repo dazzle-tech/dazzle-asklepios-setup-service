@@ -11,5 +11,12 @@ public interface PayorPlanItemRepository extends JpaRepository<PayorPlanItem, Lo
 
     Page<PayorPlanItem> findByPlan_IdAndIsActiveTrue(Long planId, Pageable pageable);
 
+    boolean existsByProcedure_IdAndPreAuthorizationTrueAndIsActiveTrue(Long procedureId);
+
+    boolean existsByService_IdAndPreAuthorizationTrueAndIsActiveTrue(Long serviceId);
+
+    boolean existsByDiagnosticTest_IdAndPreAuthorizationTrueAndIsActiveTrue(Long diagnosticTestId);
+
+    boolean existsByBrandMedication_IdAndPreAuthorizationTrueAndIsActiveTrue(Long brandMedicationId);
     void deleteByPlan_Id(Long planId);
 }
