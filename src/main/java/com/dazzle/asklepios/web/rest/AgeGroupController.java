@@ -182,6 +182,17 @@ public class AgeGroupController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/age-group/is-new-born")
+    public ResponseEntity<Boolean> isNewBornByBirthDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
+    ) {
+        LOG.debug("REST check isNewBorn by birthDate={}", birthDate);
+
+        return ResponseEntity.ok(
+                ageGroupService.isNewBornByBirthDate(birthDate)
+        );
+    }
     @GetMapping("/age-group/by-birthdate")
     public ResponseEntity<AgeGroupResponseVM> getAgeGroupByBirthDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
