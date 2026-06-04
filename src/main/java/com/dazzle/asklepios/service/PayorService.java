@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
 import org.slf4j.Logger;
@@ -12,6 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 @Service
 @Transactional
@@ -178,5 +183,15 @@ public class PayorService {
     public Page<Payor> getAllActive(Pageable pageable) {
         return repo.findByIsActiveTrue(pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Optional<Payor> findByNphiesId(String nphiesId) {
+        if (nphiesId == null || nphiesId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return repo.findFirstByNphiesId(nphiesId.trim());
+    }
+
 }
 

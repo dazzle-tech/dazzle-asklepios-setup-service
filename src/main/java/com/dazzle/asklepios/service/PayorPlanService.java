@@ -23,7 +23,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
+import com.dazzle.asklepios.domain.PayorPlanCoverageClass;
+import com.dazzle.asklepios.domain.enumeration.CoverageClassType;
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
+import com.dazzle.asklepios.repository.PayorPlanCoverageClassRepository;
+
+import java.util.List;
+
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
+
 @Service
 @Transactional
 public class PayorPlanService {
@@ -32,6 +42,8 @@ public class PayorPlanService {
 
     private final PayorPlanRepository planRepo;
     private final PayorPlanItemRepository itemRepo;
+    private final PayorPlanCoverageClassRepository coverageClassRepo;
+
     private final BrandMedicationRepository brandMedicationRepo;
     private final DiagnosticTestRepository diagnosticTestRepo;
     private final ServiceRepository serviceRepo;
@@ -40,6 +52,7 @@ public class PayorPlanService {
     public PayorPlanService(
             PayorPlanRepository planRepo,
             PayorPlanItemRepository itemRepo,
+            PayorPlanCoverageClassRepository coverageClassRepo,
             BrandMedicationRepository brandMedicationRepo,
             DiagnosticTestRepository diagnosticTestRepo,
             ServiceRepository serviceRepo,
@@ -47,10 +60,12 @@ public class PayorPlanService {
     ) {
         this.planRepo = planRepo;
         this.itemRepo = itemRepo;
+        this.coverageClassRepo = coverageClassRepo;
         this.brandMedicationRepo = brandMedicationRepo;
         this.diagnosticTestRepo = diagnosticTestRepo;
         this.serviceRepo = serviceRepo;
         this.procedureRepo = procedureRepo;
+
     }
 
     // ---------------- PLAN CRUD ----------------
@@ -268,6 +283,108 @@ public class PayorPlanService {
         return itemRepo.findByPlan_IdAndIsActiveTrue(planId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<PayorPlan> findCchiPlanByPayorAndWaseelPlanId(
+            Long payorId,
+            String waseelPlanId
+    ) {
+        if (payorId == null || isBlank(waseelPlanId)) {
+            return Optional.empty();
+        }
+
+        return planRepo.findFirstByPayorIdAndWaseelPlanIdAndIsActiveTrue(
+                payorId,
+                waseelPlanId.trim()
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public Optional<PayorPlan> findCchiPlanByMatch(
+            Long payorId,
+            String coverageType,
+            String networkId,
+            String policyClassName
+    ) {
+        if (payorId == null) {
+            return Optional.empty();
+        }
+
+        String cleanCoverageType = clean(coverageType);
+        String cleanNetworkId = clean(networkId);
+        String cleanPolicyClassName = clean(policyClassName);
+
+        if (isBlank(cleanCoverageType) && isBlank(cleanNetworkId) && isBlank(cleanPolicyClassName)) {
+            return Optional.empty();
+        }
+
+        CoverageType coverageTypeEnum = parseCoverageType(cleanCoverageType);
+
+        List<PayorPlan> candidatePlans;
+
+        if (!isBlank(cleanNetworkId)) {
+            candidatePlans = planRepo.findByPayorIdAndCoverageTypeAndNetworkIdAndIsActiveTrue(
+                    payorId,
+                    coverageTypeEnum,
+                    cleanNetworkId
+            );
+        } else {
+            candidatePlans = planRepo.findByPayorIdAndCoverageTypeAndIsActiveTrue(
+                    payorId,
+                    coverageTypeEnum
+            );
+        }
+
+        if (candidatePlans.isEmpty()) {
+            return Optional.empty();
+        }
+
+        if (isBlank(cleanPolicyClassName)) {
+            return Optional.of(candidatePlans.get(0));
+        }
+
+        return candidatePlans.stream()
+                .filter(plan -> coverageClassRepo.existsByPlan_IdAndCoverageClassTypeAndCoverageClassValueIgnoreCase(
+                        plan.getId(),
+                        CoverageClassType.PLAN,
+                        cleanPolicyClassName
+                ))
+                .findFirst();
+    }
+
+    private CoverageType parseCoverageType(String value) {
+        if (isBlank(value)) {
+            throw new BadRequestAlertException(
+                    "coverageTypeRequired",
+                    "payorPlan",
+                    "Coverage type is required."
+            );
+        }
+
+        try {
+            return CoverageType.valueOf(value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestAlertException(
+                    "invalidCoverageType",
+                    "payorPlan",
+                    "Invalid coverage type: " + value
+            );
+        }
+    }
+
+    private String clean(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String text = value.trim();
+
+        return text.isEmpty() ? null : text;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
     // ---------------- HELPERS ----------------
 
     private void applyItemReference(

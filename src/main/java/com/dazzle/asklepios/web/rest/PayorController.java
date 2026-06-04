@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.service.PayorService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorResponseVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
@@ -112,5 +113,13 @@ public class PayorController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/payor/cchi/by-nphies/{nphiesId}")
+    public ResponseEntity<PayorResponseVM> getByNphiesId(@PathVariable String nphiesId) {
+        return service.findByNphiesId(nphiesId)
+                .map(PayorResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

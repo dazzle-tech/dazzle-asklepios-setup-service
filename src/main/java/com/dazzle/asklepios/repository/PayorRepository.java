@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
+
 public interface PayorRepository extends JpaRepository<Payor, Long> {
 
     boolean existsByCodeIgnoreCase(String code);
@@ -21,4 +23,6 @@ public interface PayorRepository extends JpaRepository<Payor, Long> {
     Page<Payor> findByCategoryAndNameContainingIgnoreCaseAndCodeContainingIgnoreCase(
             PayorCategory category, String name, String code, Pageable pageable
     );
+
+    Optional<Payor> findFirstByNphiesId(String nphiesId);
 }
