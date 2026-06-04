@@ -6,17 +6,16 @@ import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 
 import java.util.List;
 import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
@@ -46,13 +45,13 @@ public class UserDepartmentService {
         boolean wantDefault = Boolean.TRUE.equals(vm.isDefault());
 
         if (userDepartmentRepository.existsByUserIdAndDepartmentId(userId, departmentId)) {
-            throw new BadRequestAlertException("departmentexists", ENTITY_NAME,"User already has this department" );
+            throw new BadRequestAlertException("departmentexists", ENTITY_NAME, "User already has this department");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"User not found"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
         Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME,"Department not found"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "Department not found"));
 
         Long facilityId = department.getFacility().getId(); // or department.getFacilityId()
 
@@ -60,7 +59,7 @@ public class UserDepartmentService {
             boolean defaultInFacility =
                     userDepartmentRepository.existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(userId, facilityId);
             if (defaultInFacility) {
-                throw new BadRequestAlertException( "defaultexists",ENTITY_NAME, "User already has a default for this facility");
+                throw new BadRequestAlertException("defaultexists", ENTITY_NAME, "User already has a default for this facility");
             }
         }
 
@@ -94,7 +93,7 @@ public class UserDepartmentService {
     @Transactional
     public void hardDelete(Long id) {
         UserDepartment target = userDepartmentRepository.findById(id)
-                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"Mapping not found"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "Mapping not found"));
 
         Long userId = target.getUser().getId();
         Long facilityId = target.getDepartment().getFacility().getId();
@@ -131,7 +130,7 @@ public class UserDepartmentService {
     public String getFullNameByLogin(String login) {
         LOG.debug("Request to get full name by login={}", login);
         User user = userRepository.findByLogin(login)
-                .orElseThrow(() -> new BadRequestAlertException( "notfound", ENTITY_NAME,"User not found"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
 
         String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
         String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
