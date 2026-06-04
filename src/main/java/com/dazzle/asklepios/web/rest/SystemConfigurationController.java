@@ -150,4 +150,18 @@ public class SystemConfigurationController {
 
         return ResponseEntity.ok(response);
     }
+    @PostMapping(value = "/system-config/login-background", consumes = "multipart/form-data")
+    public ResponseEntity<SystemConfiguration> uploadLoginBackground(
+            @RequestParam("file") MultipartFile file
+    ) {
+        LOG.info(
+                "REST request to upload login background. FileName={}, Size={} bytes",
+                file != null ? file.getOriginalFilename() : null,
+                file != null ? file.getSize() : 0
+        );
+
+        return ResponseEntity.ok(
+                service.uploadImage(SystemConfigKey.LOGIN_BACKGROUND, file)
+        );
+    }
 }
