@@ -6,5 +6,7 @@ public enum SystemConfigKey {
     PRIMARY_COLOR,
     FONT_FAMILY,
     LOGIN_BACKGROUND,
-    FAVICON
+    FAVICON,
+    SIDEBAR_LOGO,
+
 }

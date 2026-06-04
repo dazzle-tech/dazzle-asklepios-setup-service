@@ -205,18 +205,18 @@ public class SystemConfigurationService {
         return switch (key) {
             case SYSTEM_TITLE -> "System title shown in browser and header";
             case PRIMARY_COLOR -> "Main system color";
-//            case SECONDARY_COLOR -> "Secondary system color";
             case FONT_FAMILY -> "Main system font family";
             case SYSTEM_LOGO -> "System logo";
             case FAVICON -> "Browser favicon";
             case LOGIN_BACKGROUND -> "Login page background";
-//            case ENABLE_DARK_MODE -> "Enable dark mode by default";
+            case SIDEBAR_LOGO -> "Sidebar logo, used when sidebar is in expanded mode";
         };
     }
 
     private boolean isImageKey(SystemConfigKey key) {
         return key == SystemConfigKey.FAVICON ||
                 key == SystemConfigKey.SYSTEM_LOGO ||
+                key==SystemConfigKey.SIDEBAR_LOGO||
                 key == SystemConfigKey.LOGIN_BACKGROUND;
     }
 
@@ -234,7 +234,9 @@ public class SystemConfigurationService {
         if (key == SystemConfigKey.LOGIN_BACKGROUND) {
             return "config/LOGIN_BACKGROUND/background-" + timestamp + extension;
         }
-
+        if(key == SystemConfigKey.SIDEBAR_LOGO){
+            return "config/SIDEBAR_LOGO/sidebar-logo-" + timestamp + extension;
+        }
         return "config/" + key.name() + "/" + key.name().toLowerCase() + "-" + timestamp + extension;
     }
 
