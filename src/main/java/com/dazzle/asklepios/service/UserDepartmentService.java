@@ -71,6 +71,7 @@ public class UserDepartmentService {
                 .department(department)
                 .isActive(isActive)
                 .isDefault(wantDefault)
+                .appointmentBookingAllowed(Boolean.TRUE.equals(vm.appointmentBookingAllowed()))
                 .build();
 
         return userDepartmentRepository.save(ufd);

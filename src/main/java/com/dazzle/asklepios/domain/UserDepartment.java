@@ -49,4 +49,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
 
     @Column(name = "is_default",nullable = false)
     private Boolean isDefault = false;
+
+    @Column(name = "appointment_booking_allowed",nullable = false)
+    private Boolean appointmentBookingAllowed = false;
 }
