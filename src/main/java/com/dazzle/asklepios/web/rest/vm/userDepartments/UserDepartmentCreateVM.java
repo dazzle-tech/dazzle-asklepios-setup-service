@@ -11,7 +11,8 @@ public record UserDepartmentCreateVM(
         @NotNull Long userId,
         @NotNull Long departmentId,
         Boolean isActive,
-        Boolean isDefault
+        Boolean isDefault,
+        Boolean appointmentBookingAllowed
 ) implements Serializable {
 
     public static UserDepartmentCreateVM ofEntity(UserDepartment entity) {
@@ -19,7 +20,8 @@ public record UserDepartmentCreateVM(
                 entity.getUser() != null ? entity.getUser().getId() : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
                 entity.getIsActive(),
-                entity.getIsDefault()
+                entity.getIsDefault(),
+                entity.getAppointmentBookingAllowed()
         );
     }
 }

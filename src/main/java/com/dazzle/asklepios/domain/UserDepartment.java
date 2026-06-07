@@ -41,7 +41,8 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_department"))    private Department department;
+    @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_department"))
+    private Department department;
 
     @Builder.Default
     @Column(name = "is_active", nullable = false)
@@ -49,4 +50,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
 
     @Column(name = "is_default",nullable = false)
     private Boolean isDefault = false;
+
+    @Column(name = "appointment_booking_allowed",nullable = false)
+    private Boolean appointmentBookingAllowed = false;
 }

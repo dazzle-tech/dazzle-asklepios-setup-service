@@ -3,6 +3,8 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
+import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
@@ -10,6 +12,7 @@ import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
+import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -25,9 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,17 +43,19 @@ public class DepartmentService {
     private final FacilityRepository facilityRepository;
     private final UserDepartmentRepository userDepartmentRepository;
     private final ResourceRepository resourceRepository;
+    private final UserRepository userRepository;
 
     public DepartmentService(
             DepartmentsRepository departmentRepository,
             FacilityRepository facilityRepository,
             UserDepartmentRepository userDepartmentRepository,
-            ResourceRepository resourceRepository
-    ) {
+            ResourceRepository resourceRepository,
+            UserRepository userRepository) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
         this.userDepartmentRepository = userDepartmentRepository;
         this.resourceRepository = resourceRepository;
+        this.userRepository = userRepository;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -321,6 +326,7 @@ public class DepartmentService {
                 type, facilityId, pageable);
         return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId, pageable);
     }
+
     @Transactional(readOnly = true)
     public List<Department> findActiveByTypeAndFacility(DepartmentType type, Long facilityId) {
         LOG.debug("Request to get Active Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
@@ -369,12 +375,14 @@ public class DepartmentService {
         LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Department> findAppointableDepartmentByLoggedInFacility(Pageable pageable) {
         LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
-        Long facilityId=getFacility();
+        Long facilityId = getFacility();
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Department> findAppointableActiveByFacilityAndEncounterType(
             Long facilityId,
@@ -422,7 +430,7 @@ public class DepartmentService {
         return departmentRepository.findAllById(ids);
     }
 
-    private Long getFacility(){
+    private Long getFacility() {
 
         return SecurityUtils.getCurrentUserFacility()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
@@ -433,5 +441,23 @@ public class DepartmentService {
     public Page<Department> findActive(Pageable pageable) {
         LOG.debug("Request to get Active Departments pageable={}", pageable);
         return departmentRepository.findByIsActiveTrue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> getBookableDepartmentsForLoggedInUser() {
+        String login = SecurityUtils.getCurrentUserLogin()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated."));
+
+        Long userId = userRepository.findByLogin(login)
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + login));
+
+
+        return userDepartmentRepository
+                .findAllByUser_IdAndAppointmentBookingAllowedTrueAndIsActiveTrue(userId)
+                .stream()
+                .map(UserDepartment::getDepartment)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

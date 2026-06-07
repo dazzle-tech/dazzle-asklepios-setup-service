@@ -43,5 +43,8 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
             """)
     void clearDefaultForUserActiveInFacility(Long userId, Long facilityId);
 
+    List<UserDepartment> findAllByUser_IdAndAppointmentBookingAllowedTrueAndIsActiveTrue(Long userId);
+
+
 }
 

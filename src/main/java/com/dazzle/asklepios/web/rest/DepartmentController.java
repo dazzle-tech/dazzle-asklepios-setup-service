@@ -409,4 +409,16 @@ public class DepartmentController {
 
         return ResponseEntity.ok(departments);
     }
+
+    @GetMapping("/department/bookable-departments")
+    public ResponseEntity<List<DepartmentResponseVM>> getBookableDepartmentsForLoggedInUser() {
+        LOG.debug("REST request to get bookable departments for logged in user");
+
+        List<DepartmentResponseVM> result = departmentService.getBookableDepartmentsForLoggedInUser()
+                .stream()
+                .map(DepartmentResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
 }
