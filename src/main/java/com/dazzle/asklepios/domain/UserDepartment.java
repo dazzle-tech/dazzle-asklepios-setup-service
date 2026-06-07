@@ -40,7 +40,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_user"))
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @JoinColumn(name = "department_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_department"))
     private Department department;
 
