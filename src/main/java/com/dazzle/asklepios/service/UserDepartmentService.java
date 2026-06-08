@@ -9,6 +9,7 @@ import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentTogglesVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -140,4 +141,28 @@ public class UserDepartmentService {
         return fullName.isEmpty() ? user.getLogin() : fullName;
     }
 
+    @Transactional
+    public UserDepartment updateToggles(Long id, UserDepartmentTogglesVM userDepartmentTogglesVM) {
+        LOG.debug("Update User Department request userDepartmentTogglesVM={}", userDepartmentTogglesVM);
+        UserDepartment userDepartment = userDepartmentRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "UserDepartment not found"));
+
+        Long userId = userDepartment.getUser().getId();
+        Long facilityId = userDepartment.getDepartment().getFacility().getId();
+        boolean wantDefault = Boolean.TRUE.equals(userDepartmentTogglesVM.isDefault());
+
+        // If setting as default, make sure no other default exists in same facility
+        if (wantDefault && !Boolean.TRUE.equals(userDepartment.getIsDefault())) {
+            boolean defaultInFacility =
+                    userDepartmentRepository.existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(userId, facilityId);
+            if (defaultInFacility) {
+                throw new BadRequestAlertException("defaultexists", ENTITY_NAME, "User already has a default for this facility");
+            }
+        }
+
+        userDepartment.setIsDefault(wantDefault);
+        userDepartment.setAppointmentBookingAllowed(Boolean.TRUE.equals(userDepartmentTogglesVM.appointmentBookingAllowed()));
+
+        return userDepartmentRepository.save(userDepartment);
+    }
 }
