@@ -210,6 +210,7 @@ public class SystemConfigurationService {
             case FAVICON -> "Browser favicon";
             case LOGIN_BACKGROUND -> "Login page background";
             case SIDEBAR_LOGO -> "Sidebar logo, used when sidebar is in expanded mode";
+            case SIDEBAR_LOGO_DARK -> "Sidebar logo in dark mode, used when sidebar is in expanded mode";
         };
     }
 
@@ -217,6 +218,7 @@ public class SystemConfigurationService {
         return key == SystemConfigKey.FAVICON ||
                 key == SystemConfigKey.SYSTEM_LOGO ||
                 key==SystemConfigKey.SIDEBAR_LOGO||
+                key==SystemConfigKey.SIDEBAR_LOGO_DARK||
                 key == SystemConfigKey.LOGIN_BACKGROUND;
     }
 
@@ -236,6 +238,9 @@ public class SystemConfigurationService {
         }
         if(key == SystemConfigKey.SIDEBAR_LOGO){
             return "config/SIDEBAR_LOGO/sidebar-logo-" + timestamp + extension;
+        }
+        if(key ==SystemConfigKey.SIDEBAR_LOGO_DARK){
+            return "config/SIDEBAR_LOGO_DARK/sidebar-logo-dark" + timestamp + extension;
         }
         return "config/" + key.name() + "/" + key.name().toLowerCase() + "-" + timestamp + extension;
     }

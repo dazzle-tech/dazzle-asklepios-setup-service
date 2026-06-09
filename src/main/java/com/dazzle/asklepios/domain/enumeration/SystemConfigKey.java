@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain.enumeration;
 
-public enum SystemConfigKey {
+public enum
+SystemConfigKey {
     SYSTEM_TITLE,
     SYSTEM_LOGO,
     PRIMARY_COLOR,
@@ -8,5 +9,6 @@ public enum SystemConfigKey {
     LOGIN_BACKGROUND,
     FAVICON,
     SIDEBAR_LOGO,
+    SIDEBAR_LOGO_DARK
 
 }
