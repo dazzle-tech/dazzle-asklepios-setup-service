@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,8 @@ import java.util.List;
 /**
  * View Model for creating a Practitioner via REST.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
+
 public record PractitionerCreateVM(
         @NotNull(message = "Facility ID cannot be null")
         Long facilityId,

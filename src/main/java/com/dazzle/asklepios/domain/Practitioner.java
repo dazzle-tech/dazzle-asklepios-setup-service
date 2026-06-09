@@ -104,6 +104,7 @@ public class Practitioner extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "dob")
     private LocalDate dateOfBirth;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "job_role")
     private JobRole jobRole;
 
