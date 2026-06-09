@@ -178,4 +178,17 @@ public class SystemConfigurationController {
                 service.uploadImage(SystemConfigKey.SIDEBAR_LOGO, file)
         );
     }
+    @PostMapping(value = "/system-config/sidebar-logo-dark", consumes = "multipart/form-data")
+    public ResponseEntity<SystemConfiguration> uploadSidebarLogoDark(
+            @RequestParam("file") MultipartFile file
+    ) {
+        LOG.info(
+                "REST request to upload sidebar logo dark. FileName={}, Size={} bytes",
+                file != null ? file.getOriginalFilename() : null,
+                file != null ? file.getSize() : 0
+        );
+        return ResponseEntity.ok(
+                service.uploadImage(SystemConfigKey.SIDEBAR_LOGO_DARK, file)
+        );
+    }
 }
