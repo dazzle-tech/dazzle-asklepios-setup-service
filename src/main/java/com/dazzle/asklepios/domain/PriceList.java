@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,9 +55,11 @@ public class PriceList extends AbstractAuditingEntity<Long> implements Serializa
     private Currency currency;
 
     @NotNull
+    @FutureOrPresent(message = "Effective from cannot be in the past")
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
 
+    @FutureOrPresent(message = "Effective to cannot be in the past")
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
