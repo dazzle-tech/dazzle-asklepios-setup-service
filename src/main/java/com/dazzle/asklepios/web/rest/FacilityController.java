@@ -128,5 +128,14 @@ public class FacilityController {
     public ResponseEntity<List<FacilityResponseVM>> getActiveFacilities() {
         return ResponseEntity.ok(facilityService.findActiveFacilities());
     }
+    @PostMapping("/bulk/by-ids")
+    public ResponseEntity<List<FacilityResponseVM>> getFacilitiesByIds(@RequestBody List<Long> ids) {
+        LOG.debug("REST request to get Facilities by ids : {}", ids);
 
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        return ResponseEntity.ok(facilityService.findAllByIds(ids));
+    }
 }
