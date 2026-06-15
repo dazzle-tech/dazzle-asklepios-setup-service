@@ -42,7 +42,17 @@ public class SystemConfigurationService {
 
         return configs;
     }
+    public String getResolvedValue(SystemConfigKey key) {
+        LOG.info("Loading resolved system configuration: {}", key);
 
+        String value = repository.findByConfigKey(key)
+                .map(this::resolveValue)
+                .orElse("");
+
+        LOG.info("Loaded resolved system configuration [{}]", key);
+
+        return value;
+    }
     private String resolveValue(SystemConfiguration config) {
         String value = config.getConfigValue();
 
