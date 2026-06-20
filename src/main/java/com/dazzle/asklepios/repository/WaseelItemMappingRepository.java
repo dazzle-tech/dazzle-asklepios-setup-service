@@ -7,4 +7,8 @@ import java.util.Optional;
 
 public interface WaseelItemMappingRepository extends JpaRepository<WaseelItemMapping, Long> {
 
+    Optional<WaseelItemMapping> findByItemTypeAndSourceIdAndIsActiveTrue(
+            String itemType,
+            Long sourceId
+    );
 }

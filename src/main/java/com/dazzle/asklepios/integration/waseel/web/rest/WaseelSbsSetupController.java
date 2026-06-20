@@ -84,4 +84,15 @@ public class WaseelSbsSetupController {
         waseelSbsSetupService.deactivateMapping(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/item-mapping/by-item")
+    public ResponseEntity<WaseelItemMappingDTO> getMappingByItem(
+            @RequestParam String itemType,
+            @RequestParam Long sourceId
+    ) {
+        return waseelSbsSetupService
+                .getMappingByItem(itemType, sourceId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }

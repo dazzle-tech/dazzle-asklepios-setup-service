@@ -34,18 +34,15 @@ public class WaseelSbsSetupService {
     private final WaseelSbsCatalogRepository sbsCatalogRepository;
     private final WaseelItemMappingRepository itemMappingRepository;
     private final WaseelSbsImportLogRepository importLogRepository;
-    private final ServiceItemsRepository serviceItemsRepository;
 
     public WaseelSbsSetupService(
             WaseelSbsCatalogRepository sbsCatalogRepository,
             WaseelItemMappingRepository itemMappingRepository,
-            WaseelSbsImportLogRepository importLogRepository,
-            ServiceItemsRepository serviceItemsRepository
+            WaseelSbsImportLogRepository importLogRepository
     ) {
         this.sbsCatalogRepository = sbsCatalogRepository;
         this.itemMappingRepository = itemMappingRepository;
         this.importLogRepository = importLogRepository;
-        this.serviceItemsRepository = serviceItemsRepository;
     }
 
     public WaseelSbsImportResultDTO importSbsExcel(MultipartFile file) {
@@ -280,5 +277,12 @@ public class WaseelSbsSetupService {
         String value = formatter.formatCellValue(cell);
 
         return value != null ? value.trim() : null;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<WaseelItemMappingDTO> getMappingByItem(String itemType, Long sourceId) {
+        return itemMappingRepository
+                .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
+                .map(this::toMappingDto);
     }
 }
