@@ -189,4 +189,16 @@ public class FacilityService {
                 .map(FacilityResponseVM::ofEntity)
                 .toList();
     }
+    public List<FacilityResponseVM> findAllByIds(List<Long> ids) {
+        LOG.debug("Request to get Facilities by ids : {}", ids);
+
+        List<FacilityResponseVM> facilities = facilityRepository.findAllById(ids)
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .toList();
+
+        LOG.debug("Found {} Facilities for ids : {}", facilities.size(), ids);
+
+        return facilities;
+    }
 }

@@ -1,19 +1,19 @@
 package com.dazzle.asklepios.domain.enumeration;
 
 public enum MedFrequency {
-    QD,
-    BID,
-    TID,
-    QID,
-    Q4H,
-    Q6H,
-    Q12H,
-    PRN,
-    Q8H,
-    QHS,
-    QAM,
-    QPM,
-    Q46H,
-    QOD,
-    OTHER
+    OTHER,
+    TWICE_DAILY,
+    FOUR_TIMES_DAILY,
+    EVERY_4_HOURS,
+    EVERY_6_HOURS,
+    EVERY_8_HOURS,
+    EVERY_12_HOURS,
+    AS_NEEDED,
+    AT_BEDTIME,
+    EVERY_EVENING,
+    EVERY_4_TO_6_HOURS,
+    EVERY_OTHER_DAY,
+    ONCE_DAILY,
+    THREE_TIMES_DAILY,
+    EVERY_MORNING
 }
