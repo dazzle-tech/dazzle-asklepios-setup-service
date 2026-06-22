@@ -64,11 +64,12 @@ public class WaseelSbsSetupService {
                         continue;
                     }
 
-                    String sbsCode = getCellValue(row.getCell(0));
-                    String updateType = getCellValue(row.getCell(1));
-                    String revisionDetails = getCellValue(row.getCell(2));
-                    String shortDescription = getCellValue(row.getCell(3));
-                    String longDescription = getCellValue(row.getCell(4));
+                    String waseelItemType = normalizeWaseelItemType(getCellValue(row.getCell(0)));
+                    String sbsCode = getCellValue(row.getCell(1));
+                    String updateType = getCellValue(row.getCell(2));
+                    String revisionDetails = getCellValue(row.getCell(3));
+                    String shortDescription = getCellValue(row.getCell(4));
+                    String longDescription = getCellValue(row.getCell(5));
 
                     if (sbsCode == null || sbsCode.isBlank()) {
                         failedRows++;
@@ -76,10 +77,17 @@ public class WaseelSbsSetupService {
                         continue;
                     }
 
+                    if (waseelItemType == null || waseelItemType.isBlank()) {
+                        failedRows++;
+                        errors.append("Row ").append(i + 1).append(": Waseel item type is empty\n");
+                        continue;
+                    }
+
                     WaseelSbsCatalog catalog = sbsCatalogRepository
                             .findBySbsCode(sbsCode)
                             .orElseGet(WaseelSbsCatalog::new);
 
+                    catalog.setWaseelItemType(waseelItemType);
                     catalog.setSbsCode(sbsCode);
                     catalog.setUpdateType(updateType);
                     catalog.setRevisionDetails(revisionDetails);
@@ -132,6 +140,14 @@ public class WaseelSbsSetupService {
         }
     }
 
+    private String normalizeWaseelItemType(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
+        return value.trim().toLowerCase();
+    }
+    
     @Transactional(readOnly = true)
     public Page<WaseelSbsCatalogDTO> searchSbs(String search, Pageable pageable) {
         Page<WaseelSbsCatalog> page;
