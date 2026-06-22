@@ -42,6 +42,9 @@ public class WaseelItemMapping extends AbstractAuditingEntity<Long> implements S
         @Column(name = "item_name", length = 1000)
         private String itemName;
 
+        @Column(name = "waseel_item_type", length = 100)
+        private String waseelItemType;
+
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumn(name = "sbs_catalog_id", nullable = false)
         private WaseelSbsCatalog sbsCatalog;

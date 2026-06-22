@@ -168,6 +168,10 @@ public class WaseelSbsSetupService {
             throw new BadRequestAlertException("Selected item is required" , "WaseelItemMapping", "itemRequired");
         }
 
+        if (request.waseelItemType() == null || request.waseelItemType().isBlank()) {
+            throw new RuntimeException("Waseel item type is required");
+        }
+
         WaseelSbsCatalog sbsCatalog = sbsCatalogRepository.findById(request.sbsCatalogId())
                 .orElseThrow(() -> new BadRequestAlertException("SBS code not found" , "WaseelSbsCatalog", "sbsCodeNotFound"));
 
@@ -176,6 +180,7 @@ public class WaseelSbsSetupService {
         mapping.setSourceId(request.sourceId());
         mapping.setItemCode(request.itemCode());
         mapping.setItemName(request.itemName());
+        mapping.setWaseelItemType(request.waseelItemType());
         mapping.setSbsCatalog(sbsCatalog);
         mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
@@ -196,6 +201,11 @@ public class WaseelSbsSetupService {
             mapping.setSbsCatalog(sbsCatalog);
         }
 
+        if (request.waseelItemType() == null || request.waseelItemType().isBlank()) {
+            throw new RuntimeException("Waseel item type is required");
+        }
+
+        mapping.setWaseelItemType(request.waseelItemType());
         mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
@@ -240,6 +250,7 @@ public class WaseelSbsSetupService {
                 mapping.getSourceId(),
                 mapping.getItemCode(),
                 mapping.getItemName(),
+                mapping.getWaseelItemType(),
                 mapping.getSbsCatalog().getId(),
                 mapping.getSbsCatalog().getSbsCode(),
                 mapping.getSbsCatalog().getShortDescription(),
