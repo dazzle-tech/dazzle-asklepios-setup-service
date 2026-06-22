@@ -85,7 +85,7 @@ public class WaseelSbsSetupController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/waseel/item-mapping/by-item")
+    @GetMapping("/item-mapping/by-item")
     public ResponseEntity<WaseelItemMappingDTO> getMappingByItem(
             @RequestParam String itemType,
             @RequestParam Long sourceId
