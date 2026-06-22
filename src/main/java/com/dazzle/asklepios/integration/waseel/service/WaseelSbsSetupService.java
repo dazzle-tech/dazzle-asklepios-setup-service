@@ -310,4 +310,13 @@ public class WaseelSbsSetupService {
                 .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
                 .map(this::toMappingDto);
     }
+
+    @Transactional(readOnly = true)
+    public boolean requiresPreauth(String itemType, Long sourceId) {
+
+        return itemMappingRepository
+                .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
+                .map(WaseelItemMapping::getRequiresPreauth)
+                .orElse(false);
+    }
 }
