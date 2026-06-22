@@ -86,6 +86,7 @@ public class WaseelSbsSetupService {
                             .findBySbsCode(sbsCode)
                             .orElseGet(WaseelSbsCatalog::new);
 
+                    catalog.setWaseelItemType(waseelItemType);
                     catalog.setSbsCode(sbsCode);
                     catalog.setUpdateType(updateType);
                     catalog.setRevisionDetails(revisionDetails);
@@ -101,6 +102,7 @@ public class WaseelSbsSetupService {
                         catalog.setLastModifiedBy("system");
                         catalog.setLastModifiedDate(Instant.now());
                     }
+
 
                     sbsCatalogRepository.save(catalog);
                     successRows++;
@@ -182,9 +184,12 @@ public class WaseelSbsSetupService {
             throw new BadRequestAlertException("Selected item is required" , "WaseelItemMapping", "itemRequired");
         }
 
-
         WaseelSbsCatalog sbsCatalog = sbsCatalogRepository.findById(request.sbsCatalogId())
-                .orElseThrow(() -> new BadRequestAlertException("SBS code not found" , "WaseelSbsCatalog", "sbsCodeNotFound"));
+                .orElseThrow(() -> new BadRequestAlertException("SBS code not found", "WaseelSbsCatalog", "sbsCodeNotFound"));
+
+        if (sbsCatalog.getWaseelItemType() == null || sbsCatalog.getWaseelItemType().isBlank()) {
+            throw new RuntimeException("Selected SBS code does not have Waseel item type");
+        }
 
         WaseelItemMapping mapping = new WaseelItemMapping();
         mapping.setItemType(request.itemType());
@@ -240,6 +245,7 @@ public class WaseelSbsSetupService {
     private WaseelSbsCatalogDTO toSbsDto(WaseelSbsCatalog catalog) {
         return new WaseelSbsCatalogDTO(
                 catalog.getId(),
+                catalog.getWaseelItemType(),
                 catalog.getSbsCode(),
                 catalog.getUpdateType(),
                 catalog.getRevisionDetails(),
@@ -250,15 +256,18 @@ public class WaseelSbsSetupService {
     }
 
     private WaseelItemMappingDTO toMappingDto(WaseelItemMapping mapping) {
+        WaseelSbsCatalog catalog = mapping.getSbsCatalog();
+
         return new WaseelItemMappingDTO(
                 mapping.getId(),
                 mapping.getItemType(),
                 mapping.getSourceId(),
                 mapping.getItemCode(),
                 mapping.getItemName(),
-                mapping.getSbsCatalog().getId(),
-                mapping.getSbsCatalog().getSbsCode(),
-                mapping.getSbsCatalog().getShortDescription(),
+                catalog.getId(),
+                catalog.getWaseelItemType(),
+                catalog.getSbsCode(),
+                catalog.getShortDescription(),
                 mapping.getRequiresPreauth(),
                 mapping.getIsActive(),
                 mapping.getNotes()

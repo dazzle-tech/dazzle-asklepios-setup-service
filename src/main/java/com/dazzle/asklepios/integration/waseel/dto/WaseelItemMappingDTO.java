@@ -7,6 +7,7 @@ public record WaseelItemMappingDTO(
         String itemCode,
         String itemName,
         Long sbsCatalogId,
+        String waseelItemType,
         String sbsCode,
         String sbsDescription,
         Boolean requiresPreauth,

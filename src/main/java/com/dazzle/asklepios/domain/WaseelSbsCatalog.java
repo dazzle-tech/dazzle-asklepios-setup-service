@@ -27,6 +27,9 @@ public class WaseelSbsCatalog extends AbstractAuditingEntity<Long> implements Se
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "waseel_item_type", length = 100)
+    private String waseelItemType;
+
     @Column(name = "sbs_code", nullable = false, unique = true, length = 100)
     private String sbsCode;
 
