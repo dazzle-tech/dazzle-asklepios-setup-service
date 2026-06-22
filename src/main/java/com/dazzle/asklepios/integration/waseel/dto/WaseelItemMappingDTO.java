@@ -6,7 +6,6 @@ public record WaseelItemMappingDTO(
         Long sourceId,
         String itemCode,
         String itemName,
-        String waseelItemType,
         Long sbsCatalogId,
         String sbsCode,
         String sbsDescription,

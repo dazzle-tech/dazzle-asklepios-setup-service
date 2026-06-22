@@ -10,7 +10,6 @@ import com.dazzle.asklepios.integration.waseel.dto.WaseelSbsImportResultDTO;
 import com.dazzle.asklepios.repository.WaseelItemMappingRepository;
 import com.dazzle.asklepios.repository.WaseelSbsCatalogRepository;
 import com.dazzle.asklepios.repository.WaseelSbsImportLogRepository;
-import com.dazzle.asklepios.repository.ServiceItemsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -87,7 +86,6 @@ public class WaseelSbsSetupService {
                             .findBySbsCode(sbsCode)
                             .orElseGet(WaseelSbsCatalog::new);
 
-                    catalog.setWaseelItemType(waseelItemType);
                     catalog.setSbsCode(sbsCode);
                     catalog.setUpdateType(updateType);
                     catalog.setRevisionDetails(revisionDetails);
@@ -147,7 +145,7 @@ public class WaseelSbsSetupService {
 
         return value.trim().toLowerCase();
     }
-    
+
     @Transactional(readOnly = true)
     public Page<WaseelSbsCatalogDTO> searchSbs(String search, Pageable pageable) {
         Page<WaseelSbsCatalog> page;
@@ -184,9 +182,6 @@ public class WaseelSbsSetupService {
             throw new BadRequestAlertException("Selected item is required" , "WaseelItemMapping", "itemRequired");
         }
 
-        if (request.waseelItemType() == null || request.waseelItemType().isBlank()) {
-            throw new RuntimeException("Waseel item type is required");
-        }
 
         WaseelSbsCatalog sbsCatalog = sbsCatalogRepository.findById(request.sbsCatalogId())
                 .orElseThrow(() -> new BadRequestAlertException("SBS code not found" , "WaseelSbsCatalog", "sbsCodeNotFound"));
@@ -196,7 +191,6 @@ public class WaseelSbsSetupService {
         mapping.setSourceId(request.sourceId());
         mapping.setItemCode(request.itemCode());
         mapping.setItemName(request.itemName());
-        mapping.setWaseelItemType(request.waseelItemType());
         mapping.setSbsCatalog(sbsCatalog);
         mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
@@ -217,11 +211,7 @@ public class WaseelSbsSetupService {
             mapping.setSbsCatalog(sbsCatalog);
         }
 
-        if (request.waseelItemType() == null || request.waseelItemType().isBlank()) {
-            throw new RuntimeException("Waseel item type is required");
-        }
 
-        mapping.setWaseelItemType(request.waseelItemType());
         mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
@@ -266,7 +256,6 @@ public class WaseelSbsSetupService {
                 mapping.getSourceId(),
                 mapping.getItemCode(),
                 mapping.getItemName(),
-                mapping.getWaseelItemType(),
                 mapping.getSbsCatalog().getId(),
                 mapping.getSbsCatalog().getSbsCode(),
                 mapping.getSbsCatalog().getShortDescription(),

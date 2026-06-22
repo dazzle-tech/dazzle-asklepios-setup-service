@@ -6,7 +6,6 @@ public record WaseelItemMappingRequest(
         Long sourceId,
         String itemCode,
         String itemName,
-        String waseelItemType,
         Long sbsCatalogId,
         Boolean requiresPreauth,
         Boolean isActive,
