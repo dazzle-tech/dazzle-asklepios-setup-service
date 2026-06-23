@@ -45,6 +45,7 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findAllByUser_IdAndAppointmentBookingAllowedTrueAndIsActiveTrue(Long userId);
 
+    List<UserDepartment> findAllByDepartment_IdAndIsActiveTrue(Long departmentId);
 
 }
 

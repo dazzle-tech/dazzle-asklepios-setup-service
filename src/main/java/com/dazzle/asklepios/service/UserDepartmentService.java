@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -164,5 +165,15 @@ public class UserDepartmentService {
         userDepartment.setAppointmentBookingAllowed(Boolean.TRUE.equals(userDepartmentTogglesVM.appointmentBookingAllowed()));
 
         return userDepartmentRepository.save(userDepartment);
+    }
+    @Transactional(readOnly = true)
+    public List<User> getUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrue(departmentId)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

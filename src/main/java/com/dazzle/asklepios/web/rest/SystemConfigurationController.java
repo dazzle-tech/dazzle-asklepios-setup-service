@@ -191,4 +191,12 @@ public class SystemConfigurationController {
                 service.uploadImage(SystemConfigKey.SIDEBAR_LOGO_DARK, file)
         );
     }
+    @GetMapping("/system-configurations/{key}/resolved-value")
+    public ResponseEntity<String> getResolvedValue(@PathVariable SystemConfigKey key) {
+        LOG.debug("REST request to get resolved system configuration value: {}", key);
+
+        String value = service.getResolvedValue(key);
+
+        return ResponseEntity.ok(value);
+    }
 }
