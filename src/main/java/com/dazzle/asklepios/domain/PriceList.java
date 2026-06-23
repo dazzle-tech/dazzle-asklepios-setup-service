@@ -55,11 +55,9 @@ public class PriceList extends AbstractAuditingEntity<Long> implements Serializa
     private Currency currency;
 
     @NotNull
-    @FutureOrPresent(message = "Effective from cannot be in the past")
     @Column(name = "effective_from", nullable = false)
     private LocalDate effectiveFrom;
 
-    @FutureOrPresent(message = "Effective to cannot be in the past")
     @Column(name = "effective_to")
     private LocalDate effectiveTo;
 
