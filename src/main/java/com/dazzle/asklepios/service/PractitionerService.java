@@ -104,6 +104,7 @@ public class PractitionerService {
                 .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
                 .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
                 .workingDays(normalizeWorkingDays(vm.workingDays()))
+                .nationalNumber(vm.nationalNumber())
                 .build();
 
         validatePractitioner(practitioner);
@@ -186,6 +187,7 @@ public class PractitionerService {
         if (vm.workingDays() != null) {
             practitioner.setWorkingDays(normalizeWorkingDays(vm.workingDays()));
         }
+         practitioner.setNationalNumber(vm.nationalNumber());
 
         validatePractitioner(practitioner);
 

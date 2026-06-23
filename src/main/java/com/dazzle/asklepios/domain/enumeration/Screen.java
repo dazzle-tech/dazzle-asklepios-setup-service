@@ -77,6 +77,7 @@ public enum Screen {
     PAYER,
     POLICY_DEFINITION,
     NPHIES_PAYER,
+    SKILL_DEFINITION,
     // Front Desk Office
     QUICK_APPOINTMENT,
     PATIENT_REGISTRATION,
@@ -155,13 +156,23 @@ public enum Screen {
     PATIENT_EMR_OLD,
     MERGE_PATIENT_FILES_OLD,
 
+
     // System Configurations
     ORGANIZATION_DEFINITION,
     GENERAL_SETTINGS,
     CONFIGURATIONS,
     ORGANIZATION_HOLIDAY,
     URGENT_CARE_TRIAGE,
-    NURSE_ASSESSMENT
+    NURSE_ASSESSMENT,
+    PATIENT_MERGE_CONFIG,
+    SYSTEM_CONFIGURATION_SETUP,
+    //Notification Module
+    NOTIFICATION_RULE,
+    EMAIL_NOTIFICATION,
+    IN_APP_NOTIFICATION,
+    SMS_NOTIFICATION,
+    WHATSAPP_NOTIFICATION
+
     ;
     @JsonCreator
     public static Screen fromValue(String value) {

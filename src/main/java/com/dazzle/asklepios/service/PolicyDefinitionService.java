@@ -102,11 +102,21 @@ public class PolicyDefinitionService {
         LOG.debug("Request to get all PolicyDefinition");
        return policyDefinitionRepository.findAll(pageable);
     }
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findAllActive(Pageable pageable) {
+        LOG.debug("Request to get all active PolicyDefinition");
+        return policyDefinitionRepository.findAllByIsActiveTrue(pageable);
+    }
 
     @Transactional(readOnly = true)
     public Page<PolicyDefinition> findByFacilityId(Long facilityId, Pageable pageable) {
         LOG.debug("Request to get PolicyDefinition by facilityId={} pageable={}", facilityId, pageable);
         return policyDefinitionRepository.findByFacility_Id(facilityId, pageable);
+    }
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findByFacilityIdAndActive(Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get active PolicyDefinition by facilityId={} pageable={}", facilityId, pageable);
+        return policyDefinitionRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)

@@ -224,6 +224,7 @@ public class ActiveIngredientsService {
         if (vm.doseAdjustmentPugA() != null) ai.setDoseAdjustmentPugA(vm.doseAdjustmentPugA());
         if (vm.doseAdjustmentPugB() != null) ai.setDoseAdjustmentPugB(vm.doseAdjustmentPugB());
         if (vm.doseAdjustmentPugC() != null) ai.setDoseAdjustmentPugC(vm.doseAdjustmentPugC());
+        ai.setIsLookAlikeSoundAlike(vm.isLookAlikeSoundAlike());
     }
 
 

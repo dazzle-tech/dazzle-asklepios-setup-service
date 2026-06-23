@@ -39,7 +39,8 @@ public record PractitionerResponseVM(
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
         Integer defaultBufferAfterMinutes,
-        List<WorkingDayJson> workingDays
+        List<WorkingDayJson> workingDays,
+        String nationalNumber
 ) implements Serializable {
 
     public static PractitionerResponseVM ofEntity(Practitioner practitioner) {
@@ -68,7 +69,8 @@ public record PractitionerResponseVM(
                 practitioner.getDefaultDurationMinutes(),
                 practitioner.getDefaultBufferBeforeMinutes(),
                 practitioner.getDefaultBufferAfterMinutes(),
-                practitioner.getWorkingDays()
+                practitioner.getWorkingDays(),
+                practitioner.getNationalNumber()
         );
     }
 }

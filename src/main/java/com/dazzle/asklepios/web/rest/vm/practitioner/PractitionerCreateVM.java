@@ -57,7 +57,8 @@ public record PractitionerCreateVM(
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
         Integer defaultBufferAfterMinutes,
-        List<WorkingDayJson> workingDays
+        List<WorkingDayJson> workingDays,
+        String nationalNumber
 ) implements Serializable {
 
     public static PractitionerCreateVM ofEntity(Practitioner practitioner) {
@@ -84,7 +85,8 @@ public record PractitionerCreateVM(
                 practitioner.getDefaultDurationMinutes(),
                 practitioner.getDefaultBufferBeforeMinutes(),
                 practitioner.getDefaultBufferAfterMinutes(),
-                practitioner.getWorkingDays()
+                practitioner.getWorkingDays(),
+                practitioner.getNationalNumber()
         );
     }
 }

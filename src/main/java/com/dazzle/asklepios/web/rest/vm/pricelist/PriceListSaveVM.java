@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.pricelist;
 
 import com.dazzle.asklepios.domain.enumeration.biling.PriceListTypes;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -19,7 +20,10 @@ public record PriceListSaveVM(
         @NotNull(message = "Type cannot be null")
         PriceListTypes type,
         @NotNull(message = "Effective from cannot be null")
+        @FutureOrPresent(message = "Effective from cannot be in the past")
         LocalDate effectiveFrom,
+
+        @FutureOrPresent(message = "Effective to cannot be in the past")
         LocalDate effectiveTo,
         String description,
         Boolean isActive

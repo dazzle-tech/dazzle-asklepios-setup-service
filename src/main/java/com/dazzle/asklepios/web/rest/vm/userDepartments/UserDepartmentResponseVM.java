@@ -14,7 +14,8 @@ public record UserDepartmentResponseVM(
         Long departmentId,
         String departmentName,
         Boolean isActive,
-        Boolean isDefault
+        Boolean isDefault,
+        Boolean appointmentBookingAllowed
 ) implements Serializable {
 
     public static UserDepartmentResponseVM ofEntity(UserDepartment entity) {
@@ -39,7 +40,8 @@ public record UserDepartmentResponseVM(
                         : null,
 
                 entity.getIsActive(),
-                entity.getIsDefault()
+                entity.getIsDefault(),
+                entity.getAppointmentBookingAllowed()
         );
     }
 }

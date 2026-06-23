@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.UserDepartmentService;
@@ -7,6 +8,7 @@ import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentTogglesVM;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -152,6 +154,28 @@ public class UserDepartmentController {
         String fullName = userDepartmentService.getFullNameByLogin(login);
         log.debug("REST response full name for login={} -> {}", login, fullName);
         return ResponseEntity.ok(fullName);
+    }
+
+    /**
+     * PATCH /api/setup/user-departments/{id}/toggles :
+     * Update only the toggle fields (isDefault, appointmentBookingAllowed).
+     */
+    @PatchMapping("/user-departments/{id}/toggles")
+    public ResponseEntity<UserDepartment> updateToggles(
+            @PathVariable Long id,
+            @RequestBody UserDepartmentTogglesVM vm) {
+        log.debug("REST request to update toggles for UserDepartment id={} : {}", id, vm);
+        UserDepartment result = userDepartmentService.updateToggles(id, vm);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/user-department/department/{departmentId}/users")
+    public ResponseEntity<List<User>> getUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get users for department");
+
+        List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);
+
+        return ResponseEntity.ok(result);
     }
 
 }

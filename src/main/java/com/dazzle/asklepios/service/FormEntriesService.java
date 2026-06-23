@@ -61,6 +61,8 @@ public class FormEntriesService {
         formEntries.setFacility(facility);
         formEntries.setDepartment(department);
         formEntries.setDataJson(dto.dataJson());
+        formEntries.setPatientId(dto.patientId());
+        formEntries.setEncounterId(dto.encounterId());
 
         return toVM(formEntriesRepository.save(formEntries));
     }
@@ -146,6 +148,18 @@ public class FormEntriesService {
         return page.map(this::toVM);
     }
 
+    @Transactional(readOnly = true)
+    public Page<FormEntryResponseVM> listByPatient(Long patientId, Pageable pageable) {
+        LOG.debug("Request to list FormEntries by patientId={}", patientId);
+        return formEntriesRepository.findByPatientId(patientId, pageable).map(this::toVM);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<FormEntryResponseVM> listByEncounter(Long encounterId, Pageable pageable) {
+        LOG.debug("Request to list FormEntries by encounterId={}", encounterId);
+        return formEntriesRepository.findByEncounterId(encounterId, pageable).map(this::toVM);
+    }
+
     public void delete(Long id) {
         LOG.info("Request to delete FormEntry id={}", id);
         formEntriesRepository.deleteById(id);
@@ -163,7 +177,9 @@ public class FormEntriesService {
                 formEntries.getCreatedDate(),
                 formEntries.getCreatedBy(),
                 formEntries.getLastModifiedDate(),
-                formEntries.getLastModifiedBy()
+                formEntries.getLastModifiedBy(),
+                formEntries.getPatientId(),
+                formEntries.getEncounterId()
         );
     }
 }
