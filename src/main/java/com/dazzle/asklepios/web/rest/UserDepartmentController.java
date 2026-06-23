@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.UserDepartmentService;
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -166,6 +166,15 @@ public class UserDepartmentController {
             @RequestBody UserDepartmentTogglesVM vm) {
         log.debug("REST request to update toggles for UserDepartment id={} : {}", id, vm);
         UserDepartment result = userDepartmentService.updateToggles(id, vm);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/user-department/department/{departmentId}/users")
+    public ResponseEntity<List<User>> getUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get users for department");
+
+        List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);
+
         return ResponseEntity.ok(result);
     }
 
