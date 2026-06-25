@@ -15,7 +15,6 @@ import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogCreateVM;
-import com.dazzle.asklepios.web.rest.vm.catalog.CatalogTestVM;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogUpdateVM;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -229,6 +228,7 @@ public class CatalogService {
     public Page<CatalogDiagnosticTest> getDiagnosticTestsForCatalog(Long catalogId, Pageable pageable) {
         return catalogDiagnosticTestRepository.findAllByCatalogId(catalogId, pageable);
     }
+
     /**
      * Get tests of given type that are NOT already selected in this catalog.
      * Also filter by name (search) if provided.
@@ -273,15 +273,18 @@ public class CatalogService {
 
         return new PageImpl<>(pageContent, pageable, filtered.size());
     }
+
     public Page<Catalog> findByDepartmentOrUnassigned(Long departmentId, Pageable pageable) {
         return catalogRepository.findByDepartmentIdOrDepartmentIdIsNull(departmentId, pageable);
     }
+
     public Page<Catalog> findAppointableBasedOnLoggedInFacility(Pageable pageable) {
         LOG.debug("Fetching Active Appointable  catalog pageable={} is", pageable);
         Long facilityId = getFacility();
         return catalogRepository.findByAppointableTrueAndFacility_Id(facilityId, pageable);
     }
-    private Long getFacility(){
+
+    private Long getFacility() {
 
         return SecurityUtils.getCurrentUserFacility()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));

@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
-import org.wildfly.common.annotation.NotNull;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -28,7 +27,11 @@ public record FacilityResponseVM(
         Boolean isActive,
         Long ruleId,
         String timeZone,
-        List<WorkingDayJson> workingDays
+        List<WorkingDayJson> workingDays,
+        Long defaultLabDepartmentId,
+        String defaultLabDepartmentName,
+        Long defaultRadDepartmentId,
+        String defaultRadDepartmentName
 
 ) implements Serializable {
 
@@ -48,7 +51,11 @@ public record FacilityResponseVM(
                 facility.getIsActive(),
                 facility.getRuleId(),
                 facility.getTimeZone(),
-                facility.getWorkingDays()
+                facility.getWorkingDays(),
+                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
+                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getName() : null,
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null,
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getName() : null
         );
     }
 }
