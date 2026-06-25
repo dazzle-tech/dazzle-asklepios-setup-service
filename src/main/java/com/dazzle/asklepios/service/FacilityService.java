@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
+import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
@@ -32,13 +34,15 @@ public class FacilityService {
 
     private final FacilityRepository facilityRepository;
     private final DuplicationCandidateRepository duplicationCandidateRepository;
+    private final DepartmentsRepository departmentsRepository;
 
     public FacilityService(
             FacilityRepository facilityRepository,
-            DuplicationCandidateRepository duplicationCandidateRepository
-    ) {
+            DuplicationCandidateRepository duplicationCandidateRepository,
+            DepartmentsRepository departmentsRepository) {
         this.facilityRepository = facilityRepository;
         this.duplicationCandidateRepository = duplicationCandidateRepository;
+        this.departmentsRepository = departmentsRepository;
     }
 
     public FacilityResponseVM create(FacilityCreateVM vm) {
@@ -58,6 +62,10 @@ public class FacilityService {
         facility.setRegistrationDate(vm.registrationDate());
         validateWorkingDays(vm.workingDays());
         facility.setWorkingDays(vm.workingDays() == null ? List.of() : vm.workingDays());
+        Department defaultLabDepartment = getDepartment(vm.defaultLabDepartmentId());
+        facility.setDefaultLabDepartment(defaultLabDepartment);
+        Department defaultRadDepartment = getDepartment(vm.defaultRadDepartmentId());
+        facility.setDefaultRadDepartment(defaultRadDepartment);
 
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
@@ -67,37 +75,52 @@ public class FacilityService {
     public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
         LOG.debug("Request to update Facility id={} with {}", id, vm);
         try {
-        return facilityRepository.findById(id).map(existing -> {
-            if (vm.name() != null) existing.setName(vm.name());
-            if (vm.type() != null) existing.setType(vm.type());
-            if (vm.code() != null) existing.setCode(vm.code());
-            if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
-            if (vm.registrationDate() != null) existing.setRegistrationDate(vm.registrationDate());
-            if (vm.phone1() != null) existing.setPhone1(vm.phone1());
-            if (vm.phone2() != null) existing.setPhone2(vm.phone2());
-            if (vm.fax() != null) existing.setFax(vm.fax());
-            if (vm.addressId() != null) existing.setAddressId(vm.addressId());
-            if (vm.isActive() != null) existing.setIsActive(vm.isActive());
-            if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
-            if (vm.timeZone() != null) existing.setTimeZone(vm.timeZone());
+            return facilityRepository.findById(id).map(existing -> {
+                if (vm.name() != null) existing.setName(vm.name());
+                if (vm.type() != null) existing.setType(vm.type());
+                if (vm.code() != null) existing.setCode(vm.code());
+                if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
+                if (vm.registrationDate() != null) existing.setRegistrationDate(vm.registrationDate());
+                if (vm.phone1() != null) existing.setPhone1(vm.phone1());
+                if (vm.phone2() != null) existing.setPhone2(vm.phone2());
+                if (vm.fax() != null) existing.setFax(vm.fax());
+                if (vm.addressId() != null) existing.setAddressId(vm.addressId());
+                if (vm.isActive() != null) existing.setIsActive(vm.isActive());
+                if (vm.defaultCurrency() != null) existing.setDefaultCurrency(vm.defaultCurrency());
+                if (vm.timeZone() != null) existing.setTimeZone(vm.timeZone());
 
-            if (vm.ruleId() != null) {
-                DuplicationCandidate candidate = new DuplicationCandidate();
-                candidate.setId(vm.ruleId());
-                existing.setRuleId(candidate.getId());
-            } else {
-                existing.setRuleId(null);
-            }
+                if (vm.ruleId() != null) {
+                    DuplicationCandidate candidate = new DuplicationCandidate();
+                    candidate.setId(vm.ruleId());
+                    existing.setRuleId(candidate.getId());
+                } else {
+                    existing.setRuleId(null);
+                }
 
-            if (vm.workingDays() != null) {
-                validateWorkingDays(vm.workingDays());
-                existing.setWorkingDays(vm.workingDays());
-            }
+                if (vm.workingDays() != null) {
+                    validateWorkingDays(vm.workingDays());
+                    existing.setWorkingDays(vm.workingDays());
+                }
 
-            Facility updated = facilityRepository.save(existing);
-            LOG.debug("Facility updated successfully: {}", updated);
-            return updated;
-        });
+                if (vm.defaultLabDepartmentId() != null) {
+                    Department defaultLabDepartment = getDepartment(vm.defaultLabDepartmentId());
+                    existing.setDefaultLabDepartment(defaultLabDepartment);
+                }
+                else{
+                    existing.setDefaultLabDepartment(null);
+                }
+                if (vm.defaultRadDepartmentId() != null) {
+                    Department defaultRadDepartment = getDepartment(vm.defaultRadDepartmentId());
+                    existing.setDefaultRadDepartment(defaultRadDepartment);
+                }
+                else{
+                    existing.setDefaultRadDepartment(null);
+                }
+
+                Facility updated = facilityRepository.save(existing);
+                LOG.debug("Facility updated successfully: {}", updated);
+                return updated;
+            });
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             throw handleConstraintViolation(constraintException);
         }
@@ -182,6 +205,7 @@ public class FacilityService {
                 "Database constraint violated while saving facility"
         );
     }
+
     @Transactional(readOnly = true)
     public List<FacilityResponseVM> findActiveFacilities() {
         return facilityRepository.findByIsActiveTrue()
@@ -189,6 +213,7 @@ public class FacilityService {
                 .map(FacilityResponseVM::ofEntity)
                 .toList();
     }
+
     public List<FacilityResponseVM> findAllByIds(List<Long> ids) {
         LOG.debug("Request to get Facilities by ids : {}", ids);
 
@@ -200,5 +225,10 @@ public class FacilityService {
         LOG.debug("Found {} Facilities for ids : {}", facilities.size(), ids);
 
         return facilities;
+    }
+
+    private Department getDepartment(Long departmentId) {
+        return departmentsRepository.findById(departmentId)
+                .orElseThrow(() -> new BadRequestAlertException("department.notfound", "Facility", "Department not found: " + departmentId));
     }
 }
