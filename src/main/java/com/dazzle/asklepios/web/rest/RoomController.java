@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -184,10 +185,10 @@ public class RoomController {
         return ResponseEntity.ok(rooms);
     }
 
-    @GetMapping("/room/available/by-department/{departmentId}/gender/{gender}")
+    @GetMapping("/room/available/by-department/{departmentId}")
     public ResponseEntity<List<Room>> findAvailableRoomsByDepartmentAndGender(
             @PathVariable @NotNull Long departmentId,
-            @PathVariable @NotNull Gender gender,
+            @RequestParam(required = false) Gender gender,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST find available Rooms by departmentId={} gender='{}' pageable={}",
