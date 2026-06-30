@@ -253,17 +253,33 @@ public class RoomService {
 
 
     @Transactional(readOnly = true)
-    public Page<Room> findAvailableRoomsByDepartmentAndGender(Long departmentId, Gender gender, Pageable pageable) {
-        LOG.debug("[FIND AVAILABLE ROOMS] departmentId='{}' gender='{}' pageable={}",
-                departmentId, gender, pageable);
+    public Page<Room> findAvailableRoomsByDepartmentAndGender(
+            Long departmentId,
+            Gender gender,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND AVAILABLE ROOMS] departmentId='{}' gender='{}' pageable={}",
+                departmentId,
+                gender,
+                pageable
+        );
 
-        Page<Room> roomsPage =
-                roomRepository.findByDepartment_IdAndIsActiveTrueAndGenderIsNullOrDepartment_IdAndIsActiveTrueAndGender(
-                        departmentId,
-                        departmentId,
-                        gender,
-                        pageable
-                );
+        Page<Room> roomsPage;
+
+        if (gender == null) {
+            roomsPage = roomRepository.findByDepartment_IdAndIsActiveTrueAndIsSpecificGenderFalse(
+                    departmentId,
+                    pageable
+            );
+        } else {
+            roomsPage = roomRepository.findByDepartment_IdAndIsActiveTrueAndGenderIsNullOrDepartment_IdAndIsActiveTrueAndGender(
+                    departmentId,
+                    departmentId,
+                    gender,
+                    pageable
+            );
+        }
 
         LOG.debug(
                 "[FIND AVAILABLE ROOMS] Retrieved rooms count={} pageNumber={} pageSize={} totalElements={} totalPages={}",
