@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
 import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.UserBookableDepartment;
 import com.dazzle.asklepios.domain.UserDepartment;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
@@ -11,6 +12,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
+import com.dazzle.asklepios.repository.UserBookableDepartmentRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
@@ -44,18 +46,20 @@ public class DepartmentService {
     private final UserDepartmentRepository userDepartmentRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
+    private final UserBookableDepartmentRepository userBookableDepartmentRepository;
 
     public DepartmentService(
             DepartmentsRepository departmentRepository,
             FacilityRepository facilityRepository,
             UserDepartmentRepository userDepartmentRepository,
             ResourceRepository resourceRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, UserBookableDepartmentRepository userBookableDepartmentRepository) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
         this.userDepartmentRepository = userDepartmentRepository;
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
+        this.userBookableDepartmentRepository = userBookableDepartmentRepository;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -453,10 +457,10 @@ public class DepartmentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + login));
 
 
-        return userDepartmentRepository
-                .findAllByUser_IdAndAppointmentBookingAllowedTrueAndIsActiveTrue(userId)
+        return userBookableDepartmentRepository
+                .findAllByUser_Id(userId)
                 .stream()
-                .map(UserDepartment::getDepartment)
+                .map(UserBookableDepartment::getDepartment)
                 .filter(Objects::nonNull)
                 .toList();
     }

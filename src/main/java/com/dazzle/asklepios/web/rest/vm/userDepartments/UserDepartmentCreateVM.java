@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.userDepartments;
 
 import com.dazzle.asklepios.domain.UserDepartment;
 import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 
 /**
@@ -11,8 +12,7 @@ public record UserDepartmentCreateVM(
         @NotNull Long userId,
         @NotNull Long departmentId,
         Boolean isActive,
-        Boolean isDefault,
-        Boolean appointmentBookingAllowed
+        Boolean isDefault
 ) implements Serializable {
 
     public static UserDepartmentCreateVM ofEntity(UserDepartment entity) {
@@ -20,8 +20,7 @@ public record UserDepartmentCreateVM(
                 entity.getUser() != null ? entity.getUser().getId() : null,
                 entity.getDepartment() != null ? entity.getDepartment().getId() : null,
                 entity.getIsActive(),
-                entity.getIsDefault(),
-                entity.getAppointmentBookingAllowed()
+                entity.getIsDefault()
         );
     }
 }

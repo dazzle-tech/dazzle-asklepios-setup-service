@@ -72,7 +72,6 @@ public class UserDepartmentService {
                 .department(department)
                 .isActive(isActive)
                 .isDefault(wantDefault)
-                .appointmentBookingAllowed(Boolean.TRUE.equals(vm.appointmentBookingAllowed()))
                 .build();
 
         return userDepartmentRepository.save(ufd);
@@ -170,10 +169,10 @@ public class UserDepartmentService {
         }
 
         userDepartment.setIsDefault(wantDefault);
-        userDepartment.setAppointmentBookingAllowed(Boolean.TRUE.equals(userDepartmentTogglesVM.appointmentBookingAllowed()));
 
         return userDepartmentRepository.save(userDepartment);
     }
+
     @Transactional(readOnly = true)
     public List<User> getUserDepartmentsForDepartment(Long departmentId) {
         LOG.debug("Request to get Users linked to Department id={}", departmentId);

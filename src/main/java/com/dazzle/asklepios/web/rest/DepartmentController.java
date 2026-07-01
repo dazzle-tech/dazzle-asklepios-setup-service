@@ -232,10 +232,12 @@ public class DepartmentController {
     }
 
     @GetMapping("/department/facility/{facilityId}/active/list")
-    public ResponseEntity<List<Department>> getActiveDepartmentsByFacilityIdList(
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveDepartmentsByFacilityIdList(
             @PathVariable Long facilityId
     ) {
-        return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId));
+        LOG.debug("REST list active Departments by facilityId={}", facilityId);
+        List<DepartmentResponseVM> departmentResponseVM= departmentService.findActiveByFacilityId(facilityId).stream().map(DepartmentResponseVM::ofEntity).toList();
+        return ResponseEntity.ok(departmentResponseVM);
     }
 
     @GetMapping("/department/appointable/by-type/{type}/{facilityId}")
