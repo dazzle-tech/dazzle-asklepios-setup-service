@@ -1,24 +1,23 @@
-package com.dazzle.asklepios.web.rest.vm.userDepartments;
+package com.dazzle.asklepios.web.rest.vm.userBookableDepartments;
 
-import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.UserBookableDepartment;
+
 import java.io.Serializable;
 
 /**
- * View Model for reading a UserFacilityDepartment via REST.
+ * View Model for reading a UserBookableDepartment via REST.
  */
-public record UserDepartmentResponseVM(
+public record UserBookableDepartmentResponseVM(
         Long id,
         Long userId,
         Long facilityId,
         String facilityName,
         Long departmentId,
-        String departmentName,
-        Boolean isActive,
-        Boolean isDefault
+        String departmentName
 ) implements Serializable {
 
-    public static UserDepartmentResponseVM ofEntity(UserDepartment entity) {
-        return new UserDepartmentResponseVM(
+    public static UserBookableDepartmentResponseVM ofEntity(UserBookableDepartment entity) {
+        return new UserBookableDepartmentResponseVM(
                 entity.getId(),
                 entity.getUser() != null ? entity.getUser().getId() : null,
 
@@ -36,10 +35,7 @@ public record UserDepartmentResponseVM(
 
                 entity.getDepartment() != null
                         ? entity.getDepartment().getName()
-                        : null,
-
-                entity.getIsActive(),
-                entity.getIsDefault()
+                        : null
         );
     }
 }
