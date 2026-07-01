@@ -155,6 +155,16 @@ public class UserDepartmentController {
         log.debug("REST response full name for login={} -> {}", login, fullName);
         return ResponseEntity.ok(fullName);
     }
+    /**
+     * GET /api/setup/user-departments/user/id?login= : Get user's id by login.
+     */
+    @GetMapping("/user-departments/user/id")
+    public ResponseEntity<Long> getIdByLogin(@RequestParam String login) {
+        log.debug("REST request to get full name by login={}", login);
+        Long userId = userDepartmentService.getIdByLogin(login);
+        return ResponseEntity.ok(userId);
+    }
+
 
     /**
      * PATCH /api/setup/user-departments/{id}/toggles :
@@ -171,6 +181,15 @@ public class UserDepartmentController {
 
     @GetMapping("/user-department/department/{departmentId}/users")
     public ResponseEntity<List<User>> getUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get users for department");
+
+        List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/user-department/department/internalJob/{departmentId}/users")
+    public ResponseEntity<List<User>> getUsersForDepartmentsInternal(@PathVariable Long departmentId) {
         log.debug("REST request to get users for department");
 
         List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);

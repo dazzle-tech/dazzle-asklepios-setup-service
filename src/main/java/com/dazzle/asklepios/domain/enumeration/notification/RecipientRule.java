@@ -9,6 +9,7 @@ public enum RecipientRule {
     PRACTITIONER_USER,
 
     DEPARTMENT_USERS,
+    CURRENT_USER,
 
     DATA,
     STATIC
