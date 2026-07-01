@@ -141,6 +141,14 @@ public class UserDepartmentService {
         LOG.debug("Resolved full name for login={} -> {}", login, fullName.isEmpty() ? user.getLogin() : fullName);
         return fullName.isEmpty() ? user.getLogin() : fullName;
     }
+    @Transactional(readOnly = true)
+    public Long getIdByLogin(String login) {
+        LOG.debug("Request to get id by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user.getId();
+    }
 
     @Transactional
     public UserDepartment updateToggles(Long id, UserDepartmentTogglesVM userDepartmentTogglesVM) {

@@ -421,4 +421,15 @@ public class DepartmentController {
 
         return ResponseEntity.ok(result);
     }
+    /**
+     * {@code GET /department/{id}} : Get a single Department by id.
+     */
+    @GetMapping("/department/internalJob/{id}")
+    public ResponseEntity<DepartmentResponseVM> getDepartmentInternal(@PathVariable Long id) {
+        LOG.debug("REST get Department id={}", id);
+        return departmentService.findOne(id)
+                .map(DepartmentResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }
