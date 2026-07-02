@@ -160,9 +160,18 @@ public class UserDepartmentController {
      */
     @GetMapping("/user-departments/user/id")
     public ResponseEntity<Long> getIdByLogin(@RequestParam String login) {
-        log.debug("REST request to get full name by login={}", login);
+        log.debug("REST request to get id by login={}", login);
         Long userId = userDepartmentService.getIdByLogin(login);
         return ResponseEntity.ok(userId);
+    }
+    /**
+     * GET /api/setup/user-departments/user/id?login= : Get user's id by login.
+     */
+    @GetMapping("/user-departments/user")
+    public ResponseEntity<User> getUserByLogin(@RequestParam String login) {
+        log.debug("REST request to get user by login={}", login);
+       User user= userDepartmentService.getUserByLogin(login);
+        return ResponseEntity.ok(user);
     }
 
 

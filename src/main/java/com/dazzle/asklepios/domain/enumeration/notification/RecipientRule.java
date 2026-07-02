@@ -10,6 +10,9 @@ public enum RecipientRule {
 
     DEPARTMENT_USERS,
     CURRENT_USER,
+    CURRENT_USER_PHONE,
+    CREATED_BY_USER,
+    CREATED_BY_USER_PHONE,
 
     DATA,
     STATIC
