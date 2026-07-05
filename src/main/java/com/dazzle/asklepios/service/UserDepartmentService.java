@@ -159,6 +159,15 @@ public class UserDepartmentService {
         return user;
     }
 
+    @Transactional(readOnly = true)
+    public User getUserById(Long id) {
+        LOG.debug("Request to get user by id={}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user;
+    }
+
     @Transactional
     public UserDepartment updateToggles(Long id, UserDepartmentTogglesVM userDepartmentTogglesVM) {
         LOG.debug("Update User Department request userDepartmentTogglesVM={}", userDepartmentTogglesVM);
