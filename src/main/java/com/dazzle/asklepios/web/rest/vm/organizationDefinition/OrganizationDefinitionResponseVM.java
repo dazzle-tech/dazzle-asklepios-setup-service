@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.organizationDefinition;
 
-import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.OrganizationDefinition;
 import com.dazzle.asklepios.domain.enumeration.TimeZone;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;

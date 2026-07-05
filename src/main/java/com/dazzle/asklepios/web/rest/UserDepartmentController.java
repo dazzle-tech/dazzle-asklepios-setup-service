@@ -155,6 +155,7 @@ public class UserDepartmentController {
         log.debug("REST response full name for login={} -> {}", login, fullName);
         return ResponseEntity.ok(fullName);
     }
+
     /**
      * GET /api/setup/user-departments/user/id?login= : Get user's id by login.
      */
@@ -164,13 +165,24 @@ public class UserDepartmentController {
         Long userId = userDepartmentService.getIdByLogin(login);
         return ResponseEntity.ok(userId);
     }
+
     /**
-     * GET /api/setup/user-departments/user/id?login= : Get user's id by login.
+     * GET /api/setup/user-departments/user?login= : Get user's  by login.
      */
     @GetMapping("/user-departments/user")
     public ResponseEntity<User> getUserByLogin(@RequestParam String login) {
         log.debug("REST request to get user by login={}", login);
-       User user= userDepartmentService.getUserByLogin(login);
+        User user = userDepartmentService.getUserByLogin(login);
+        return ResponseEntity.ok(user);
+    }
+
+    /**
+     * GET /api/setup/user-departments/user/by-user-id?userId= : Get user's  by id.
+     */
+    @GetMapping("/user-departments/user/by-user-id")
+    public ResponseEntity<User> getUserById(@RequestParam Long userId) {
+        log.debug("REST request to get user by id={}", userId);
+        User user = userDepartmentService.getUserById(userId);
         return ResponseEntity.ok(user);
     }
 
@@ -180,9 +192,7 @@ public class UserDepartmentController {
      * Update only the toggle fields (isDefault, appointmentBookingAllowed).
      */
     @PatchMapping("/user-departments/{id}/toggles")
-    public ResponseEntity<UserDepartment> updateToggles(
-            @PathVariable Long id,
-            @RequestBody UserDepartmentTogglesVM vm) {
+    public ResponseEntity<UserDepartment> updateToggles(@PathVariable Long id, @RequestBody UserDepartmentTogglesVM vm) {
         log.debug("REST request to update toggles for UserDepartment id={} : {}", id, vm);
         UserDepartment result = userDepartmentService.updateToggles(id, vm);
         return ResponseEntity.ok(result);
