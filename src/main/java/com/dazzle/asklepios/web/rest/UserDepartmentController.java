@@ -207,6 +207,15 @@ public class UserDepartmentController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/user-department/department/{departmentId}/physician-users")
+    public ResponseEntity<List<User>> getPhysicianUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get physician users for department");
+
+        List<User> result = userDepartmentService.getPhysicianUserDepartmentsForDepartment(departmentId);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/user-department/department/internalJob/{departmentId}/users")
     public ResponseEntity<List<User>> getUsersForDepartmentsInternal(@PathVariable Long departmentId) {
         log.debug("REST request to get users for department");
