@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -44,6 +45,9 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
     void clearDefaultForUserActiveInFacility(Long userId, Long facilityId);
 
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrue(Long departmentId);
+
+    List<UserDepartment> findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(Long departmentId, JobRole jobRole);
+
 
 }
 

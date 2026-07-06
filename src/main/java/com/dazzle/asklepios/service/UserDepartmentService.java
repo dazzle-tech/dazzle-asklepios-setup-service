@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
@@ -197,6 +198,17 @@ public class UserDepartmentService {
         LOG.debug("Request to get Users linked to Department id={}", departmentId);
         return userDepartmentRepository
                 .findAllByDepartment_IdAndIsActiveTrue(departmentId)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getPhysicianUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get physician Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(departmentId, JobRole.PHYSICIAN)
                 .stream()
                 .map(UserDepartment::getUser)
                 .filter(Objects::nonNull)
