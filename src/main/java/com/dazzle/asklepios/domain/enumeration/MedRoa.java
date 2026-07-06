@@ -9,6 +9,16 @@ public enum MedRoa{
     NASAL_IN,
     INTRAVENOUS_IV,
     TRANSDERMAL_PATCH,
-    TOPICAL
+    TOPICAL,
+    SUBLINGUAL,
+    BUCCAL,
+    OROPHARYNGEAL,
+    OPHTHALMIC,
+    OTIC,
+    INHALATION,
+    VAGINAL,
+    ENTERAL_TUBE,
+    DENTAL,
+    ORAL_RINSE
 
-    }
+}
