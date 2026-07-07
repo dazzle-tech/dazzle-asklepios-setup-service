@@ -36,7 +36,7 @@ public class UserDepartment extends AbstractAuditingEntity<Long> implements Seri
     @EqualsAndHashCode.Include
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_departments_user"))
     private User user;
 
