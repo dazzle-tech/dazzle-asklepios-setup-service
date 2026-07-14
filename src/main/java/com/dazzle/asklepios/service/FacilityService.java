@@ -62,9 +62,9 @@ public class FacilityService {
         facility.setRegistrationDate(vm.registrationDate());
         validateWorkingDays(vm.workingDays());
         facility.setWorkingDays(vm.workingDays() == null ? List.of() : vm.workingDays());
-        Department defaultLabDepartment = getDepartment(vm.defaultLabDepartmentId());
+        Department defaultLabDepartment = vm.defaultLabDepartmentId()!=null? getDepartment(vm.defaultLabDepartmentId()):null;
         facility.setDefaultLabDepartment(defaultLabDepartment);
-        Department defaultRadDepartment = getDepartment(vm.defaultRadDepartmentId());
+        Department defaultRadDepartment = vm.defaultRadDepartmentId()!=null? getDepartment(vm.defaultRadDepartmentId()):null;
         facility.setDefaultRadDepartment(defaultRadDepartment);
 
         Facility saved = facilityRepository.save(facility);
