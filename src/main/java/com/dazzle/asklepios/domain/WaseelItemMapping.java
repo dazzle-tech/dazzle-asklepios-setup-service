@@ -33,25 +33,25 @@ public class WaseelItemMapping extends AbstractAuditingEntity<Long> implements S
         @Column(name = "item_type", length = 50)
         private String itemType;
 
-        @Column(name = "source_id")
+        @Column(name = "source_id" , nullable = false)
         private Long sourceId;
 
-        @Column(name = "item_code", length = 255)
+        @Column(name = "item_code", length = 255, nullable = false)
         private String itemCode;
 
-        @Column(name = "item_name", length = 1000)
+        @Column(name = "item_name", length = 1000 , nullable = false)
         private String itemName;
 
         @ManyToOne(fetch = FetchType.LAZY, optional = false)
         @JoinColumn(name = "sbs_catalog_id", nullable = false)
         private WaseelSbsCatalog sbsCatalog;
 
-        @Column(name = "requires_preauth", nullable = false)
-        private Boolean requiresPreauth = false;
+        @Column(name = "requires_pre_authorization", nullable = false)
+        private Boolean requiresPreAuthorization = false;
 
         @Column(name = "is_active", nullable = false)
         private Boolean isActive = true;
 
-        @Column(name = "notes", length = 1000)
+        @Column(name = "notes", columnDefinition = "TEXT")
         private String notes;
     }

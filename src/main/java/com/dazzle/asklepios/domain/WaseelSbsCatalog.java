@@ -27,7 +27,7 @@ public class WaseelSbsCatalog extends AbstractAuditingEntity<Long> implements Se
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "waseel_item_type", length = 100)
+    @Column(name = "waseel_item_type", nullable = false, length = 100)
     private String waseelItemType;
 
     @Column(name = "sbs_code", nullable = false, unique = true, length = 100)
@@ -36,10 +36,10 @@ public class WaseelSbsCatalog extends AbstractAuditingEntity<Long> implements Se
     @Column(name = "update_type", length = 20)
     private String updateType;
 
-    @Column(name = "revision_details", length = 1000)
+    @Column(name = "revision_details")
     private String revisionDetails;
 
-    @Column(name = "short_description", length = 1000)
+    @Column(name = "short_description")
     private String shortDescription;
 
     @Column(name = "long_description")
@@ -50,6 +50,5 @@ public class WaseelSbsCatalog extends AbstractAuditingEntity<Long> implements Se
 
     @Column(name = "source_file_name")
     private String sourceFileName;
-
 
 }

@@ -45,19 +45,24 @@ public class WaseelSbsSetupService {
     }
 
     public WaseelSbsImportResultDTO importSbsExcel(MultipartFile file) {
-        int totalRows = 0;
-        int successRows = 0;
-        int failedRows = 0;
+
+        long totalRows = 0L;
+        long successRows = 0L;
+        long failedRows = 0L;
         StringBuilder errors = new StringBuilder();
 
         try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+
             Sheet sheet = workbook.getSheetAt(0);
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+
                 totalRows++;
 
                 try {
+
                     Row row = sheet.getRow(i);
+
                     if (row == null) {
                         failedRows++;
                         continue;
@@ -72,13 +77,17 @@ public class WaseelSbsSetupService {
 
                     if (sbsCode == null || sbsCode.isBlank()) {
                         failedRows++;
-                        errors.append("Row ").append(i + 1).append(": SBS code is empty\n");
+                        errors.append("Row ")
+                                .append(i + 1)
+                                .append(": SBS code is empty\n");
                         continue;
                     }
 
                     if (waseelItemType == null || waseelItemType.isBlank()) {
                         failedRows++;
-                        errors.append("Row ").append(i + 1).append(": Waseel item type is empty\n");
+                        errors.append("Row ")
+                                .append(i + 1)
+                                .append(": Waseel item type is empty\n");
                         continue;
                     }
 
@@ -103,21 +112,28 @@ public class WaseelSbsSetupService {
                         catalog.setLastModifiedDate(Instant.now());
                     }
 
-
                     sbsCatalogRepository.save(catalog);
                     successRows++;
 
-                } catch (Exception e) {
+                } catch (Exception ex) {
+
                     failedRows++;
+
                     errors.append("Row ")
                             .append(i + 1)
                             .append(": ")
-                            .append(e.getMessage())
+                            .append(ex.getMessage())
                             .append("\n");
                 }
             }
 
-            saveImportLog(file.getOriginalFilename(), totalRows, successRows, failedRows, errors.toString());
+            saveImportLog(
+                    file.getOriginalFilename(),
+                    totalRows,
+                    successRows,
+                    failedRows,
+                    errors.toString()
+            );
 
             return new WaseelSbsImportResultDTO(
                     totalRows,
@@ -127,19 +143,25 @@ public class WaseelSbsSetupService {
                     errors.toString()
             );
 
-        } catch (Exception e) {
-            saveImportLog(file.getOriginalFilename(), totalRows, successRows, failedRows, e.getMessage());
+        } catch (Exception ex) {
+
+            saveImportLog(
+                    file.getOriginalFilename(),
+                    totalRows,
+                    successRows,
+                    failedRows,
+                    ex.getMessage()
+            );
 
             return new WaseelSbsImportResultDTO(
                     totalRows,
                     successRows,
                     failedRows,
                     "Failed to import SBS file",
-                    e.getMessage()
+                    ex.getMessage()
             );
         }
     }
-
     private String normalizeWaseelItemType(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -197,7 +219,7 @@ public class WaseelSbsSetupService {
         mapping.setItemCode(request.itemCode());
         mapping.setItemName(request.itemName());
         mapping.setSbsCatalog(sbsCatalog);
-        mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
+        mapping.setRequiresPreAuthorization(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
         mapping.setCreatedBy("system");
@@ -217,7 +239,7 @@ public class WaseelSbsSetupService {
         }
 
 
-        mapping.setRequiresPreauth(Boolean.TRUE.equals(request.requiresPreauth()));
+        mapping.setRequiresPreAuthorization(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
         mapping.setLastModifiedBy("system");
@@ -268,7 +290,7 @@ public class WaseelSbsSetupService {
                 catalog.getWaseelItemType(),
                 catalog.getSbsCode(),
                 catalog.getShortDescription(),
-                mapping.getRequiresPreauth(),
+                mapping.getRequiresPreAuthorization(),
                 mapping.getIsActive(),
                 mapping.getNotes()
         );
@@ -276,9 +298,9 @@ public class WaseelSbsSetupService {
 
     private void saveImportLog(
             String fileName,
-            int totalRows,
-            int successRows,
-            int failedRows,
+            Long totalRows,
+            Long successRows,
+            Long failedRows,
             String errorDetails
     ) {
         WaseelSbsImportLog log = new WaseelSbsImportLog();
@@ -287,8 +309,6 @@ public class WaseelSbsSetupService {
         log.setSuccessRows(successRows);
         log.setFailedRows(failedRows);
         log.setErrorDetails(errorDetails);
-        log.setImportedBy("system");
-        log.setImportedAt(Instant.now());
 
         importLogRepository.save(log);
     }
@@ -316,7 +336,7 @@ public class WaseelSbsSetupService {
 
         return itemMappingRepository
                 .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
-                .map(WaseelItemMapping::getRequiresPreauth)
+                .map(WaseelItemMapping::getRequiresPreAuthorization)
                 .orElse(false);
     }
 }
