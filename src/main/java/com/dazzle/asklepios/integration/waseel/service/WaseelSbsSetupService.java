@@ -176,7 +176,7 @@ public class WaseelSbsSetupService {
     }
 
     public WaseelItemMappingDTO createMapping(WaseelItemMappingRequest request) {
-        if (request.itemType() == null || request.itemType().isBlank()) {
+        if (request.itemType() == null) {
             throw new BadRequestAlertException("Item type is required", "WaseelItemMapping", "itemTypeRequired");
         }
 

@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.integration.waseel.dto;
 
 
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+
 public record WaseelItemMappingRequest(
-        String itemType,
+        BillingItemTypes itemType,
         Long sourceId,
         String itemCode,
         String itemName,
