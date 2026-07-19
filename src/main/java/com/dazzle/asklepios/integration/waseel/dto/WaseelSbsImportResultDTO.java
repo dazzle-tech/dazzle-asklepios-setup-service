@@ -1,9 +1,9 @@
 package com.dazzle.asklepios.integration.waseel.dto;
 
 public record WaseelSbsImportResultDTO(
-        Integer totalRows,
-        Integer successRows,
-        Integer failedRows,
+       Long  totalRows,
+       Long successRows,
+       Long failedRows,
         String message,
         String errorDetails
 ) {}

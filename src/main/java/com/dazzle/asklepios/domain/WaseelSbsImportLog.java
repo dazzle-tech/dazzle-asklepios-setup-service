@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.io.Serializable;
 
 @Getter
 @Setter
@@ -21,31 +21,25 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 @Table(name = "waseel_sbs_import_log")
-public class WaseelSbsImportLog {
+public class WaseelSbsImportLog extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "file_name")
+    @Column(name = "file_name",columnDefinition = "TEXT")
     private String fileName;
 
     @Column(name = "total_rows")
-    private Integer totalRows;
+    private Long totalRows;
 
     @Column(name = "success_rows")
-    private Integer successRows;
+    private Long successRows;
 
-    @Column(name = "failed_rows")
-    private Integer failedRows;
+    @Column(name = "failed_rows" )
+    private Long failedRows;
 
-    @Column(name = "error_details")
+    @Column(name = "error_details",columnDefinition = "TEXT")
     private String errorDetails;
-
-    @Column(name = "imported_by")
-    private String importedBy;
-
-    @Column(name = "imported_at")
-    private Instant importedAt;
 
 }
