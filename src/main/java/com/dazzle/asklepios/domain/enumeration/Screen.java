@@ -166,6 +166,7 @@ public enum Screen {
     NURSE_ASSESSMENT,
     PATIENT_MERGE_CONFIG,
     SYSTEM_CONFIGURATION_SETUP,
+
     //Notification Module
     NOTIFICATION_RULE,
     EMAIL_NOTIFICATION,
