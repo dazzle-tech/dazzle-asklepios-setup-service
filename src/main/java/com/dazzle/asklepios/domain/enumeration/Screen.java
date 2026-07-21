@@ -162,7 +162,10 @@ public enum Screen {
     ORGANIZATION_HOLIDAY,
     URGENT_CARE_TRIAGE,
     WASEEL_SBS_SETUP,
+    PRICE_LIST_SETUP,
+    BILLING_CONFIGURATION,
     NURSE_ASSESSMENT;
+
     @JsonCreator
     public static Screen fromValue(String value) {
         return Screen.valueOf(value.toUpperCase().replace(" ", "_"));

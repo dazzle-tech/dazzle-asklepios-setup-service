@@ -35,7 +35,7 @@ public record PriceListSetupDTO(
         LocalDate effectiveTo,
 
         @NotNull
-        Currency currencyCode
+        Currency currency
 
 ) {
 }

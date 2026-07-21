@@ -30,7 +30,7 @@ public class PriceListSetupService {
         entity.setVersionNumber(dto.versionNumber());
         entity.setEffectiveFrom(dto.effectiveFrom());
         entity.setEffectiveTo(dto.effectiveTo());
-        entity.setCurrencyCode(dto.currencyCode());
+        entity.setCurrency(dto.currency());
 
         entity.setStatus(PriceListSetupStatus.DRAFT);
         entity.setIsActive(true);
@@ -62,7 +62,7 @@ public class PriceListSetupService {
         entity.setVersionNumber(dto.versionNumber());
         entity.setEffectiveFrom(dto.effectiveFrom());
         entity.setEffectiveTo(dto.effectiveTo());
-        entity.setCurrencyCode(dto.currencyCode());
+        entity.setCurrency(dto.currency());
 
         PriceListSetup savedEntity =
                 priceListSetupRepository.save(entity);
@@ -119,7 +119,7 @@ public class PriceListSetupService {
                 entity.getVersionNumber(),
                 entity.getEffectiveFrom(),
                 entity.getEffectiveTo(),
-                entity.getCurrencyCode()
+                entity.getCurrency()
         );
     }
 }

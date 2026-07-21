@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.integration.waseel.web.rest;
 
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelItemMappingDTO;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelItemMappingRequest;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelSbsCatalogDTO;
@@ -87,7 +88,7 @@ public class WaseelSbsSetupController {
 
     @GetMapping("/waseel/item-mapping/by-item")
     public ResponseEntity<WaseelItemMappingDTO> getMappingByItem(
-            @RequestParam String itemType,
+            @RequestParam BillingItemTypes itemType,
             @RequestParam Long sourceId
     ) {
         return waseelSbsSetupService
@@ -98,7 +99,7 @@ public class WaseelSbsSetupController {
 
     @GetMapping("/waseel/item-mapping/{itemType}/{sourceId}/requires-preauth")
     public ResponseEntity<Boolean> requiresPreauth(
-            @PathVariable String itemType,
+            @PathVariable BillingItemTypes itemType,
             @PathVariable Long sourceId
     ) {
         return ResponseEntity.ok(
