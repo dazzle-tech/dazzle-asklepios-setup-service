@@ -8,7 +8,6 @@ import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.TaxRepository;
 import com.dazzle.asklepios.service.dto.TaxDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -279,7 +278,7 @@ public class TaxService {
         return taxRepository
                 .findById(id)
                 .orElseThrow(
-                        () -> new NotFoundAlertException(
+                        () -> new BadRequestAlertException(
                                 "Tax not found with id " + id,
                                 ENTITY_NAME,
                                 "notfound"
@@ -287,29 +286,6 @@ public class TaxService {
                 );
     }
 
-    @Transactional(readOnly = true)
-    public Tax findByFacilityIdAndCode(
-            Long facilityId,
-            String code
-    ) {
-        validateFacility(facilityId);
-
-        return taxRepository
-                .findByFacilityIdAndCodeIgnoreCase(
-                        facilityId,
-                        code.trim()
-                )
-                .orElseThrow(
-                        () -> new NotFoundAlertException(
-                                "Tax not found for facility "
-                                        + facilityId
-                                        + " and code "
-                                        + code,
-                                ENTITY_NAME,
-                                "notfound"
-                        )
-                );
-    }
 
     @Transactional(readOnly = true)
     public Tax findDefaultTax(Long facilityId) {
@@ -320,7 +296,7 @@ public class TaxService {
                         facilityId
                 )
                 .orElseThrow(
-                        () -> new NotFoundAlertException(
+                        () -> new BadRequestAlertException(
                                 "No active default tax exists for facility "
                                         + facilityId,
                                 ENTITY_NAME,
@@ -645,7 +621,7 @@ public class TaxService {
                 facilityId == null
                         || !facilityRepository.existsById(facilityId)
         ) {
-            throw new NotFoundAlertException(
+            throw new BadRequestAlertException(
                     "Facility not found with id " + facilityId,
                     ENTITY_NAME,
                     "facility.notfound"

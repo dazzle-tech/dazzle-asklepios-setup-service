@@ -11,8 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface BillingConfigurationRepository
-        extends JpaRepository<BillingConfiguration, Long> {
+public interface BillingConfigurationRepository extends JpaRepository<BillingConfiguration, Long> {
 
     Page<BillingConfiguration> findByFacilityId(
             Long facilityId,
@@ -30,11 +29,7 @@ public interface BillingConfigurationRepository
             Pageable pageable
     );
 
-    Optional<BillingConfiguration>
-    findByFacilityIdAndConfigurationKey(
-            Long facilityId,
-            BillingConfigurationKey configurationKey
-    );
+    Optional<BillingConfiguration>findByFacilityIdAndConfigurationKey(Long facilityId, BillingConfigurationKey configurationKey);
 
     boolean existsByFacilityIdAndConfigurationKey(
             Long facilityId,

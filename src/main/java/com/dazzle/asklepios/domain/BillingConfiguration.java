@@ -31,9 +31,7 @@ import java.io.Serializable;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "billing_configuration"
-)
+@Table(name = "billing_configuration")
 @Getter
 @Setter
 @Builder
@@ -54,20 +52,12 @@ public class BillingConfiguration  extends AbstractAuditingEntity<Long> implemen
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(
-            name = "configuration_key",
-            nullable = false,
-            length = 150
-    )
+    @Column(name = "configuration_key", nullable = false, length = 150)
     private BillingConfigurationKey configurationKey;
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(
-            name = "value_type",
-            nullable = false,
-            length = 30
-    )
+    @Column(name = "value_type", nullable = false,length = 30)
     private BillingConfigurationValueType valueType;
 
     @Lob
