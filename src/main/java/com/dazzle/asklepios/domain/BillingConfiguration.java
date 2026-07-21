@@ -78,7 +78,6 @@ public class BillingConfiguration  extends AbstractAuditingEntity<Long> implemen
     @Column(name = "enum_code", length = 255)
     private String enumCode;
 
-    @Size(max = 500)
     @Column(name = "description")
     private String description;
 

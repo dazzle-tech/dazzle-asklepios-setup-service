@@ -373,36 +373,21 @@ public class TaxService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Tax> findByNameEn(
+    public Page<Tax> findByName(
             Long facilityId,
-            String nameEn,
+            String name,
             Pageable pageable
     ) {
         validateFacility(facilityId);
 
         return taxRepository
-                .findAllByFacilityIdAndNameEnContainingIgnoreCase(
+                .findAllByFacilityIdAndNameContainingIgnoreCase(
                         facilityId,
-                        nameEn.trim(),
+                        name.trim(),
                         pageable
                 );
     }
 
-    @Transactional(readOnly = true)
-    public Page<Tax> findByNameAr(
-            Long facilityId,
-            String nameAr,
-            Pageable pageable
-    ) {
-        validateFacility(facilityId);
-
-        return taxRepository
-                .findAllByFacilityIdAndNameArContainingIgnoreCase(
-                        facilityId,
-                        nameAr.trim(),
-                        pageable
-                );
-    }
 
     @Transactional(readOnly = true)
     public Page<Tax> findByTaxType(

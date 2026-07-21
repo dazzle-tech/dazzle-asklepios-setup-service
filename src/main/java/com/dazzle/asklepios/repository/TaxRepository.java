@@ -32,15 +32,9 @@ public interface TaxRepository
             Pageable pageable
     );
 
-    Page<Tax> findAllByFacilityIdAndNameEnContainingIgnoreCase(
+    Page<Tax> findAllByFacilityIdAndNameContainingIgnoreCase(
             Long facilityId,
-            String nameEn,
-            Pageable pageable
-    );
-
-    Page<Tax> findAllByFacilityIdAndNameArContainingIgnoreCase(
-            Long facilityId,
-            String nameAr,
+            String name,
             Pageable pageable
     );
 

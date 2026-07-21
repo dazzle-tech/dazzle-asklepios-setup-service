@@ -246,7 +246,7 @@ public class TaxController {
             Pageable pageable
     ) {
         return pagedResponse(
-                taxService.findByNameEn(
+                taxService.findByName(
                         facilityId,
                         nameEn,
                         pageable
@@ -254,25 +254,7 @@ public class TaxController {
         );
     }
 
-    @GetMapping("/tax/by-name-ar/{nameAr}")
-    public ResponseEntity<List<Tax>> findByNameAr(
-            @NotNull
-            Long facilityId,
 
-            @PathVariable
-            String nameAr,
-
-            @ParameterObject
-            Pageable pageable
-    ) {
-        return pagedResponse(
-                taxService.findByNameAr(
-                        facilityId,
-                        nameAr,
-                        pageable
-                )
-        );
-    }
 
     @GetMapping("/tax/by-type/{taxType}")
     public ResponseEntity<List<Tax>> findByTaxType(
