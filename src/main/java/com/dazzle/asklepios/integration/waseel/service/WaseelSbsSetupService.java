@@ -3,6 +3,7 @@ package com.dazzle.asklepios.integration.waseel.service;
 import com.dazzle.asklepios.domain.WaseelItemMapping;
 import com.dazzle.asklepios.domain.WaseelSbsCatalog;
 import com.dazzle.asklepios.domain.WaseelSbsImportLog;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelItemMappingDTO;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelItemMappingRequest;
 import com.dazzle.asklepios.integration.waseel.dto.WaseelSbsCatalogDTO;
@@ -325,14 +326,14 @@ public class WaseelSbsSetupService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<WaseelItemMappingDTO> getMappingByItem(String itemType, Long sourceId) {
+    public Optional<WaseelItemMappingDTO> getMappingByItem(BillingItemTypes itemType, Long sourceId) {
         return itemMappingRepository
                 .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
                 .map(this::toMappingDto);
     }
 
     @Transactional(readOnly = true)
-    public boolean requiresPreauth(String itemType, Long sourceId) {
+    public boolean requiresPreauth(BillingItemTypes itemType, Long sourceId) {
 
         return itemMappingRepository
                 .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)

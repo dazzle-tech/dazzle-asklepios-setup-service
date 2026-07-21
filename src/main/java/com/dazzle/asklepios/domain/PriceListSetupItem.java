@@ -66,12 +66,6 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
     private String itemName;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "pricing_method", nullable = false, length = 30)
-    @Builder.Default
-    private PricingMethod pricingMethod = PricingMethod.FIXED_PRICE;
-
-    @NotNull
     @DecimalMin("0.0000")
     @Column(
             name = "unit_price",

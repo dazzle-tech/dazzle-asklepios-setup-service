@@ -1,14 +1,12 @@
 package com.dazzle.asklepios.service.dto;
 
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.PricingMethod;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 
 public record PriceListSetupItemDTO(
 
@@ -31,9 +29,6 @@ public record PriceListSetupItemDTO(
 
         @NotBlank
         String itemName,
-
-        @NotNull
-        PricingMethod pricingMethod,
 
         @NotNull
         @DecimalMin("0.00")

@@ -3,6 +3,7 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -34,7 +35,7 @@ public class WaseelItemMapping extends AbstractAuditingEntity<Long> implements S
         private Long id;
 
         @NotNull
-        @Enumerated
+        @Enumerated(EnumType.STRING)
         @Column(name = "item_type", length = 50)
         private BillingItemTypes itemType;
 

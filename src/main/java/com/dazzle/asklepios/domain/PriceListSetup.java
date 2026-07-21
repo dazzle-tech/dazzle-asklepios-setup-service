@@ -77,8 +77,8 @@ public class PriceListSetup extends AbstractAuditingEntity<Long>  implements Ser
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "currency_code", nullable = false, length = 10)
-    private Currency currencyCode;
+    @Column(name = "currency", nullable = false, length = 10)
+    private Currency currency;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

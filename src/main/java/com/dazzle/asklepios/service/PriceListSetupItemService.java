@@ -46,7 +46,6 @@ public class PriceListSetupItemService {
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
         entity.setItemName(dto.itemName());
-        entity.setPricingMethod(dto.pricingMethod());
         entity.setUnitPrice(dto.unitPrice());
         entity.setDiscountPercentage(
                 dto.discountPercentage()
@@ -91,7 +90,6 @@ public class PriceListSetupItemService {
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
         entity.setItemName(dto.itemName());
-        entity.setPricingMethod(dto.pricingMethod());
         entity.setUnitPrice(dto.unitPrice());
         entity.setDiscountPercentage(
                 dto.discountPercentage()
@@ -177,7 +175,6 @@ public class PriceListSetupItemService {
                 entity.getSourceId(),
                 entity.getItemCode(),
                 entity.getItemName(),
-                entity.getPricingMethod(),
                 entity.getUnitPrice(),
                 entity.getDiscountPercentage(),
                 entity.getIsActive()
