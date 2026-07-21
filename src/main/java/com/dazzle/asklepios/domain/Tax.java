@@ -98,7 +98,6 @@ public class Tax extends AbstractAuditingEntity<Long> implements Serializable {
     @Column(name = "active",nullable = false)
     private Boolean active = true;
 
-    @Size(max = 500)
-    @Column(name = "description", length = 500)
+    @Column(name = "description")
     private String description;
 }

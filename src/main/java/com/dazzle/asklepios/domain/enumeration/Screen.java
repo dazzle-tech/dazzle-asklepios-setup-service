@@ -164,6 +164,7 @@ public enum Screen {
     WASEEL_SBS_SETUP,
     PRICE_LIST_SETUP,
     BILLING_CONFIGURATION,
+    TAX_CONFIGURATION,
     NURSE_ASSESSMENT;
 
     @JsonCreator
