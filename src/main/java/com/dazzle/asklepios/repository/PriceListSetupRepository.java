@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.PriceListSetup;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
+import com.dazzle.asklepios.domain.enumeration.biling.PriceListStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -34,4 +36,23 @@ public interface PriceListSetupRepository
             LocalDate effectiveFrom,
             LocalDate effectiveTo
     );
+
+    List<PriceListSetup>
+    findAllByFacilityIdAndCurrencyAndStatusAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByPriorityAsc(
+            Long facilityId,
+            Currency currency,
+            PriceListStatus status,
+            LocalDate effectiveFrom,
+            LocalDate effectiveTo
+    );
+
+
+    List<PriceListSetup>
+    findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
+            Long facilityId,
+            Currency currency,
+            PriceListSetupStatus status
+    );
+
+    
 }

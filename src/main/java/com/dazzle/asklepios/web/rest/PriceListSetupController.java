@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.service.PriceListSetupService;
+import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
+import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -74,5 +76,16 @@ public class PriceListSetupController {
         priceListSetupService.delete(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/price-list-setups/resolve")
+    public ResponseEntity<BillingPricingResolutionDTO> resolve(
+            @Valid BillingPricingResolutionRequest request
+    ) {
+        BillingPricingResolutionDTO result =
+                priceListSetupService.resolve(request);
+
+        return ResponseEntity.ok(result);
     }
 }
