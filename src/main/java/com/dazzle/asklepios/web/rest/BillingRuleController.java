@@ -129,9 +129,7 @@ public class BillingRuleController {
     @GetMapping("/billing-rule/{id}")
     public ResponseEntity<BillingRule> getById(
             @PathVariable("id")
-            @NotNull
-            Long id
-    ) {
+            @NotNull Long id ) {
         LOG.debug(
                 "REST request to get BillingRule id={}",
                 id

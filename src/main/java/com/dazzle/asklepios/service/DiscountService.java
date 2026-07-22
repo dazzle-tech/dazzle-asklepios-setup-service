@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.DiscountRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.dto.DiscountDTO;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -974,5 +976,60 @@ public class DiscountService {
                 ENTITY_NAME,
                 "db.constraint"
         );
+    }
+
+
+    @Transactional(readOnly = true)
+    public Discount resolveApplicableDiscount(
+            Long facilityId,
+            DiscountApplicableOn applicableOn,
+            LocalDate pricingDate
+    ) {
+        LocalDate effectiveDate =
+                pricingDate == null
+                        ? LocalDate.now()
+                        : pricingDate;
+
+        List<Discount> effectiveDiscounts =
+                new ArrayList<>();
+
+        effectiveDiscounts.addAll(
+                discountRepository
+                        .findAllByFacilityIdAndActiveTrueAndValidFromLessThanEqualAndValidToIsNull(
+                                facilityId,
+                                effectiveDate
+                        )
+        );
+
+        effectiveDiscounts.addAll(
+                discountRepository
+                        .findAllByFacilityIdAndActiveTrueAndValidFromLessThanEqualAndValidToGreaterThanEqual(
+                                facilityId,
+                                effectiveDate,
+                                effectiveDate
+                        )
+        );
+
+        return effectiveDiscounts.stream()
+                .filter(discount ->
+                        applicableOn == null
+                                || discount.getApplicableOn()
+                                == applicableOn
+                )
+                .sorted(
+                        Comparator
+                                .comparing(
+                                        Discount::getIsDefault,
+                                        Comparator.nullsLast(
+                                                Comparator.reverseOrder()
+                                        )
+                                )
+                                .thenComparing(
+                                        Discount::getId,
+                                        Comparator.reverseOrder()
+                                )
+                )
+                .findFirst()
+                .orElse(null);
     }
 }

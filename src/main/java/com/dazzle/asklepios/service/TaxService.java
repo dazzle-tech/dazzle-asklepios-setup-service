@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Tax;
 import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -394,6 +395,84 @@ public class TaxService {
                         calculationType,
                         pageable
                 );
+    }
+
+    @Transactional(readOnly = true)
+    public Tax resolveApplicableTax(
+            Long facilityId,
+            Currency currency,
+            LocalDate pricingDate
+    ) {
+        LocalDate effectiveDate =
+                pricingDate == null
+                        ? LocalDate.now()
+                        : pricingDate;
+
+        List<Tax> effectiveTaxes =
+                findEffectiveTaxes(
+                        facilityId,
+                        effectiveDate
+                );
+
+        return effectiveTaxes.stream()
+                .filter(tax ->
+                        tax.getCurrency() == null
+                                || tax.getCurrency() == currency
+                )
+                .filter(Tax::getActive)
+                .sorted(
+                        java.util.Comparator
+                                .comparing(
+                                        Tax::getIsDefault,
+                                        java.util.Comparator.reverseOrder()
+                                )
+                                .thenComparing(
+                                        Tax::getId,
+                                        java.util.Comparator.reverseOrder()
+                                )
+                )
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public Tax resolveApplicableTax(
+            Long facilityId,
+            Currency currency,
+            TaxApplicableOn applicableOn,
+            LocalDate pricingDate
+    ) {
+        LocalDate effectiveDate =
+                pricingDate == null
+                        ? LocalDate.now()
+                        : pricingDate;
+
+        return findEffectiveTaxes(
+                facilityId,
+                effectiveDate
+        )
+                .stream()
+                .filter(Tax::getActive)
+                .filter(tax ->
+                        tax.getApplicableOn() == applicableOn
+                )
+                .filter(tax ->
+                        tax.getCurrency() == null
+                                || tax.getCurrency() == currency
+                )
+                .sorted(
+                        java.util.Comparator
+                                .comparing(
+                                        Tax::getIsDefault,
+                                        java.util.Comparator.reverseOrder()
+                                )
+                                .thenComparing(
+                                        Tax::getId,
+                                        java.util.Comparator.reverseOrder()
+                                )
+                )
+                .findFirst()
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)

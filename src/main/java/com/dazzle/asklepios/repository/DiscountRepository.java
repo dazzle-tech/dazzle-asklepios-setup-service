@@ -87,4 +87,8 @@ public interface DiscountRepository
             String code,
             Long id
     );
+
+    List<Discount> findAllByFacilityIdAndActiveTrue(
+            Long facilityId
+    );
 }
