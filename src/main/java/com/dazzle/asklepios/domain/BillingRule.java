@@ -52,4 +52,9 @@ public class BillingRule extends AbstractAuditingEntity<Long>
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_trigger", nullable = false, length = 50)
     private BillingTrigger billingTrigger;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "is_default", nullable = false)
+    private Boolean isDefault = false;
 }
