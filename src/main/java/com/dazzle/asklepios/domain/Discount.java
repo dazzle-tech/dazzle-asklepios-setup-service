@@ -148,16 +148,10 @@ public class Discount extends AbstractAuditingEntity<Long>
 
     @NotNull
     @Builder.Default
-    @Column(
-            name = "active",
-            nullable = false
-    )
+    @Column(name = "active",nullable = false)
     private Boolean active = true;
 
     @Size(max = 500)
-    @Column(
-            name = "description",
-            length = 500
-    )
+    @Column(name = "description")
     private String description;
 }
