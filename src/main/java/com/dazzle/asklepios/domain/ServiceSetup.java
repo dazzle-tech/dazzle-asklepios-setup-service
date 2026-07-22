@@ -88,4 +88,8 @@ public class ServiceSetup extends AbstractAuditingEntity<Long> implements Serial
 
     @Column(name = "default_buffer_after_minutes")
     private Integer defaultBufferAfterMinutes = 0;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
 }

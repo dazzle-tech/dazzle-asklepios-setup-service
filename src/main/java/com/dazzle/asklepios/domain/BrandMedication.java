@@ -103,6 +103,10 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     @JoinColumn(name = "uom_group_unit_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_unit_id"))
     private UomGroupUnit uomGroupUnit;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
+
     @OneToMany(mappedBy = "brandMedication", fetch = FetchType.LAZY, orphanRemoval = true)
     private List<BrandMedicationActiveIngredient> brandMedicationActiveIngredients = new ArrayList<>();
 
