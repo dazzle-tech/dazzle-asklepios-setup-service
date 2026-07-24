@@ -37,15 +37,6 @@ public interface PriceListSetupRepository
             LocalDate effectiveTo
     );
 
-    List<PriceListSetup>
-    findAllByFacilityIdAndCurrencyAndStatusAndEffectiveFromLessThanEqualAndEffectiveToGreaterThanEqualOrderByPriorityAsc(
-            Long facilityId,
-            Currency currency,
-            PriceListStatus status,
-            LocalDate effectiveFrom,
-            LocalDate effectiveTo
-    );
-
 
     List<PriceListSetup>
     findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
