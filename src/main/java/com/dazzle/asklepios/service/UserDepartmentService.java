@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
@@ -72,7 +73,6 @@ public class UserDepartmentService {
                 .department(department)
                 .isActive(isActive)
                 .isDefault(wantDefault)
-                .appointmentBookingAllowed(Boolean.TRUE.equals(vm.appointmentBookingAllowed()))
                 .build();
 
         return userDepartmentRepository.save(ufd);
@@ -142,6 +142,33 @@ public class UserDepartmentService {
         return fullName.isEmpty() ? user.getLogin() : fullName;
     }
 
+    @Transactional(readOnly = true)
+    public Long getIdByLogin(String login) {
+        LOG.debug("Request to get id by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserByLogin(String login) {
+        LOG.debug("Request to get user by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user;
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserById(Long id) {
+        LOG.debug("Request to get user by id={}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user;
+    }
+
     @Transactional
     public UserDepartment updateToggles(Long id, UserDepartmentTogglesVM userDepartmentTogglesVM) {
         LOG.debug("Update User Department request userDepartmentTogglesVM={}", userDepartmentTogglesVM);
@@ -162,15 +189,26 @@ public class UserDepartmentService {
         }
 
         userDepartment.setIsDefault(wantDefault);
-        userDepartment.setAppointmentBookingAllowed(Boolean.TRUE.equals(userDepartmentTogglesVM.appointmentBookingAllowed()));
 
         return userDepartmentRepository.save(userDepartment);
     }
+
     @Transactional(readOnly = true)
     public List<User> getUserDepartmentsForDepartment(Long departmentId) {
         LOG.debug("Request to get Users linked to Department id={}", departmentId);
         return userDepartmentRepository
                 .findAllByDepartment_IdAndIsActiveTrue(departmentId)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getPhysicianUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get physician Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(departmentId, JobRole.PHYSICIAN)
                 .stream()
                 .map(UserDepartment::getUser)
                 .filter(Objects::nonNull)

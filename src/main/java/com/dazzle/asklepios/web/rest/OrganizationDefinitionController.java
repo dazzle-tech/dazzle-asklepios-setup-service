@@ -75,7 +75,6 @@ public class OrganizationDefinitionController {
      * {@code GET /organization-definition} : Get all OrganizationDefinitions (no pagination).
      */
     @GetMapping("/organization-definition")
-    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<List<OrganizationDefinitionResponseVM>> getAllOrganizationDefinitions() {
         LOG.debug("REST get all OrganizationDefinitions");
 

@@ -55,15 +55,16 @@ public class ActiveIngredientsService {
                     message.contains("duplicate key") ||
                     message.contains("duplicate entry")) {
                 throw new BadRequestAlertException(
-                        "An active ingredient with the same name  already exists.",
+                        "unique.name.activeIngredients",
                         ENTITY_NAME,
-                        "unique.name.activeIngredients"
+                        "An active ingredient with the same name  already exists."
                 );
             }
             throw new BadRequestAlertException(
-                    "Database constraint violated while creating active ingredient (check unique name, or required fields).",
+                    "db.constraint",
                     ENTITY_NAME,
-                    "db.constraint"
+
+                    "Database constraint violated while creating active ingredient (check unique name, or required fields)."
             );
         }
     }

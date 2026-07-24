@@ -40,7 +40,15 @@ public enum UOM {
     TUBE,
     VIAL,
     PIECE,
-
+    MG_KG,
+    MG_KG_DAY,
+    FILM,
+    LOZENGE,
+    APPLICATION,
+    NEBULE,
+    PATCH,
+    APPLICATORFUL,
+    UNIT,
 
 }
 

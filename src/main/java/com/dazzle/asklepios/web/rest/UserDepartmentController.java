@@ -157,13 +157,42 @@ public class UserDepartmentController {
     }
 
     /**
+     * GET /api/setup/user-departments/user/id?login= : Get user's id by login.
+     */
+    @GetMapping("/user-departments/user/id")
+    public ResponseEntity<Long> getIdByLogin(@RequestParam String login) {
+        log.debug("REST request to get id by login={}", login);
+        Long userId = userDepartmentService.getIdByLogin(login);
+        return ResponseEntity.ok(userId);
+    }
+
+    /**
+     * GET /api/setup/user-departments/user?login= : Get user's  by login.
+     */
+    @GetMapping("/user-departments/user")
+    public ResponseEntity<User> getUserByLogin(@RequestParam String login) {
+        log.debug("REST request to get user by login={}", login);
+        User user = userDepartmentService.getUserByLogin(login);
+        return ResponseEntity.ok(user);
+    }
+
+    /**
+     * GET /api/setup/user-departments/user/by-user-id?userId= : Get user's  by id.
+     */
+    @GetMapping("/user-departments/user/by-user-id")
+    public ResponseEntity<User> getUserById(@RequestParam Long userId) {
+        log.debug("REST request to get user by id={}", userId);
+        User user = userDepartmentService.getUserById(userId);
+        return ResponseEntity.ok(user);
+    }
+
+
+    /**
      * PATCH /api/setup/user-departments/{id}/toggles :
      * Update only the toggle fields (isDefault, appointmentBookingAllowed).
      */
     @PatchMapping("/user-departments/{id}/toggles")
-    public ResponseEntity<UserDepartment> updateToggles(
-            @PathVariable Long id,
-            @RequestBody UserDepartmentTogglesVM vm) {
+    public ResponseEntity<UserDepartment> updateToggles(@PathVariable Long id, @RequestBody UserDepartmentTogglesVM vm) {
         log.debug("REST request to update toggles for UserDepartment id={} : {}", id, vm);
         UserDepartment result = userDepartmentService.updateToggles(id, vm);
         return ResponseEntity.ok(result);
@@ -171,6 +200,24 @@ public class UserDepartmentController {
 
     @GetMapping("/user-department/department/{departmentId}/users")
     public ResponseEntity<List<User>> getUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get users for department");
+
+        List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/user-department/department/{departmentId}/physician-users")
+    public ResponseEntity<List<User>> getPhysicianUsersForDepartments(@PathVariable Long departmentId) {
+        log.debug("REST request to get physician users for department");
+
+        List<User> result = userDepartmentService.getPhysicianUserDepartmentsForDepartment(departmentId);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/user-department/department/internalJob/{departmentId}/users")
+    public ResponseEntity<List<User>> getUsersForDepartmentsInternal(@PathVariable Long departmentId) {
         log.debug("REST request to get users for department");
 
         List<User> result = userDepartmentService.getUserDepartmentsForDepartment(departmentId);

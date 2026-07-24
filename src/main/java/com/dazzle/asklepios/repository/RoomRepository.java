@@ -16,7 +16,6 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     Page<Room> findByDepartment_Id(Long departmentId, Pageable pageable);
 
-
     Page<Room> findByDepartment_IdAndIsActiveTrueAndGenderIsNullOrDepartment_IdAndIsActiveTrueAndGender(
             Long departmentId1,
             Long departmentId2,
@@ -24,7 +23,15 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             Pageable pageable
     );
 
-    Page<Room> findByIsActiveTrueAndAppointableIsTrueAndDepartment_Id(Long departmentId, Pageable pageable);
+    Page<Room> findByDepartment_IdAndIsActiveTrueAndIsSpecificGenderFalse(
+            Long departmentId,
+            Pageable pageable
+    );
+
+    Page<Room> findByIsActiveTrueAndAppointableIsTrueAndDepartment_Id(
+            Long departmentId,
+            Pageable pageable
+    );
 
     List<Room> findAllByIdIn(List<Long> ids);
 }

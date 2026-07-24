@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.Email;
 import org.wildfly.common.annotation.NotNull;
 
@@ -14,6 +15,7 @@ import java.util.List;
 /**
  * View Model for updating a Facility via REST.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record FacilityUpdateVM(
         @NotNull Long id,
         String name,
@@ -29,7 +31,9 @@ public record FacilityUpdateVM(
         Long ruleId,
         LocalDate registrationDate,
         String timeZone,
-        List<WorkingDayJson> workingDays
+        List<WorkingDayJson> workingDays,
+        Long defaultLabDepartmentId,
+        Long defaultRadDepartmentId
 ) implements Serializable {
 
     public static FacilityUpdateVM ofEntity(Facility facility) {
@@ -48,7 +52,9 @@ public record FacilityUpdateVM(
                 facility.getRuleId(),
                 facility.getRegistrationDate(),
                 facility.getTimeZone(),
-                facility.getWorkingDays()
+                facility.getWorkingDays(),
+                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null
 
         );
     }

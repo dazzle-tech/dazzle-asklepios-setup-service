@@ -29,7 +29,9 @@ public record FacilityCreateVM(
         Boolean isActive,
         LocalDate registrationDate,
         String timeZone,
-        List<WorkingDayJson> workingDays
+        List<WorkingDayJson> workingDays,
+        Long defaultLabDepartmentId,
+        Long defaultRadDepartmentId
 ) implements Serializable {
 
     public static FacilityCreateVM ofEntity(Facility facility) {
@@ -46,7 +48,9 @@ public record FacilityCreateVM(
                 facility.getIsActive(),
                 facility.getRegistrationDate(),
                 facility.getTimeZone(),
-                facility.getWorkingDays()
+                facility.getWorkingDays(),
+                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null
         );
     }
 }

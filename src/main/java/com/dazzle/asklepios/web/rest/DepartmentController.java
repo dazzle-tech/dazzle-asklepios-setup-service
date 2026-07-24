@@ -232,10 +232,12 @@ public class DepartmentController {
     }
 
     @GetMapping("/department/facility/{facilityId}/active/list")
-    public ResponseEntity<List<Department>> getActiveDepartmentsByFacilityIdList(
+    public ResponseEntity<List<DepartmentResponseVM>> getActiveDepartmentsByFacilityIdList(
             @PathVariable Long facilityId
     ) {
-        return ResponseEntity.ok(departmentService.findActiveByFacilityId(facilityId));
+        LOG.debug("REST list active Departments by facilityId={}", facilityId);
+        List<DepartmentResponseVM> departmentResponseVM= departmentService.findActiveByFacilityId(facilityId).stream().map(DepartmentResponseVM::ofEntity).toList();
+        return ResponseEntity.ok(departmentResponseVM);
     }
 
     @GetMapping("/department/appointable/by-type/{type}/{facilityId}")
@@ -420,5 +422,16 @@ public class DepartmentController {
                 .toList();
 
         return ResponseEntity.ok(result);
+    }
+    /**
+     * {@code GET /department/{id}} : Get a single Department by id.
+     */
+    @GetMapping("/department/internalJob/{id}")
+    public ResponseEntity<DepartmentResponseVM> getDepartmentInternal(@PathVariable Long id) {
+        LOG.debug("REST get Department id={}", id);
+        return departmentService.findOne(id)
+                .map(DepartmentResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
