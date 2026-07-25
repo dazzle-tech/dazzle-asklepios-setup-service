@@ -148,6 +148,7 @@ public class ServiceService {
         if (incoming.getDefaultBufferAfterMinutes() != null) {
             existing.setDefaultBufferAfterMinutes(incoming.getDefaultBufferAfterMinutes());
         }
+        existing.setBillingRule(incoming.getBillingRule());
 
         validateAppointableRequirements(existing);
 

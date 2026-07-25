@@ -25,7 +25,8 @@ public record ServiceUpdateVM(
         Integer parallelCapacityValue,
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
-        Integer defaultBufferAfterMinutes
+        Integer defaultBufferAfterMinutes,
+        Long billingRuleId
 
 ) implements Serializable {
 
@@ -43,7 +44,10 @@ public record ServiceUpdateVM(
                 service.getParallelCapacityValue(),
                 service.getDefaultDurationMinutes(),
                 service.getDefaultBufferBeforeMinutes(),
-                service.getDefaultBufferAfterMinutes()
+                service.getDefaultBufferAfterMinutes(),
+                service.getBillingRule() != null
+                        ? service.getBillingRule().getId()
+                        : null
         );
     }
 }

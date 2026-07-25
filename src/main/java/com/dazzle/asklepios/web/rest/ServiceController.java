@@ -2,6 +2,8 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.service.BillingRuleReferenceService;
 import com.dazzle.asklepios.service.ServiceService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.ServiceCreateVM;
@@ -36,9 +38,14 @@ public class ServiceController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
     private final ServiceService serviceService;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
-    public ServiceController(ServiceService serviceService) {
+    public ServiceController(
+            ServiceService serviceService,
+            BillingRuleReferenceService billingRuleReferenceService
+    ) {
         this.serviceService = serviceService;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     @PostMapping("/service")
@@ -61,6 +68,12 @@ public class ServiceController {
                 .defaultDurationMinutes(vm.defaultDurationMinutes())
                 .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes())
                 .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes())
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.SERVICE
+                        )
+                )
                 .build();
 
         ServiceSetup created = serviceService.create(facilityId, toCreate);
@@ -92,6 +105,12 @@ public class ServiceController {
         patch.setDefaultDurationMinutes(vm.defaultDurationMinutes());
         patch.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
         patch.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+        patch.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.SERVICE
+                )
+        );
 
         return serviceService.update(id, facilityId, patch)
                 .map(ServiceResponseVM::ofEntity)

@@ -26,7 +26,8 @@ public record BrandMedicationUpdateVM(
         @NotNull Long uomGroupId,
        @NotNull Long uomGroupUnitId,
         @NotNull BigDecimal price,
-        @NotEmpty String currency
+        @NotEmpty String currency,
+        Long billingRuleId
 ) {
     public static BrandMedicationUpdateVM ofEntity(BrandMedication entity) {
         if (entity == null) return null;
@@ -49,7 +50,10 @@ public record BrandMedicationUpdateVM(
                 entity.getUomGroup()!=null? entity.getUomGroup().getId():null,
                 entity.getUomGroupUnit()!=null?entity.getUomGroupUnit().getId():null,
                 entity.getPrice(),
-                entity.getCurrency()
+                entity.getCurrency(),
+                entity.getBillingRule() != null
+                        ? entity.getBillingRule().getId()
+                        : null
         );
     }
 }

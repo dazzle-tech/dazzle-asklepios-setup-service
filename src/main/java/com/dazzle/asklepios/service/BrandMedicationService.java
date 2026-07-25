@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.domain.UomGroup;
 import com.dazzle.asklepios.domain.UomGroupUnit;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
 import com.dazzle.asklepios.repository.BrandMedicationActiveIngredientRepository;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
@@ -42,14 +43,23 @@ public class BrandMedicationService {
     private final UomGroupUnitRepository uomGroupUnitRepository;
     private final ActiveIngredientsRepository activeRepository;
     private final BrandMedicationActiveIngredientRepository relRepository;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
 
-    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository, UomGroupRepository uomGroupRepository, UomGroupUnitRepository uomGroupUnitRepository, ActiveIngredientsRepository activeRepository, BrandMedicationActiveIngredientRepository relRepository) {
+    public BrandMedicationService(
+            BrandMedicationRepository brandMedicationRepository,
+            UomGroupRepository uomGroupRepository,
+            UomGroupUnitRepository uomGroupUnitRepository,
+            ActiveIngredientsRepository activeRepository,
+            BrandMedicationActiveIngredientRepository relRepository,
+            BillingRuleReferenceService billingRuleReferenceService
+    ) {
         this.brandMedicationRepository = brandMedicationRepository;
         this.uomGroupRepository = uomGroupRepository;
         this.uomGroupUnitRepository = uomGroupUnitRepository;
         this.activeRepository = activeRepository;
         this.relRepository = relRepository;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     public BrandMedication create(BrandMedicationCreateVM vm) {
@@ -90,6 +100,12 @@ public class BrandMedicationService {
                 .uomGroupUnit(uomGroupUnit)
                 .price(vm.price())
                 .currency(vm.currency())
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.MEDICATION
+                        )
+                )
                 .build();
 
         BrandMedication saved = brandMedicationRepository.save(entity);
@@ -134,6 +150,12 @@ public class BrandMedicationService {
         if(vm.uomGroupUnitId()!=null) entity.setUomGroupUnit(getUOMGroupUnit(vm.uomGroupUnitId()));
         if (vm.price() != null) entity.setPrice(vm.price());
         if (vm.currency() != null) entity.setCurrency(vm.currency());
+        entity.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.MEDICATION
+                )
+        );
 
         BrandMedication updated = brandMedicationRepository.save(entity);
         LOG.debug("Updated BrandMedication: {}", updated);

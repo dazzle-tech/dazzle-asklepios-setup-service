@@ -2,6 +2,8 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.service.BillingRuleReferenceService;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -39,9 +41,14 @@ public class ProcedureController {
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureController.class);
 
     private final ProcedureService procedureService;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
-    public ProcedureController(ProcedureService procedureService) {
+    public ProcedureController(
+            ProcedureService procedureService,
+            BillingRuleReferenceService billingRuleReferenceService
+    ) {
         this.procedureService = procedureService;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     @PostMapping("/procedure")
@@ -63,6 +70,12 @@ public class ProcedureController {
                 .price(vm.price())
                 .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.PROCEDURE
+                        )
+                )
                 .build();
 
         Procedure created = procedureService.create(facilityId, toCreate);
@@ -94,6 +107,12 @@ public class ProcedureController {
         patch.setLastModifiedBy(vm.lastModifiedBy());
         patch.setPrice(vm.price());
         patch.setCurrency(vm.currency());
+        patch.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.PROCEDURE
+                )
+        );
 
         return procedureService.update(id, facilityId, patch)
                 .map(ProcedureResponseVM::ofEntity)

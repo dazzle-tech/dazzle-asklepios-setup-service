@@ -351,6 +351,54 @@ public class BillingRuleService {
                 );
     }
 
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findByName(
+            String name,
+            BillingItemTypes billingItemType,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND BY NAME] name={} itemType={} pageable={}",
+                name,
+                billingItemType,
+                pageable
+        );
+
+        if (pageable == null) {
+            throw new BadRequestAlertException(
+                    "Pageable is required",
+                    ENTITY_NAME,
+                    "pageable.required"
+            );
+        }
+
+        String normalizedName =
+                name == null ? "" : name.trim();
+
+        if (normalizedName.isBlank()) {
+            throw new BadRequestAlertException(
+                    "Billing rule name is required",
+                    ENTITY_NAME,
+                    "name.required"
+            );
+        }
+
+        if (billingItemType != null) {
+            return billingRuleRepository
+                    .findByNameContainingIgnoreCaseAndBillingItemType(
+                            normalizedName,
+                            billingItemType,
+                            pageable
+                    );
+        }
+
+        return billingRuleRepository
+                .findByNameContainingIgnoreCase(
+                        normalizedName,
+                        pageable
+                );
+    }
+
     public BillingRule setDefault(
             Long id
     ) {

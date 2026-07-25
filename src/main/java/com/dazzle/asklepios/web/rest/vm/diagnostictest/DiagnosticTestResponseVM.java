@@ -37,7 +37,8 @@ public record DiagnosticTestResponseVM(
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
         Integer defaultBufferAfterMinutes,
-        String modality
+        String modality,
+        Long billingRuleId
 
 ) implements Serializable {
 
@@ -63,7 +64,10 @@ public record DiagnosticTestResponseVM(
 
                 null, null, null, null,
                 test.getParallelCapacityValue(),test.getDefaultDurationMinutes(),test.getDefaultBufferBeforeMinutes(), test.getDefaultBufferAfterMinutes(),
-                test.getModality()
+                test.getModality(),
+                test.getBillingRule() != null
+                        ? test.getBillingRule().getId()
+                        : null
         );
     }
 
@@ -74,7 +78,8 @@ public record DiagnosticTestResponseVM(
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
                 this.specialNotes, this.isActive, this.appointable,
                 this.createdDate, this.lastModifiedDate,
-                id, unit, type, listOfValueId,this.parallelCapacityValue,this.defaultDurationMinutes,this.defaultBufferBeforeMinutes,this.defaultBufferAfterMinutes,this.modality
+                id, unit, type, listOfValueId,this.parallelCapacityValue,this.defaultDurationMinutes,this.defaultBufferBeforeMinutes,this.defaultBufferAfterMinutes,this.modality,
+                this.billingRuleId
         );
     }
 }

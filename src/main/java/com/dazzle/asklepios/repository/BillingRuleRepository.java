@@ -16,6 +16,14 @@ public interface BillingRuleRepository extends JpaRepository<BillingRule, Long> 
 
     Page<BillingRule> findByBillingItemType(BillingItemTypes billingItemType, Pageable pageable);
 
+    Page<BillingRule> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<BillingRule> findByNameContainingIgnoreCaseAndBillingItemType(
+            String name,
+            BillingItemTypes billingItemType,
+            Pageable pageable
+    );
+
     Optional<BillingRule> findFirstByBillingItemTypeAndIsDefaultTrue(BillingItemTypes billingItemType);
 
     Optional<BillingRule> findFirstByIsDefaultTrue();

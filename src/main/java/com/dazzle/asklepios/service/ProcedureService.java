@@ -116,6 +116,7 @@ public class ProcedureService {
         existing.setFacility(refFacility(facilityId));
         existing.setCurrency(incoming.getCurrency());
         existing.setPrice(incoming.getPrice());
+        existing.setBillingRule(incoming.getBillingRule());
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);

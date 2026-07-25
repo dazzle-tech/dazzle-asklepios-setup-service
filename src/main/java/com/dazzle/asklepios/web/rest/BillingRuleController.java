@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -153,6 +154,49 @@ public class BillingRuleController {
 
         Page<BillingRule> page =
                 billingRuleService.findAll(pageable);
+
+        HttpHeaders headers =
+                PaginationUtil.generatePaginationHttpHeaders(
+                        ServletUriComponentsBuilder
+                                .fromCurrentRequest(),
+                        page
+                );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/billing-rule/by-name/{name}")
+    public ResponseEntity<List<BillingRule>> findByName(
+            @PathVariable("name")
+            @NotNull
+            String name,
+
+            @RequestParam(
+                    value = "billingItemType",
+                    required = false
+            )
+            BillingItemTypes billingItemType,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to get BillingRules by name={} itemType={} pageable={}",
+                name,
+                billingItemType,
+                pageable
+        );
+
+        Page<BillingRule> page =
+                billingRuleService.findByName(
+                        name,
+                        billingItemType,
+                        pageable
+                );
 
         HttpHeaders headers =
                 PaginationUtil.generatePaginationHttpHeaders(

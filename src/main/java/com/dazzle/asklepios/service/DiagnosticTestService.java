@@ -26,13 +26,16 @@ public class DiagnosticTestService {
 
     private final DiagnosticTestRepository repository;
     private final DiagnosticTestProfileRepository profileRepository;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
     public DiagnosticTestService(
             DiagnosticTestRepository repository,
-            DiagnosticTestProfileRepository profileRepository
+            DiagnosticTestProfileRepository profileRepository,
+            BillingRuleReferenceService billingRuleReferenceService
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     public DiagnosticTest create(DiagnosticTestCreateVM vm) {
@@ -58,6 +61,12 @@ public class DiagnosticTestService {
                 .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes() != null ? vm.defaultBufferBeforeMinutes() : 0)
                 .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes() != null ? vm.defaultBufferAfterMinutes() : 0)
                 .modality(vm.modality())
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                billingRuleReferenceService.toBillingItemType(vm.type())
+                        )
+                )
                 .build();
 
         validateAppointableRequirements(test);
@@ -122,6 +131,12 @@ public class DiagnosticTestService {
             }
 
             existing.setModality(vm.modality());
+            existing.setBillingRule(
+                    billingRuleReferenceService.resolveOptional(
+                            vm.billingRuleId(),
+                            billingRuleReferenceService.toBillingItemType(vm.type())
+                    )
+            );
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);

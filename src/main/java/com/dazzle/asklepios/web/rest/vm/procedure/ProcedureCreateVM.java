@@ -21,7 +21,8 @@ public record ProcedureCreateVM(
         String recoveryNotes,
        @NotNull Currency currency,
         @NotNull Long price,
-        @NotNull Boolean isActive
+        @NotNull Boolean isActive,
+        Long billingRuleId
 ) implements Serializable {
 
     public static ProcedureCreateVM ofEntity(Procedure procedure) {
@@ -36,7 +37,10 @@ public record ProcedureCreateVM(
                 procedure.getRecoveryNotes(),
                 procedure.getCurrency(),
                 procedure.getPrice(),
-                procedure.getIsActive()
+                procedure.getIsActive(),
+                procedure.getBillingRule() != null
+                        ? procedure.getBillingRule().getId()
+                        : null
         );
     }
 }
