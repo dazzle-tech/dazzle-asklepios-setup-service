@@ -177,16 +177,8 @@ public class PriceListSetupService {
                         .toList();
 
         if (candidatePriceLists.isEmpty()) {
-            throw new EntityNotFoundException(
-                    "No active price list found for facility "
-                            + request.facilityId()
-                            + ", currency "
-                            + request.currency()
-                            + " and pricing date "
-                            + pricingDate
-            );
+            return null;
         }
-
         for (PriceListSetup priceList : candidatePriceLists) {
 
             Optional<PriceListSetupItem> itemOptional =
@@ -205,13 +197,7 @@ public class PriceListSetupService {
             }
         }
 
-        throw new EntityNotFoundException(
-                "No price-list item found for billing item type "
-                        + request.billingItemType()
-                        + " and item id "
-                        + request.itemId()
-                        + " in the applicable price lists"
-        );
+        return null;
     }
 
     private boolean isEffective(

@@ -5,11 +5,13 @@ import com.dazzle.asklepios.domain.Tax;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.domain.enumeration.biling.PricingSource;
+import com.dazzle.asklepios.service.DefaultItemPricingService.DefaultItemPrice;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.BillingPricingResolveRequest;
 import com.dazzle.asklepios.service.dto.BillingPricingResolveResponse;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +34,17 @@ public class BillingPricingResolutionService {
     private static final String ENTITY_NAME =
             "billingPricingResolution";
 
-    private final PriceListSetupService priceListSetupService;
-    private final TaxService taxService;
-    private final DiscountService discountService;
+    private final PriceListSetupService
+            priceListSetupService;
+
+    private final DefaultItemPricingService
+            defaultItemPricingService;
+
+    private final TaxService
+            taxService;
+
+    private final DiscountService
+            discountService;
 
     public BillingPricingResolveResponse resolve(
             BillingPricingResolveRequest request
@@ -58,28 +68,11 @@ public class BillingPricingResolutionService {
                 pricingDate
         );
 
-        /*
-         * Use the method that already exists in PriceListSetupService.
-         */
-        BillingPricingResolutionDTO resolvedPrice =
-                priceListSetupService.resolve(
-                        new BillingPricingResolutionRequest(
-                                request.facilityId(),
-                                request.patientId(),
-                                request.encounterId(),
-                                request.billingItemType(),
-                                request.sourceId(),
-                                request.patientInsuranceId(),
-                                request.payerId(),
-                                request.currency(),
-                                pricingDate
-                        )
+        ResolvedPricing resolvedPricing =
+                resolvePrice(
+                        request,
+                        pricingDate
                 );
-
-        validateResolvedPrice(
-                request,
-                resolvedPrice
-        );
 
         Tax resolvedTax =
                 taxService.resolveApplicableTax(
@@ -100,36 +93,19 @@ public class BillingPricingResolutionService {
         BillingPricingResolveResponse response =
                 new BillingPricingResolveResponse(
 
-                        resolvedPrice.priceListSetupId(),
-                        resolvedPrice.priceListSetupItemId(),
+                        resolvedPricing.priceListId(),
+                        resolvedPricing.priceListItemId(),
+                        resolvedPricing.priceListCode(),
+                        resolvedPricing.priceListName(),
+                        resolvedPricing.priceListItemCode(),
+                        resolvedPricing.pricingVersion(),
 
-                        /*
-                         * BillingPricingResolutionDTO currently does not
-                         * contain a price-list code, so use null temporarily.
-                         */
-                        null,
+                        resolvedPricing.itemCode(),
+                        resolvedPricing.itemName(),
 
-                        resolvedPrice.priceListName(),
-
-                        /*
-                         * Use item code as the price-list item code.
-                         */
-                        resolvedPrice.itemCode(),
-
-                        /*
-                         * Add version to BillingPricingResolutionDTO later.
-                         */
-                        null,
-
-                        resolvedPrice.itemCode(),
-                        resolvedPrice.itemName(),
-
-                        resolvedPrice.unitPrice(),
-                        resolvedPrice.currency(),
-
-                        request.payerId() == null
-                                ? PricingSource.PRICE_LIST
-                                : PricingSource.INSURANCE_PRICE_LIST,
+                        resolvedPricing.unitPrice(),
+                        resolvedPricing.currency(),
+                        resolvedPricing.pricingSource(),
 
                         resolvedTax == null
                                 ? null
@@ -143,7 +119,9 @@ public class BillingPricingResolutionService {
                                 ? null
                                 : resolvedTax.getCalculationType(),
 
-                        resolveTaxRate(resolvedTax),
+                        resolveTaxRate(
+                                resolvedTax
+                        ),
 
                         resolveTaxFixedAmount(
                                 resolvedTax
@@ -165,21 +143,14 @@ public class BillingPricingResolutionService {
                                 resolvedDiscount
                         ),
 
-                        resolvedPrice.calculationOrder() == null
-                                ? "DISCOUNT_THEN_TAX"
-                                : resolvedPrice.calculationOrder(),
-
-                        resolvedPrice.roundingMode() == null
-                                ? "HALF_UP"
-                                : resolvedPrice.roundingMode(),
-
-                        resolvedPrice.roundingScale() == null
-                                ? 4
-                                : resolvedPrice.roundingScale()
+                        resolvedPricing.calculationOrder(),
+                        resolvedPricing.roundingMode(),
+                        resolvedPricing.roundingScale()
                 );
 
         LOG.info(
-                "[RESOLVE] Billing pricing success priceListId={} itemId={} unitPrice={} taxId={} discountId={}",
+                "[RESOLVE] Billing pricing success pricingSource={} priceListId={} itemId={} unitPrice={} taxId={} discountId={}",
+                response.pricingSource(),
                 response.priceListId(),
                 response.priceListItemId(),
                 response.unitPrice(),
@@ -188,6 +159,148 @@ public class BillingPricingResolutionService {
         );
 
         return response;
+    }
+    private ResolvedPricing resolvePrice(
+            BillingPricingResolveRequest request,
+            LocalDate pricingDate
+    ) {
+
+        BillingPricingResolutionDTO priceListPrice =
+                priceListSetupService.resolve(
+                        new BillingPricingResolutionRequest(
+                                request.facilityId(),
+                                request.patientId(),
+                                request.encounterId(),
+                                request.billingItemType(),
+                                request.sourceId(),
+                                request.patientInsuranceId(),
+                                request.payerId(),
+                                request.currency(),
+                                pricingDate
+                        )
+                );
+
+        if (priceListPrice == null) {
+
+            LOG.info(
+                    "[RESOLVE] No price list found. Falling back to setup price. itemType={} sourceId={}",
+                    request.billingItemType(),
+                    request.sourceId()
+            );
+
+            return resolveFromDefaultItem(request);
+        }
+
+        validatePriceListPrice(
+                request,
+                priceListPrice
+        );
+
+        PricingSource pricingSource =
+                request.payerId() == null
+                        ? PricingSource.PRICE_LIST
+                        : PricingSource.INSURANCE_PRICE_LIST;
+
+        return new ResolvedPricing(
+                priceListPrice.priceListSetupId(),
+                priceListPrice.priceListSetupItemId(),
+                null,
+                priceListPrice.priceListName(),
+                priceListPrice.itemCode(),
+                null,
+                priceListPrice.itemCode(),
+                priceListPrice.itemName(),
+                priceListPrice.unitPrice(),
+                priceListPrice.currency(),
+                pricingSource,
+                defaultString(
+                        priceListPrice.calculationOrder(),
+                        "DISCOUNT_THEN_TAX"
+                ),
+                defaultString(
+                        priceListPrice.roundingMode(),
+                        "HALF_UP"
+                ),
+                priceListPrice.roundingScale() == null
+                        ? 4
+                        : priceListPrice.roundingScale()
+        );
+    }
+
+    private ResolvedPricing resolveFromDefaultItem(
+            BillingPricingResolveRequest request
+    ) {
+        DefaultItemPrice defaultPrice =
+                defaultItemPricingService.resolve(
+                        request.billingItemType(),
+                        request.sourceId(),
+                        request.currency()
+                );
+
+        return new ResolvedPricing(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                defaultPrice.itemCode(),
+                defaultPrice.itemName(),
+                defaultPrice.unitPrice(),
+                defaultPrice.currency(),
+                PricingSource.DEFAULT_ITEM_PRICE,
+                "DISCOUNT_THEN_TAX",
+                "HALF_UP",
+                4
+        );
+    }
+
+    private void validatePriceListPrice(
+            BillingPricingResolveRequest request,
+            BillingPricingResolutionDTO price
+    ) {
+        if (price == null) {
+            throw new EntityNotFoundException(
+                    "No applicable price-list pricing was found."
+            );
+        }
+
+        if (price.priceListSetupId() == null) {
+            throw new EntityNotFoundException(
+                    "Resolved price-list ID is missing."
+            );
+        }
+
+        if (price.priceListSetupItemId() == null) {
+            throw new EntityNotFoundException(
+                    "Resolved price-list item ID is missing."
+            );
+        }
+
+        if (price.unitPrice() == null
+                || price.unitPrice().signum() < 0) {
+            throw new BadRequestAlertException(
+                    "Resolved price-list unit price is invalid.",
+                    ENTITY_NAME,
+                    "unitPrice.invalid"
+            );
+        }
+
+        if (price.currency() == null) {
+            throw new BadRequestAlertException(
+                    "Resolved price-list currency is missing.",
+                    ENTITY_NAME,
+                    "currency.missing"
+            );
+        }
+
+        if (price.currency() != request.currency()) {
+            throw new BadRequestAlertException(
+                    "Resolved price-list currency does not match request currency.",
+                    ENTITY_NAME,
+                    "currency.mismatch"
+            );
+        }
     }
 
     private BigDecimal resolveTaxRate(
@@ -306,65 +419,54 @@ public class BillingPricingResolutionService {
         }
     }
 
-    private void validateResolvedPrice(
-            BillingPricingResolveRequest request,
-            BillingPricingResolutionDTO price
-    ) {
-        if (price == null) {
-            throw new BadRequestAlertException(
-                    "No applicable pricing configuration was found.",
-                    ENTITY_NAME,
-                    "price.notfound"
-            );
-        }
-
-        if (price.priceListSetupId() == null) {
-            throw new BadRequestAlertException(
-                    "Resolved price-list ID is missing.",
-                    ENTITY_NAME,
-                    "priceListId.missing"
-            );
-        }
-
-        if (price.priceListSetupItemId() == null) {
-            throw new BadRequestAlertException(
-                    "Resolved price-list item ID is missing.",
-                    ENTITY_NAME,
-                    "priceListItemId.missing"
-            );
-        }
-
-        if (price.unitPrice() == null
-                || price.unitPrice().signum() < 0) {
-            throw new BadRequestAlertException(
-                    "Resolved unit price is invalid.",
-                    ENTITY_NAME,
-                    "unitPrice.invalid"
-            );
-        }
-
-        if (price.currency() == null) {
-            throw new BadRequestAlertException(
-                    "Resolved currency is missing.",
-                    ENTITY_NAME,
-                    "currency.missing"
-            );
-        }
-
-        if (price.currency() != request.currency()) {
-            throw new BadRequestAlertException(
-                    "Resolved price currency does not match request currency.",
-                    ENTITY_NAME,
-                    "currency.mismatch"
-            );
-        }
-    }
-
     private BigDecimal defaultZero(
             BigDecimal value
     ) {
         return value == null
                 ? BigDecimal.ZERO
                 : value;
+    }
+
+    private String defaultString(
+            String value,
+            String defaultValue
+    ) {
+        return value == null
+                || value.isBlank()
+                ? defaultValue
+                : value;
+    }
+
+    private record ResolvedPricing(
+
+            Long priceListId,
+
+            Long priceListItemId,
+
+            String priceListCode,
+
+            String priceListName,
+
+            String priceListItemCode,
+
+            Long pricingVersion,
+
+            String itemCode,
+
+            String itemName,
+
+            BigDecimal unitPrice,
+
+            com.dazzle.asklepios.domain.enumeration.Currency currency,
+
+            PricingSource pricingSource,
+
+            String calculationOrder,
+
+            String roundingMode,
+
+            Integer roundingScale
+
+    ) {
     }
 }

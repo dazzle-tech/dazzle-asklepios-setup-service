@@ -2,19 +2,18 @@ package com.dazzle.asklepios.domain.enumeration.biling;
 
 public enum BillingTrigger {
 
-    ON_ORDER,
+    ENCOUNTER_CREATED,
 
-    ON_SERVICE_START,
+    TREATMENT_STARTED,
 
-    ON_SERVICE_COMPLETION,
 
-    ON_DISPENSE,
+    ORDERED,
 
-    ON_ADMINISTRATION,
+    DISPENSED,
 
-    ON_RESULT,
+    SERVICE_COMPLETED,
 
-    ON_ENCOUNTER_CLOSE,
+    CHECKOUT,
 
     MANUAL
 }
