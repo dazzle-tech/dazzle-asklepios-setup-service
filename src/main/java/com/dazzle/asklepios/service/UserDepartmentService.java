@@ -214,4 +214,15 @@ public class UserDepartmentService {
                 .filter(Objects::nonNull)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<User> getNurseUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get nurse Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(departmentId, JobRole.NURSE)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
 }

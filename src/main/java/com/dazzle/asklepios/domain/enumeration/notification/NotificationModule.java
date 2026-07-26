@@ -4,5 +4,6 @@ public enum NotificationModule {
     APPOINTMENT,
     PATIENT,
     ENCOUNTER,
-    REFERRAL
+    REFERRAL,
+    URGENT_CARE
 }
