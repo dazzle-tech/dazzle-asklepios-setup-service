@@ -55,6 +55,9 @@ public class FinancialDocumentNumberingService {
                     FinancialDocumentType.CREDIT_NOTE,
                     "CN",
 
+                    FinancialDocumentType.DEBIT_NOTE,
+                    "DN",
+
                     FinancialDocumentType.RECEIPT,
                     "RCP",
 
