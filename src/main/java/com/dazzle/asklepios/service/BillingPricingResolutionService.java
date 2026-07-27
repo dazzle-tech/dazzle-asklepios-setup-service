@@ -6,6 +6,8 @@ import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.domain.enumeration.biling.PricingSource;
 import com.dazzle.asklepios.service.DefaultItemPricingService.DefaultItemPrice;
+import com.dazzle.asklepios.service.dto.BillingAdjustmentResolveRequest;
+import com.dazzle.asklepios.service.dto.BillingAdjustmentResolveResponse;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.BillingPricingResolveRequest;
@@ -83,12 +85,11 @@ public class BillingPricingResolutionService {
                 );
 
         Discount resolvedDiscount =
-                discountService
-                        .resolveApplicableDiscount(
-                                request.facilityId(),
-                                request.discountApplicableOn(),
-                                pricingDate
-                        );
+                resolveDiscount(
+                        request,
+                        resolvedPricing,
+                        pricingDate
+                );
 
         BillingPricingResolveResponse response =
                 new BillingPricingResolveResponse(
@@ -160,6 +161,101 @@ public class BillingPricingResolutionService {
 
         return response;
     }
+
+    public BillingAdjustmentResolveResponse resolveAdjustments(
+            BillingAdjustmentResolveRequest request
+    ) {
+        validateAdjustmentRequest(request);
+
+        LocalDate pricingDate =
+                request.pricingDate() == null
+                        ? LocalDate.now()
+                        : request.pricingDate();
+
+        Tax resolvedTax = null;
+        if (request.taxApplicableOn() != null) {
+            resolvedTax =
+                    taxService.resolveApplicableTax(
+                            request.facilityId(),
+                            request.currency(),
+                            request.taxApplicableOn(),
+                            pricingDate
+                    );
+        }
+
+        Discount resolvedDiscount = null;
+        if (request.discountApplicableOn() != null) {
+            resolvedDiscount =
+                    discountService.resolveApplicableDiscount(
+                            request.facilityId(),
+                            request.discountApplicableOn(),
+                            pricingDate
+                    );
+        }
+
+        LOG.debug(
+                "[RESOLVE_ADJUSTMENTS] facilityId={} taxApplicableOn={} discountApplicableOn={} taxId={} discountId={}",
+                request.facilityId(),
+                request.taxApplicableOn(),
+                request.discountApplicableOn(),
+                resolvedTax == null ? null : resolvedTax.getId(),
+                resolvedDiscount == null
+                        ? null
+                        : resolvedDiscount.getId()
+        );
+
+        return new BillingAdjustmentResolveResponse(
+                resolvedTax == null ? null : resolvedTax.getId(),
+                resolvedTax == null ? null : resolvedTax.getCode(),
+                resolvedTax == null ? null : resolvedTax.getName(),
+                resolvedTax == null ? null : resolvedTax.getApplicableOn(),
+                resolvedTax == null ? null : resolvedTax.getTaxType(),
+                resolvedTax == null
+                        ? null
+                        : resolvedTax.getCalculationType(),
+                resolveTaxRate(resolvedTax),
+                resolveTaxFixedAmount(resolvedTax),
+                resolvedDiscount == null ? null : resolvedDiscount.getId(),
+                resolvedDiscount == null ? null : resolvedDiscount.getCode(),
+                resolvedDiscount == null ? null : resolvedDiscount.getName(),
+                resolvedDiscount == null ? null : resolvedDiscount.getApplicableOn(),
+                resolvedDiscount == null
+                        ? null
+                        : resolvedDiscount.getDiscountType(),
+                resolveDiscountRate(resolvedDiscount),
+                resolveDiscountFixedAmount(resolvedDiscount)
+        );
+    }
+
+    private void validateAdjustmentRequest(
+            BillingAdjustmentResolveRequest request
+    ) {
+        if (request == null) {
+            throw new BadRequestAlertException(
+                    "Billing adjustment request is required.",
+                    ENTITY_NAME,
+                    "adjustment.request.required"
+            );
+        }
+
+        if (request.facilityId() == null) {
+            throw new BadRequestAlertException(
+                    "Facility ID is required.",
+                    ENTITY_NAME,
+                    "facility.required"
+            );
+        }
+
+        if (request.taxApplicableOn() == null
+                && request.discountApplicableOn() == null) {
+            throw new BadRequestAlertException(
+                    "At least one applicable-on scope is required.",
+                    ENTITY_NAME,
+                    "applicableOn.required"
+            );
+        }
+    }
+
     private ResolvedPricing resolvePrice(
             BillingPricingResolveRequest request,
             LocalDate pricingDate
@@ -175,6 +271,7 @@ public class BillingPricingResolutionService {
                                 request.sourceId(),
                                 request.patientInsuranceId(),
                                 request.payerId(),
+                                request.coverageType(),
                                 request.currency(),
                                 pricingDate
                         )
@@ -198,7 +295,7 @@ public class BillingPricingResolutionService {
 
         PricingSource pricingSource =
                 request.payerId() == null
-                        ? PricingSource.PRICE_LIST
+                        ? PricingSource.CASH_PRICE_LIST
                         : PricingSource.INSURANCE_PRICE_LIST;
 
         return new ResolvedPricing(
@@ -223,7 +320,36 @@ public class BillingPricingResolutionService {
                 ),
                 priceListPrice.roundingScale() == null
                         ? 4
-                        : priceListPrice.roundingScale()
+                        : priceListPrice.roundingScale(),
+                priceListPrice.discountRate()
+        );
+    }
+
+    private Discount resolveDiscount(
+            BillingPricingResolveRequest request,
+            ResolvedPricing resolvedPricing,
+            LocalDate pricingDate
+    ) {
+        if (resolvedPricing.itemDiscountRate() != null
+                && resolvedPricing.itemDiscountRate()
+                .compareTo(BigDecimal.ZERO) > 0) {
+            Discount itemDiscount =
+                    new Discount();
+
+            itemDiscount.setDiscountType(
+                    DiscountType.PERCENTAGE
+            );
+            itemDiscount.setPercentage(
+                    resolvedPricing.itemDiscountRate()
+            );
+
+            return itemDiscount;
+        }
+
+        return discountService.resolveApplicableDiscount(
+                request.facilityId(),
+                request.discountApplicableOn(),
+                pricingDate
         );
     }
 
@@ -251,7 +377,8 @@ public class BillingPricingResolutionService {
                 PricingSource.DEFAULT_ITEM_PRICE,
                 "DISCOUNT_THEN_TAX",
                 "HALF_UP",
-                4
+                4,
+                null
         );
     }
 
@@ -465,7 +592,9 @@ public class BillingPricingResolutionService {
 
             String roundingMode,
 
-            Integer roundingScale
+            Integer roundingScale,
+
+            BigDecimal itemDiscountRate
 
     ) {
     }

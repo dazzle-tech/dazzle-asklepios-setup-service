@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service.dto;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -35,7 +36,9 @@ public record PriceListSetupDTO(
         LocalDate effectiveTo,
 
         @NotNull
-        Currency currency
+        Currency currency,
+
+        PriceListSetupStatus status
 
 ) {
 }

@@ -2,7 +2,12 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
+import com.dazzle.asklepios.domain.enumeration.DiscountType;
+import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingCoverageType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
@@ -15,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -45,13 +51,35 @@ public class PriceListSetupService {
         entity.setEffectiveTo(dto.effectiveTo());
         entity.setCurrency(dto.currency());
 
-        entity.setStatus(PriceListSetupStatus.DRAFT);
+        entity.setStatus(
+                dto.status() != null
+                        ? dto.status()
+                        : PriceListSetupStatus.ACTIVE
+        );
         entity.setIsActive(true);
 
         PriceListSetup savedEntity =
                 priceListSetupRepository.save(entity);
 
         return toDTO(savedEntity);
+    }
+
+    public PriceListSetupDTO activate(Long id) {
+        PriceListSetup entity =
+                priceListSetupRepository.findById(id)
+                        .orElseThrow(() ->
+                                new EntityNotFoundException(
+                                        "Price list setup not found with id: "
+                                                + id
+                                )
+                        );
+
+        entity.setStatus(PriceListSetupStatus.ACTIVE);
+        entity.setIsActive(true);
+
+        return toDTO(
+                priceListSetupRepository.save(entity)
+        );
     }
 
     public PriceListSetupDTO update(
@@ -77,6 +105,10 @@ public class PriceListSetupService {
         entity.setEffectiveFrom(dto.effectiveFrom());
         entity.setEffectiveTo(dto.effectiveTo());
         entity.setCurrency(dto.currency());
+
+        if (dto.status() != null) {
+            entity.setStatus(dto.status());
+        }
 
         PriceListSetup savedEntity =
                 priceListSetupRepository.save(entity);
@@ -140,6 +172,14 @@ public class PriceListSetupService {
                         ? request.pricingDate()
                         : LocalDate.now();
 
+        BillingCoverageType coverageType =
+                resolveCoverageType(request);
+
+        PriceListItemType itemType =
+                mapItemType(
+                        request.billingItemType()
+                );
+
         List<PriceListSetup> candidatePriceLists =
                 priceListSetupRepository
                         .findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
@@ -148,6 +188,13 @@ public class PriceListSetupService {
                                 PriceListSetupStatus.ACTIVE
                         )
                         .stream()
+                        .filter(priceList ->
+                                matchesCoverageType(
+                                        priceList,
+                                        coverageType,
+                                        request.payerId()
+                                )
+                        )
                         .filter(priceList ->
                                 isEffective(
                                         priceList,
@@ -185,7 +232,7 @@ public class PriceListSetupService {
                     priceListSetupItemRepository
                             .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
                                     priceList.getId(),
-                                    request.billingItemType(),
+                                    itemType,
                                     request.itemId()
                             );
 
@@ -258,13 +305,13 @@ public class PriceListSetupService {
                 item.getUnitPrice(),
                 priceList.getCurrency(),
 
-                /*
-                 * Add these values when discount and tax are resolved.
-                 * For now, they are returned as null/default values.
-                 */
                 null,
-                null,
-                null,
+                hasItemDiscount(item)
+                        ? DiscountType.PERCENTAGE.name()
+                        : null,
+                hasItemDiscount(item)
+                        ? item.getDiscountPercentage()
+                        : null,
                 null,
 
                 null,
@@ -275,6 +322,74 @@ public class PriceListSetupService {
                 "HALF_UP",
                 4
         );
+    }
+
+    private BillingCoverageType resolveCoverageType(
+            BillingPricingResolutionRequest request
+    ) {
+        if (request.coverageType() != null) {
+            return request.coverageType();
+        }
+
+        if (request.patientInsuranceId() != null
+                || request.payerId() != null) {
+            return BillingCoverageType.INSURANCE;
+        }
+
+        return BillingCoverageType.SELF_PAY;
+    }
+
+    private boolean matchesCoverageType(
+            PriceListSetup priceList,
+            BillingCoverageType coverageType,
+            Long requestedPayerId
+    ) {
+        if (coverageType == BillingCoverageType.SELF_PAY) {
+            return priceList.getPayerId() == null
+                    && isSelfPayPriceListType(
+                            priceList.getType()
+                    );
+        }
+
+        if (coverageType == BillingCoverageType.INSURANCE) {
+            if (priceList.getType()
+                    != PriceListSetupType.INSURANCE) {
+                return false;
+            }
+
+            if (requestedPayerId == null) {
+                return true;
+            }
+
+            return requestedPayerId.equals(
+                    priceList.getPayerId()
+            );
+        }
+
+        return true;
+    }
+
+    private boolean isSelfPayPriceListType(
+            PriceListSetupType type
+    ) {
+        return type == PriceListSetupType.CASH
+                || type == PriceListSetupType.SELF_PAY;
+    }
+
+    private PriceListItemType mapItemType(
+            BillingItemTypes billingItemType
+    ) {
+        return PriceListItemType.valueOf(
+                billingItemType.name()
+        );
+    }
+
+    private boolean hasItemDiscount(
+            PriceListSetupItem item
+    ) {
+        return item.getDiscountPercentage() != null
+                && item.getDiscountPercentage()
+                .compareTo(BigDecimal.ZERO) > 0;
     }
 
     private PriceListSetupDTO toDTO(
@@ -290,7 +405,8 @@ public class PriceListSetupService {
                 entity.getVersionNumber(),
                 entity.getEffectiveFrom(),
                 entity.getEffectiveTo(),
-                entity.getCurrency()
+                entity.getCurrency(),
+                entity.getStatus()
         );
     }
 }

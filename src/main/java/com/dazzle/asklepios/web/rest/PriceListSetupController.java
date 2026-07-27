@@ -79,6 +79,16 @@ public class PriceListSetupController {
     }
 
 
+    @PutMapping("/price-list-setups/{id}/activate")
+    public ResponseEntity<PriceListSetupDTO> activatePriceListSetup(
+            @PathVariable Long id
+    ) {
+        PriceListSetupDTO result =
+                priceListSetupService.activate(id);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/price-list-setups/resolve")
     public ResponseEntity<BillingPricingResolutionDTO> resolve(
             @Valid BillingPricingResolutionRequest request

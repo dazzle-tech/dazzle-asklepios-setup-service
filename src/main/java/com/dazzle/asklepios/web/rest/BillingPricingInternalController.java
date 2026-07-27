@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.service.BillingPricingResolutionService;
+import com.dazzle.asklepios.service.dto.BillingAdjustmentResolveRequest;
+import com.dazzle.asklepios.service.dto.BillingAdjustmentResolveResponse;
 import com.dazzle.asklepios.service.dto.BillingPricingResolveRequest;
 import com.dazzle.asklepios.service.dto.BillingPricingResolveResponse;
 import jakarta.validation.Valid;
@@ -41,6 +43,25 @@ public class BillingPricingInternalController {
         BillingPricingResolveResponse response =
                 billingPricingResolutionService
                         .resolve(request);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/internal/billing-adjustments/resolve")
+    public ResponseEntity<BillingAdjustmentResolveResponse>
+    resolveAdjustments(
+            @Valid
+            @RequestBody
+            BillingAdjustmentResolveRequest request
+    ) {
+        LOG.debug(
+                "REST request to resolve billing adjustments request={}",
+                request
+        );
+
+        BillingAdjustmentResolveResponse response =
+                billingPricingResolutionService
+                        .resolveAdjustments(request);
 
         return ResponseEntity.ok(response);
     }
