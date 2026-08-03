@@ -80,6 +80,7 @@ public enum Screen {
     // Front Desk Office
     QUICK_APPOINTMENT,
     PATIENT_REGISTRATION,
+    FACILITY_PATIENTS,
     INFORMATION_DESK,
     FILES_MERGE,
 
