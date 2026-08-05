@@ -43,9 +43,10 @@ public class WaseelSbsSetupController {
     @GetMapping("/waseel/sbs")
     public ResponseEntity<Page<WaseelSbsCatalogDTO>> searchSbs(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean activeOnly,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(waseelSbsSetupService.searchSbs(search, pageable));
+        return ResponseEntity.ok(waseelSbsSetupService.searchSbs(search, activeOnly, pageable));
     }
 
     @GetMapping("/waseel/sbs/{id}")

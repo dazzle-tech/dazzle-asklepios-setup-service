@@ -172,20 +172,19 @@ public class WaseelSbsSetupService {
     }
 
     @Transactional(readOnly = true)
-    public Page<WaseelSbsCatalogDTO> searchSbs(String search, Pageable pageable) {
-        Page<WaseelSbsCatalog> page;
+    public Page<WaseelSbsCatalogDTO> searchSbs(
+            String search,
+            Boolean activeOnly,
+            Pageable pageable
+    ) {
+        String normalizedSearch = search == null ? "" : search.trim();
+        boolean onlyActive = Boolean.TRUE.equals(activeOnly);
 
-        if (search == null || search.isBlank()) {
-            page = sbsCatalogRepository.findAll(pageable);
-        } else {
-            page = sbsCatalogRepository
-                    .findBySbsCodeContainingIgnoreCaseOrShortDescriptionContainingIgnoreCaseOrLongDescriptionContainingIgnoreCase(
-                            search,
-                            search,
-                            search,
-                            pageable
-                    );
-        }
+        Page<WaseelSbsCatalog> page = sbsCatalogRepository.searchCatalog(
+                normalizedSearch,
+                onlyActive,
+                pageable
+        );
 
         return page.map(this::toSbsDto);
     }

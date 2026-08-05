@@ -4,8 +4,10 @@ import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class PriceListSetupItemService {
+
+    private static final String ENTITY = "priceListSetupItem";
 
     private final PriceListSetupItemRepository
             priceListSetupItemRepository;
@@ -34,9 +38,12 @@ public class PriceListSetupItemService {
             );
         }
 
+        validateUniqueWithinPriceList(priceListSetupId, dto);
+
         PriceListSetupItem entity =
                 new PriceListSetupItem();
 
+        entity.setId(null);
         entity.setPriceListSetupId(priceListSetupId);
         entity.setWaseelItemMappingId(
                 dto.waseelItemMappingId()
@@ -57,10 +64,14 @@ public class PriceListSetupItemService {
                         : dto.isActive()
         );
 
-        PriceListSetupItem savedEntity =
-                priceListSetupItemRepository.save(entity);
+        try {
+            PriceListSetupItem savedEntity =
+                    priceListSetupItemRepository.save(entity);
 
-        return toDTO(savedEntity);
+            return toDTO(savedEntity);
+        } catch (DataIntegrityViolationException exception) {
+            throw mapIntegrityViolation(exception);
+        }
     }
 
     public PriceListSetupItemDTO update(
@@ -82,6 +93,15 @@ public class PriceListSetupItemService {
                                 )
                         );
 
+        if (dto.itemCode() != null
+                && !dto.itemCode().equals(entity.getItemCode())
+                && priceListSetupItemRepository.existsByPriceListSetupIdAndItemCode(
+                        priceListSetupId,
+                        dto.itemCode()
+                )) {
+            throw duplicateItemCodeException(dto.itemCode());
+        }
+
         entity.setWaseelItemMappingId(
                 dto.waseelItemMappingId()
         );
@@ -99,10 +119,14 @@ public class PriceListSetupItemService {
             entity.setIsActive(dto.isActive());
         }
 
-        PriceListSetupItem savedEntity =
-                priceListSetupItemRepository.save(entity);
+        try {
+            PriceListSetupItem savedEntity =
+                    priceListSetupItemRepository.save(entity);
 
-        return toDTO(savedEntity);
+            return toDTO(savedEntity);
+        } catch (DataIntegrityViolationException exception) {
+            throw mapIntegrityViolation(exception);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +184,77 @@ public class PriceListSetupItemService {
                         );
 
         priceListSetupItemRepository.delete(entity);
+    }
+
+    private void validateUniqueWithinPriceList(
+            Long priceListSetupId,
+            PriceListSetupItemDTO dto
+    ) {
+        if (priceListSetupItemRepository.existsByPriceListSetupIdAndItemCode(
+                priceListSetupId,
+                dto.itemCode()
+        )) {
+            throw duplicateItemCodeException(dto.itemCode());
+        }
+
+        if (dto.sourceId() != null
+                && dto.itemType() != null
+                && priceListSetupItemRepository
+                        .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
+                                priceListSetupId,
+                                dto.itemType(),
+                                dto.sourceId()
+                        )
+                        .isPresent()) {
+            throw new BadRequestAlertException(
+                    "This catalog item is already on the selected price list. "
+                            + "Use a different price list header (e.g. Cash vs Insurance) "
+                            + "to price the same service separately.",
+                    ENTITY,
+                    "item.duplicateInPriceList"
+            );
+        }
+    }
+
+    private BadRequestAlertException duplicateItemCodeException(
+            String itemCode
+    ) {
+        return new BadRequestAlertException(
+                "Item code "
+                        + itemCode
+                        + " already exists on this price list.",
+                ENTITY,
+                "itemCode.duplicate"
+        );
+    }
+
+    private RuntimeException mapIntegrityViolation(
+            DataIntegrityViolationException exception
+    ) {
+        String message = exception.getMostSpecificCause() != null
+                ? exception.getMostSpecificCause().getMessage()
+                : exception.getMessage();
+
+        if (message != null && message.contains("price_list_setup_item_pkey")) {
+            return new BadRequestAlertException(
+                    "Unable to allocate a new price-list item ID. "
+                            + "The database sequence is out of sync — run the "
+                            + "price_list_setup_item sequence fix migration "
+                            + "or contact support.",
+                    ENTITY,
+                    "item.idSequenceOutOfSync"
+            );
+        }
+
+        if (message != null && message.contains("uk_price_list_item_code")) {
+            return new BadRequestAlertException(
+                    "This item code already exists on the selected price list.",
+                    ENTITY,
+                    "itemCode.duplicate"
+            );
+        }
+
+        return exception;
     }
 
     private PriceListSetupItemDTO toDTO(

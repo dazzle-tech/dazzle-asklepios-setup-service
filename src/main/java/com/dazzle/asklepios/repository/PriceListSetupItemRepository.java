@@ -30,4 +30,9 @@ public interface PriceListSetupItemRepository
             Long sourceId
     );
 
+    boolean existsByPriceListSetupIdAndItemCode(
+            Long priceListSetupId,
+            String itemCode
+    );
+
 }
