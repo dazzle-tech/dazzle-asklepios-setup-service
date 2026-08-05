@@ -311,6 +311,13 @@ public class PractitionerController {
         );
     }
 
+    @GetMapping("/practitioners/by-login/{login}")
+    public ResponseEntity<Practitioner> getByLogin(@PathVariable String login) {
+        return practitionerService.findByUserLogin(login)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/practitioner/active/by-facility/{facilityId:\\d+}")
     public ResponseEntity<List<PractitionerResponseVM>> getActiveByFacility(
             @PathVariable Long facilityId,
@@ -325,6 +332,19 @@ public class PractitionerController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/practitioner/resolve")
+    public ResponseEntity<PractitionerResponseVM> resolvePractitioner(
+            @RequestParam(value = "practitionerId", required = false) Long practitionerId,
+            @RequestParam(value = "login", required = false) String login
+    ) {
+        LOG.debug("REST resolve Practitioner practitionerId={} login={}", practitionerId, login);
+
+        return practitionerService.resolvePractitioner(practitionerId, login)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 }

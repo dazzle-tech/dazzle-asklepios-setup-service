@@ -25,7 +25,8 @@ public record BrandMedicationResponseVM(
         Long uomGroupId,
         Long uomGroupUnitId,
         BigDecimal price,
-        String currency
+        String currency,
+        Long billingRuleId
 ) {
     public static BrandMedicationResponseVM ofEntity(BrandMedication entity, boolean hasActiveIngredient) {
         if (entity == null) return null;
@@ -49,7 +50,10 @@ public record BrandMedicationResponseVM(
                 entity.getUomGroup()!=null? entity.getUomGroup().getId():null,
                 entity.getUomGroupUnit()!=null?entity.getUomGroupUnit().getId():null,
                 entity.getPrice(),
-                entity.getCurrency()
+                entity.getCurrency(),
+                entity.getBillingRule() != null
+                        ? entity.getBillingRule().getId()
+                        : null
         );
     }
 }

@@ -290,6 +290,14 @@ public class AgeGroupService {
         return subtractFromDate(LocalDate.now(), group.getToAge(), group.getToAgeUnit());
     }
 
+    @Transactional(readOnly = true)
+    public boolean isNewBornByBirthDate(LocalDate birthDate) {
+        AgeGroup ageGroup = findAgeGroupByBirthDate(birthDate);
+
+        return ageGroup != null
+                && ageGroup.getAgeGroup() == AgeGroupType.NEONATES;
+    }
+
     private LocalDate subtractFromDate(LocalDate baseDate, BigDecimal value, AgeUnit unit) {
 
         if (baseDate == null || value == null || unit == null) {

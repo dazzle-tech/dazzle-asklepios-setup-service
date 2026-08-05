@@ -1,4 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.payorplan;
+
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorPlanType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,15 +9,30 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 
 public record PayorPlanUpdateVM(
-        @NotNull Long id,
-        @NotNull Long payorId,
+        @NotNull
+        Long id,
 
-        @NotBlank @Size(max=255)
+        @NotNull
+        Long payorId,
+
+        @NotBlank
+        @Size(max = 255)
         String name,
 
         @NotNull
         PayorPlanType planType,
 
+        @Size(max = 100)
+        String networkId,
+
+        @Size(max = 50)
+        CoverageType coverageType,
+
+        @Size(max = 100)
+        String payerNphiesId,
+
+        @Size(max = 100)
+        String waseelPlanId,
+
         Boolean isActive
 ) implements Serializable {}
-

@@ -382,10 +382,31 @@ public class PractitionerService {
         return practitionerRepository.findByFacilityIdAndIsActiveTrue(facilityId, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<Practitioner> findByUserLogin(String login) {
+        return practitionerRepository.findByUser_LoginIgnoreCase(login);
+    }
+
     private Long getFacility() {
 
         return SecurityUtils.getCurrentUserFacility()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
 
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Practitioner> resolvePractitioner(Long practitionerId, String login) {
+        if (practitionerId != null) {
+            Optional<Practitioner> practitioner = practitionerRepository.findById(practitionerId);
+            if (practitioner.isPresent()) {
+                return practitioner;
+            }
+        }
+
+        if (login != null && !login.isBlank()) {
+            return practitionerRepository.findByUser_LoginIgnoreCase(login.trim());
+        }
+
+        return Optional.empty();
     }
 }

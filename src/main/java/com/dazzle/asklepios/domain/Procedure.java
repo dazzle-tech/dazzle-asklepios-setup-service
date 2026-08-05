@@ -88,4 +88,8 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
 }

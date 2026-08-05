@@ -20,7 +20,8 @@ public record ProcedureResponseVM(
         Boolean isActive,
         Long facilityId,
        Currency currency,
-       Long price
+       Long price,
+       Long billingRuleId
 ) implements Serializable {
 
     public static ProcedureResponseVM ofEntity(Procedure procedure) {
@@ -37,7 +38,10 @@ public record ProcedureResponseVM(
                 procedure.getIsActive(),
                 procedure.getFacility() != null ? procedure.getFacility().getId() : null,
                 procedure.getCurrency(),
-                procedure.getPrice()
+                procedure.getPrice(),
+                procedure.getBillingRule() != null
+                        ? procedure.getBillingRule().getId()
+                        : null
         );
     }
 }

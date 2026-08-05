@@ -142,7 +142,23 @@ public class PayorPlanController {
         );
     }
 
+    @GetMapping("/payor-plan-items/procedure/{procedureId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isProcedurePreAuthorizationRequired(
+            @PathVariable Long procedureId
+    ) {
+        return ResponseEntity.ok(
+                service.isProcedurePreAuthorizationRequired(procedureId)
+        );
+    }
 
+    @GetMapping("/payor-plan-items/service/{serviceId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isServicePreAuthorizationRequired(
+            @PathVariable Long serviceId
+    ) {
+        return ResponseEntity.ok(
+                service.isServicePreAuthorizationRequired(serviceId)
+        );
+    }
     // ---------------- ITEMS ----------------
 
     @PostMapping("/payor-plan-item")
@@ -190,6 +206,23 @@ public class PayorPlanController {
         );
     }
 
+    @GetMapping("/payor-plan-items/diagnostic-test/{diagnosticTestId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isDiagnosticTestPreAuthorizationRequired(
+            @PathVariable Long diagnosticTestId
+    ) {
+        return ResponseEntity.ok(
+                service.isDiagnosticTestPreAuthorizationRequired(diagnosticTestId)
+        );
+    }
+
+    @GetMapping("/payor-plan-items/brand-medication/{brandMedicationId}/pre-authorization-required")
+    public ResponseEntity<Boolean> isBrandMedicationPreAuthorizationRequired(
+            @PathVariable Long brandMedicationId
+    ) {
+        return ResponseEntity.ok(
+                service.isBrandMedicationPreAuthorizationRequired(brandMedicationId)
+        );
+    }
     @GetMapping("/payor-plan-item/by-plan/{planId}/active")
     public ResponseEntity<List<PayorPlanItemResponseVM>> getActiveItemsByPlan(
             @PathVariable Long planId,
@@ -206,4 +239,49 @@ public class PayorPlanController {
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/payor-plan/cchi/by-payor/{payorId}/waseel-plan/{waseelPlanId}")
+    public ResponseEntity<PayorPlanResponseVM> getCchiPayorPlanByWaseelPlanId(
+            @PathVariable Long payorId,
+            @PathVariable String waseelPlanId
+    ) {
+        LOG.debug(
+                "REST get CCHI PayorPlan by payorId={}, waseelPlanId={}",
+                payorId,
+                waseelPlanId
+        );
+
+        return service.findCchiPlanByPayorAndWaseelPlanId(payorId, waseelPlanId)
+                .map(PayorPlanResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/payor-plan/cchi/by-payor/{payorId}/match")
+    public ResponseEntity<PayorPlanResponseVM> getCchiPayorPlanByMatch(
+            @PathVariable Long payorId,
+            @RequestParam(required = false) String coverageType,
+            @RequestParam(required = false) String networkId,
+            @RequestParam(required = false) String policyClassName
+    ) {
+        LOG.debug(
+                "REST get CCHI PayorPlan match payorId={}, coverageType={}, networkId={}, policyClassName={}",
+                payorId,
+                coverageType,
+                networkId,
+                policyClassName
+        );
+
+        return service.findCchiPlanByMatch(
+                        payorId,
+                        coverageType,
+                        networkId,
+                        policyClassName
+                )
+                .map(PayorPlanResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
 }

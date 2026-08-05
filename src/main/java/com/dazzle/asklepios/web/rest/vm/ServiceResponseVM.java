@@ -20,7 +20,8 @@ public record ServiceResponseVM(
         Integer parallelCapacityValue,
         Integer defaultDurationMinutes,
         Integer defaultBufferBeforeMinutes,
-        Integer defaultBufferAfterMinutes
+        Integer defaultBufferAfterMinutes,
+        Long billingRuleId
 ) implements Serializable {
 
     public static ServiceResponseVM ofEntity(ServiceSetup service) {
@@ -38,7 +39,10 @@ public record ServiceResponseVM(
                 service.getParallelCapacityValue(),
                 service.getDefaultDurationMinutes(),
                 service.getDefaultBufferBeforeMinutes(),
-                service.getDefaultBufferAfterMinutes()
+                service.getDefaultBufferAfterMinutes(),
+                service.getBillingRule() != null
+                        ? service.getBillingRule().getId()
+                        : null
         );
     }
 }

@@ -6,9 +6,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -111,6 +114,11 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     private Integer defaultBufferAfterMinutes = 0;
     @Column(name = "modality", length = 100)
     private String modality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
+
     @PostLoad
     private void fillListsFromRaw() {
         if (ageGroup != null && !ageGroup.isBlank()) {

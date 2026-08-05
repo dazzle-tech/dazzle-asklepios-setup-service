@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
 import org.slf4j.Logger;
@@ -12,6 +13,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 @Service
 @Transactional
@@ -52,7 +57,10 @@ public class PayorService {
                 .startDate(vm.startDate())
                 .expiryDate(vm.expiryDate())
                 .renewable(vm.renewable() != null ? vm.renewable() : false)
-
+                .nphiesId(vm.nphiesId())
+                .waseelPayerId(vm.waseelPayerId())
+                .tpaNphiesId(vm.tpaNphiesId())
+                .isWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : false)
                 .allowPartialCoverage(bool(vm.allowPartialCoverage()))
                 .acceptCopay(bool(vm.acceptCopay()))
                 .acceptDeductibles(bool(vm.acceptDeductibles()))
@@ -76,8 +84,6 @@ public class PayorService {
                         "payor",
                         "Payor not found."
                 ));
-
-        // إذا غيّر الكود وتكرر
         if (!existing.getCode().equalsIgnoreCase(vm.code())
                 && repo.existsByCodeIgnoreCase(vm.code())) {
             throw new BadRequestAlertException(
@@ -101,7 +107,10 @@ public class PayorService {
         existing.setStartDate(vm.startDate());
         existing.setExpiryDate(vm.expiryDate());
         existing.setRenewable(vm.renewable() != null ? vm.renewable() : existing.getRenewable());
-
+        existing.setNphiesId(vm.nphiesId());
+        existing.setWaseelPayerId(vm.waseelPayerId());
+        existing.setTpaNphiesId(vm.tpaNphiesId());
+        existing.setIsWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : existing.getIsWaseelEnabled());
         existing.setAllowPartialCoverage(vm.allowPartialCoverage() != null ? vm.allowPartialCoverage() : existing.getAllowPartialCoverage());
         existing.setAcceptCopay(vm.acceptCopay() != null ? vm.acceptCopay() : existing.getAcceptCopay());
         existing.setAcceptDeductibles(vm.acceptDeductibles() != null ? vm.acceptDeductibles() : existing.getAcceptDeductibles());
@@ -174,5 +183,15 @@ public class PayorService {
     public Page<Payor> getAllActive(Pageable pageable) {
         return repo.findByIsActiveTrue(pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Optional<Payor> findByNphiesId(String nphiesId) {
+        if (nphiesId == null || nphiesId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return repo.findFirstByNphiesId(nphiesId.trim());
+    }
+
 }
 

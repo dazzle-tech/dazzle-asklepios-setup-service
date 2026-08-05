@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.CoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorPlanType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +47,20 @@ public class PayorPlan extends AbstractAuditingEntity<Long> implements Serializa
     @Enumerated(EnumType.STRING)
     @Column(name = "plan_type", nullable = false, length = 50)
     private PayorPlanType planType;
+
+    @Column(name = "network_id", length = 100)
+    private String networkId;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "coverage_type", nullable = false, length = 50)
+    private CoverageType coverageType;
+
+    @Column(name = "payer_nphies_id", length = 100)
+    private String payerNphiesId;
+
+    @Column(name = "waseel_plan_id", length = 100)
+    private String waseelPlanId;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

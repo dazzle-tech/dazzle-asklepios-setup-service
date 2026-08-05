@@ -26,7 +26,8 @@ public record ProcedureUpdateVM(
         @NotNull Currency currency,
         @NotNull Long price,
         @NotNull Boolean isActive,
-        String lastModifiedBy
+        String lastModifiedBy,
+        Long billingRuleId
 ) implements Serializable {
 
     public static ProcedureUpdateVM ofEntity(Procedure procedure) {
@@ -43,6 +44,10 @@ public record ProcedureUpdateVM(
                 procedure.getCurrency(),
                 procedure.getPrice(),
                 procedure.getIsActive(),
-                procedure.getLastModifiedBy());
+                procedure.getLastModifiedBy(),
+                procedure.getBillingRule() != null
+                        ? procedure.getBillingRule().getId()
+                        : null
+        );
     }
 }
