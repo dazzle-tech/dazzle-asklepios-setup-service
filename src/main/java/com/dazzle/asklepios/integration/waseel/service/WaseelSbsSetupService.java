@@ -56,6 +56,10 @@ public class WaseelSbsSetupService {
 
             Sheet sheet = workbook.getSheetAt(0);
 
+            if (isIdfProviderSheet(sheet)) {
+                return importIdfProviderExcel(sheet, file.getOriginalFilename());
+            }
+
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 
                 totalRows++;
@@ -163,6 +167,197 @@ public class WaseelSbsSetupService {
             );
         }
     }
+
+    /**
+     * IDF provider medication list format (e.g. "IDF LIST ... Providers.xlsx"):
+     * Register Number | Trade Name | Scientific Name | Public price | Tier | DrugType | GTIN1..GTIN5
+     * Stores GTIN as {@code sbs_code} with {@code waseel_item_type = medication-codes} for Waseel mapping.
+     */
+    private WaseelSbsImportResultDTO importIdfProviderExcel(
+            Sheet sheet,
+            String fileName
+    ) {
+        long totalRows = 0L;
+        long successRows = 0L;
+        long failedRows = 0L;
+        StringBuilder errors = new StringBuilder();
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            totalRows++;
+
+            try {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    failedRows++;
+                    continue;
+                }
+
+                String registerNumber = getCellValue(row.getCell(0));
+                String tradeName = getCellValue(row.getCell(1));
+                String scientificName = getCellValue(row.getCell(2));
+                String publicPrice = getCellValue(row.getCell(3));
+                String tier = getCellValue(row.getCell(4));
+                String drugType = getCellValue(row.getCell(5));
+                String gtin = firstNonBlank(
+                        getCellValue(row.getCell(6)),
+                        getCellValue(row.getCell(7)),
+                        getCellValue(row.getCell(8)),
+                        getCellValue(row.getCell(9)),
+                        getCellValue(row.getCell(10))
+                );
+
+                if (gtin == null || gtin.isBlank()) {
+                    failedRows++;
+                    errors.append("Row ")
+                            .append(i + 1)
+                            .append(": GTIN is empty\n");
+                    continue;
+                }
+
+                gtin = normalizeGtin(gtin);
+                if (isPlaceholderGtin(gtin)) {
+                    failedRows++;
+                    errors.append("Row ")
+                            .append(i + 1)
+                            .append(": placeholder GTIN skipped\n");
+                    continue;
+                }
+
+                WaseelSbsCatalog catalog = sbsCatalogRepository
+                        .findBySbsCode(gtin)
+                        .orElseGet(WaseelSbsCatalog::new);
+
+                catalog.setWaseelItemType("medication-codes");
+                catalog.setSbsCode(gtin);
+                catalog.setUpdateType(truncate(tier, 20));
+                catalog.setRevisionDetails(truncate(registerNumber, 255));
+                catalog.setShortDescription(truncate(tradeName, 500));
+                catalog.setLongDescription(buildIdfLongDescription(
+                        scientificName,
+                        registerNumber,
+                        tier,
+                        publicPrice,
+                        drugType
+                ));
+                catalog.setIsActive(true);
+                catalog.setSourceFileName(fileName);
+
+                if (catalog.getId() == null) {
+                    catalog.setCreatedBy("system");
+                    catalog.setCreatedDate(Instant.now());
+                } else {
+                    catalog.setLastModifiedBy("system");
+                    catalog.setLastModifiedDate(Instant.now());
+                }
+
+                sbsCatalogRepository.save(catalog);
+                successRows++;
+
+            } catch (Exception ex) {
+                failedRows++;
+                errors.append("Row ")
+                        .append(i + 1)
+                        .append(": ")
+                        .append(ex.getMessage())
+                        .append("\n");
+            }
+        }
+
+        saveImportLog(fileName, totalRows, successRows, failedRows, errors.toString());
+
+        return new WaseelSbsImportResultDTO(
+                totalRows,
+                successRows,
+                failedRows,
+                "IDF medication catalog imported successfully",
+                errors.toString()
+        );
+    }
+
+    private boolean isIdfProviderSheet(Sheet sheet) {
+        Row header = sheet.getRow(0);
+        if (header == null) {
+            return false;
+        }
+
+        String firstColumn = getCellValue(header.getCell(0));
+        String gtinColumn = getCellValue(header.getCell(6));
+
+        return firstColumn != null
+                && firstColumn.trim().equalsIgnoreCase("Register Number")
+                && gtinColumn != null
+                && gtinColumn.trim().equalsIgnoreCase("GTIN1");
+    }
+
+    private String buildIdfLongDescription(
+            String scientificName,
+            String registerNumber,
+            String tier,
+            String publicPrice,
+            String drugType
+    ) {
+        StringBuilder description = new StringBuilder();
+
+        appendDescriptionPart(description, "Scientific Name", scientificName);
+        appendDescriptionPart(description, "Register Number", registerNumber);
+        appendDescriptionPart(description, "Tier", tier);
+        appendDescriptionPart(description, "Public Price", publicPrice);
+        appendDescriptionPart(description, "Drug Type", drugType);
+
+        return description.toString().trim();
+    }
+
+    private void appendDescriptionPart(StringBuilder description, String label, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+
+        if (!description.isEmpty()) {
+            description.append(" | ");
+        }
+
+        description.append(label).append(": ").append(value.trim());
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+
+        return null;
+    }
+
+    private String normalizeGtin(String gtin) {
+        return gtin == null ? null : gtin.trim();
+    }
+
+    private boolean isPlaceholderGtin(String gtin) {
+        if (gtin == null || gtin.isBlank()) {
+            return true;
+        }
+
+        return "99999999999999".equals(gtin);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.length() <= maxLength) {
+            return trimmed;
+        }
+
+        return trimmed.substring(0, maxLength);
+    }
+
     private String normalizeWaseelItemType(String value) {
         if (value == null || value.isBlank()) {
             return null;
