@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.CptCode;
-import com.dazzle.asklepios.domain.enumeration.CptCategory;
 import com.dazzle.asklepios.repository.CptCodeRepository;
 import com.dazzle.asklepios.service.CptCodeService;
 import com.dazzle.asklepios.service.dto.CptImportResultDTO;
@@ -32,13 +31,12 @@ public class CptCodeController {
     private final CptCodeService service;
     private final CptCodeRepository repository;
 
-    // ====================== IMPORT ======================
     @PostMapping("/cpt/import")
     public ResponseEntity<CptImportResultDTO> importCpt(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "overwrite", defaultValue = "false") boolean overwrite
     ) {
-        CptImportResultDTO result = service.importCsv(file, overwrite);
+        CptImportResultDTO result = service.importFile(file, overwrite);
 
         if (!overwrite && !result.conflicts().isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(result);
@@ -47,7 +45,6 @@ public class CptCodeController {
         return ResponseEntity.ok(result);
     }
 
-    // ====================== FETCH ALL ======================
     @GetMapping("/cpt/all")
     public ResponseEntity<List<CptCode>> getAll(@ParameterObject Pageable pageable) {
         Page<CptCode> page = repository.findAll(pageable);
@@ -57,18 +54,36 @@ public class CptCodeController {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
-    // ====================== FILTERS ======================
-
-    @GetMapping("/cpt/by-category/{category}")
-    public ResponseEntity<List<CptCode>> getByCategory(
-            @PathVariable CptCategory category,
+    @GetMapping("/cpt/by-main-category/{mainCategory}")
+    public ResponseEntity<List<CptCode>> getByMainCategory(
+            @PathVariable String mainCategory,
             @ParameterObject Pageable pageable
     ) {
-        Page<CptCode> page = repository.findByCategory(category, pageable);
+        Page<CptCode> page = service.findByMainCategory(mainCategory, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/cpt/by-service-category/{serviceCategory}")
+    public ResponseEntity<List<CptCode>> getByServiceCategory(
+            @PathVariable String serviceCategory,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<CptCode> page = service.findByServiceCategory(serviceCategory, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/cpt/by-category/{category}")
+    public ResponseEntity<List<CptCode>> getByCategory(
+            @PathVariable String category,
+            @ParameterObject Pageable pageable
+    ) {
+        return getByMainCategory(category, pageable);
     }
 
     @GetMapping("/cpt/by-code/{code}")
