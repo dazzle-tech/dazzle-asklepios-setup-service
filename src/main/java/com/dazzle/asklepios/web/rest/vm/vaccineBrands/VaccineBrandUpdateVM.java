@@ -16,7 +16,8 @@ public record VaccineBrandUpdateVM(
         @NotEmpty String name,
         @NotEmpty String manufacture,
         @NotNull BigDecimal volume,
-        @NotNull MeasurementUnit unit,
+        @NotEmpty
+        String unit,
         String marketingAuthorizationHolder,
         @NotNull Boolean isActive
 ) implements Serializable {

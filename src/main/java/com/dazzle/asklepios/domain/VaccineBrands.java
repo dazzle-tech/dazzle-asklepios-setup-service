@@ -57,9 +57,8 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     private BigDecimal volume;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private MeasurementUnit unit;
+    @Column(nullable = false, length = 30)
+    private String unit;
 
     @Column(name = "marketing_authorization_holder", length = 255)
     private String marketingAuthorizationHolder;

@@ -3,7 +3,7 @@ package com.dazzle.asklepios.web.rest.vm.inventoryProducts;
 import com.dazzle.asklepios.domain.InventoryProducts;
 import com.dazzle.asklepios.domain.enumeration.InventoryType;
 import com.dazzle.asklepios.domain.enumeration.ProductTypes;
-import com.dazzle.asklepios.domain.enumeration.TimeUnit;
+import com.dazzle.asklepios.domain.enumeration.Unit;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -36,9 +36,9 @@ public record InventoryProductsResponseVM(
         Boolean reusable,
         InventoryType inventoryType,
         Integer shelfLife,
-        TimeUnit shelfLifeUnit,
+        Unit shelfLifeUnit,
         Integer leadTime,
-        TimeUnit leadTimeUnit,
+        Unit leadTimeUnit,
         String erpIntegrationId,
         Boolean isActive
 ) implements Serializable {

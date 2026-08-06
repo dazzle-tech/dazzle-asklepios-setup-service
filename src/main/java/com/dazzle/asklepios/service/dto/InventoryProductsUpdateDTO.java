@@ -2,7 +2,7 @@ package com.dazzle.asklepios.service.dto;
 
 import com.dazzle.asklepios.domain.enumeration.InventoryType;
 import com.dazzle.asklepios.domain.enumeration.ProductTypes;
-import com.dazzle.asklepios.domain.enumeration.TimeUnit;
+import com.dazzle.asklepios.domain.enumeration.Unit;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -37,9 +37,9 @@ public record InventoryProductsUpdateDTO(
         Boolean reusable,
         InventoryType inventoryType,
         Integer shelfLife,
-        TimeUnit shelfLifeUnit,
+        Unit shelfLifeUnit,
         Integer leadTime,
-        TimeUnit leadTimeUnit,
+        Unit leadTimeUnit,
         String erpIntegrationId,
         Boolean isActive
 ) implements Serializable {}
