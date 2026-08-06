@@ -10,7 +10,7 @@ public record VaccineBrandResponseVM(
         String name,
         String manufacture,
         BigDecimal volume,
-        MeasurementUnit unit,
+        String unit,
         String marketingAuthorizationHolder,
         Boolean isActive
 ) implements Serializable {

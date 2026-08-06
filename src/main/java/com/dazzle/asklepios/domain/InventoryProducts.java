@@ -2,7 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.InventoryType;
 import com.dazzle.asklepios.domain.enumeration.ProductTypes;
-import com.dazzle.asklepios.domain.enumeration.TimeUnit;
+import com.dazzle.asklepios.domain.enumeration.Unit;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -114,14 +114,14 @@ public class InventoryProducts extends AbstractAuditingEntity<Long> implements S
 
     @Column(name = "shelf_life_unit", length = 50)
     @Enumerated(EnumType.STRING)
-    private TimeUnit shelfLifeUnit;
+    private Unit shelfLifeUnit;
 
     @Column(name = "lead_time")
     private Integer leadTime;
 
     @Column(name = "lead_time_unit", length = 50)
     @Enumerated(EnumType.STRING)
-    private TimeUnit leadTimeUnit;
+    private Unit leadTimeUnit;
 
     @Column(name = "erp_integration_id", length = 50)
     private String erpIntegrationId;
