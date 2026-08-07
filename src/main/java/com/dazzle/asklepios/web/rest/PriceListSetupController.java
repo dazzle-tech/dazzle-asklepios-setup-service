@@ -4,10 +4,13 @@ import com.dazzle.asklepios.service.PriceListSetupService;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +21,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/setup")
@@ -49,6 +55,16 @@ public class PriceListSetupController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/price-list-setups/resolve")
+    public ResponseEntity<BillingPricingResolutionDTO> resolve(
+            @Valid BillingPricingResolutionRequest request
+    ) {
+        BillingPricingResolutionDTO result =
+                priceListSetupService.resolve(request);
+
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("/price-list-setups/{id}")
     public ResponseEntity<PriceListSetupDTO> getPriceListSetup(
             @PathVariable Long id
@@ -60,13 +76,23 @@ public class PriceListSetupController {
     }
 
     @GetMapping("/price-list-setups")
-    public ResponseEntity<Page<PriceListSetupDTO>>
-    getAllPriceListSetups(Pageable pageable) {
-
-        Page<PriceListSetupDTO> result =
+    public ResponseEntity<List<PriceListSetupDTO>>
+    getAllPriceListSetups(
+            @ParameterObject Pageable pageable
+    ) {
+        Page<PriceListSetupDTO> page =
                 priceListSetupService.findAll(pageable);
 
-        return ResponseEntity.ok(result);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
     @DeleteMapping("/price-list-setups/{id}")
@@ -89,13 +115,4 @@ public class PriceListSetupController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/price-list-setups/resolve")
-    public ResponseEntity<BillingPricingResolutionDTO> resolve(
-            @Valid BillingPricingResolutionRequest request
-    ) {
-        BillingPricingResolutionDTO result =
-                priceListSetupService.resolve(request);
-
-        return ResponseEntity.ok(result);
-    }
 }

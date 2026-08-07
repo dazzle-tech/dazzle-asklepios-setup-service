@@ -13,6 +13,7 @@ import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,12 +33,16 @@ import java.util.Optional;
 @Transactional
 public class PriceListSetupService {
 
+    private static final String ENTITY_NAME = "priceListSetup";
+
     private final PriceListSetupRepository priceListSetupRepository;
 
     private final PriceListSetupItemRepository
             priceListSetupItemRepository;
 
     public PriceListSetupDTO create(PriceListSetupDTO dto) {
+        validateDto(dto);
+        validateNoOverlappingInterval(null, dto);
 
         PriceListSetup entity = new PriceListSetup();
 
@@ -86,6 +91,8 @@ public class PriceListSetupService {
             Long id,
             PriceListSetupDTO dto
     ) {
+        validateDto(dto);
+        validateNoOverlappingInterval(id, dto);
 
         PriceListSetup entity =
                 priceListSetupRepository.findById(id)
@@ -372,8 +379,90 @@ public class PriceListSetupService {
     private boolean isSelfPayPriceListType(
             PriceListSetupType type
     ) {
-        return type == PriceListSetupType.CASH
-                || type == PriceListSetupType.SELF_PAY;
+        return type == PriceListSetupType.SELF_PAY;
+    }
+
+    private void validateDto(PriceListSetupDTO dto) {
+        if (dto.effectiveTo() != null
+                && dto.effectiveTo().isBefore(dto.effectiveFrom())) {
+            throw new BadRequestAlertException(
+                    "Effective To must be on or after Effective From.",
+                    ENTITY_NAME,
+                    "effectiveDate.invalidRange"
+            );
+        }
+
+        if (dto.type() == PriceListSetupType.INSURANCE
+                && dto.payerId() == null) {
+            throw new BadRequestAlertException(
+                    "Payer is required for insurance price lists.",
+                    ENTITY_NAME,
+                    "payer.required"
+            );
+        }
+    }
+
+    private void validateNoOverlappingInterval(
+            Long excludeId,
+            PriceListSetupDTO dto
+    ) {
+        List<PriceListSetup> candidates =
+                dto.type() == PriceListSetupType.INSURANCE
+                        ? priceListSetupRepository
+                        .findAllByFacilityIdAndPayerIdAndIsActiveTrue(
+                                dto.facilityId(),
+                                dto.payerId()
+                        )
+                        : priceListSetupRepository
+                        .findAllByFacilityIdAndTypeAndIsActiveTrue(
+                                dto.facilityId(),
+                                dto.type()
+                        );
+
+        boolean hasOverlap = candidates.stream()
+                .filter(candidate ->
+                        excludeId == null
+                                || !excludeId.equals(candidate.getId())
+                )
+                .anyMatch(candidate ->
+                        intervalsOverlap(
+                                dto.effectiveFrom(),
+                                dto.effectiveTo(),
+                                candidate.getEffectiveFrom(),
+                                candidate.getEffectiveTo()
+                        )
+                );
+
+        if (hasOverlap) {
+            if (dto.type() == PriceListSetupType.INSURANCE) {
+                throw new BadRequestAlertException(
+                        "An active insurance price list already exists for this payer in the selected date range.",
+                        ENTITY_NAME,
+                        "interval.payer.duplicate"
+                );
+            }
+
+            throw new BadRequestAlertException(
+                    "An active price list already exists for this type in the selected date range.",
+                    ENTITY_NAME,
+                    "interval.type.duplicate"
+            );
+        }
+    }
+
+    private boolean intervalsOverlap(
+            LocalDate from1,
+            LocalDate to1,
+            LocalDate from2,
+            LocalDate to2
+    ) {
+        LocalDate end1 =
+                to1 != null ? to1 : LocalDate.MAX;
+        LocalDate end2 =
+                to2 != null ? to2 : LocalDate.MAX;
+
+        return !from1.isAfter(end2)
+                && !from2.isAfter(end1);
     }
 
     private PriceListItemType mapItemType(

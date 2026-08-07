@@ -2,13 +2,11 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.FinancialDocumentNumbering;
-import com.dazzle.asklepios.domain.FinancialDocumentSequence;
 import com.dazzle.asklepios.domain.enumeration.BillingConfigurationStatus;
 import com.dazzle.asklepios.domain.enumeration.BillingResetFrequency;
 import com.dazzle.asklepios.domain.enumeration.biling.FinancialDocumentType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.FinancialDocumentNumberingRepository;
-import com.dazzle.asklepios.repository.FinancialDocumentSequenceRepository;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberRequest;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberResponse;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberingBulkDTO;
@@ -71,22 +69,15 @@ public class FinancialDocumentNumberingService {
     private final FinancialDocumentNumberingRepository
             numberingRepository;
 
-    private final FinancialDocumentSequenceRepository
-            sequenceRepository;
-
     private final FacilityRepository
             facilityRepository;
 
     public FinancialDocumentNumberingService(
             FinancialDocumentNumberingRepository numberingRepository,
-            FinancialDocumentSequenceRepository sequenceRepository,
             FacilityRepository facilityRepository
     ) {
         this.numberingRepository =
                 numberingRepository;
-
-        this.sequenceRepository =
-                sequenceRepository;
 
         this.facilityRepository =
                 facilityRepository;
@@ -403,13 +394,9 @@ public class FinancialDocumentNumberingService {
         } catch (
                 RuntimeException exception
         ) {
-            LOG.warn(
-                    "Unable to load financial document numbering for facility {}: {}",
-                    facilityId,
-                    exception.getMessage()
+            throw mapDatabaseAccessException(
+                    exception
             );
-
-            return List.of();
         }
     }
 
@@ -427,40 +414,65 @@ public class FinancialDocumentNumberingService {
         } catch (
                 RuntimeException exception
         ) {
-            LOG.warn(
-                    "Unable to load financial document numbering for facility {} and type {}: {}",
-                    facilityId,
-                    documentType,
-                    exception.getMessage()
+            throw mapDatabaseAccessException(
+                    exception
             );
-
-            return Optional.empty();
         }
     }
 
-    private List<FinancialDocumentSequence>
-    loadPersistedSequences(
-            Long facilityId,
-            FinancialDocumentType documentType
+    private RuntimeException mapDatabaseAccessException(
+            RuntimeException exception
     ) {
-        try {
-            return sequenceRepository
-                    .findByFacilityIdAndDocumentTypeOrderByPeriodKeyDesc(
-                            facilityId,
-                            documentType
-                    );
-        } catch (
-                RuntimeException exception
+        String message =
+                exception.getMessage() != null
+                        ? exception.getMessage().toLowerCase(
+                                Locale.ROOT
+                        )
+                        : "";
+
+        if (
+                message.contains(
+                        "current_period_key does not exist"
+                )
+                        || message.contains(
+                        "last_number does not exist"
+                )
+                        || message.contains(
+                        "version does not exist"
+                )
+                        || message.contains(
+                        "financial_document_numbering"
+                )
+                                && message.contains(
+                                "does not exist"
+                        )
         ) {
-            LOG.warn(
-                    "Unable to load financial document sequence for facility {} and type {}: {}",
-                    facilityId,
-                    documentType,
-                    exception.getMessage()
+            LOG.error(
+                    "Financial document numbering schema is out of date",
+                    exception
             );
 
-            return List.of();
+            return new BadRequestAlertException(
+                    "Financial document numbering columns are missing. "
+                            + "Deploy the gateway Liquibase changelog "
+                            + "(1786080700_B_financial_document_numbering_counter.xml), "
+                            + "then restart the setup service.",
+                    ENTITY_NAME,
+                    "db.schema.outdated"
+            );
         }
+
+        LOG.warn(
+                "Unable to access financial document numbering tables: {}",
+                exception.getMessage()
+        );
+
+        return new BadRequestAlertException(
+                "Financial document numbering tables are not available. "
+                        + "Apply the database migration first.",
+                ENTITY_NAME,
+                "db.notready"
+        );
     }
 
     public FinancialDocumentNumbering changeActivationStatus(
@@ -593,7 +605,7 @@ public class FinancialDocumentNumberingService {
 
         FinancialDocumentNumbering numbering =
                 numberingRepository
-                        .findByFacilityIdAndDocumentType(
+                        .findForUpdate(
                                 request.facilityId(),
                                 request.documentType()
                         )
@@ -637,43 +649,15 @@ public class FinancialDocumentNumberingService {
                         documentDate
                 );
 
-        FinancialDocumentSequence sequence =
-                sequenceRepository
-                        .findForUpdate(
-                                request.facilityId(),
-                                request.documentType(),
-                                periodKey
-                        )
-                        .orElseGet(
-                                () ->
-                                        FinancialDocumentSequence
-                                                .builder()
-                                                .facilityId(
-                                                        request.facilityId()
-                                                )
-                                                .documentType(
-                                                        request.documentType()
-                                                )
-                                                .periodKey(
-                                                        periodKey
-                                                )
-                                                .lastNumber(
-                                                        numbering.getStartingNumber()
-                                                                - 1
-                                                )
-                                                .build()
-                        );
-
         long nextSequence =
-                sequence.getLastNumber()
-                        + 1;
+                reserveNextSequenceOnConfiguration(
+                        numbering,
+                        periodKey,
+                        request.minimumUsedSequence()
+                );
 
-        sequence.setLastNumber(
-                nextSequence
-        );
-
-        sequenceRepository.saveAndFlush(
-                sequence
+        numberingRepository.saveAndFlush(
+                numbering
         );
 
         String documentNumber =
@@ -735,53 +719,85 @@ public class FinancialDocumentNumberingService {
                         today
                 );
 
-        List<FinancialDocumentSequence> sequences =
-                loadPersistedSequences(
-                        facilityId,
-                        documentType
+        long lastAssigned =
+                resolveLastAssignedSequence(
+                        numbering,
+                        currentPeriodKey
                 );
 
-        if (
-                sequences.isEmpty()
-        ) {
-            long nextNumber =
-                    numbering.getStartingNumber();
+        long nextNumber =
+                lastAssigned + 1;
 
-            return List.of(
-                    new FinancialDocumentSequenceStatusDTO(
-                            documentType,
-                            currentPeriodKey,
-                            numbering.getStartingNumber()
-                                    - 1,
-                            nextNumber,
-                            formatDocumentNumber(
-                                    numbering,
-                                    nextNumber,
-                                    today
-                            )
-                    )
-            );
-        }
-
-        return sequences
-                .stream()
-                .map(
-                        sequence ->
-                                new FinancialDocumentSequenceStatusDTO(
-                                        documentType,
-                                        sequence.getPeriodKey(),
-                                        sequence.getLastNumber(),
-                                        sequence.getLastNumber()
-                                                + 1,
-                                        formatDocumentNumber(
-                                                numbering,
-                                                sequence.getLastNumber()
-                                                        + 1,
-                                                today
-                                        )
-                                )
+        return List.of(
+                new FinancialDocumentSequenceStatusDTO(
+                        documentType,
+                        currentPeriodKey,
+                        lastAssigned,
+                        nextNumber,
+                        formatDocumentNumber(
+                                numbering,
+                                nextNumber,
+                                today
+                        )
                 )
-                .toList();
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public FinancialDocumentSequenceStatusDTO
+    previewNextNumber(
+            Long facilityId,
+            FinancialDocumentType documentType,
+            LocalDate documentDate
+    ) {
+        FinancialDocumentNumbering numbering =
+                findPersistedConfiguration(
+                                facilityId,
+                                documentType
+                        )
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundAlertException(
+                                                "Financial document numbering is not configured for facility "
+                                                        + facilityId
+                                                        + " and document type "
+                                                        + documentType,
+                                                ENTITY_NAME,
+                                                "notfound"
+                                        )
+                        );
+
+        LocalDate effectiveDate =
+                documentDate != null
+                        ? documentDate
+                        : LocalDate.now();
+
+        String periodKey =
+                resolvePeriodKey(
+                        numbering.getResetFrequency(),
+                        effectiveDate
+                );
+
+        long lastAssigned =
+                resolveLastAssignedSequence(
+                        numbering,
+                        periodKey
+                );
+
+        long nextNumber =
+                lastAssigned + 1;
+
+        return new FinancialDocumentSequenceStatusDTO(
+                documentType,
+                periodKey,
+                lastAssigned,
+                nextNumber,
+                formatDocumentNumber(
+                        numbering,
+                        nextNumber,
+                        effectiveDate
+                )
+        );
     }
 
     public String previewDocumentNumber(
@@ -1133,8 +1149,28 @@ public class FinancialDocumentNumberingService {
         if (
                 exists
         ) {
+            numberingRepository
+                    .findByFacilityIdAndDocumentType(
+                            facilityId,
+                            documentType
+                    )
+                    .ifPresentOrElse(
+                            existing ->
+                                    LOG.warn(
+                                            "Duplicate financial document numbering blocked facilityId={} type={} existingId={}",
+                                            facilityId,
+                                            documentType,
+                                            existing.getId()
+                                    ),
+                            () -> {}
+                    );
+
             throw new BadRequestAlertException(
-                    "Document numbering already exists for this facility and document type",
+                    "Document numbering already exists for facility "
+                            + facilityId
+                            + " and document type "
+                            + documentType
+                            + ". Edit the existing configuration instead of creating a new one.",
                     ENTITY_NAME,
                     "document.type.exists"
             );
@@ -1163,6 +1199,60 @@ public class FinancialDocumentNumberingService {
         }
 
         return separator.trim();
+    }
+
+    private long reserveNextSequenceOnConfiguration(
+            FinancialDocumentNumbering numbering,
+            String periodKey,
+            Long minimumUsedSequence
+    ) {
+        long lastAssigned =
+                resolveLastAssignedSequence(
+                        numbering,
+                        periodKey
+                );
+
+        if (
+                minimumUsedSequence != null
+                        && minimumUsedSequence > lastAssigned
+        ) {
+            LOG.warn(
+                    "Advancing financial document counter from setup value {} to issued value {} for facility {} type {} period {}",
+                    lastAssigned,
+                    minimumUsedSequence,
+                    numbering.getFacilityId(),
+                    numbering.getDocumentType(),
+                    periodKey
+            );
+            lastAssigned = minimumUsedSequence;
+        }
+
+        long nextSequence = lastAssigned + 1;
+
+        numbering.setCurrentPeriodKey(
+                periodKey
+        );
+        numbering.setLastNumber(
+                nextSequence
+        );
+
+        return nextSequence;
+    }
+
+    private long resolveLastAssignedSequence(
+            FinancialDocumentNumbering numbering,
+            String periodKey
+    ) {
+        if (
+                periodKey.equals(
+                        numbering.getCurrentPeriodKey()
+                )
+                        && numbering.getLastNumber() != null
+        ) {
+            return numbering.getLastNumber();
+        }
+
+        return numbering.getStartingNumber() - 1;
     }
 
     private String resolvePeriodKey(
