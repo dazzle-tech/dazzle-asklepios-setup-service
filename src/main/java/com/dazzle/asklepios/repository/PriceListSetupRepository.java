@@ -45,5 +45,16 @@ public interface PriceListSetupRepository
             PriceListSetupStatus status
     );
 
-    
+    List<PriceListSetup>
+    findAllByFacilityIdAndTypeAndIsActiveTrue(
+            Long facilityId,
+            PriceListSetupType type
+    );
+
+    List<PriceListSetup>
+    findAllByFacilityIdAndPayerIdAndIsActiveTrue(
+            Long facilityId,
+            Long payerId
+    );
+
 }

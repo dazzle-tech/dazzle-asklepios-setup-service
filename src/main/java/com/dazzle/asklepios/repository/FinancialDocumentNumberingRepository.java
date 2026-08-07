@@ -2,7 +2,11 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.FinancialDocumentNumbering;
 import com.dazzle.asklepios.domain.enumeration.biling.FinancialDocumentType;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,5 +36,23 @@ public interface FinancialDocumentNumberingRepository
             Long facilityId,
             FinancialDocumentType documentType,
             Long id
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+            """
+            SELECT n
+            FROM FinancialDocumentNumbering n
+            WHERE n.facilityId = :facilityId
+              AND n.documentType = :documentType
+            """
+    )
+    Optional<FinancialDocumentNumbering>
+    findForUpdate(
+            @Param("facilityId")
+            Long facilityId,
+
+            @Param("documentType")
+            FinancialDocumentType documentType
     );
 }

@@ -4,6 +4,8 @@ import com.dazzle.asklepios.domain.FinancialDocumentNumbering;
 import com.dazzle.asklepios.domain.enumeration.BillingConfigurationStatus;
 import com.dazzle.asklepios.domain.enumeration.biling.FinancialDocumentType;
 import com.dazzle.asklepios.service.FinancialDocumentNumberingService;
+import com.dazzle.asklepios.service.dto.FinancialDocumentNumberRequest;
+import com.dazzle.asklepios.service.dto.FinancialDocumentNumberResponse;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberingBulkDTO;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberingDTO;
 import com.dazzle.asklepios.service.dto.FinancialDocumentSequenceStatusDTO;
@@ -20,9 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -253,6 +257,73 @@ public class FinancialDocumentNumberingController {
                 financialDocumentNumberingService.getSequenceStatus(
                         facilityId,
                         documentType
+                )
+        );
+    }
+
+    @PostMapping(
+            "/financial-document-numbering/by-facility/{facilityId}/allocate"
+    )
+    public ResponseEntity<FinancialDocumentNumberResponse>
+    allocateNextNumber(
+            @PathVariable("facilityId")
+            @NotNull
+            Long facilityId,
+
+            @Valid
+            @RequestBody
+            @NotNull
+            FinancialDocumentNumberRequest request
+    ) {
+        if (
+                !facilityId.equals(
+                        request.facilityId()
+                )
+        ) {
+            throw new BadRequestAlertException(
+                    "Path facility id and payload facility id do not match",
+                    ENTITY_NAME,
+                    "facility.mismatch"
+            );
+        }
+
+        FinancialDocumentNumberResponse response =
+                financialDocumentNumberingService.generateNextNumber(
+                        request
+                );
+
+        return ResponseEntity.ok(
+                response
+        );
+    }
+
+    @GetMapping(
+            "/financial-document-numbering/by-facility/{facilityId}/preview/{documentType}"
+    )
+    public ResponseEntity<FinancialDocumentSequenceStatusDTO>
+    previewNextNumber(
+            @PathVariable("facilityId")
+            @NotNull
+            Long facilityId,
+
+            @PathVariable("documentType")
+            @NotNull
+            FinancialDocumentType documentType,
+
+            @RequestParam(required = false)
+            String documentDate
+    ) {
+        LocalDate effectiveDate =
+                documentDate != null
+                        && !documentDate.isBlank()
+                        ? LocalDate.parse(documentDate)
+                        : LocalDate.now();
+
+        return ResponseEntity.ok(
+                financialDocumentNumberingService.previewNextNumber(
+                        facilityId,
+                        documentType,
+                        effectiveDate
                 )
         );
     }

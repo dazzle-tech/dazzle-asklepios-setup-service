@@ -11,7 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -101,4 +101,21 @@ public class FinancialDocumentNumbering
     @Column(name = "status", nullable = false, length = 30)
     private BillingConfigurationStatus status =
             BillingConfigurationStatus.DRAFT;
+
+    /**
+     * Last assigned sequence number for {@link #currentPeriodKey}.
+     * Null means no document has been issued yet in the current period.
+     */
+    @Column(name = "last_number")
+    private Long lastNumber;
+
+    /**
+     * Period bucket (year/month/day/ALL) for which {@link #lastNumber} applies.
+     */
+    @Column(name = "current_period_key", length = 20)
+    private String currentPeriodKey;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 }

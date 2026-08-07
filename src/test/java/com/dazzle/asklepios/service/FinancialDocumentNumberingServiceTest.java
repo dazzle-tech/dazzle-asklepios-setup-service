@@ -2,14 +2,12 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.FinancialDocumentNumbering;
-import com.dazzle.asklepios.domain.FinancialDocumentSequence;
 import com.dazzle.asklepios.domain.enumeration.BillingConfigurationStatus;
 import com.dazzle.asklepios.domain.enumeration.BillingResetFrequency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.domain.enumeration.biling.FinancialDocumentType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.FinancialDocumentNumberingRepository;
-import com.dazzle.asklepios.repository.FinancialDocumentSequenceRepository;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberRequest;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberResponse;
 import com.dazzle.asklepios.service.dto.FinancialDocumentNumberingDTO;
@@ -30,9 +28,6 @@ class FinancialDocumentNumberingServiceTest {
 
     @Mock
     private FinancialDocumentNumberingRepository numberingRepository;
-
-    @Mock
-    private FinancialDocumentSequenceRepository sequenceRepository;
 
     @Mock
     private FacilityRepository facilityRepository;
@@ -72,13 +67,10 @@ class FinancialDocumentNumberingServiceTest {
 
     @Test
     void generateNextNumber_shouldReturnYearlySequentialInvoiceNumber() {
-        when(numberingRepository.findByFacilityIdAndDocumentType(1L, FinancialDocumentType.INVOICE))
+        when(numberingRepository.findForUpdate(1L, FinancialDocumentType.INVOICE))
                 .thenReturn(Optional.of(numbering));
 
-        when(sequenceRepository.findForUpdate(1L, FinancialDocumentType.INVOICE, "2026"))
-                .thenReturn(Optional.empty());
-
-        when(sequenceRepository.saveAndFlush(any(FinancialDocumentSequence.class)))
+        when(numberingRepository.saveAndFlush(any(FinancialDocumentNumbering.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         when(facilityRepository.findById(1L))
@@ -88,13 +80,68 @@ class FinancialDocumentNumberingServiceTest {
                 new FinancialDocumentNumberRequest(
                         1L,
                         FinancialDocumentType.INVOICE,
-                        LocalDate.of(2026, 7, 25)
+                        LocalDate.of(2026, 7, 25),
+                        null
                 )
         );
 
         assertThat(response.documentNumber()).isEqualTo("INV-2026-000001");
         assertThat(response.sequenceNumber()).isEqualTo(1L);
         assertThat(response.periodKey()).isEqualTo("2026");
+        assertThat(numbering.getLastNumber()).isEqualTo(1L);
+        assertThat(numbering.getCurrentPeriodKey()).isEqualTo("2026");
+    }
+
+    @Test
+    void generateNextNumber_shouldResetToStartingNumberWhenPeriodChanges() {
+        numbering.setCurrentPeriodKey("2025");
+        numbering.setLastNumber(99L);
+
+        when(numberingRepository.findForUpdate(1L, FinancialDocumentType.INVOICE))
+                .thenReturn(Optional.of(numbering));
+
+        when(numberingRepository.saveAndFlush(any(FinancialDocumentNumbering.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        FinancialDocumentNumberResponse response = service.generateNextNumber(
+                new FinancialDocumentNumberRequest(
+                        1L,
+                        FinancialDocumentType.INVOICE,
+                        LocalDate.of(2026, 1, 1),
+                        null
+                )
+        );
+
+        assertThat(response.sequenceNumber()).isEqualTo(1L);
+        assertThat(response.documentNumber()).isEqualTo("INV-2026-000001");
+    }
+
+    @Test
+    void generateNextNumber_shouldAdvanceCounterWhenMinimumUsedSequenceIsAhead() {
+        numbering.setCurrentPeriodKey("2026");
+        numbering.setLastNumber(1L);
+
+        when(numberingRepository.findForUpdate(1L, FinancialDocumentType.DEBIT_NOTE))
+                .thenReturn(Optional.of(numbering));
+
+        when(numberingRepository.saveAndFlush(any(FinancialDocumentNumbering.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        numbering.setDocumentType(FinancialDocumentType.DEBIT_NOTE);
+        numbering.setPrefix("DNS");
+
+        FinancialDocumentNumberResponse response = service.generateNextNumber(
+                new FinancialDocumentNumberRequest(
+                        1L,
+                        FinancialDocumentType.DEBIT_NOTE,
+                        LocalDate.of(2026, 8, 7),
+                        3L
+                )
+        );
+
+        assertThat(response.sequenceNumber()).isEqualTo(4L);
+        assertThat(response.documentNumber()).isEqualTo("DNS-2026-000004");
+        assertThat(numbering.getLastNumber()).isEqualTo(4L);
     }
 
     @Test
