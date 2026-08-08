@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
@@ -38,6 +40,11 @@ public class PriceListSetupItemService {
             );
         }
 
+        PriceListSetup priceListSetup =
+                priceListSetupRepository
+                        .findById(priceListSetupId)
+                        .orElseThrow();
+
         validateUniqueWithinPriceList(priceListSetupId, dto);
 
         PriceListSetupItem entity =
@@ -62,6 +69,12 @@ public class PriceListSetupItemService {
                 dto.isActive() == null
                         ? true
                         : dto.isActive()
+        );
+        entity.setRequiresPreAuthorization(
+                resolveRequiresPreAuthorization(
+                        priceListSetup,
+                        dto.requiresPreAuthorization()
+                )
         );
 
         try {
@@ -93,6 +106,11 @@ public class PriceListSetupItemService {
                                 )
                         );
 
+        PriceListSetup priceListSetup =
+                priceListSetupRepository
+                        .findById(priceListSetupId)
+                        .orElseThrow();
+
         if (dto.itemCode() != null
                 && !dto.itemCode().equals(entity.getItemCode())
                 && priceListSetupItemRepository.existsByPriceListSetupIdAndItemCode(
@@ -117,6 +135,15 @@ public class PriceListSetupItemService {
 
         if (dto.isActive() != null) {
             entity.setIsActive(dto.isActive());
+        }
+
+        if (dto.requiresPreAuthorization() != null) {
+            entity.setRequiresPreAuthorization(
+                    resolveRequiresPreAuthorization(
+                            priceListSetup,
+                            dto.requiresPreAuthorization()
+                    )
+            );
         }
 
         try {
@@ -272,7 +299,28 @@ public class PriceListSetupItemService {
                 entity.getItemName(),
                 entity.getUnitPrice(),
                 entity.getDiscountPercentage(),
-                entity.getIsActive()
+                entity.getIsActive(),
+                entity.getRequiresPreAuthorization()
         );
+    }
+
+    private Boolean resolveRequiresPreAuthorization(
+            PriceListSetup priceListSetup,
+            Boolean requestedValue
+    ) {
+        if (priceListSetup.getType()
+                != PriceListSetupType.INSURANCE) {
+            if (Boolean.TRUE.equals(requestedValue)) {
+                throw new BadRequestAlertException(
+                        "Requires Pre-Authorization is only allowed on insurance price list items.",
+                        ENTITY,
+                        "requiresPreAuthorization.insuranceOnly"
+                );
+            }
+
+            return false;
+        }
+
+        return Boolean.TRUE.equals(requestedValue);
     }
 }

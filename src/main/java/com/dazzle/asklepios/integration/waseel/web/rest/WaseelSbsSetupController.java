@@ -97,14 +97,4 @@ public class WaseelSbsSetupController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
-
-    @GetMapping("/waseel/item-mapping/{itemType}/{sourceId}/requires-preauth")
-    public ResponseEntity<Boolean> requiresPreauth(
-            @PathVariable BillingItemTypes itemType,
-            @PathVariable Long sourceId
-    ) {
-        return ResponseEntity.ok(
-                waseelSbsSetupService.requiresPreauth(itemType, sourceId)
-        );
-    }
 }

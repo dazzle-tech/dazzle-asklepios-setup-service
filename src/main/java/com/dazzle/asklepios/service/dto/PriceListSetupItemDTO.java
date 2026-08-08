@@ -39,7 +39,9 @@ public record PriceListSetupItemDTO(
         @DecimalMax("100.00")
         BigDecimal discountPercentage,
 
-        Boolean isActive
+        Boolean isActive,
+
+        Boolean requiresPreAuthorization
 
 ) {
 }

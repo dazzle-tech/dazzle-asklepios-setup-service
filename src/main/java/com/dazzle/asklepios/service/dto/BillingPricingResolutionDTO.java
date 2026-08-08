@@ -38,7 +38,9 @@ public record BillingPricingResolutionDTO(
 
         String roundingMode,
 
-        Integer roundingScale
+        Integer roundingScale,
+
+        Boolean requiresPreAuthorization
 
 ) {
 }

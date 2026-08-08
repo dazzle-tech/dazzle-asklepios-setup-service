@@ -52,9 +52,6 @@ public class WaseelItemMapping extends AbstractAuditingEntity<Long> implements S
         @JoinColumn(name = "sbs_catalog_id", nullable = false)
         private WaseelSbsCatalog sbsCatalog;
 
-        @Column(name = "requires_pre_authorization", nullable = false)
-        private Boolean requiresPreAuthorization = false;
-
         @Column(name = "is_active", nullable = false)
         private Boolean isActive = true;
 
