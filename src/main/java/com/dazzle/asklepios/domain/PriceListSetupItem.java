@@ -91,4 +91,9 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    @NotNull
+    @Column(name = "requires_pre_authorization", nullable = false)
+    @Builder.Default
+    private Boolean requiresPreAuthorization = false;
 }

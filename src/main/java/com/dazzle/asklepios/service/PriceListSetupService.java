@@ -327,7 +327,42 @@ public class PriceListSetupService {
 
                 "DISCOUNT_THEN_TAX",
                 "HALF_UP",
-                4
+                4,
+                resolveRequiresPreAuthorization(
+                        priceList,
+                        item
+                )
+        );
+    }
+
+    /**
+     * Resolves whether pre-authorization is required for a billing item
+     * based on the matched insurance price list item (type + payor).
+     */
+    @Transactional(readOnly = true)
+    public boolean requiresPreAuthorization(
+            BillingPricingResolutionRequest request
+    ) {
+        BillingPricingResolutionDTO resolved =
+                resolve(request);
+
+        return resolved != null
+                && Boolean.TRUE.equals(
+                        resolved.requiresPreAuthorization()
+                );
+    }
+
+    private Boolean resolveRequiresPreAuthorization(
+            PriceListSetup priceList,
+            PriceListSetupItem item
+    ) {
+        if (priceList.getType()
+                != PriceListSetupType.INSURANCE) {
+            return false;
+        }
+
+        return Boolean.TRUE.equals(
+                item.getRequiresPreAuthorization()
         );
     }
 

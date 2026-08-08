@@ -414,7 +414,6 @@ public class WaseelSbsSetupService {
         mapping.setItemCode(request.itemCode());
         mapping.setItemName(request.itemName());
         mapping.setSbsCatalog(sbsCatalog);
-        mapping.setRequiresPreAuthorization(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
         mapping.setCreatedBy("system");
@@ -434,7 +433,6 @@ public class WaseelSbsSetupService {
         }
 
 
-        mapping.setRequiresPreAuthorization(Boolean.TRUE.equals(request.requiresPreauth()));
         mapping.setIsActive(request.isActive() == null || request.isActive());
         mapping.setNotes(request.notes());
         mapping.setLastModifiedBy("system");
@@ -485,7 +483,6 @@ public class WaseelSbsSetupService {
                 catalog.getWaseelItemType(),
                 catalog.getSbsCode(),
                 catalog.getShortDescription(),
-                mapping.getRequiresPreAuthorization(),
                 mapping.getIsActive(),
                 mapping.getNotes()
         );
@@ -524,14 +521,5 @@ public class WaseelSbsSetupService {
         return itemMappingRepository
                 .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
                 .map(this::toMappingDto);
-    }
-
-    @Transactional(readOnly = true)
-    public boolean requiresPreauth(BillingItemTypes itemType, Long sourceId) {
-
-        return itemMappingRepository
-                .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
-                .map(WaseelItemMapping::getRequiresPreAuthorization)
-                .orElse(false);
     }
 }

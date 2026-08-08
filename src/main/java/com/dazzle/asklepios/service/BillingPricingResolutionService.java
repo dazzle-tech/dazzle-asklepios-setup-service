@@ -146,7 +146,8 @@ public class BillingPricingResolutionService {
 
                         resolvedPricing.calculationOrder(),
                         resolvedPricing.roundingMode(),
-                        resolvedPricing.roundingScale()
+                        resolvedPricing.roundingScale(),
+                        resolvedPricing.requiresPreAuthorization()
                 );
 
         LOG.info(
@@ -321,7 +322,10 @@ public class BillingPricingResolutionService {
                 priceListPrice.roundingScale() == null
                         ? 4
                         : priceListPrice.roundingScale(),
-                priceListPrice.discountRate()
+                priceListPrice.discountRate(),
+                Boolean.TRUE.equals(
+                        priceListPrice.requiresPreAuthorization()
+                )
         );
     }
 
@@ -378,7 +382,8 @@ public class BillingPricingResolutionService {
                 "DISCOUNT_THEN_TAX",
                 "HALF_UP",
                 4,
-                null
+                null,
+                false
         );
     }
 
@@ -594,7 +599,9 @@ public class BillingPricingResolutionService {
 
             Integer roundingScale,
 
-            BigDecimal itemDiscountRate
+            BigDecimal itemDiscountRate,
+
+            Boolean requiresPreAuthorization
 
     ) {
     }

@@ -12,7 +12,6 @@ public record WaseelItemMappingDTO(
         String waseelItemType,
         String sbsCode,
         String sbsDescription,
-        Boolean requiresPreauth,
         Boolean isActive,
         String notes
 ) {}

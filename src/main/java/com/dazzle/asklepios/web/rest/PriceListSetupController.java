@@ -65,6 +65,17 @@ public class PriceListSetupController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/price-list-setups/requires-preauth")
+    public ResponseEntity<Boolean> requiresPreAuthorization(
+            @Valid BillingPricingResolutionRequest request
+    ) {
+        return ResponseEntity.ok(
+                priceListSetupService.requiresPreAuthorization(
+                        request
+                )
+        );
+    }
+
     @GetMapping("/price-list-setups/{id}")
     public ResponseEntity<PriceListSetupDTO> getPriceListSetup(
             @PathVariable Long id
