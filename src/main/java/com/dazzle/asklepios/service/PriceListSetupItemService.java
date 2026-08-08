@@ -181,12 +181,27 @@ public class PriceListSetupItemService {
     @Transactional(readOnly = true)
     public Page<PriceListSetupItemDTO> findAll(
             Long priceListSetupId,
+            String search,
             Pageable pageable
     ) {
+        String normalizedSearch =
+                search == null || search.isBlank()
+                        ? null
+                        : search.trim();
+
+        if (normalizedSearch == null) {
+            return priceListSetupItemRepository
+                    .findAllByPriceListSetupId(
+                            priceListSetupId,
+                            pageable
+                    )
+                    .map(this::toDTO);
+        }
 
         return priceListSetupItemRepository
-                .findAllByPriceListSetupId(
+                .findAllByPriceListSetupIdAndItemNameContainingIgnoreCase(
                         priceListSetupId,
+                        normalizedSearch,
                         pageable
                 )
                 .map(this::toDTO);

@@ -18,6 +18,12 @@ public interface PriceListSetupItemRepository
             Pageable pageable
     );
 
+    Page<PriceListSetupItem> findAllByPriceListSetupIdAndItemNameContainingIgnoreCase(
+            Long priceListSetupId,
+            String itemName,
+            Pageable pageable
+    );
+
     Optional<PriceListSetupItem>
     findByIdAndPriceListSetupId(
             Long id,
