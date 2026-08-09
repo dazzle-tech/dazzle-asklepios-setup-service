@@ -279,6 +279,7 @@ public class DiagnosticTestProfileService {
     // helpers
     // -------------------------
     private void validate(DiagnosticTestProfile entity) {
+
         Long testId = entity.getTest() != null ? entity.getTest().getId() : null;
 
         LOG.debug("[TestProfile] VALIDATE - start. testId={} name={} resultType={}",
@@ -286,20 +287,57 @@ public class DiagnosticTestProfileService {
 
         if (testId == null) {
             LOG.warn("[TestProfile] VALIDATE - missing testId");
-            throw new BadRequestAlertException("testId is required", "diagnosticTestProfile", "testidmissing");
+            throw new BadRequestAlertException(
+                    "testId is required",
+                    "diagnosticTestProfile",
+                    "testidmissing"
+            );
         }
+
         if (entity.getName() == null || entity.getName().isBlank()) {
             LOG.warn("[TestProfile] VALIDATE - missing name. testId={}", testId);
-            throw new BadRequestAlertException("name is required", "diagnosticTestProfile", "namemissing");
+            throw new BadRequestAlertException(
+                    "name is required",
+                    "diagnosticTestProfile",
+                    "namemissing"
+            );
         }
+
         if (entity.getResultType() == null) {
             LOG.warn("[TestProfile] VALIDATE - missing resultType. testId={}", testId);
-            throw new BadRequestAlertException("resultType is required", "diagnosticTestProfile", "resulttypemissing");
+            throw new BadRequestAlertException(
+                    "resultType is required",
+                    "diagnosticTestProfile",
+                    "resulttypemissing"
+            );
+        }
+
+        if (entity.getResultType() == TestResultType.LOV
+                && entity.getListOfValueId() == null) {
+
+            LOG.warn("[TestProfile] VALIDATE - LOV requires listOfValueId. testId={}", testId);
+
+            throw new BadRequestAlertException(
+                    "listOfValueId is required for LOV result type",
+                    "diagnosticTestProfile",
+                    "lovmissing"
+            );
+        }
+
+        if (entity.getResultType() == TestResultType.TEXT
+                && entity.getListOfValueId() != null) {
+
+            LOG.warn("[TestProfile] VALIDATE - TEXT cannot have listOfValueId. testId={}", testId);
+
+            throw new BadRequestAlertException(
+                    "listOfValueId is not allowed for TEXT result type",
+                    "diagnosticTestProfile",
+                    "invalidlov"
+            );
         }
 
         LOG.debug("[TestProfile] VALIDATE - ok. testId={}", testId);
     }
-
     public List<DiagnosticTestProfile> findAllByIds(Collection<Long> ids) {
 
         LOG.debug("Request to find DiagnosticTestProfiles by ids={}, count={}",
