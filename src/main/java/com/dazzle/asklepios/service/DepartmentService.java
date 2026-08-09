@@ -89,7 +89,7 @@ public class DepartmentService {
                 .defaultDurationMinutes(departmentVM.defaultDurationMinutes())
                 .defaultBufferBeforeMinutes(departmentVM.defaultBufferBeforeMinutes())
                 .defaultBufferAfterMinutes(departmentVM.defaultBufferAfterMinutes())
-                .requirePractitioner(departmentVM.requirePractitioner())
+                .requirePractitioner(true)
                 .requireBilling(departmentVM.requireBilling())
                 .requirePreAssessment(departmentVM.requirePreAssessment())
                 .workingDays(normalizeWorkingDays(departmentVM.workingDays()))
@@ -152,9 +152,7 @@ public class DepartmentService {
         if (departmentVM.defaultBufferAfterMinutes() != null) {
             department.setDefaultBufferAfterMinutes(departmentVM.defaultBufferAfterMinutes());
         }
-        if (departmentVM.requirePractitioner() != null) {
-            department.setRequirePractitioner(departmentVM.requirePractitioner());
-        }
+
         if (departmentVM.requireBilling() != null) {
             department.setRequireBilling(departmentVM.requireBilling());
         }

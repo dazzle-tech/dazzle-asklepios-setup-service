@@ -101,7 +101,7 @@ public class Department extends AbstractAuditingEntity<Long> implements Serializ
     private Integer defaultBufferAfterMinutes = 0;
 
     @Column(name = "require_practitioner")
-    private Boolean requirePractitioner = false;
+    private Boolean requirePractitioner = true;
 
     @Column(name = "require_billing")
     private Boolean requireBilling = false;
