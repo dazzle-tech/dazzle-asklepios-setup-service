@@ -78,7 +78,17 @@ public class DiagnosticTestNormalRangeService {
                             "Profile not found: " + profileTestId
                     );
                 });
+        if (profile.getResultType() == TestResultType.TEXT) {
 
+            LOG.warn("[NormalRange] CREATE - TEXT profile does not support normal ranges. profileTestId={}",
+                    profileTestId);
+
+            throw new BadRequestAlertException(
+                    "Normal range is not supported for TEXT result type",
+                    "diagnosticTestNormalRange",
+                    "text_result_type"
+            );
+        }
         entity.setProfileTest(profile);
         entity.setTest(profile.getTest());
 
@@ -124,7 +134,17 @@ public class DiagnosticTestNormalRangeService {
                                 "Profile not found: " + profileTestId
                         );
                     });
+            if (profile.getResultType() == TestResultType.TEXT) {
 
+                LOG.warn("[NormalRange] UPDATE - TEXT profile does not support normal ranges. profileTestId={}",
+                        profileTestId);
+
+                throw new BadRequestAlertException(
+                        "Normal range is not supported for TEXT result type",
+                        "diagnosticTestNormalRange",
+                        "text_result_type"
+                );
+            }
             entity.setId(id);
             entity.setProfileTest(profile);
             entity.setTest(profile.getTest());

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
+import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
@@ -37,7 +38,27 @@ public class DiagnosticTestService {
         this.profileRepository = profileRepository;
         this.billingRuleReferenceService = billingRuleReferenceService;
     }
+    private void validateDefaultProfileFields(
+            TestResultType resultType,
+            String listOfValueId
+    ) {
 
+        if (resultType == TestResultType.LOV && listOfValueId == null) {
+            throw new BadRequestAlertException(
+                    "listOfValueId is required for LOV result type",
+                    "diagnosticTest",
+                    "lovmissing"
+            );
+        }
+
+        if (resultType == TestResultType.TEXT && listOfValueId != null) {
+            throw new BadRequestAlertException(
+                    "listOfValueId is not allowed for TEXT result type",
+                    "diagnosticTest",
+                    "invalidlov"
+            );
+        }
+    }
     public DiagnosticTest create(DiagnosticTestCreateVM vm) {
         LOG.debug("Create DiagnosticTest: {}", vm);
 
@@ -76,13 +97,17 @@ public class DiagnosticTestService {
         if (saved.getType() == TestType.LABORATORY) {
 
             if (vm.defaultProfileResultType() == null) {
+
                 throw new BadRequestAlertException(
                         "defaultProfileResultType is required for LABORATORY tests",
                         "diagnosticTest",
                         "missing_default_profile_result_type"
                 );
             }
-
+            validateDefaultProfileFields(
+                    vm.defaultProfileResultType(),
+                    vm.listOfValueId()
+            );
             DiagnosticTestProfile defaultProfile = DiagnosticTestProfile.builder()
                     .test(saved)
                     .name(saved.getName())
@@ -142,7 +167,12 @@ public class DiagnosticTestService {
             DiagnosticTest saved = repository.save(existing);
 
             if (saved.getType() == TestType.LABORATORY) {
-
+                if (vm.defaultProfileResultType() != null) {
+                    validateDefaultProfileFields(
+                            vm.defaultProfileResultType(),
+                            vm.listOfValueId()
+                    );
+                }
                 DiagnosticTestProfile defaultProfile = profileRepository
                         .findFirstByTest_IdAndIsDefaultTrue(saved.getId())
                         .orElseGet(() -> {
