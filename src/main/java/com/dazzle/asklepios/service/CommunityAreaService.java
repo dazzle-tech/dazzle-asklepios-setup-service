@@ -117,6 +117,42 @@ public class CommunityAreaService {
         return areaRepository.findByCommunity_IdAndNameContainingIgnoreCase(communityId, name.trim(), pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<CommunityArea> searchByName(
+            Long communityId,
+            String name,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Searching areas by name prefix='{}' communityId={} pageable={}",
+                name,
+                communityId,
+                pageable
+        );
+
+        if (communityId == null) {
+            throw new BadRequestAlertException(
+                    "Community id is required",
+                    "communityArea",
+                    "community.required"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            return areaRepository.findByCommunity_IdAndIsActiveTrue(
+                    communityId,
+                    pageable
+            );
+        }
+
+        return areaRepository
+                .findByCommunity_IdAndIsActiveTrueAndNameStartingWithIgnoreCase(
+                        communityId,
+                        name.trim(),
+                        pageable
+                );
+    }
+
     @Transactional
     public Optional<CommunityArea> toggleIsActive(Long id) {
         return areaRepository.findById(id)

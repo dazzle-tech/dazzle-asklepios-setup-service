@@ -61,6 +61,9 @@ public class CountryController {
                 .body(body);
     }
 
+
+
+
     @PutMapping("/country/{id}")
     public ResponseEntity<CountryResponseVM> updateCountry(
             @PathVariable Long id,
@@ -125,6 +128,32 @@ public class CountryController {
         Page<Country> page = countryService.findByName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/country/names/{name}")
+    public ResponseEntity<List<CountryResponseVM>> getCountriesByNameSearch(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search Countries by name prefix='{}' pageable={}",
+                name,
+                pageable
+        );
+
+        Page<Country> page = countryService.searchByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
 
         List<CountryResponseVM> body = page.getContent()
                 .stream()

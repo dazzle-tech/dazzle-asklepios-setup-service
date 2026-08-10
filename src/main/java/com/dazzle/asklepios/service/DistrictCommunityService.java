@@ -129,6 +129,42 @@ public class DistrictCommunityService {
         );
     }
 
+    @Transactional(readOnly = true)
+    public Page<DistrictCommunity> searchByName(
+            Long districtId,
+            String name,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Searching communities by name prefix='{}' districtId={} pageable={}",
+                name,
+                districtId,
+                pageable
+        );
+
+        if (districtId == null) {
+            throw new BadRequestAlertException(
+                    "District id is required",
+                    "districtCommunity",
+                    "district.required"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            return communityRepository.findByDistrict_IdAndIsActiveTrue(
+                    districtId,
+                    pageable
+            );
+        }
+
+        return communityRepository
+                .findByDistrict_IdAndIsActiveTrueAndNameStartingWithIgnoreCase(
+                        districtId,
+                        name.trim(),
+                        pageable
+                );
+    }
+
     @Transactional
     public Optional<DistrictCommunity> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for DistrictCommunity id={}", id);

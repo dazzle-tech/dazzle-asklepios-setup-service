@@ -14,4 +14,11 @@ public interface CommunityAreaRepository extends JpaRepository<CommunityArea, Lo
     Page<CommunityArea> findByCommunity_IdAndNameContainingIgnoreCase(Long communityId, String name, Pageable pageable);
 
     Page<CommunityArea> findByCommunity_IdAndIsActiveTrue(Long communityId, Pageable pageable);
+
+    Page<CommunityArea> findByCommunity_IdAndIsActiveTrueAndNameStartingWithIgnoreCase(
+            Long communityId,
+            String name,
+            Pageable pageable
+    );
+
 }
