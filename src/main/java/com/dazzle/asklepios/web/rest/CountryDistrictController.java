@@ -162,6 +162,37 @@ public class CountryDistrictController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+
+    @GetMapping("/country/{countryId}/district/names/{name}")
+    public ResponseEntity<List<CountryDistrictResponseVM>> searchDistrictsByName(
+            @PathVariable Long countryId,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search districts by name prefix='{}' for countryId={} pageable={}",
+                name,
+                countryId,
+                pageable
+        );
+
+        Page<CountryDistrict> page =
+                districtService.searchByName(countryId, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<CountryDistrictResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryDistrictResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
     @GetMapping("/country/{countryId}/district/by-code")
     public ResponseEntity<List<CountryDistrictResponseVM>> getByCode(
             @PathVariable Long countryId,

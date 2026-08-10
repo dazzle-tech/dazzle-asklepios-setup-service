@@ -95,6 +95,43 @@ public class CountryDistrictService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CountryDistrict> searchByName(
+            Long countryId,
+            String name,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Searching districts by name prefix='{}' countryId={} pageable={}",
+                name,
+                countryId,
+                pageable
+        );
+
+        if (countryId == null) {
+            throw new BadRequestAlertException(
+                    "Country id is required",
+                    "countryDistrict",
+                    "country.required"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            return districtRepository.findByCountry_IdAndIsActiveTrue(
+                    countryId,
+                    pageable
+            );
+        }
+
+        return districtRepository
+                .findByCountry_IdAndIsActiveTrueAndNameStartingWithIgnoreCase(
+                        countryId,
+                        name.trim(),
+                        pageable
+                );
+    }
+
+
+    @Transactional(readOnly = true)
     public Page<CountryDistrict> findActive(Long countryId, Pageable pageable) {
         LOG.debug("Fetching active CountryDistricts for countryId={} pageable={}", countryId, pageable);
         return districtRepository.findByCountry_IdAndIsActiveTrue(countryId, pageable);

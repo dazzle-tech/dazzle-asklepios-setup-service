@@ -127,6 +127,36 @@ public class CommunityAreaController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+
+    @GetMapping("/community/{communityId}/community-area/names/{name}")
+    public ResponseEntity<List<CommunityAreaResponseVM>> searchAreasByName(
+            @PathVariable Long communityId,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search areas by name prefix='{}' for communityId={} pageable={}",
+                name,
+                communityId,
+                pageable
+        );
+
+        Page<CommunityArea> page =
+                areaService.searchByName(communityId, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<CommunityAreaResponseVM> body = page.getContent()
+                .stream()
+                .map(CommunityAreaResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
     @PatchMapping("/community-area/{id}/toggle-active")
     public ResponseEntity<CommunityAreaResponseVM> toggleActive(@PathVariable Long id) {
         return areaService.toggleIsActive(id)

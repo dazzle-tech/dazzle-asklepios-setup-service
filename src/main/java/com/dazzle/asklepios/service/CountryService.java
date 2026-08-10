@@ -126,6 +126,25 @@ public class CountryService {
                     return saved;
                 });
     }
+
+    @Transactional(readOnly = true)
+    public Page<Country> searchByName(String name, Pageable pageable) {
+        LOG.debug(
+                "Searching Countries by name prefix='{}' pageable={}",
+                name,
+                pageable
+        );
+
+        if (name == null || name.trim().isEmpty()) {
+            return countryRepository.findByIsActiveTrue(pageable);
+        }
+
+        return countryRepository.searchActiveByNamePrefix(
+                name.trim(),
+                pageable
+        );
+    }
+
     @Transactional(readOnly = true)
     public Country findById(Long id) {
         LOG.debug("[GET country BY ID] id={}", id);

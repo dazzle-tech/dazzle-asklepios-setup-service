@@ -160,6 +160,37 @@ public class DistrictCommunityController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+
+    @GetMapping("/district/{districtId}/community/names/{name}")
+    public ResponseEntity<List<DistrictCommunityResponseVM>> searchCommunitiesByName(
+            @PathVariable Long districtId,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search communities by name prefix='{}' for districtId={} pageable={}",
+                name,
+                districtId,
+                pageable
+        );
+
+        Page<DistrictCommunity> page =
+                communityService.searchByName(districtId, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<DistrictCommunityResponseVM> body = page.getContent()
+                .stream()
+                .map(DistrictCommunityResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
     @PatchMapping("/community/{id}/toggle-active")
     public ResponseEntity<DistrictCommunityResponseVM> toggleActive(@PathVariable Long id) {
         LOG.debug("REST toggle DistrictCommunity isActive id={}", id);
