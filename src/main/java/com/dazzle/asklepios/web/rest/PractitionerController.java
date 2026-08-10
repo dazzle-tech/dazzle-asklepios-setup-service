@@ -311,6 +311,25 @@ public class PractitionerController {
         );
     }
 
+    @GetMapping("/practitioner/specialists/by-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getSpecialistPractitionersByDepartment(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list specialist practitioners by departmentId={} pageable={}", departmentId, pageable);
+
+        Page<Practitioner> page = practitionerService.findSpecialistPractitionersByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/practitioners/by-login/{login}")
     public ResponseEntity<Practitioner> getByLogin(@PathVariable String login) {
         return practitionerService.findByUserLogin(login)

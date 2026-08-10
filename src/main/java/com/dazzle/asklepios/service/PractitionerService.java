@@ -377,6 +377,38 @@ public class PractitionerService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Practitioner> findSpecialistPractitionersByDepartment(Long departmentId, Pageable pageable) {
+        LOG.debug("Fetching paged specialist practitioners by department departmentId={} pageable={}", departmentId, pageable);
+
+        if (departmentId == null) {
+            throw new BadRequestAlertException("Department ID is required", "practitioner", "departmentid.required");
+        }
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentIdAndPractitioner_IsActiveIsTrue(departmentId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> practitionerIds = items.stream()
+                .map(pd -> pd.getPractitioner().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (practitionerIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepository.findByIdInAndSpecialtyAndIsActiveTrue(
+                practitionerIds,
+                Specialty.SPECIALIST,
+                pageable
+        );
+    }
+
+    @Transactional(readOnly = true)
     public Page<Practitioner> findActiveByFacilityId(Long facilityId, Pageable pageable) {
         LOG.debug("Fetching ACTIVE Practitioners by facilityId={} pageable={}", facilityId, pageable);
         return practitionerRepository.findByFacilityIdAndIsActiveTrue(facilityId, pageable);
