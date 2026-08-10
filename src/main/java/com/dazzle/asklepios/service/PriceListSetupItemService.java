@@ -179,7 +179,7 @@ public class PriceListSetupItemService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PriceListSetupItemDTO> findAll(
+    public Page<PriceListSetupItemDTO> search(
             Long priceListSetupId,
             Pageable pageable
     ) {

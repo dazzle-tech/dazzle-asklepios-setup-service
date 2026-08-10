@@ -442,8 +442,23 @@ public class WaseelSbsSetupService {
     }
 
     @Transactional(readOnly = true)
-    public Page<WaseelItemMappingDTO> searchMappings(Pageable pageable) {
-        return itemMappingRepository.findAll(pageable).map(this::toMappingDto);
+    public Page<WaseelItemMappingDTO> searchMappings(
+            BillingItemTypes itemType,
+            String search,
+            Pageable pageable
+    ) {
+        String normalizedSearch =
+                search == null || search.isBlank()
+                        ? null
+                        : search.trim();
+
+        return itemMappingRepository
+                .searchActiveMappings(
+                        itemType,
+                        normalizedSearch,
+                        pageable
+                )
+                .map(this::toMappingDto);
     }
 
     public void deactivateMapping(Long id) {
