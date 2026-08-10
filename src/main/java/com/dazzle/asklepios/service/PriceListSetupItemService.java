@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
+import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
@@ -181,12 +182,20 @@ public class PriceListSetupItemService {
     @Transactional(readOnly = true)
     public Page<PriceListSetupItemDTO> findAll(
             Long priceListSetupId,
+            String search,
+            PriceListItemType itemType,
             Pageable pageable
     ) {
+        String normalizedSearch =
+                search == null || search.isBlank()
+                        ? null
+                        : search.trim();
 
         return priceListSetupItemRepository
-                .findAllByPriceListSetupId(
+                .findAllByPriceListSetupIdAndItemNameContaining(
                         priceListSetupId,
+                        normalizedSearch,
+                        itemType,
                         pageable
                 )
                 .map(this::toDTO);

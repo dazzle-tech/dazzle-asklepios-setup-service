@@ -188,47 +188,11 @@ public class PriceListSetupService {
                 );
 
         List<PriceListSetup> candidatePriceLists =
-                priceListSetupRepository
-                        .findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
-                                request.facilityId(),
-                                request.currency(),
-                                PriceListSetupStatus.ACTIVE
-                        )
-                        .stream()
-                        .filter(priceList ->
-                                matchesCoverageType(
-                                        priceList,
-                                        coverageType,
-                                        request.payerId()
-                                )
-                        )
-                        .filter(priceList ->
-                                isEffective(
-                                        priceList,
-                                        pricingDate
-                                )
-                        )
-                        .sorted(
-                                Comparator
-                                        .comparing(
-                                                (PriceListSetup priceList) ->
-                                                        payerPriority(
-                                                                priceList,
-                                                                request.payerId()
-                                                        )
-                                        )
-                                        .thenComparing(
-                                                PriceListSetup::getVersionNumber,
-                                                Comparator.nullsLast(
-                                                        Comparator.reverseOrder()
-                                                )
-                                        )
-                                        .thenComparing(
-                                                PriceListSetup::getId,
-                                                Comparator.reverseOrder()
-                                        )
-                        )
-                        .toList();
+                findCandidatePriceLists(
+                        request,
+                        coverageType,
+                        pricingDate
+                );
 
         if (candidatePriceLists.isEmpty()) {
             return null;
@@ -236,12 +200,11 @@ public class PriceListSetupService {
         for (PriceListSetup priceList : candidatePriceLists) {
 
             Optional<PriceListSetupItem> itemOptional =
-                    priceListSetupItemRepository
-                            .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
-                                    priceList.getId(),
-                                    itemType,
-                                    request.itemId()
-                            );
+                    findActivePriceListItem(
+                            priceList.getId(),
+                            itemType,
+                            request.itemId()
+                    );
 
             if (itemOptional.isPresent()) {
                 return toResolutionDTO(
@@ -346,9 +309,130 @@ public class PriceListSetupService {
         BillingPricingResolutionDTO resolved =
                 resolve(request);
 
-        return resolved != null
+        if (resolved != null
                 && Boolean.TRUE.equals(
                         resolved.requiresPreAuthorization()
+                )) {
+            return true;
+        }
+
+        return requiresPreAuthorizationFromAnyMatchingInsuranceItem(
+                request
+        );
+    }
+
+    /**
+     * Safety net for pre-authorization checks: when payer matching is ambiguous,
+     * still honor PREAUTH on any active insurance price list item for the same
+     * facility, currency, item type, and source id.
+     */
+    private boolean requiresPreAuthorizationFromAnyMatchingInsuranceItem(
+            BillingPricingResolutionRequest request
+    ) {
+        if (resolveCoverageType(request) != BillingCoverageType.INSURANCE) {
+            return false;
+        }
+
+        LocalDate pricingDate =
+                request.pricingDate() != null
+                        ? request.pricingDate()
+                        : LocalDate.now();
+
+        PriceListItemType itemType =
+                mapItemType(
+                        request.billingItemType()
+                );
+
+        return priceListSetupRepository
+                .findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
+                        request.facilityId(),
+                        request.currency(),
+                        PriceListSetupStatus.ACTIVE
+                )
+                .stream()
+                .filter(priceList ->
+                        priceList.getType() == PriceListSetupType.INSURANCE
+                )
+                .filter(priceList ->
+                        isEffective(
+                                priceList,
+                                pricingDate
+                        )
+                )
+                .map(priceList ->
+                        findActivePriceListItem(
+                                priceList.getId(),
+                                itemType,
+                                request.itemId()
+                        )
+                                .filter(item ->
+                                        Boolean.TRUE.equals(
+                                                item.getRequiresPreAuthorization()
+                                        )
+                                )
+                                .isPresent()
+                )
+                .anyMatch(Boolean.TRUE::equals);
+    }
+
+    private List<PriceListSetup> findCandidatePriceLists(
+            BillingPricingResolutionRequest request,
+            BillingCoverageType coverageType,
+            LocalDate pricingDate
+    ) {
+        return priceListSetupRepository
+                .findAllByFacilityIdAndCurrencyAndStatusAndIsActiveTrue(
+                        request.facilityId(),
+                        request.currency(),
+                        PriceListSetupStatus.ACTIVE
+                )
+                .stream()
+                .filter(priceList ->
+                        matchesCoverageType(
+                                priceList,
+                                coverageType,
+                                request.payerId()
+                        )
+                )
+                .filter(priceList ->
+                        isEffective(
+                                priceList,
+                                pricingDate
+                        )
+                )
+                .sorted(
+                        Comparator
+                                .comparing(
+                                        (PriceListSetup priceList) ->
+                                                payerPriority(
+                                                        priceList,
+                                                        request.payerId()
+                                                )
+                                )
+                                .thenComparing(
+                                        PriceListSetup::getVersionNumber,
+                                        Comparator.nullsLast(
+                                                Comparator.reverseOrder()
+                                        )
+                                )
+                                .thenComparing(
+                                        PriceListSetup::getId,
+                                        Comparator.reverseOrder()
+                                )
+                )
+                .toList();
+    }
+
+    private Optional<PriceListSetupItem> findActivePriceListItem(
+            Long priceListSetupId,
+            PriceListItemType itemType,
+            Long sourceId
+    ) {
+        return priceListSetupItemRepository
+                .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
+                        priceListSetupId,
+                        itemType,
+                        sourceId
                 );
     }
 
