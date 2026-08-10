@@ -289,6 +289,50 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
+    public Page<ServiceSetup> findServicesByDepartmentAndPractitioner(
+            Long sourceId,
+            Long practitionerId,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching paged active Services by department sourceId={} practitionerId={} pageable={}",
+                sourceId,
+                practitionerId,
+                pageable
+        );
+
+        if (sourceId == null) {
+            throw new BadRequestAlertException("Department sourceId is required", "service", "sourceid.required");
+        }
+        if (practitionerId == null) {
+            throw new BadRequestAlertException("Practitioner ID is required", "service", "practitionerid.required");
+        }
+
+        List<ServiceItems> items =
+                serviceItemsRepository.findByTypeAndSourceIdAndPractitionerIdAndIsActiveTrue(
+                        ServiceItemsType.DEPARTMENTS,
+                        sourceId,
+                        practitionerId
+                );
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> serviceIds = items.stream()
+                .map(item -> item.getService().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (serviceIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return serviceRepository.findByIdInAndIsActiveTrue(serviceIds, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<ServiceSetup> findActiveByFacility(Long facilityId, Pageable pageable) {
         LOG.debug("Fetching active Services by facilityId={} pageable={}", facilityId, pageable);
         return serviceRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);

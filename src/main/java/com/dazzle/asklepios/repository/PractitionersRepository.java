@@ -49,6 +49,18 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
 
     Page<Practitioner> findByIsActiveTrueAndAppointableTrueAndFacility_Id(Long facilityId, Pageable pageable);
 
+    Page<Practitioner> findByIdInAndSpecialtyAndIsActiveTrueAndAppointableTrue(
+            List<Long> ids,
+            Specialty specialty,
+            Pageable pageable
+    );
+
+    Page<Practitioner> findByIdInAndSpecialtyAndIsActiveTrue(
+            List<Long> ids,
+            Specialty specialty,
+            Pageable pageable
+    );
+
     Page<Practitioner> findByIdIn(List<Long> ids, Pageable pageable);
 
     Page<Practitioner> findByIsActiveTrue(Pageable pageable);

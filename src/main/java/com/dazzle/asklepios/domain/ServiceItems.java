@@ -49,6 +49,8 @@ public class ServiceItems extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "source_id", nullable = false)
     private Long sourceId;
 
+    @Column(name = "practitioner_id")
+    private Long practitionerId;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "service_id", nullable = false)

@@ -20,6 +20,8 @@ public interface PractitionerDepartmentRepository extends JpaRepository<Practiti
 
     List<PractitionerDepartment> findByDepartmentIdAndPractitioner_AppointableIsTrueAndPractitioner_IsActiveIsTrue(Long departmentId);
 
+    List<PractitionerDepartment> findByDepartmentIdAndPractitioner_IsActiveIsTrue(Long departmentId);
+
     boolean existsByPractitionerIdAndDepartmentId(Long practitionerId, Long departmentId);
 
 }
