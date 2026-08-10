@@ -6,6 +6,8 @@ import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,9 @@ import java.util.List;
 @RequestMapping("/api/setup")
 @RequiredArgsConstructor
 public class PriceListSetupItemController {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(PriceListSetupItemController.class);
 
     private final PriceListSetupItemService
             priceListSetupItemService;
@@ -90,8 +95,16 @@ public class PriceListSetupItemController {
             @RequestParam(required = false) PriceListItemType itemType,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug(
+                "REST search PriceListSetupItems priceListSetupId={} search={} itemType={} pageable={}",
+                priceListSetupId,
+                search,
+                itemType,
+                pageable
+        );
+
         Page<PriceListSetupItemDTO> page =
-                priceListSetupItemService.findAll(
+                priceListSetupItemService.search(
                         priceListSetupId,
                         search,
                         itemType,
