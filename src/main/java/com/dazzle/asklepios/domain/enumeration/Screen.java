@@ -81,7 +81,7 @@ public enum Screen {
     FACILITY_PATIENTS,
     INFORMATION_DESK,
     FILES_MERGE,
-
+    ENCOUNTERS_LIST,
     // Emergency
     ER_TRIAGE,
 
