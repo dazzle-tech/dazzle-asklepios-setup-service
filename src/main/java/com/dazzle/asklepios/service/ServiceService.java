@@ -289,30 +289,30 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findServicesByDepartmentAndPractitioner(
+    public Page<ServiceSetup> findServicesByDepartmentAndSpecialty(
             Long sourceId,
-            Long practitionerId,
+            String specialty,
             Pageable pageable
     ) {
         LOG.debug(
-                "Fetching paged active Services by department sourceId={} practitionerId={} pageable={}",
+                "Fetching paged active Services by department sourceId={} specialty={} pageable={}",
                 sourceId,
-                practitionerId,
+                specialty,
                 pageable
         );
 
         if (sourceId == null) {
             throw new BadRequestAlertException("Department sourceId is required", "service", "sourceid.required");
         }
-        if (practitionerId == null) {
-            throw new BadRequestAlertException("Practitioner ID is required", "service", "practitionerid.required");
+        if (specialty == null || specialty.isBlank()) {
+            throw new BadRequestAlertException("Specialty is required", "service", "specialty.required");
         }
 
         List<ServiceItems> items =
-                serviceItemsRepository.findByTypeAndSourceIdAndPractitionerIdAndIsActiveTrue(
+                serviceItemsRepository.findByTypeAndSourceIdAndSpecialtyAndIsActiveTrue(
                         ServiceItemsType.DEPARTMENTS,
                         sourceId,
-                        practitionerId
+                        specialty.trim()
                 );
 
         if (items == null || items.isEmpty()) {

@@ -51,11 +51,12 @@ public class ServiceItemsService {
         if (input == null) {
             throw new BadRequestAlertException("ServiceItems payload is required", "serviceItems", "payload.required");
         }
-        if (input.getType() == ServiceItemsType.DEPARTMENTS && input.getPractitionerId() == null) {
+        if (input.getType() == ServiceItemsType.DEPARTMENTS
+                && (input.getSpecialty() == null || input.getSpecialty().isBlank())) {
             throw new BadRequestAlertException(
-                    "Practitioner ID is required when linking a department",
+                    "Specialty is required when linking a department",
                     "serviceItems",
-                    "practitionerid.required"
+                    "specialty.required"
             );
         }
 
@@ -66,7 +67,7 @@ public class ServiceItemsService {
         ServiceItems entity = ServiceItems.builder()
                 .type(input.getType())
                 .sourceId(input.getSourceId())
-                .practitionerId(input.getPractitionerId())
+                .specialty(input.getSpecialty())
                 .isActive(input.getIsActive() != null ? input.getIsActive() : Boolean.TRUE)
                 .build();
         entity.setService(service);
@@ -83,8 +84,7 @@ public class ServiceItemsService {
                     serviceId, input.getType(), input.getSourceId(), msg, ex);
 
             if (msg.contains("uk_service_items_service_type_source")
-                    || msg.contains("uk_service_items_no_practitioner")
-                    || msg.contains("uk_service_items_with_practitioner")
+                    || msg.contains("uk_service_items_with_specialty")
                     || msg.contains("unique constraint")
                     || msg.contains("duplicate key")
                     || msg.contains("duplicate entry")) {
@@ -110,11 +110,12 @@ public class ServiceItemsService {
                         "ServiceItems not found with id " + id, "serviceItems", "notfound"));
 
         ServiceItemsType effectiveType = patch.getType() != null ? patch.getType() : existing.getType();
-        if (effectiveType == ServiceItemsType.DEPARTMENTS && patch.getPractitionerId() == null) {
+        if (effectiveType == ServiceItemsType.DEPARTMENTS
+                && (patch.getSpecialty() == null || patch.getSpecialty().isBlank())) {
             throw new BadRequestAlertException(
-                    "Practitioner ID is required when linking a department",
+                    "Specialty is required when linking a department",
                     "serviceItems",
-                    "practitionerid.required"
+                    "specialty.required"
             );
         }
 
@@ -131,7 +132,7 @@ public class ServiceItemsService {
         if (patch.getSourceId() != null) {
             existing.setSourceId(patch.getSourceId());
         }
-        existing.setPractitionerId(patch.getPractitionerId());
+        existing.setSpecialty(patch.getSpecialty());
         if (patch.getIsActive() != null) {
             existing.setIsActive(patch.getIsActive());
         }
@@ -154,8 +155,7 @@ public class ServiceItemsService {
             );
 
             if (msg.contains("uk_service_items_service_type_source")
-                    || msg.contains("uk_service_items_no_practitioner")
-                    || msg.contains("uk_service_items_with_practitioner")
+                    || msg.contains("uk_service_items_with_specialty")
                     || msg.contains("unique constraint")
                     || msg.contains("duplicate key")
                     || msg.contains("duplicate entry")) {

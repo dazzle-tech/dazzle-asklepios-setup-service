@@ -314,11 +314,19 @@ public class PractitionerController {
     @GetMapping("/practitioner/specialists/by-department")
     public ResponseEntity<List<PractitionerResponseVM>> getSpecialistPractitionersByDepartment(
             @RequestParam Long departmentId,
+            @RequestParam(required = false) Specialty specialty,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list specialist practitioners by departmentId={} pageable={}", departmentId, pageable);
+        LOG.debug(
+                "REST list practitioners by departmentId={} specialty={} pageable={}",
+                departmentId,
+                specialty,
+                pageable
+        );
 
-        Page<Practitioner> page = practitionerService.findSpecialistPractitionersByDepartment(departmentId, pageable);
+        Page<Practitioner> page = specialty != null
+                ? practitionerService.findPractitionersByDepartmentAndSpecialty(departmentId, specialty, pageable)
+                : practitionerService.findPractitionersByDepartment(departmentId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
@@ -328,6 +336,21 @@ public class PractitionerController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/practitioner/specialties/by-department")
+    public ResponseEntity<List<String>> getSpecialtiesByDepartment(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list specialties by departmentId={} pageable={}", departmentId, pageable);
+
+        Page<String> page = practitionerService.findDistinctSpecialtiesByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
     @GetMapping("/practitioners/by-login/{login}")
