@@ -18,6 +18,7 @@ import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -406,6 +407,109 @@ public class PractitionerService {
                 Specialty.SPECIALIST,
                 pageable
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<String> findDistinctSpecialtiesByDepartment(Long departmentId, Pageable pageable) {
+        LOG.debug("Fetching distinct specialties by department departmentId={} pageable={}", departmentId, pageable);
+
+        if (departmentId == null) {
+            throw new BadRequestAlertException("Department ID is required", "practitioner", "departmentid.required");
+        }
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentIdAndPractitioner_IsActiveIsTrue(departmentId);
+
+        List<String> specialties = items.stream()
+                .map(PractitionerDepartment::getPractitioner)
+                .filter(Objects::nonNull)
+                .filter(practitioner -> Boolean.TRUE.equals(practitioner.getIsActive()))
+                .map(Practitioner::getSpecialty)
+                .filter(Objects::nonNull)
+                .map(Specialty::name)
+                .distinct()
+                .sorted()
+                .toList();
+
+        if (specialties.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), specialties.size());
+        if (start >= specialties.size()) {
+            return new PageImpl<>(List.of(), pageable, specialties.size());
+        }
+
+        return new PageImpl<>(specialties.subList(start, end), pageable, specialties.size());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findPractitionersByDepartmentAndSpecialty(
+            Long departmentId,
+            Specialty specialty,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching practitioners by departmentId={} specialty={} pageable={}",
+                departmentId,
+                specialty,
+                pageable
+        );
+
+        if (departmentId == null) {
+            throw new BadRequestAlertException("Department ID is required", "practitioner", "departmentid.required");
+        }
+        if (specialty == null) {
+            throw new BadRequestAlertException("Specialty is required", "practitioner", "specialty.required");
+        }
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentIdAndPractitioner_IsActiveIsTrue(departmentId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> practitionerIds = items.stream()
+                .map(item -> item.getPractitioner().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (practitionerIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepository.findByIdInAndSpecialtyAndIsActiveTrue(practitionerIds, specialty, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findPractitionersByDepartment(Long departmentId, Pageable pageable) {
+        LOG.debug("Fetching practitioners by departmentId={} pageable={}", departmentId, pageable);
+
+        if (departmentId == null) {
+            throw new BadRequestAlertException("Department ID is required", "practitioner", "departmentid.required");
+        }
+
+        List<PractitionerDepartment> items =
+                practitionerDepartmentRepository.findByDepartmentIdAndPractitioner_IsActiveIsTrue(departmentId);
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> practitionerIds = items.stream()
+                .map(item -> item.getPractitioner().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (practitionerIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return practitionerRepository.findByIdInAndIsActiveTrue(practitionerIds, pageable);
     }
 
     @Transactional(readOnly = true)

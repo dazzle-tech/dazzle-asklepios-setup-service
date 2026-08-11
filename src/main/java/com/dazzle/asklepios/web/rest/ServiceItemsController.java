@@ -53,7 +53,7 @@ public class ServiceItemsController {
         ServiceItems toCreate = ServiceItems.builder()
                 .type(vm.type())
                 .sourceId(vm.sourceId())
-                .practitionerId(vm.practitionerId())
+                .specialty(vm.specialty())
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .build();
 
@@ -72,7 +72,7 @@ public class ServiceItemsController {
         ServiceItems patch = ServiceItems.builder()
                 .type(vm.type())
                 .sourceId(vm.sourceId())
-                .practitionerId(vm.practitionerId())
+                .specialty(vm.specialty())
                 .isActive(vm.isActive())
                 .build();
         patch.setLastModifiedBy(vm.lastModifiedBy());

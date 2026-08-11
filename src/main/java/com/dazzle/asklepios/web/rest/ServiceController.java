@@ -211,14 +211,14 @@ public class ServiceController {
     @GetMapping("/service/by-department")
     public ResponseEntity<List<ServiceResponseVM>> getServicesByDepartment(
             @RequestParam Long sourceId,
-            @RequestParam(required = false) Long practitionerId,
+            @RequestParam(required = false) String specialty,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Services by DEPARTMENTS sourceId={} practitionerId={} pageable={}",
-                sourceId, practitionerId, pageable);
+        LOG.debug("REST list Services by DEPARTMENTS sourceId={} specialty={} pageable={}",
+                sourceId, specialty, pageable);
 
-        Page<ServiceSetup> page = practitionerId != null
-                ? serviceService.findServicesByDepartmentAndPractitioner(sourceId, practitionerId, pageable)
+        Page<ServiceSetup> page = specialty != null && !specialty.isBlank()
+                ? serviceService.findServicesByDepartmentAndSpecialty(sourceId, specialty, pageable)
                 : serviceService.findServicesByDepartmentSource(sourceId, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
