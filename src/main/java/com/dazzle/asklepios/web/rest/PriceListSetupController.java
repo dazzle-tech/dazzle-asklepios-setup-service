@@ -106,6 +106,26 @@ public class PriceListSetupController {
         );
     }
 
+    @GetMapping("/price-list-setups/by-loggedIn-facility")
+    public ResponseEntity<List<PriceListSetupDTO>>
+    getAllPriceListSetupsBasedOnLoggedInFacility(
+            @ParameterObject Pageable pageable
+    ) {
+        Page<PriceListSetupDTO> page =
+                priceListSetupService.findAllBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @DeleteMapping("/price-list-setups/{id}")
     public ResponseEntity<Void> deletePriceListSetup(
             @PathVariable Long id

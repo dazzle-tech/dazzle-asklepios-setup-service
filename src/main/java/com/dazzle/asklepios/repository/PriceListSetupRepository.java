@@ -5,6 +5,8 @@ import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import com.dazzle.asklepios.domain.enumeration.biling.PriceListStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -55,6 +57,12 @@ public interface PriceListSetupRepository
     findAllByFacilityIdAndPayerIdAndIsActiveTrue(
             Long facilityId,
             Long payerId
+    );
+
+    Page<PriceListSetup>
+    findAllByFacilityId(
+            Long facilityId,
+            Pageable pageable
     );
 
 }
