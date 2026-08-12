@@ -10,6 +10,7 @@ import com.dazzle.asklepios.domain.enumeration.biling.BillingCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
@@ -18,8 +19,10 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -146,6 +149,23 @@ public class PriceListSetupService {
         return priceListSetupRepository
                 .findAll(pageable)
                 .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findAllBasedOnLoggedInFacility(
+        Pageable pageable
+    ) {
+        Long facilityId = getFacility();
+        return priceListSetupRepository
+                .findAllByFacilityId(facilityId,pageable)
+                .map(this::toDTO);
+    }
+
+    private Long getFacility() {
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 
     public void delete(Long id) {
