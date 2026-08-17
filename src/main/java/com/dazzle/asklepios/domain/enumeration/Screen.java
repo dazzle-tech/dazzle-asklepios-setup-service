@@ -173,7 +173,8 @@ public enum Screen {
     WASEEL_CLAIMS,
     EMAIL_SETTINGS,
     WHATSAPP_SETTINGS,
-    PATIENT_SATISFACTION_SURVEY_RESPONSES;
+    PATIENT_SATISFACTION_SURVEY_RESPONSES,
+    PUSH_NOTIFICATION;
 
     @JsonCreator
     public static Screen fromValue(String value) {
