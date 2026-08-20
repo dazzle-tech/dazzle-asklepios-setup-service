@@ -12,7 +12,8 @@ management:
   tracing:
     sampling:
       probability: 1.0 # report 100% of traces
-
+service:
+  asklepios-patient-service-url: http://localhost:8083
 spring:
   devtools:
     restart:
@@ -25,9 +26,9 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
-    password: qse123H
+    password: Iwid@123
     hikari:
       poolName: Hikari
       auto-commit: false
@@ -74,6 +75,7 @@ setup:
     bucket: asklepios
     region: sfo3
     endpoint: https://sfo3.digitaloceanspaces.com
+    cdnEndpoint: https://asklepios.sfo3.cdn.digitaloceanspaces.com
     accessKeyId: DO00TRNC7U4TLLL6ZAN2
     secretAccessKey: mNFZKBA/BPXTHVUsde8y/2MslOn7zZEiPzwfIuhLrx4
     presignExpirySeconds: 300

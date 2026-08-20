@@ -22,4 +22,26 @@ public interface LanguageTranslationRepository extends JpaRepository<LanguageTra
             Pageable pageable
     );
     List<LanguageTranslation> findAllByTranslationKeyContainingIgnoreCase(String partialKey, Pageable pageable);
+
+    Optional<LanguageTranslation>
+    findByLangKeyAndResourceTypeAndResourceKeyAndFieldName(
+            String langKey,
+            String resourceType,
+            String resourceKey,
+            String fieldName
+    );
+
+    List<LanguageTranslation>
+    findAllByResourceTypeAndResourceKey(
+            String resourceType,
+            String resourceKey
+    );
+
+    Optional<LanguageTranslation>
+    findByLangKeyAndResourceTypeAndResourceKeyAndEnumType(
+            String langKey,
+            String resourceType,
+            String resourceKey,
+            String enumType
+    );
 }

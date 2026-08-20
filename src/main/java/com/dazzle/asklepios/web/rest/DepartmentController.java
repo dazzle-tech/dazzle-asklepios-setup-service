@@ -86,7 +86,7 @@ public class DepartmentController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         return new ResponseEntity<>(
-                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                page.getContent().stream().map(departmentService::toResponseVM).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -106,7 +106,7 @@ public class DepartmentController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         return new ResponseEntity<>(
-                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                page.getContent().stream().map(departmentService::toResponseVM).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -123,7 +123,7 @@ public class DepartmentController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         return new ResponseEntity<>(
-                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                page.getContent().stream().map(departmentService::toResponseVM).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -145,7 +145,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -169,7 +169,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -187,7 +187,7 @@ public class DepartmentController {
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         return new ResponseEntity<>(
-                page.getContent().stream().map(DepartmentResponseVM::ofEntity).toList(),
+                page.getContent().stream().map(departmentService::toResponseVM).toList(),
                 headers,
                 HttpStatus.OK
         );
@@ -196,11 +196,20 @@ public class DepartmentController {
     /**
      * {@code GET /department/{id}} : Get a single Department by id.
      */
+//    @GetMapping("/department/{id}")
+//    public ResponseEntity<DepartmentResponseVM> getDepartment(@PathVariable Long id) {
+//        LOG.debug("REST get Department id={}", id);
+//        return departmentService.findOne(id)
+//                .map(DepartmentResponseVM::ofEntity)
+//                .map(ResponseEntity::ok)
+//                .orElseGet(() -> ResponseEntity.notFound().build());
+//    }
     @GetMapping("/department/{id}")
     public ResponseEntity<DepartmentResponseVM> getDepartment(@PathVariable Long id) {
         LOG.debug("REST get Department id={}", id);
+
         return departmentService.findOne(id)
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -213,7 +222,7 @@ public class DepartmentController {
         LOG.debug("REST get All Department");
 
         List<DepartmentResponseVM> departments = departmentService.findAll().stream()
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .toList();
 
         return ResponseEntity.ok(departments);
@@ -236,7 +245,7 @@ public class DepartmentController {
             @PathVariable Long facilityId
     ) {
         LOG.debug("REST list active Departments by facilityId={}", facilityId);
-        List<DepartmentResponseVM> departmentResponseVM= departmentService.findActiveByFacilityId(facilityId).stream().map(DepartmentResponseVM::ofEntity).toList();
+        List<DepartmentResponseVM> departmentResponseVM= departmentService.findActiveByFacilityId(facilityId).stream().map(departmentService::toResponseVM).toList();
         return ResponseEntity.ok(departmentResponseVM);
     }
 
@@ -256,7 +265,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -278,7 +287,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -300,7 +309,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -316,7 +325,7 @@ public class DepartmentController {
         List<DepartmentResponseVM> departments = departmentService
                 .findDepartmentsLinkedToResourceType(resourceType)
                 .stream()
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .toList();
 
         return ResponseEntity.ok(departments);
@@ -342,7 +351,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -370,7 +379,7 @@ public class DepartmentController {
 
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -388,7 +397,7 @@ public class DepartmentController {
         );
         return new ResponseEntity<>(
                 page.getContent().stream()
-                        .map(DepartmentResponseVM::ofEntity)
+                        .map(departmentService::toResponseVM)
                         .toList(),
                 headers,
                 HttpStatus.OK
@@ -406,7 +415,7 @@ public class DepartmentController {
         List<DepartmentResponseVM> departments = departmentService
                 .findActiveByTypeAndFacility(type, facilityId)
                 .stream()
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .toList();
 
         return ResponseEntity.ok(departments);
@@ -418,7 +427,7 @@ public class DepartmentController {
 
         List<DepartmentResponseVM> result = departmentService.getBookableDepartmentsForLoggedInUser()
                 .stream()
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .toList();
 
         return ResponseEntity.ok(result);
@@ -430,7 +439,7 @@ public class DepartmentController {
     public ResponseEntity<DepartmentResponseVM> getDepartmentInternal(@PathVariable Long id) {
         LOG.debug("REST get Department id={}", id);
         return departmentService.findOne(id)
-                .map(DepartmentResponseVM::ofEntity)
+                .map(departmentService::toResponseVM)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

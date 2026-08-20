@@ -24,10 +24,12 @@ public class LanguageService {
 
     private final LanguageRepository languageRepository;
     private final LanguageTranslationRepository languageTranslationRepository;
+    private final LanguageTranslationService languageTranslationService;
 
-    public LanguageService(LanguageRepository languageRepository, LanguageTranslationRepository languageTranslationRepository) {
+    public LanguageService(LanguageRepository languageRepository, LanguageTranslationRepository languageTranslationRepository, LanguageTranslationService languageTranslationService) {
         this.languageRepository = languageRepository;
         this.languageTranslationRepository = languageTranslationRepository;
+        this.languageTranslationService = languageTranslationService;
     }
 
     public Language create(Language vm) {
@@ -49,6 +51,10 @@ public class LanguageService {
         try {
             Language saved = languageRepository.save(entity);
             addDefaultDictionary(saved);
+            languageTranslationService.syncForNewLanguage(
+                    saved.getLangKey()
+            );
+
             return saved;
         } catch (DataIntegrityViolationException ex) {
              throw new BadRequestAlertException("Invalid Language data" ,  "language", "notfound");

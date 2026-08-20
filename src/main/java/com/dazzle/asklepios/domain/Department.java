@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.annotation.Translatable;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
@@ -51,6 +52,7 @@ public class Department extends AbstractAuditingEntity<Long> implements Serializ
 
     @NotNull
     @Column(nullable = false, length = 100)
+    @Translatable
     private String name;
 
     @NotNull

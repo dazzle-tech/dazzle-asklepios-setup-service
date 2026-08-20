@@ -19,9 +19,11 @@ import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -47,19 +50,21 @@ public class DepartmentService {
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
     private final UserBookableDepartmentRepository userBookableDepartmentRepository;
+    private final LanguageTranslationService languageTranslationService;
 
     public DepartmentService(
             DepartmentsRepository departmentRepository,
             FacilityRepository facilityRepository,
             UserDepartmentRepository userDepartmentRepository,
             ResourceRepository resourceRepository,
-            UserRepository userRepository, UserBookableDepartmentRepository userBookableDepartmentRepository) {
+            UserRepository userRepository, UserBookableDepartmentRepository userBookableDepartmentRepository, LanguageTranslationService languageTranslationService) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
         this.userDepartmentRepository = userDepartmentRepository;
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
         this.userBookableDepartmentRepository = userBookableDepartmentRepository;
+        this.languageTranslationService = languageTranslationService;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -98,7 +103,13 @@ public class DepartmentService {
         validateDepartment(department);
 
         LOG.debug("Created department: {}", department);
-        return departmentRepository.save(department);
+        Department saved = departmentRepository.save(department);
+
+        languageTranslationService.createMissingTranslations(saved);
+
+        LOG.debug("Created department: {}", saved);
+
+        return saved;
     }
 
     public Optional<Department> update(Long id, DepartmentUpdateVM departmentVM) {
@@ -462,4 +473,25 @@ public class DepartmentService {
                 .filter(Objects::nonNull)
                 .toList();
     }
+
+
+public DepartmentResponseVM toResponseVM(Department department) {
+
+    String currentLanguage =
+            LocaleContextHolder.getLocale().getLanguage();
+
+    Map<String, String> translations =
+            languageTranslationService.getTranslatedFields(
+                    currentLanguage,
+                    department
+            );
+
+    DepartmentResponseVM response =
+            DepartmentResponseVM.ofEntity(department);
+
+    return languageTranslationService.applyTranslations(
+            response,
+            translations
+    );
+}
 }
