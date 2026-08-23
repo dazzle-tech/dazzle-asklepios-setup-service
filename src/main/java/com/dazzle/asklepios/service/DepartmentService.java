@@ -475,23 +475,23 @@ public class DepartmentService {
     }
 
 
-public DepartmentResponseVM toResponseVM(Department department) {
-
-    String currentLanguage =
-            LocaleContextHolder.getLocale().getLanguage();
-
-    Map<String, String> translations =
-            languageTranslationService.getTranslatedFields(
-                    currentLanguage,
-                    department
-            );
-
-    DepartmentResponseVM response =
-            DepartmentResponseVM.ofEntity(department);
-
-    return languageTranslationService.applyTranslations(
-            response,
-            translations
-    );
-}
+//public DepartmentResponseVM toResponseVM(Department department) {
+//
+//    String currentLanguage =
+//            LocaleContextHolder.getLocale().getLanguage();
+//
+//    Map<String, String> translations =
+//            languageTranslationService.getTranslatedFields(
+//                    currentLanguage,
+//                    department
+//            );
+//
+//    DepartmentResponseVM response =
+//            DepartmentResponseVM.ofEntity(department);
+//
+//    return languageTranslationService.applyTranslations(
+//            response,
+//            translations
+//    );
+//}
 }
