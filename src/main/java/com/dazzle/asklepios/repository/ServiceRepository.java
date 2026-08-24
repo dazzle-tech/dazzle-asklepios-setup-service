@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
@@ -26,4 +27,9 @@ public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
     Page<ServiceSetup> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
 
     Page<ServiceSetup> findByIsActiveTrueAndAppointableTrueAndFacility_Id(Long facilityId, Pageable pageable);
+
+    Optional<ServiceSetup> findFirstByFacility_IdAndCodeIgnoreCase(
+            Long facilityId,
+            String code
+    );
 }

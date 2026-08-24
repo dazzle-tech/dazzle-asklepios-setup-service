@@ -34,4 +34,9 @@ public interface WaseelItemMappingRepository extends JpaRepository<WaseelItemMap
             BillingItemTypes itemType,
             Long sourceId
     );
+
+    Optional<WaseelItemMapping> findFirstByItemTypeAndItemCodeIgnoreCaseAndIsActiveTrue(
+            BillingItemTypes itemType,
+            String itemCode
+    );
 }

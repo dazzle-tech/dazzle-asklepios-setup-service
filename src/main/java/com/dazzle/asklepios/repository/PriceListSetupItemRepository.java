@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,6 +19,10 @@ public interface PriceListSetupItemRepository
     Page<PriceListSetupItem> findAllByPriceListSetupId(
             Long priceListSetupId,
             Pageable pageable
+    );
+
+    List<PriceListSetupItem> findAllByPriceListSetupId(
+            Long priceListSetupId
     );
 
     @Query("""
@@ -53,6 +58,19 @@ public interface PriceListSetupItemRepository
     boolean existsByPriceListSetupIdAndItemCode(
             Long priceListSetupId,
             String itemCode
+    );
+
+    Optional<PriceListSetupItem>
+    findByPriceListSetupIdAndItemCode(
+            Long priceListSetupId,
+            String itemCode
+    );
+
+    Optional<PriceListSetupItem>
+    findFirstByPriceListSetupIdAndItemTypeAndSourceId(
+            Long priceListSetupId,
+            PriceListItemType type,
+            Long sourceId
     );
 
 }

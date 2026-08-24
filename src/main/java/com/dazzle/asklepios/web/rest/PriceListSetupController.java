@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.service.PriceListSetupService;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
+import com.dazzle.asklepios.service.dto.PriceListSetupCloneRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
@@ -53,6 +54,19 @@ public class PriceListSetupController {
                 priceListSetupService.update(id, dto);
 
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/price-list-setups/{id}/clone")
+    public ResponseEntity<PriceListSetupDTO> clonePriceListSetup(
+            @PathVariable Long id,
+            @Valid @RequestBody PriceListSetupCloneRequest request
+    ) {
+        PriceListSetupDTO result =
+                priceListSetupService.clonePriceList(id, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(result);
     }
 
     @GetMapping("/price-list-setups/resolve")

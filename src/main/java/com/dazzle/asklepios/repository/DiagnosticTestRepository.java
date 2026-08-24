@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, Long> {
@@ -20,4 +21,9 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
     Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(  Pageable pageable);
     Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(TestType type, String name, Pageable pageable);
     Page<DiagnosticTest> findByTypeAndIsActiveTrue(TestType type, Pageable pageable);
+
+    Optional<DiagnosticTest> findFirstByInternalCodeIgnoreCaseAndType(
+            String internalCode,
+            TestType type
+    );
 }

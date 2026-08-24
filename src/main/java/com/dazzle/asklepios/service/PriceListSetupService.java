@@ -13,6 +13,7 @@ import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
+import com.dazzle.asklepios.service.dto.PriceListSetupCloneRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
@@ -72,6 +73,27 @@ public class PriceListSetupService {
         return toDTO(savedEntity);
     }
 
+    public PriceListSetupDTO clonePriceList(
+            Long sourceId,
+            PriceListSetupCloneRequest request
+    ) {
+        if (!priceListSetupRepository.existsById(sourceId)) {
+            throw new EntityNotFoundException(
+                    "Price list setup not found with id: " + sourceId
+            );
+        }
+
+        PriceListSetupDTO created =
+                create(request.toPriceListSetupDTO());
+
+        if (Boolean.TRUE.equals(request.cloneItems())
+                && created.id() != null) {
+            cloneItems(sourceId, created.id());
+        }
+
+        return created;
+    }
+
     public PriceListSetupDTO activate(Long id) {
         PriceListSetup entity =
                 priceListSetupRepository.findById(id)
@@ -81,6 +103,11 @@ public class PriceListSetupService {
                                                 + id
                                 )
                         );
+
+        validateNoOverlappingInterval(
+                id,
+                toDTO(entity)
+        );
 
         entity.setStatus(PriceListSetupStatus.ACTIVE);
         entity.setIsActive(true);
@@ -618,6 +645,66 @@ public class PriceListSetupService {
         return item.getDiscountPercentage() != null
                 && item.getDiscountPercentage()
                 .compareTo(BigDecimal.ZERO) > 0;
+    }
+
+    private void cloneItems(
+            Long sourcePriceListSetupId,
+            Long targetPriceListSetupId
+    ) {
+        List<PriceListSetupItem> sourceItems =
+                priceListSetupItemRepository.findAllByPriceListSetupId(
+                        sourcePriceListSetupId
+                );
+
+        if (sourceItems.isEmpty()) {
+            return;
+        }
+
+        List<PriceListSetupItem> clonedItems =
+                sourceItems.stream()
+                        .map(sourceItem -> {
+                            PriceListSetupItem clonedItem =
+                                    new PriceListSetupItem();
+
+                            clonedItem.setPriceListSetupId(
+                                    targetPriceListSetupId
+                            );
+                            clonedItem.setWaseelItemMappingId(
+                                    sourceItem.getWaseelItemMappingId()
+                            );
+                            clonedItem.setSbsCatalogId(
+                                    sourceItem.getSbsCatalogId()
+                            );
+                            clonedItem.setItemType(
+                                    sourceItem.getItemType()
+                            );
+                            clonedItem.setSourceId(
+                                    sourceItem.getSourceId()
+                            );
+                            clonedItem.setItemCode(
+                                    sourceItem.getItemCode()
+                            );
+                            clonedItem.setItemName(
+                                    sourceItem.getItemName()
+                            );
+                            clonedItem.setUnitPrice(
+                                    sourceItem.getUnitPrice()
+                            );
+                            clonedItem.setDiscountPercentage(
+                                    sourceItem.getDiscountPercentage()
+                            );
+                            clonedItem.setIsActive(
+                                    sourceItem.getIsActive()
+                            );
+                            clonedItem.setRequiresPreAuthorization(
+                                    sourceItem.getRequiresPreAuthorization()
+                            );
+
+                            return clonedItem;
+                        })
+                        .toList();
+
+        priceListSetupItemRepository.saveAll(clonedItems);
     }
 
     private PriceListSetupDTO toDTO(
