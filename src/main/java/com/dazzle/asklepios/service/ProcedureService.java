@@ -246,6 +246,56 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Procedure> searchActiveByFacilityAndCategory(
+            Long facilityId,
+            ProcedureCategory category,
+            String name,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Searching ACTIVE Procedures by facilityId={} category={} name={} pageable={}",
+                facilityId,
+                category,
+                name,
+                pageable
+        );
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility id is required",
+                    "procedure",
+                    "facility.required"
+            );
+        }
+
+        if (category == null) {
+            throw new BadRequestAlertException(
+                    "Procedure category is required",
+                    "procedure",
+                    "category.required"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            return procedureRepository
+                    .findByFacility_IdAndIsActiveTrueAndCategoryType(
+                            facilityId,
+                            category,
+                            pageable
+                    );
+        }
+
+        return procedureRepository
+                .findByFacility_IdAndIsActiveTrueAndCategoryTypeAndNameContainingIgnoreCase(
+                        facilityId,
+                        category,
+                        name.trim(),
+                        pageable
+                );
+    }
+
+
+    @Transactional(readOnly = true)
     public List<Procedure> findByIds(List<Long> ids) {
         LOG.debug("[GET PROCEDURES BY IDS] ids={}", ids);
 
