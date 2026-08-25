@@ -16,7 +16,9 @@ public record UploadEncounterAttachmentVM(
         String details,
         @NotNull EncounterAttachmentSource source,
         @NotNull long sourceId,
-        @NotNull MultipartFile file
+        @NotNull MultipartFile file,
+        Long documentDefinitionId,
+        Long documentVersionId
 ) implements Serializable {
 
     public static UploadEncounterAttachmentVM ofEntity(EncounterAttachments attachment, MultipartFile file) {
@@ -25,7 +27,9 @@ public record UploadEncounterAttachmentVM(
                 attachment.getDetails(),
                 attachment.getSource(),
                 attachment.getSourceId(),
-                file
+                file,
+                attachment.getDocumentDefinitionId(),
+                attachment.getDocumentVersionId()
         );
     }
 }
