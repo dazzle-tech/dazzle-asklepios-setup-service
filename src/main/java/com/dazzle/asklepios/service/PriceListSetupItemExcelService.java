@@ -9,6 +9,7 @@ import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.WaseelItemMapping;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
@@ -67,7 +68,10 @@ public class PriceListSetupItemExcelService {
             "itemCode",
             "itemName",
             "sourceId",
+            "category",
+            "visitType",
             "unitPrice",
+            "cost",
             "discountPercentage",
             "isActive",
             "requiresPreAuthorization",
@@ -81,39 +85,48 @@ public class PriceListSetupItemExcelService {
             "unitprice"
     );
 
-    private static final Map<String, Set<String>> HEADER_ALIASES = Map.of(
-            "itemtype", Set.of("itemtype", "item type", "item_type", "type"),
-            "itemcode", Set.of("itemcode", "item code", "item_code", "code"),
-            "itemname", Set.of("itemname", "item name", "item_name", "name"),
-            "sourceid", Set.of("sourceid", "source id", "source_id", "source"),
-            "unitprice", Set.of("unitprice", "unit price", "unit_price", "price"),
-            "discountpercentage", Set.of(
+    private static final Map<String, Set<String>> HEADER_ALIASES = Map.ofEntries(
+            Map.entry("itemtype", Set.of("itemtype", "item type", "item_type", "type")),
+            Map.entry("itemcode", Set.of("itemcode", "item code", "item_code", "code")),
+            Map.entry("itemname", Set.of("itemname", "item name", "item_name", "name")),
+            Map.entry("sourceid", Set.of("sourceid", "source id", "source_id", "source")),
+            Map.entry("category", Set.of("category", "service category")),
+            Map.entry("visittype", Set.of(
+                    "visittype",
+                    "visit type",
+                    "visit_type",
+                    "encountertype",
+                    "encounter type"
+            )),
+            Map.entry("unitprice", Set.of("unitprice", "unit price", "unit_price", "price")),
+            Map.entry("cost", Set.of("cost", "internal cost", "internal_cost")),
+            Map.entry("discountpercentage", Set.of(
                     "discountpercentage",
                     "discount percentage",
                     "discount_percentage",
                     "discount"
-            ),
-            "isactive", Set.of("isactive", "is active", "is_active", "active"),
-            "requirespreauthorization", Set.of(
+            )),
+            Map.entry("isactive", Set.of("isactive", "is active", "is_active", "active")),
+            Map.entry("requirespreauthorization", Set.of(
                     "requirespreauthorization",
                     "requires preauthorization",
                     "requires_pre_authorization",
                     "preauth",
                     "pre-authorization"
-            ),
-            "waseelitemmappingid", Set.of(
+            )),
+            Map.entry("waseelitemmappingid", Set.of(
                     "waseelitemmappingid",
                     "waseel item mapping id",
                     "waseel_item_mapping_id",
                     "mappingid",
                     "mapping id"
-            ),
-            "sbscatalogid", Set.of(
+            )),
+            Map.entry("sbscatalogid", Set.of(
                     "sbscatalogid",
                     "sbs catalog id",
                     "sbs_catalog_id",
                     "sbs"
-            )
+            ))
     );
 
     private final PriceListSetupRepository priceListSetupRepository;
@@ -221,7 +234,9 @@ public class PriceListSetupItemExcelService {
 
         for (ImportRow row : rows) {
             try {
-                String itemCodeKey = row.itemCode().toLowerCase(Locale.ROOT);
+                String itemCodeKey = row.itemCode().toLowerCase(Locale.ROOT)
+                        + "|"
+                        + (row.visitType() == null ? "ALL" : row.visitType().name());
 
                 if (!itemCodesInFile.add(itemCodeKey)) {
                     throw new BadRequestAlertException(
@@ -246,10 +261,18 @@ public class PriceListSetupItemExcelService {
                         catalog.sourceId(),
                         catalog.itemCode(),
                         catalog.itemName(),
+                        row.category(),
+                        row.visitType(),
                         row.unitPrice(),
+                        row.cost(),
                         row.discountPercentage(),
                         row.isActive(),
-                        mapping.requiresPreAuthorization()
+                        mapping.requiresPreAuthorization(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 );
 
                 if (existing.isPresent()) {
@@ -299,14 +322,16 @@ public class PriceListSetupItemExcelService {
             ImportRow row,
             ResolvedCatalog catalog
     ) {
-        Optional<PriceListSetupItem> byCode =
-                priceListSetupItemRepository.findByPriceListSetupIdAndItemCode(
-                        priceListSetupId,
-                        catalog.itemCode()
-                );
-
-        if (byCode.isPresent()) {
-            return byCode;
+        Optional<PriceListSetupItem> byVisit =
+                priceListSetupItemRepository
+                        .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndVisitType(
+                                priceListSetupId,
+                                row.itemType(),
+                                catalog.sourceId(),
+                                row.visitType()
+                        );
+        if (byVisit.isPresent()) {
+            return byVisit;
         }
 
         return priceListSetupItemRepository
@@ -314,7 +339,8 @@ public class PriceListSetupItemExcelService {
                         priceListSetupId,
                         row.itemType(),
                         catalog.sourceId()
-                );
+                )
+                .filter(item -> item.getVisitType() == row.visitType());
     }
 
     private ResolvedCatalog resolveCatalog(
@@ -504,27 +530,36 @@ public class PriceListSetupItemExcelService {
         if (item.getSourceId() != null) {
             row.createCell(3).setCellValue(item.getSourceId());
         }
+        row.createCell(4).setCellValue(
+                item.getCategory() != null ? item.getCategory() : ""
+        );
+        row.createCell(5).setCellValue(
+                item.getVisitType() != null ? item.getVisitType().name() : ""
+        );
         if (item.getUnitPrice() != null) {
-            row.createCell(4).setCellValue(item.getUnitPrice().doubleValue());
+            row.createCell(6).setCellValue(item.getUnitPrice().doubleValue());
+        }
+        if (item.getCost() != null) {
+            row.createCell(7).setCellValue(item.getCost().doubleValue());
         }
         if (item.getDiscountPercentage() != null) {
-            row.createCell(5).setCellValue(
+            row.createCell(8).setCellValue(
                     item.getDiscountPercentage().doubleValue()
             );
         }
-        row.createCell(6).setCellValue(
+        row.createCell(9).setCellValue(
                 Boolean.TRUE.equals(item.getIsActive()) ? "TRUE" : "FALSE"
         );
-        row.createCell(7).setCellValue(
+        row.createCell(10).setCellValue(
                 Boolean.TRUE.equals(item.getRequiresPreAuthorization())
                         ? "TRUE"
                         : "FALSE"
         );
         if (item.getWaseelItemMappingId() != null) {
-            row.createCell(8).setCellValue(item.getWaseelItemMappingId());
+            row.createCell(11).setCellValue(item.getWaseelItemMappingId());
         }
         if (item.getSbsCatalogId() != null) {
-            row.createCell(9).setCellValue(item.getSbsCatalogId());
+            row.createCell(12).setCellValue(item.getSbsCatalogId());
         }
     }
 
@@ -536,11 +571,12 @@ public class PriceListSetupItemExcelService {
                 "3. itemType must be one of: SERVICE, PROCEDURE, MEDICATION, LABORATORY, RADIOLOGY, PATHOLOGY.",
                 "4. itemCode must match the catalog code (service/procedure/medication/test).",
                 "5. sourceId is optional. Fill it if you already know the catalog ID.",
-                "6. discountPercentage is optional (default 0). isActive is optional (default TRUE).",
-                "7. For insurance price lists, the system resolves Waseel mapping by item type + source/code.",
-                "8. requiresPreAuthorization is only allowed for insurance price lists.",
-                "9. Upload the filled .xlsx, .xls, or .csv file from Price List Items.",
-                "10. Existing item codes on this price list are updated. New codes are added."
+                "6. visitType is EMERGENCY, INPATIENT, DAYCASE, or CLINIC. Leave blank to apply to all encounter types. Required for cash lists; optional for insurance.",
+                "7. cost (internal cost) is optional. discountPercentage is optional (default 0). isActive is optional (default TRUE).",
+                "8. For insurance price lists, the system resolves Waseel mapping by item type + source/code.",
+                "9. requiresPreAuthorization is only allowed for insurance price lists.",
+                "10. Upload the filled .xlsx, .xls, or .csv file from Price List Items.",
+                "11. Existing item codes with the same visit type on this price list are updated. New rows are added."
         };
 
         for (int index = 0; index < lines.length; index++) {
@@ -827,13 +863,37 @@ public class PriceListSetupItemExcelService {
                 itemCode.trim(),
                 blankToNull(value(values, "itemname")),
                 parseLong(value(values, "sourceid"), "sourceId"),
+                blankToNull(value(values, "category")),
+                parseVisitType(value(values, "visittype")),
                 unitPrice,
+                parseDecimal(value(values, "cost"), "cost"),
                 discount,
                 parseBoolean(value(values, "isactive"), true),
                 parseBoolean(value(values, "requirespreauthorization"), false),
                 parseLong(value(values, "waseelitemmappingid"), "waseelItemMappingId"),
                 parseLong(value(values, "sbscatalogid"), "sbsCatalogId")
         );
+    }
+
+    private EncounterType parseVisitType(String value) {
+        if (value == null || value.isBlank() || "ALL".equalsIgnoreCase(value.trim())) {
+            return null;
+        }
+        try {
+            return EncounterType.valueOf(
+                    value.trim().toUpperCase(Locale.ROOT)
+                            .replace(' ', '_')
+                            .replace('-', '_')
+            );
+        } catch (IllegalArgumentException exception) {
+            throw new BadRequestAlertException(
+                    "Invalid visitType: "
+                            + value
+                            + ". Use EMERGENCY, INPATIENT, DAYCASE, or CLINIC.",
+                    ENTITY,
+                    "item.import.invalidVisitType"
+            );
+        }
     }
 
     private String value(Map<String, String> values, String key) {
@@ -930,7 +990,10 @@ public class PriceListSetupItemExcelService {
             String itemCode,
             String itemName,
             Long sourceId,
+            String category,
+            EncounterType visitType,
             BigDecimal unitPrice,
+            BigDecimal cost,
             BigDecimal discountPercentage,
             Boolean isActive,
             Boolean requiresPreAuthorization,

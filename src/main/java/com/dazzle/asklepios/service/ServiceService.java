@@ -38,15 +38,18 @@ public class ServiceService {
     private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
     private final ServiceItemsRepository serviceItemsRepository;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
 
     public ServiceService(
             ServiceRepository serviceRepository,
             EntityManager entityManager,
-            ServiceItemsRepository serviceItemsRepository
+            ServiceItemsRepository serviceItemsRepository,
+            PriceListCatalogSyncService priceListCatalogSyncService
     ) {
         this.serviceRepository = serviceRepository;
         this.entityManager = entityManager;
         this.serviceItemsRepository = serviceItemsRepository;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
 
 
@@ -154,6 +157,12 @@ public class ServiceService {
 
         try {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
+            if (!Boolean.TRUE.equals(updated.getIsActive())) {
+                priceListCatalogSyncService.deactivateCatalogItem(
+                        com.dazzle.asklepios.domain.enumeration.PriceListItemType.SERVICE,
+                        updated.getId()
+                );
+            }
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
@@ -255,6 +264,12 @@ public class ServiceService {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
                     ServiceSetup saved = serviceRepository.save(entity);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateCatalogItem(
+                                com.dazzle.asklepios.domain.enumeration.PriceListItemType.SERVICE,
+                                saved.getId()
+                        );
+                    }
                     LOG.info("Service id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });

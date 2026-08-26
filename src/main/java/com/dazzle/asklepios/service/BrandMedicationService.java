@@ -44,6 +44,7 @@ public class BrandMedicationService {
     private final ActiveIngredientsRepository activeRepository;
     private final BrandMedicationActiveIngredientRepository relRepository;
     private final BillingRuleReferenceService billingRuleReferenceService;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
 
 
     public BrandMedicationService(
@@ -52,7 +53,8 @@ public class BrandMedicationService {
             UomGroupUnitRepository uomGroupUnitRepository,
             ActiveIngredientsRepository activeRepository,
             BrandMedicationActiveIngredientRepository relRepository,
-            BillingRuleReferenceService billingRuleReferenceService
+            BillingRuleReferenceService billingRuleReferenceService,
+            PriceListCatalogSyncService priceListCatalogSyncService
     ) {
         this.brandMedicationRepository = brandMedicationRepository;
         this.uomGroupRepository = uomGroupRepository;
@@ -60,6 +62,7 @@ public class BrandMedicationService {
         this.activeRepository = activeRepository;
         this.relRepository = relRepository;
         this.billingRuleReferenceService = billingRuleReferenceService;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
 
     public BrandMedication create(BrandMedicationCreateVM vm) {
@@ -158,6 +161,12 @@ public class BrandMedicationService {
         );
 
         BrandMedication updated = brandMedicationRepository.save(entity);
+        if (!Boolean.TRUE.equals(updated.getIsActive())) {
+            priceListCatalogSyncService.deactivateCatalogItem(
+                    com.dazzle.asklepios.domain.enumeration.PriceListItemType.MEDICATION,
+                    updated.getId()
+            );
+        }
         LOG.debug("Updated BrandMedication: {}", updated);
         return Optional.of(updated);
     }
@@ -180,7 +189,14 @@ public class BrandMedicationService {
                 .map(entity -> {
                     boolean isActive = !Boolean.TRUE.equals(entity.getIsActive());
                     entity.setIsActive(isActive);
-                    return brandMedicationRepository.save(entity);
+                    BrandMedication saved = brandMedicationRepository.save(entity);
+                    if (!isActive) {
+                        priceListCatalogSyncService.deactivateCatalogItem(
+                                com.dazzle.asklepios.domain.enumeration.PriceListItemType.MEDICATION,
+                                saved.getId()
+                        );
+                    }
+                    return saved;
                 });
     }
 

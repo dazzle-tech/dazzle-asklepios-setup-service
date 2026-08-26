@@ -11,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -44,6 +43,11 @@ public class PriceListSetup extends AbstractAuditingEntity<Long>  implements Ser
     private Long facilityId;
 
     @NotNull
+    @Column(name = "applies_to_all_facilities", nullable = false)
+    @Builder.Default
+    private Boolean appliesToAllFacilities = false;
+
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 30)
     private PriceListSetupType type;
@@ -51,20 +55,28 @@ public class PriceListSetup extends AbstractAuditingEntity<Long>  implements Ser
     @Column(name = "payer_id")
     private Long payerId;
 
+    @Column(name = "nphies_payer_id")
+    private Long nphiesPayerId;
+
     @NotBlank
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
+    @Column(name = "short_name", length = 100)
+    private String shortName;
+
     @Column(name = "description", length = 1000)
     private String description;
+
+    @Column(name = "tax_id")
+    private Long taxId;
 
     @NotNull
     @Positive
     @Column(name = "version_number", nullable = false)
     private Integer versionNumber;
 
-    @NotNull
-    @Column(name = "effective_from", nullable = false)
+    @Column(name = "effective_from")
     private LocalDate effectiveFrom;
 
     @Column(name = "effective_to")

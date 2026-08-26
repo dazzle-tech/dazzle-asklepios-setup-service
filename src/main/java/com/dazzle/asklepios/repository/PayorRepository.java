@@ -25,4 +25,15 @@ public interface PayorRepository extends JpaRepository<Payor, Long> {
     );
 
     Optional<Payor> findFirstByNphiesId(String nphiesId);
+
+    Page<Payor> findByIsActiveTrueAndCategory(
+            PayorCategory category,
+            Pageable pageable
+    );
+
+    Page<Payor> findByIsActiveTrueAndCategoryAndNameContainingIgnoreCase(
+            PayorCategory category,
+            String name,
+            Pageable pageable
+    );
 }

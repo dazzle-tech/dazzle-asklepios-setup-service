@@ -1,8 +1,12 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.enumeration.InsuranceCompanySource;
+import com.dazzle.asklepios.service.InsuranceCompanyService;
 import com.dazzle.asklepios.service.PriceListSetupService;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionRequest;
+import com.dazzle.asklepios.service.dto.InsuranceCompanyCreateVM;
+import com.dazzle.asklepios.service.dto.InsuranceCompanyDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupCloneRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -32,6 +37,8 @@ import java.util.List;
 public class PriceListSetupController {
 
     private final PriceListSetupService priceListSetupService;
+
+    private final InsuranceCompanyService insuranceCompanyService;
 
     @PostMapping("/price-list-setups")
     public ResponseEntity<PriceListSetupDTO> createPriceListSetup(
@@ -59,7 +66,7 @@ public class PriceListSetupController {
     @PostMapping("/price-list-setups/{id}/clone")
     public ResponseEntity<PriceListSetupDTO> clonePriceListSetup(
             @PathVariable Long id,
-            @Valid @RequestBody PriceListSetupCloneRequest request
+            @RequestBody(required = false) PriceListSetupCloneRequest request
     ) {
         PriceListSetupDTO result =
                 priceListSetupService.clonePriceList(id, request);
@@ -67,6 +74,43 @@ public class PriceListSetupController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(result);
+    }
+
+    @PostMapping("/price-list-setups/items/{itemId}/lock-visit-type")
+    public ResponseEntity<Void> lockVisitType(
+            @PathVariable Long itemId
+    ) {
+        priceListSetupService.lockVisitType(itemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/price-list-setups/insurance-companies")
+    public ResponseEntity<List<InsuranceCompanyDTO>> getInsuranceCompanies(
+            @RequestParam(required = false) InsuranceCompanySource source,
+            @RequestParam(required = false) String search,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<InsuranceCompanyDTO> page =
+                insuranceCompanyService.search(source, search, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @PostMapping("/price-list-setups/insurance-companies")
+    public ResponseEntity<InsuranceCompanyDTO> createInsuranceCompany(
+            @Valid @RequestBody InsuranceCompanyCreateVM vm
+    ) {
+        InsuranceCompanyDTO created = insuranceCompanyService.createInternal(vm);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @GetMapping("/price-list-setups/resolve")

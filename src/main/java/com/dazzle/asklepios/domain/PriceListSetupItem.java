@@ -1,7 +1,7 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.PricingMethod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -65,6 +64,13 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
     @Column(name = "item_name", length = 1000)
     private String itemName;
 
+    @Column(name = "category", length = 50)
+    private String category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visit_type", length = 30)
+    private EncounterType visitType;
+
     @NotNull
     @DecimalMin("0.0000")
     @Column(
@@ -74,6 +80,14 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
             scale = 4
     )
     private BigDecimal unitPrice;
+
+    @DecimalMin("0.0000")
+    @Column(
+            name = "cost",
+            precision = 19,
+            scale = 4
+    )
+    private BigDecimal cost;
 
     @NotNull
     @DecimalMin("0.0000")
@@ -96,4 +110,9 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
     @Column(name = "requires_pre_authorization", nullable = false)
     @Builder.Default
     private Boolean requiresPreAuthorization = false;
+
+    @NotNull
+    @Column(name = "visit_type_locked", nullable = false)
+    @Builder.Default
+    private Boolean visitTypeLocked = false;
 }

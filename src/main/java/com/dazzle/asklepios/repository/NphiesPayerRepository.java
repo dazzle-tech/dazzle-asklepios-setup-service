@@ -41,4 +41,13 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
     boolean existsByNphiesIdIgnoreCase(String nphiesId);
 
     boolean existsByNphiesIdIgnoreCaseAndIdNot(String nphiesId, Long id);
+
+    @EntityGraph(attributePaths = {"facility", "country", "city"})
+    Page<NphiesPayer> findByIsActiveTrue(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"facility", "country", "city"})
+    Page<NphiesPayer> findByIsActiveTrueAndNameEnContainingIgnoreCase(
+            String nameEn,
+            Pageable pageable
+    );
 }

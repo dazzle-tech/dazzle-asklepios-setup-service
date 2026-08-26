@@ -3,58 +3,40 @@ package com.dazzle.asklepios.service.dto;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDate;
 
 public record PriceListSetupCloneRequest(
 
-        @NotNull
         Boolean cloneItems,
 
-        @NotNull
         Long facilityId,
 
-        @NotNull
+        Boolean appliesToAllFacilities,
+
         PriceListSetupType type,
 
         Long payerId,
 
-        @NotBlank
+        Long nphiesPayerId,
+
         String name,
+
+        String shortName,
 
         String description,
 
-        @NotNull
-        @Positive
         Integer versionNumber,
 
-        @NotNull
         LocalDate effectiveFrom,
 
         LocalDate effectiveTo,
 
-        @NotNull
         Currency currency,
 
-        PriceListSetupStatus status
+        PriceListSetupStatus status,
+
+        Long taxId
 
 ) {
-    public PriceListSetupDTO toPriceListSetupDTO() {
-        return new PriceListSetupDTO(
-                null,
-                facilityId,
-                type,
-                payerId,
-                name,
-                description,
-                versionNumber,
-                effectiveFrom,
-                effectiveTo,
-                currency,
-                status
-        );
-    }
 }

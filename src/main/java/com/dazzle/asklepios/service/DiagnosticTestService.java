@@ -28,15 +28,18 @@ public class DiagnosticTestService {
     private final DiagnosticTestRepository repository;
     private final DiagnosticTestProfileRepository profileRepository;
     private final BillingRuleReferenceService billingRuleReferenceService;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
 
     public DiagnosticTestService(
             DiagnosticTestRepository repository,
             DiagnosticTestProfileRepository profileRepository,
-            BillingRuleReferenceService billingRuleReferenceService
+            BillingRuleReferenceService billingRuleReferenceService,
+            PriceListCatalogSyncService priceListCatalogSyncService
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
         this.billingRuleReferenceService = billingRuleReferenceService;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
     private void validateDefaultProfileFields(
             TestResultType resultType,
@@ -165,6 +168,13 @@ public class DiagnosticTestService {
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
+
+            if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                priceListCatalogSyncService.deactivateDiagnosticTest(
+                        saved.getId(),
+                        saved.getType()
+                );
+            }
 
             if (saved.getType() == TestType.LABORATORY) {
                 if (vm.defaultProfileResultType() != null) {
@@ -297,7 +307,14 @@ public class DiagnosticTestService {
         return repository.findById(id)
                 .map(p -> {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
-                    return repository.save(p);
+                    DiagnosticTest saved = repository.save(p);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateDiagnosticTest(
+                                saved.getId(),
+                                saved.getType()
+                        );
+                    }
+                    return saved;
                 });
     }
 
