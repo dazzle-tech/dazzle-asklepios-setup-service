@@ -389,4 +389,39 @@ public class PractitionerController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/practitioner/list-by-speciality-and-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionerListBySpecialityAndDepartment(
+            @RequestParam Long departmentId,
+            @RequestParam Specialty specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by departmentId={} specialty={} pageable={}",
+                departmentId,
+                specialty,
+                pageable
+        );
+
+        Page<Practitioner> page =
+                practitionerService.findPractitionersByDepartmentAndSpecialty(
+                        departmentId,
+                        specialty,
+                        pageable
+                );
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
 }

@@ -114,4 +114,22 @@ public class PractitionerDepartmentService {
                 );
     }
 
+    @Transactional(readOnly = true)
+    public boolean hasDepartmentAccess(Long practitionerId, Long departmentId) {
+        LOG.debug(
+                "Checking department access practitionerId={} departmentId={}",
+                practitionerId,
+                departmentId
+        );
+
+        if (practitionerId == null || departmentId == null) {
+            return false;
+        }
+
+        return practitionerDepartmentRepository
+                .existsByPractitionerIdAndDepartmentId(
+                        practitionerId,
+                        departmentId
+                );
+    }
 }
