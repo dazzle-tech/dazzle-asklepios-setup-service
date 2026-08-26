@@ -56,6 +56,9 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "name", length = 255, nullable = false)
     private String name;
 
+    @Column(name = "short_name", length = 255)
+    private String shortName;
+
     @NotNull(message = "Code cannot be null")
     @Column(name = "internal_code", length = 255, nullable = false, unique = true)
     private String internalCode;
