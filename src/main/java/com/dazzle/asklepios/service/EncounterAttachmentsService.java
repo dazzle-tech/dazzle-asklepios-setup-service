@@ -80,6 +80,8 @@ public class EncounterAttachmentsService {
                 .details(uploadEncounterAttachmentVM.details())
                 .source(uploadEncounterAttachmentVM.source())
                 .sourceId(uploadEncounterAttachmentVM.sourceId())
+                .documentDefinitionId(uploadEncounterAttachmentVM.documentDefinitionId())
+                .documentVersionId(uploadEncounterAttachmentVM.documentVersionId())
                 .build();
 
         return repo.save(encounterAttachments);

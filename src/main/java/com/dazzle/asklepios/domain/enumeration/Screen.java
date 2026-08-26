@@ -177,7 +177,9 @@ public enum Screen {
     POINT_OF_SALE_CHECK_IN,
     PATIENT_ENCOUNTER_REPORT,
     POINT_OF_SALE_CONFIGRATION,
-    PUSH_NOTIFICATION;
+    PUSH_NOTIFICATION,
+    DOCUMENT_MANAGEMENT;
+
 
     @JsonCreator
     public static Screen fromValue(String value) {
