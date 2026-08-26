@@ -14,6 +14,7 @@ public record DiagnosticTestResponseVM(
         Long id,
         TestType type,
         String name,
+        String shortName,
         String internalCode,
         Boolean ageSpecific,
         List<String> ageGroupList,
@@ -47,6 +48,7 @@ public record DiagnosticTestResponseVM(
                 test.getId(),
                 test.getType(),
                 test.getName(),
+                test.getShortName(),
                 test.getInternalCode(),
                 test.getAgeSpecific(),
                 test.getAgeGroupList(),
@@ -73,7 +75,7 @@ public record DiagnosticTestResponseVM(
 
     public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type, String listOfValueId) {
         return new DiagnosticTestResponseVM(
-                this.id, this.type, this.name, this.internalCode,
+                this.id, this.type, this.name ,this.shortName,this.internalCode,
                 this.ageSpecific, this.ageGroupList, this.genderSpecific, this.gender,
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
                 this.specialNotes, this.isActive, this.appointable,
