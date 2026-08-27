@@ -17,7 +17,7 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
     Page<NphiesPayer> findAll(Pageable pageable);
 
     @Override
-    @EntityGraph(attributePaths = {"facility", "country", "city"})
+    @EntityGraph(attributePaths = {"facility", "country", "city", "tpas"})
     Optional<NphiesPayer> findById(Long id);
 
     @EntityGraph(attributePaths = {"facility", "country", "city"})

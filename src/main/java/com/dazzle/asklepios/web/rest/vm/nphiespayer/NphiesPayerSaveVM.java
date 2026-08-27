@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
+import java.util.List;
 
 public record NphiesPayerSaveVM(
 
@@ -69,6 +70,8 @@ public record NphiesPayerSaveVM(
         @Size(max = 255)
         String website,
 
-        Boolean isActive
+        Boolean isActive,
+
+        List<Long> tpaIds
 
 ) implements Serializable {}

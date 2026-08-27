@@ -5,6 +5,7 @@ import com.dazzle.asklepios.service.NphiesPayerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
+import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerTpasUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -76,6 +77,16 @@ public class NphiesPayerController {
                 .map(NphiesPayerResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/nphies-payers/{id:\\d+}/tpas")
+    public ResponseEntity<NphiesPayerResponseVM> updateTpas(
+            @PathVariable Long id,
+            @RequestBody NphiesPayerTpasUpdateVM vm
+    ) {
+        LOG.debug("REST update NPHIES Payer TPA links id={} payload={}", id, vm);
+        NphiesPayer saved = nphiesPayerService.updateTpas(id, vm == null ? List.of() : vm.tpaIds());
+        return ResponseEntity.ok(NphiesPayerResponseVM.ofEntity(saved));
     }
 
     @GetMapping("/nphies-payers")

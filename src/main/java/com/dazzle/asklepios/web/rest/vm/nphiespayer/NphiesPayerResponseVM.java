@@ -1,8 +1,11 @@
 package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
+import com.dazzle.asklepios.domain.TpaDefinition;
+import org.hibernate.Hibernate;
 
 import java.time.Instant;
+import java.util.List;
 
 public record NphiesPayerResponseVM(
         Long id,
@@ -28,10 +31,17 @@ public record NphiesPayerResponseVM(
         String email,
         String website,
         Boolean isActive,
+        List<Long> tpaIds,
+        List<LinkedTpaVM> tpas,
         Instant createdDate,
         Instant lastModifiedDate
 ) {
     public static NphiesPayerResponseVM ofEntity(NphiesPayer payer) {
+        boolean tpasLoaded = payer.getTpas() != null && Hibernate.isInitialized(payer.getTpas());
+        List<LinkedTpaVM> tpas = tpasLoaded
+                ? payer.getTpas().stream().map(LinkedTpaVM::ofEntity).toList()
+                : List.of();
+
         return new NphiesPayerResponseVM(
                 payer.getId(),
                 payer.getNphiesId(),
@@ -58,8 +68,26 @@ public record NphiesPayerResponseVM(
                 payer.getEmail(),
                 payer.getWebsite(),
                 payer.getIsActive(),
+                tpas.stream().map(LinkedTpaVM::id).toList(),
+                tpas,
                 payer.getCreatedDate(),
                 payer.getLastModifiedDate()
         );
+    }
+
+    public record LinkedTpaVM(
+            Long id,
+            String tpaCode,
+            String name,
+            Boolean isActive
+    ) {
+        public static LinkedTpaVM ofEntity(TpaDefinition tpa) {
+            return new LinkedTpaVM(
+                    tpa.getId(),
+                    tpa.getTpaCode(),
+                    tpa.getName(),
+                    tpa.getIsActive()
+            );
+        }
     }
 }

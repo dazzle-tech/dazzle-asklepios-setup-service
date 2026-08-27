@@ -4,10 +4,12 @@ import com.dazzle.asklepios.domain.Country;
 import com.dazzle.asklepios.domain.CountryDistrict;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.NphiesPayer;
+import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.repository.CountryDistrictRepository;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
+import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
@@ -18,8 +20,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -33,17 +41,20 @@ public class NphiesPayerService {
     private final FacilityRepository facilityRepository;
     private final CountryRepository countryRepository;
     private final CountryDistrictRepository countryDistrictRepository;
+    private final TpaDefinitionRepository tpaDefinitionRepository;
 
     public NphiesPayerService(
             NphiesPayerRepository nphiesPayerRepository,
             FacilityRepository facilityRepository,
             CountryRepository countryRepository,
-            CountryDistrictRepository countryDistrictRepository
+            CountryDistrictRepository countryDistrictRepository,
+            TpaDefinitionRepository tpaDefinitionRepository
     ) {
         this.nphiesPayerRepository = nphiesPayerRepository;
         this.facilityRepository = facilityRepository;
         this.countryRepository = countryRepository;
         this.countryDistrictRepository = countryDistrictRepository;
+        this.tpaDefinitionRepository = tpaDefinitionRepository;
     }
 
     public NphiesPayer create(NphiesPayerSaveVM vm) {
@@ -86,7 +97,9 @@ public class NphiesPayerService {
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .build();
 
-        return nphiesPayerRepository.save(payer);
+        NphiesPayer saved = nphiesPayerRepository.save(payer);
+        syncTpas(saved, vm.tpaIds());
+        return nphiesPayerRepository.findById(saved.getId()).orElse(saved);
     }
 
     public NphiesPayer update(NphiesPayerUpdateVM vm) {
@@ -136,7 +149,22 @@ public class NphiesPayerService {
         existing.setWebsite(blankToNull(vm.website()));
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
 
-        return nphiesPayerRepository.save(existing);
+        NphiesPayer saved = nphiesPayerRepository.save(existing);
+        syncTpas(saved, vm.tpaIds());
+        return nphiesPayerRepository.findById(saved.getId()).orElse(saved);
+    }
+
+    public NphiesPayer updateTpas(Long id, List<Long> tpaIds) {
+        LOG.debug("Update NPHIES Payer TPA links id={} tpaIds={}", id, tpaIds);
+
+        NphiesPayer existing = nphiesPayerRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "notFound",
+                        ENTITY_NAME,
+                        "NPHIES payer not found."
+                ));
+        syncTpas(existing, tpaIds);
+        return nphiesPayerRepository.findById(existing.getId()).orElse(existing);
     }
 
     public Optional<NphiesPayer> toggleIsActive(Long id) {
@@ -157,6 +185,7 @@ public class NphiesPayerService {
         LOG.debug("[FIND ALL NPHIES PAYERS] Fetching all NPHIES payers pageable={}", pageable);
 
         Page<NphiesPayer> payersPage = nphiesPayerRepository.findAll(pageable);
+        attachTpas(payersPage.getContent());
 
         LOG.debug(
                 "[FIND ALL NPHIES PAYERS] Retrieved count={} pageNumber={} pageSize={} totalElements={} totalPages={}",
@@ -178,10 +207,12 @@ public class NphiesPayerService {
                 pageable
         );
 
-        return nphiesPayerRepository.findByNphiesIdContainingIgnoreCase(
+        Page<NphiesPayer> page = nphiesPayerRepository.findByNphiesIdContainingIgnoreCase(
                 nphiesId,
                 pageable
         );
+        attachTpas(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
@@ -192,10 +223,12 @@ public class NphiesPayerService {
                 pageable
         );
 
-        return nphiesPayerRepository.findByNameEnContainingIgnoreCase(
+        Page<NphiesPayer> page = nphiesPayerRepository.findByNameEnContainingIgnoreCase(
                 nameEn,
                 pageable
         );
+        attachTpas(page.getContent());
+        return page;
     }
 
     @Transactional(readOnly = true)
@@ -206,10 +239,93 @@ public class NphiesPayerService {
                 pageable
         );
 
-        return nphiesPayerRepository.findByNameArContainingIgnoreCase(
+        Page<NphiesPayer> page = nphiesPayerRepository.findByNameArContainingIgnoreCase(
                 nameAr,
                 pageable
         );
+        attachTpas(page.getContent());
+        return page;
+    }
+
+    private void attachTpas(List<NphiesPayer> payers) {
+        if (payers == null || payers.isEmpty()) {
+            return;
+        }
+
+        Set<Long> payerIds = payers.stream()
+                .map(NphiesPayer::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+        List<TpaDefinition> linkedTpas = tpaDefinitionRepository.findByInsuranceCompanies_IdIn(payerIds);
+        Map<Long, Set<TpaDefinition>> tpasByPayerId = new HashMap<>();
+
+        for (TpaDefinition tpa : linkedTpas) {
+            if (tpa.getInsuranceCompanies() == null) {
+                continue;
+            }
+            for (NphiesPayer linkedPayer : tpa.getInsuranceCompanies()) {
+                if (linkedPayer.getId() != null && payerIds.contains(linkedPayer.getId())) {
+                    tpasByPayerId
+                            .computeIfAbsent(linkedPayer.getId(), ignored -> new HashSet<>())
+                            .add(tpa);
+                }
+            }
+        }
+
+        for (NphiesPayer payer : payers) {
+            payer.setTpas(tpasByPayerId.getOrDefault(payer.getId(), new HashSet<>()));
+        }
+    }
+
+    private void syncTpas(NphiesPayer payer, List<Long> tpaIds) {
+        Set<Long> desiredIds = uniqueIds(tpaIds);
+
+        List<TpaDefinition> currentlyLinked = payer.getId() == null
+                ? List.of()
+                : tpaDefinitionRepository.findByInsuranceCompanies_Id(payer.getId());
+        Set<Long> currentIds = currentlyLinked.stream()
+                .map(TpaDefinition::getId)
+                .collect(Collectors.toSet());
+
+        List<TpaDefinition> selected = desiredIds.isEmpty()
+                ? List.of()
+                : tpaDefinitionRepository.findByIdIn(desiredIds);
+        if (selected.size() != desiredIds.size()) {
+            throw new BadRequestAlertException(
+                    "tpaNotFound",
+                    ENTITY_NAME,
+                    "One or more TPAs were not found."
+            );
+        }
+
+        for (TpaDefinition tpa : currentlyLinked) {
+            if (!desiredIds.contains(tpa.getId()) && tpa.getInsuranceCompanies() != null) {
+                tpa.getInsuranceCompanies().removeIf(linked -> linked.getId().equals(payer.getId()));
+            }
+        }
+
+        for (TpaDefinition tpa : selected) {
+            if (!currentIds.contains(tpa.getId())) {
+                if (!Boolean.TRUE.equals(tpa.getIsActive())) {
+                    throw new BadRequestAlertException(
+                            "inactiveTpaCannotLink",
+                            ENTITY_NAME,
+                            "Inactive TPA cannot be linked to insurance companies."
+                    );
+                }
+                if (tpa.getInsuranceCompanies() == null) {
+                    tpa.setInsuranceCompanies(new HashSet<>());
+                }
+                boolean alreadyLinked = tpa.getInsuranceCompanies().stream()
+                        .anyMatch(linked -> payer.getId().equals(linked.getId()));
+                if (!alreadyLinked) {
+                    tpa.getInsuranceCompanies().add(payer);
+                }
+            }
+        }
+
+        tpaDefinitionRepository.saveAll(currentlyLinked);
+        tpaDefinitionRepository.saveAll(selected);
+        payer.setTpas(new HashSet<>(selected));
     }
 
     private Facility requireActiveFacility(Long facilityId) {
@@ -302,6 +418,15 @@ public class NphiesPayerService {
                     "Website must be a valid URL."
             );
         }
+    }
+
+    private Set<Long> uniqueIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Set.of();
+        }
+        return ids.stream()
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     private String trim(String value) {

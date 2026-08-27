@@ -4,12 +4,14 @@ import com.dazzle.asklepios.domain.Country;
 import com.dazzle.asklepios.domain.CountryDistrict;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.NphiesPayer;
+import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.domain.enumeration.CountryName;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.CountryDistrictRepository;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
+import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
@@ -18,12 +20,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,6 +50,9 @@ class NphiesPayerServiceTest {
 
     @Mock
     private CountryDistrictRepository countryDistrictRepository;
+
+    @Mock
+    private TpaDefinitionRepository tpaDefinitionRepository;
 
     @InjectMocks
     private NphiesPayerService nphiesPayerService;
@@ -90,6 +102,18 @@ class NphiesPayerServiceTest {
             saved.setId(100L);
             return saved;
         });
+        when(nphiesPayerRepository.findById(100L)).thenAnswer(invocation -> Optional.of(
+                NphiesPayer.builder()
+                        .id(100L)
+                        .nphiesId("INS-001")
+                        .nameEn("Tawuniya")
+                        .facility(facility)
+                        .country(country)
+                        .city(city)
+                        .isActive(true)
+                        .build()
+        ));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(100L)).thenReturn(List.of());
 
         NphiesPayer created = nphiesPayerService.create(vm);
 
@@ -101,6 +125,31 @@ class NphiesPayerServiceTest {
         assertThat(created.getCity()).isEqualTo(city);
         assertThat(created.getIsActive()).isTrue();
         verify(nphiesPayerRepository).save(any(NphiesPayer.class));
+    }
+
+    @Test
+    void findAll_attachesLinkedTpas() {
+        NphiesPayer payer = NphiesPayer.builder()
+                .id(1L)
+                .nphiesId("INS-001")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .build();
+        TpaDefinition tpa = TpaDefinition.builder()
+                .id(9L)
+                .tpaCode("TPA-1")
+                .name("Medgulf TPA")
+                .isActive(true)
+                .build();
+        tpa.setInsuranceCompanies(new HashSet<>(Set.of(payer)));
+
+        when(nphiesPayerRepository.findAll(any(PageRequest.class))).thenReturn(new PageImpl<>(List.of(payer)));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_IdIn(anyCollection())).thenReturn(List.of(tpa));
+
+        Page<NphiesPayer> page = nphiesPayerService.findAll(PageRequest.of(0, 10));
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().get(0).getTpas()).extracting(TpaDefinition::getId).containsExactly(9L);
     }
 
     @Test
@@ -161,6 +210,8 @@ class NphiesPayerServiceTest {
         when(countryRepository.findById(10L)).thenReturn(Optional.of(country));
         when(countryDistrictRepository.findById(20L)).thenReturn(Optional.of(city));
         when(nphiesPayerRepository.save(any(NphiesPayer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(nphiesPayerRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of());
 
         NphiesPayer updated = nphiesPayerService.update(vm);
 
@@ -168,6 +219,33 @@ class NphiesPayerServiceTest {
         assertThat(updated.getShortName()).isEqualTo("TAW");
         assertThat(updated.getEmail()).isEqualTo("info@example.com");
         verify(nphiesPayerRepository).save(existing);
+    }
+
+    @Test
+    void updateTpas_ignoresDuplicateIds() {
+        NphiesPayer payer = NphiesPayer.builder()
+                .id(5L)
+                .nphiesId("INS-001")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .build();
+        TpaDefinition tpa = TpaDefinition.builder()
+                .id(9L)
+                .tpaCode("TPA-1")
+                .name("Medgulf TPA")
+                .isActive(true)
+                .insuranceCompanies(new HashSet<>())
+                .build();
+
+        when(nphiesPayerRepository.findById(5L)).thenReturn(Optional.of(payer));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of());
+        when(tpaDefinitionRepository.findByIdIn(anyCollection())).thenReturn(List.of(tpa));
+        when(tpaDefinitionRepository.saveAll(anyCollection())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        NphiesPayer updated = nphiesPayerService.updateTpas(5L, List.of(9L, 9L));
+
+        assertThat(tpa.getInsuranceCompanies()).extracting(NphiesPayer::getId).containsExactly(5L);
+        assertThat(updated.getTpas()).extracting(TpaDefinition::getId).containsExactly(9L);
     }
 
     @Test
@@ -204,7 +282,8 @@ class NphiesPayerServiceTest {
                 "0501234567",
                 "info@example.com",
                 website,
-                true
+                true,
+                List.of()
         );
     }
 
@@ -235,7 +314,8 @@ class NphiesPayerServiceTest {
                 "0501234567",
                 "info@example.com",
                 "https://example.com",
-                true
+                true,
+                List.of()
         );
     }
 }
