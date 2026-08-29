@@ -3,9 +3,11 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
+import com.dazzle.asklepios.service.dto.PriceListItemWaseelCodesDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
@@ -60,6 +62,7 @@ public class PriceListSetupItemService {
         entity.setItemType(dto.itemType());
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
+        entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setUnitPrice(dto.unitPrice());
         entity.setDiscountPercentage(
@@ -128,6 +131,7 @@ public class PriceListSetupItemService {
         entity.setItemType(dto.itemType());
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
+        entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setUnitPrice(dto.unitPrice());
         entity.setDiscountPercentage(
@@ -199,6 +203,32 @@ public class PriceListSetupItemService {
                         pageable
                 )
                 .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<PriceListItemWaseelCodesDTO> findInsuranceWaseelCodes(
+            PriceListItemType itemType,
+            Long sourceId,
+            Long facilityId
+    ) {
+        if (itemType == null || sourceId == null) {
+            return java.util.Optional.empty();
+        }
+
+        return priceListSetupItemRepository
+                .findActiveInsuranceItemsByCatalog(
+                        itemType,
+                        sourceId,
+                        facilityId,
+                        PriceListSetupStatus.ACTIVE,
+                        PriceListSetupType.INSURANCE
+                )
+                .stream()
+                .findFirst()
+                .map(item -> new PriceListItemWaseelCodesDTO(
+                        item.getItemCode(),
+                        blankToNull(item.getNonStandardCode())
+                ));
     }
 
     public void delete(
@@ -305,12 +335,22 @@ public class PriceListSetupItemService {
                 entity.getItemType(),
                 entity.getSourceId(),
                 entity.getItemCode(),
+                entity.getNonStandardCode(),
                 entity.getItemName(),
                 entity.getUnitPrice(),
                 entity.getDiscountPercentage(),
                 entity.getIsActive(),
                 entity.getRequiresPreAuthorization()
         );
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private Boolean resolveRequiresPreAuthorization(
