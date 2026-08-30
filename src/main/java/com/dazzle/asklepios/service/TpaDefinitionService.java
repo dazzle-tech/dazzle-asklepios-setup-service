@@ -176,14 +176,21 @@ public class TpaDefinitionService {
                 : tpa.getInsuranceCompanies().stream().toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<NphiesPayer> findLinkableInsuranceCompanies() {
+        return nphiesPayerRepository.findByIsActiveTrue();
+    }
+
     private Page<TpaDefinitionResponseVM> toResponsePage(Page<TpaDefinition> page) {
         List<Long> ids = page.getContent().stream().map(TpaDefinition::getId).toList();
         Map<Long, Long> linkedCounts = ids.isEmpty()
                 ? Map.of()
-                : tpaDefinitionRepository.countLinkedInsuranceCompaniesByIds(ids).stream()
+                : tpaDefinitionRepository.findByIdIn(ids).stream()
                         .collect(Collectors.toMap(
-                                row -> (Long) row[0],
-                                row -> ((Number) row[1]).longValue()
+                                TpaDefinition::getId,
+                                tpa -> tpa.getInsuranceCompanies() == null
+                                        ? 0L
+                                        : (long) tpa.getInsuranceCompanies().size()
                         ));
 
         return page.map(tpa -> TpaDefinitionResponseVM.ofEntity(
@@ -194,7 +201,11 @@ public class TpaDefinitionService {
 
     private void validateDeactivation(TpaDefinition tpa, Boolean nextActive) {
         if (Boolean.TRUE.equals(tpa.getIsActive()) && Boolean.FALSE.equals(nextActive)) {
-            long activeLinked = tpaDefinitionRepository.countActiveLinkedInsuranceCompanies(tpa.getId());
+            long activeLinked = tpa.getInsuranceCompanies() == null
+                    ? 0
+                    : tpa.getInsuranceCompanies().stream()
+                            .filter(company -> Boolean.TRUE.equals(company.getIsActive()))
+                            .count();
             if (activeLinked > 0) {
                 throw new BadRequestAlertException(
                         "activeInsuranceLinked",

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -177,7 +178,34 @@ public class NphiesPayerService {
 
     @Transactional(readOnly = true)
     public Optional<NphiesPayer> findOne(Long id) {
-        return nphiesPayerRepository.findById(id);
+        Optional<NphiesPayer> payer = nphiesPayerRepository.findById(id);
+        payer.ifPresent(found -> attachTpas(List.of(found)));
+        return payer;
+    }
+
+    @Transactional(readOnly = true)
+    public List<NphiesPayer> findActive() {
+        LOG.debug("Find active NPHIES Payers");
+        return nphiesPayerRepository.findByIsActiveTrue();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TpaDefinition> findAvailableTpas(Long payerId) {
+        LOG.debug("Find active TPAs not linked to NPHIES Payer id={}", payerId);
+        if (!nphiesPayerRepository.existsById(payerId)) {
+            throw new BadRequestAlertException(
+                    "notFound",
+                    ENTITY_NAME,
+                    "NPHIES payer not found."
+            );
+        }
+        Set<Long> linkedIds = tpaDefinitionRepository.findByInsuranceCompanies_Id(payerId).stream()
+                .map(TpaDefinition::getId)
+                .collect(Collectors.toSet());
+        return tpaDefinitionRepository.findByIsActiveTrue().stream()
+                .filter(tpa -> !linkedIds.contains(tpa.getId()))
+                .sorted(Comparator.comparing(TpaDefinition::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
     }
 
     @Transactional(readOnly = true)

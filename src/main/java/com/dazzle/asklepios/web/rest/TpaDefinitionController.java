@@ -108,6 +108,16 @@ public class TpaDefinitionController {
         return pagedResponse(tpaDefinitionService.findByName(name, pageable));
     }
 
+    @GetMapping("/tpa-definitions/linkable-insurance-companies")
+    public ResponseEntity<List<TpaDefinitionResponseVM.TpaLinkedInsuranceCompanyVM>> getLinkableInsuranceCompanies() {
+        LOG.debug("REST list insurance companies available to link to a TPA");
+        return ResponseEntity.ok(
+                tpaDefinitionService.findLinkableInsuranceCompanies().stream()
+                        .map(TpaDefinitionResponseVM.TpaLinkedInsuranceCompanyVM::ofEntity)
+                        .toList()
+        );
+    }
+
     @GetMapping("/tpa-definitions/{id:\\d+}/insurance-companies")
     public ResponseEntity<List<TpaDefinitionResponseVM.TpaLinkedInsuranceCompanyVM>> getLinkedInsuranceCompanies(
             @PathVariable Long id

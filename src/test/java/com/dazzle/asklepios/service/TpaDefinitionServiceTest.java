@@ -114,11 +114,12 @@ class TpaDefinitionServiceTest {
                 .guarantorType(GuarantorType.TPA)
                 .activationDate(LocalDate.of(2026, 1, 1))
                 .isActive(true)
-                .insuranceCompanies(new HashSet<>())
+                .insuranceCompanies(new HashSet<>(List.of(
+                        NphiesPayer.builder().id(5L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build()
+                )))
                 .build();
 
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(tpa));
-        when(tpaDefinitionRepository.countActiveLinkedInsuranceCompanies(3L)).thenReturn(2L);
 
         assertThrows(BadRequestAlertException.class, () -> tpaDefinitionService.toggleIsActive(3L));
         verify(tpaDefinitionRepository, never()).save(any());

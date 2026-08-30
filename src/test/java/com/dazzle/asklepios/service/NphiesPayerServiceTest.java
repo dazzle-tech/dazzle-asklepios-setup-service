@@ -222,6 +222,34 @@ class NphiesPayerServiceTest {
     }
 
     @Test
+    void findAvailableTpas_returnsUnlinkedActive() {
+        TpaDefinition available = TpaDefinition.builder()
+                .id(2L)
+                .tpaCode("TPA-2")
+                .name("Available TPA")
+                .isActive(true)
+                .build();
+
+        when(nphiesPayerRepository.existsById(5L)).thenReturn(true);
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of());
+        when(tpaDefinitionRepository.findByIsActiveTrue()).thenReturn(List.of(available));
+
+        List<TpaDefinition> result = nphiesPayerService.findAvailableTpas(5L);
+
+        assertThat(result).extracting(TpaDefinition::getId).containsExactly(2L);
+        assertThat(result).extracting(TpaDefinition::getName).containsExactly("Available TPA");
+    }
+
+    @Test
+    void findAvailableTpas_payerNotFound_throws() {
+        when(nphiesPayerRepository.existsById(99L)).thenReturn(false);
+
+        assertThrows(BadRequestAlertException.class, () -> nphiesPayerService.findAvailableTpas(99L));
+        verify(tpaDefinitionRepository, never()).findByIsActiveTrue();
+        verify(tpaDefinitionRepository, never()).findByInsuranceCompanies_Id(99L);
+    }
+
+    @Test
     void updateTpas_ignoresDuplicateIds() {
         NphiesPayer payer = NphiesPayer.builder()
                 .id(5L)

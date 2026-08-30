@@ -260,6 +260,7 @@ public class PriceListSetupItemExcelService {
                         row.itemType(),
                         catalog.sourceId(),
                         catalog.itemCode(),
+                        existing.map(PriceListSetupItem::getNonStandardCode).orElse(null),
                         catalog.itemName(),
                         row.category(),
                         row.visitType(),

@@ -89,6 +89,26 @@ public class NphiesPayerController {
         return ResponseEntity.ok(NphiesPayerResponseVM.ofEntity(saved));
     }
 
+    @GetMapping("/nphies-payers/{id:\\d+}/available-tpas")
+    public ResponseEntity<List<NphiesPayerResponseVM.LinkedTpaVM>> getAvailableTpas(@PathVariable Long id) {
+        LOG.debug("REST list available TPAs for NPHIES Payer id={}", id);
+        return ResponseEntity.ok(
+                nphiesPayerService.findAvailableTpas(id).stream()
+                        .map(NphiesPayerResponseVM.LinkedTpaVM::ofEntity)
+                        .toList()
+        );
+    }
+
+    @GetMapping("/nphies-payers/active")
+    public ResponseEntity<List<NphiesPayerResponseVM>> getActive() {
+        LOG.debug("REST list active NPHIES Payers");
+        return ResponseEntity.ok(
+                nphiesPayerService.findActive().stream()
+                        .map(NphiesPayerResponseVM::ofEntity)
+                        .toList()
+        );
+    }
+
     @GetMapping("/nphies-payers")
     public ResponseEntity<List<NphiesPayerResponseVM>> getAllNphiesPayers(
             @ParameterObject Pageable pageable

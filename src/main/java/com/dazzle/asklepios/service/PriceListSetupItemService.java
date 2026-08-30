@@ -184,7 +184,6 @@ public class PriceListSetupItemService {
                 .map(this::toDTO);
     }
 
-    public void delete(Long priceListSetupId, Long itemId) {
     @Transactional(readOnly = true)
     public java.util.Optional<PriceListItemWaseelCodesDTO> findInsuranceWaseelCodes(
             PriceListItemType itemType,
@@ -396,12 +395,5 @@ public class PriceListSetupItemService {
         }
 
         return Boolean.TRUE.equals(requestedValue);
-    }
-
-    private String blankToNull(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim();
     }
 }

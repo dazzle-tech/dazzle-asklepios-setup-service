@@ -1,6 +1,8 @@
 package com.dazzle.asklepios.web.rest.vm.tpadefinition;
 
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
+import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleLongDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,8 +32,10 @@ public record TpaDefinitionSaveVM(
         @Size(max = 100)
         String taxRegistrationNo,
 
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long countryId,
 
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long cityId,
 
         @Size(max = 2000)
@@ -44,6 +48,7 @@ public record TpaDefinitionSaveVM(
         @Size(max = 255)
         String email,
 
+        @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
         List<Long> insuranceCompanyIds
 
 ) implements Serializable {}
