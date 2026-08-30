@@ -287,6 +287,47 @@ public class ProcedureController {
         );
     }
 
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}/by-category/search")
+    public ResponseEntity<List<ProcedureResponseVM>> searchActiveByFacilityAndCategory(
+            @PathVariable @NotNull Long facilityId,
+            @RequestParam ProcedureCategory category,
+            @RequestParam String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search ACTIVE Procedures by facilityId={} category={} name={} pageable={}",
+                facilityId,
+                category,
+                name,
+                pageable
+        );
+
+        Page<Procedure> page =
+                procedureService.searchActiveByFacilityAndCategory(
+                        facilityId,
+                        category,
+                        name,
+                        pageable
+                );
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(ProcedureResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
+
     @GetMapping("/procedure/{id}")
     public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
         LOG.debug("REST get Procedure by id={}", id);

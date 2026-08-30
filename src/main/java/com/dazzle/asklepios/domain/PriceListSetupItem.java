@@ -14,6 +14,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -60,6 +61,10 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
     @NotBlank
     @Column(name = "item_code", nullable = false, length = 255)
     private String itemCode;
+
+    @Column(name = "non_standard_code", length = 100)
+    @Size(max = 100)
+    private String nonStandardCode;
 
     @Column(name = "item_name", length = 1000)
     private String itemName;

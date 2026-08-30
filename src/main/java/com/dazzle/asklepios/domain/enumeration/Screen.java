@@ -126,6 +126,7 @@ public enum Screen {
     // Clinics Management
     PATIENTS_VISITS_LIST,
     REVIEW_RESULTS,
+    TESTS_RESULTS,
 
 
     // Laboratory
@@ -174,7 +175,9 @@ public enum Screen {
     EMAIL_SETTINGS,
     WHATSAPP_SETTINGS,
     PATIENT_SATISFACTION_SURVEY_RESPONSES,
-    PUSH_NOTIFICATION;
+    PUSH_NOTIFICATION,
+    DOCUMENT_MANAGEMENT;
+
 
     @JsonCreator
     public static Screen fromValue(String value) {

@@ -68,6 +68,7 @@ public class DiagnosticTestService {
         DiagnosticTest test = DiagnosticTest.builder()
                 .type(vm.type())
                 .name(vm.name())
+                .shortName(vm.shortName())
                 .internalCode(vm.internalCode())
                 .ageSpecific(vm.ageSpecific())
                 .ageGroupList(vm.ageGroupList())
@@ -132,6 +133,7 @@ public class DiagnosticTestService {
 
             existing.setType(vm.type());
             existing.setName(vm.name());
+            existing.setShortName(vm.shortName());
             existing.setInternalCode(vm.internalCode());
             existing.setAgeSpecific(vm.ageSpecific());
             existing.setAgeGroupList(vm.ageGroupList());

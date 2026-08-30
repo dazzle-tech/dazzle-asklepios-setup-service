@@ -33,4 +33,10 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
             Long facilityId,
             String code
     );
+
+    Page<Procedure> findByFacility_IdAndIsActiveTrueAndCategoryTypeAndNameContainingIgnoreCase(
+            Long facilityId,
+            ProcedureCategory categoryType,
+            String name,
+            Pageable pageable);
 }

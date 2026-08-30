@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.service.PriceListSetupItemExcelService;
 import com.dazzle.asklepios.service.PriceListSetupItemService;
+import com.dazzle.asklepios.service.dto.PriceListItemWaseelCodesDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -176,6 +177,19 @@ public class PriceListSetupItemController {
                 page.getContent(),
                 headers,
                 HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/price-list-setup-items/waseel-codes")
+    public ResponseEntity<PriceListItemWaseelCodesDTO> getInsuranceWaseelCodes(
+            @RequestParam PriceListItemType itemType,
+            @RequestParam Long sourceId,
+            @RequestParam(required = false) Long facilityId
+    ) {
+        return ResponseEntity.ok(
+                priceListSetupItemService
+                        .findInsuranceWaseelCodes(itemType, sourceId, facilityId)
+                        .orElse(new PriceListItemWaseelCodesDTO(null, null))
         );
     }
 

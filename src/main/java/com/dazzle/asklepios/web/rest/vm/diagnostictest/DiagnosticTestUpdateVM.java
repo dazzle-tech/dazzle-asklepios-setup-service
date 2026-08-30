@@ -19,6 +19,7 @@ public record DiagnosticTestUpdateVM(
         TestType type,
         @NotBlank(message = "Name cannot be null")
         String name,
+        String shortName,
         @NotBlank(message = "Code cannot be null")
         String internalCode,
         Boolean ageSpecific,

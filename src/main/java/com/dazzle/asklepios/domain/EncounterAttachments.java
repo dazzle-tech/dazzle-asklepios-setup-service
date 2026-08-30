@@ -65,4 +65,10 @@ public class EncounterAttachments extends AbstractAuditingEntity<Long> implement
     @Column(name = "source_id", nullable = false)
     private long sourceId;
 
+    @Column(name = "document_definition_id")
+    private Long documentDefinitionId;
+
+    @Column(name = "document_version_id")
+    private Long documentVersionId;
+
 }

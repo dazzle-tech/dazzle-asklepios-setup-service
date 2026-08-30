@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
@@ -15,6 +16,7 @@ import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.service.dto.PriceListItemWaseelCodesDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
@@ -64,6 +66,7 @@ public class PriceListSetupItemService {
         entity.setItemType(dto.itemType());
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
+        entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setCategory(blankToNull(dto.category()));
         entity.setVisitType(visitType);
@@ -125,6 +128,15 @@ public class PriceListSetupItemService {
 
         entity.setCategory(blankToNull(dto.category()));
         entity.setVisitType(visitType);
+        entity.setWaseelItemMappingId(
+                dto.waseelItemMappingId()
+        );
+        entity.setSbsCatalogId(dto.sbsCatalogId());
+        entity.setItemType(dto.itemType());
+        entity.setSourceId(dto.sourceId());
+        entity.setItemCode(dto.itemCode());
+        entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
+        entity.setItemName(dto.itemName());
         entity.setUnitPrice(dto.unitPrice());
         entity.setCost(dto.cost());
         if (dto.isActive() != null) {
@@ -148,6 +160,7 @@ public class PriceListSetupItemService {
                                         "Price list item not found with id: " + itemId
                                 )
                         );
+
         return toDTO(entity);
     }
 
@@ -172,6 +185,37 @@ public class PriceListSetupItemService {
     }
 
     public void delete(Long priceListSetupId, Long itemId) {
+    @Transactional(readOnly = true)
+    public java.util.Optional<PriceListItemWaseelCodesDTO> findInsuranceWaseelCodes(
+            PriceListItemType itemType,
+            Long sourceId,
+            Long facilityId
+    ) {
+        if (itemType == null || sourceId == null) {
+            return java.util.Optional.empty();
+        }
+
+        return priceListSetupItemRepository
+                .findActiveInsuranceItemsByCatalog(
+                        itemType,
+                        sourceId,
+                        facilityId,
+                        PriceListSetupStatus.ACTIVE,
+                        PriceListSetupType.INSURANCE
+                )
+                .stream()
+                .findFirst()
+                .map(item -> new PriceListItemWaseelCodesDTO(
+                        item.getItemCode(),
+                        blankToNull(item.getNonStandardCode())
+                ));
+    }
+
+    public void delete(
+            Long priceListSetupId,
+            Long itemId
+    ) {
+
         PriceListSetupItem entity =
                 priceListSetupItemRepository
                         .findByIdAndPriceListSetupId(itemId, priceListSetupId)
@@ -180,6 +224,7 @@ public class PriceListSetupItemService {
                                         "Price list item not found with id: " + itemId
                                 )
                         );
+
         priceListSetupItemRepository.delete(entity);
     }
 
@@ -308,6 +353,7 @@ public class PriceListSetupItemService {
                 entity.getItemType(),
                 entity.getSourceId(),
                 entity.getItemCode(),
+                entity.getNonStandardCode(),
                 entity.getItemName(),
                 entity.getCategory(),
                 entity.getVisitType(),
@@ -324,6 +370,15 @@ public class PriceListSetupItemService {
         );
     }
 
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private Boolean resolveRequiresPreAuthorization(
             PriceListSetup priceListSetup,
             Boolean requestedValue
@@ -336,8 +391,10 @@ public class PriceListSetupItemService {
                         "requiresPreAuthorization.insuranceOnly"
                 );
             }
+
             return false;
         }
+
         return Boolean.TRUE.equals(requestedValue);
     }
 

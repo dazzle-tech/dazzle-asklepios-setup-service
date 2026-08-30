@@ -3,6 +3,8 @@ package com.dazzle.asklepios.repository;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
+import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,6 +37,7 @@ public interface PriceListSetupItemRepository
                     :search IS NULL OR :search = ''
                     OR LOWER(COALESCE(item.itemName, '')) LIKE LOWER(CONCAT('%', :search, '%'))
                     OR LOWER(COALESCE(item.itemCode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+                    OR LOWER(COALESCE(item.nonStandardCode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
               )
             """)
     Page<PriceListSetupItem> findAllByPriceListSetupIdAndItemNameContaining(
@@ -95,4 +98,29 @@ public interface PriceListSetupItemRepository
     );
 
     List<PriceListSetupItem> findAllBySourceId(Long sourceId);
+    @Query("""
+            SELECT item
+            FROM PriceListSetupItem item
+            WHERE item.itemType = :itemType
+              AND item.sourceId = :sourceId
+              AND item.isActive = true
+              AND EXISTS (
+                    SELECT 1
+                    FROM PriceListSetup setup
+                    WHERE setup.id = item.priceListSetupId
+                      AND setup.isActive = true
+                      AND setup.status = :status
+                      AND setup.type = :setupType
+                      AND (:facilityId IS NULL OR setup.facilityId = :facilityId)
+              )
+            ORDER BY item.id DESC
+            """)
+    List<PriceListSetupItem> findActiveInsuranceItemsByCatalog(
+            @Param("itemType") PriceListItemType itemType,
+            @Param("sourceId") Long sourceId,
+            @Param("facilityId") Long facilityId,
+            @Param("status") PriceListSetupStatus status,
+            @Param("setupType") PriceListSetupType setupType
+    );
+
 }
