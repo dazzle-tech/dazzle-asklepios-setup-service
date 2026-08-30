@@ -17,6 +17,8 @@ import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -35,6 +37,9 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Transactional
 public class PriceListSetupService {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(PriceListSetupService.class);
 
     private static final String ENTITY_NAME = "priceListSetup";
 
@@ -215,6 +220,15 @@ public class PriceListSetupService {
                 );
 
         if (candidatePriceLists.isEmpty()) {
+            LOG.info(
+                    "[RESOLVE] No {} price list found. "
+                            + "Caller will fall back to Setup item price. "
+                            + "facilityId={} itemType={} itemId={}",
+                    coverageType,
+                    request.facilityId(),
+                    itemType,
+                    request.itemId()
+            );
             return null;
         }
         for (PriceListSetup priceList : candidatePriceLists) {
