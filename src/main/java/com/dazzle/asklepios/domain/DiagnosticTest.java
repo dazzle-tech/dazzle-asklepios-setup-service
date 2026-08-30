@@ -63,6 +63,9 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "internal_code", length = 255, nullable = false, unique = true)
     private String internalCode;
 
+    @Column(name = "hl7_integration_code", length = 255, unique = true)
+    private String hl7IntegrationCode;
+
     @Column(name = "age_specific")
     private Boolean ageSpecific;
 

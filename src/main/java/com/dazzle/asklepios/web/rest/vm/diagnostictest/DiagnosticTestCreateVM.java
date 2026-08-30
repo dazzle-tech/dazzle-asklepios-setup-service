@@ -18,6 +18,7 @@ public record DiagnosticTestCreateVM(
         String name,
         @NotBlank(message = "Code cannot be null")
         String internalCode,
+        String hl7IntegrationCode,
         String shortName,
         Boolean ageSpecific,
         List<String> ageGroupList,
