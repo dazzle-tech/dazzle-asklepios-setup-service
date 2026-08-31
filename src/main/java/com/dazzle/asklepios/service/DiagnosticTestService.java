@@ -283,6 +283,11 @@ public class DiagnosticTestService {
         return repository.findByNameContainingIgnoreCase(name, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findByInternalCode(String internalCode, Pageable pageable) {
+        return repository.findByInternalCodeContainingIgnoreCase(internalCode, pageable);
+    }
+    
     public Page<DiagnosticTest> findByTypeAndName(TestType type, String name, Pageable pageable) {
         return repository.findByTypeAndNameContainingIgnoreCase(type, name, pageable);
     }
