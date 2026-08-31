@@ -14,10 +14,33 @@ import java.util.List;
 public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, Long> {
 
     Page<DiagnosticTest> findByType(TestType type, Pageable pageable);
+
     List<DiagnosticTest> findAllByType(TestType type);
-    Page<DiagnosticTest> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<DiagnosticTest> findByNameContainingIgnoreCase(
+            String name,
+            Pageable pageable
+    );
+
+    Page<DiagnosticTest> findByInternalCodeContainingIgnoreCase(
+            String internalCode,
+            Pageable pageable
+    );
+
     Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
-    Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(  Pageable pageable);
-    Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(TestType type, String name, Pageable pageable);
-    Page<DiagnosticTest> findByTypeAndIsActiveTrue(TestType type, Pageable pageable);
+
+    Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(
+            Pageable pageable
+    );
+
+    Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(
+            TestType type,
+            String name,
+            Pageable pageable
+    );
+
+    Page<DiagnosticTest> findByTypeAndIsActiveTrue(
+            TestType type,
+            Pageable pageable
+    );
 }

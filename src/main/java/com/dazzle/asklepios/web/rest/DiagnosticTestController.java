@@ -147,6 +147,30 @@ public class DiagnosticTestController {
         );
     }
 
+    @GetMapping("/diagnostic-test/by-internal-code/{internalCode}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByInternalCode(
+            @PathVariable String internalCode,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to search DiagnosticTests by internalCode='{}' page={}",
+                internalCode,
+                pageable
+        );
+
+        Page<DiagnosticTest> page = service.findByInternalCode(internalCode, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/diagnostic-test/by-type-and-name")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
             @RequestParam(required = false) TestType type,

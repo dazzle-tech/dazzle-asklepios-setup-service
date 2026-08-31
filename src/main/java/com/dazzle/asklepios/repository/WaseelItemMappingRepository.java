@@ -17,16 +17,21 @@ public interface WaseelItemMappingRepository extends JpaRepository<WaseelItemMap
             FROM WaseelItemMapping mapping
             WHERE mapping.isActive = true
               AND (:itemType IS NULL OR mapping.itemType = :itemType)
-              AND (
-                    :search IS NULL OR :search = ''
-                    OR LOWER(COALESCE(mapping.itemName, '')) LIKE LOWER(CONCAT('%', :search, '%'))
-                    OR LOWER(COALESCE(mapping.itemCode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
-                    OR LOWER(COALESCE(mapping.sbsCatalog.sbsCode, '')) LIKE LOWER(CONCAT('%', :search, '%'))
-              )
+              AND (:itemName IS NULL OR :itemName = ''
+                   OR LOWER(COALESCE(mapping.itemName, ''))
+                   LIKE LOWER(CONCAT('%', :itemName, '%')))
+              AND (:itemCode IS NULL OR :itemCode = ''
+                   OR LOWER(COALESCE(mapping.itemCode, ''))
+                   LIKE LOWER(CONCAT('%', :itemCode, '%')))
+              AND (:sbsCode IS NULL OR :sbsCode = ''
+                   OR LOWER(COALESCE(mapping.sbsCatalog.sbsCode, ''))
+                   LIKE LOWER(CONCAT('%', :sbsCode, '%')))
             """)
     Page<WaseelItemMapping> searchActiveMappings(
             @Param("itemType") BillingItemTypes itemType,
-            @Param("search") String search,
+            @Param("itemName") String itemName,
+            @Param("sbsCode") String sbsCode,
+            @Param("itemCode") String itemCode,
             Pageable pageable
     );
 

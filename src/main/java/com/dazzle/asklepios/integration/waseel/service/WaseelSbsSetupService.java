@@ -444,18 +444,32 @@ public class WaseelSbsSetupService {
     @Transactional(readOnly = true)
     public Page<WaseelItemMappingDTO> searchMappings(
             BillingItemTypes itemType,
-            String search,
+            String itemName,
+            String sbsCode,
+            String itemCode,
             Pageable pageable
     ) {
-        String normalizedSearch =
-                search == null || search.isBlank()
+        String normalizedItemName =
+                itemName == null || itemName.isBlank()
                         ? null
-                        : search.trim();
+                        : itemName.trim();
+
+        String normalizedSbsCode =
+                sbsCode == null || sbsCode.isBlank()
+                        ? null
+                        : sbsCode.trim();
+
+        String normalizedItemCode =
+                itemCode == null || itemCode.isBlank()
+                        ? null
+                        : itemCode.trim();
 
         return itemMappingRepository
                 .searchActiveMappings(
                         itemType,
-                        normalizedSearch,
+                        normalizedItemName,
+                        normalizedSbsCode,
+                        normalizedItemCode,
                         pageable
                 )
                 .map(this::toMappingDto);
