@@ -248,6 +248,14 @@ public class ServiceService {
         return serviceRepository.findByCodeContainingIgnoreCase(code, pageable);
     }
 
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByIsActive(Boolean isActive, Pageable pageable) {
+        LOG.debug("Fetching Services by isActive={} (no facility filter)", isActive);
+        return serviceRepository.findByIsActive(isActive, pageable);
+    }
+
+
     public Optional<ServiceSetup> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for Service id={}", id);
         return serviceRepository.findById(id)
