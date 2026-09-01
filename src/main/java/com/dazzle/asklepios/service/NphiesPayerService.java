@@ -9,6 +9,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class NphiesPayerService {
@@ -40,6 +42,12 @@ public class NphiesPayerService {
         );
 
         return payersPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<NphiesPayer> findOne(Long id) {
+        LOG.debug("[FIND NPHIES PAYER] id={}", id);
+        return nphiesPayerRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
