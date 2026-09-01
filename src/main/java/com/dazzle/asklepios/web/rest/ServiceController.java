@@ -197,6 +197,26 @@ public class ServiceController {
         );
     }
 
+
+    @GetMapping("/service/by-status/{isActive}")
+    public ResponseEntity<List<ServiceResponseVM>> getByStatus(
+            @PathVariable Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by isActive={} pageable={}", isActive, pageable);
+
+        Page<ServiceSetup> page = serviceService.findByIsActive(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @PatchMapping("/service/{id}/toggle-active")
     public ResponseEntity<ServiceResponseVM> toggleServiceActiveStatus(
             @PathVariable Long id
