@@ -127,4 +127,14 @@ public class NphiesPayerController {
                 headers,
                 HttpStatus.OK
         );
-    }}
+    }
+
+    @GetMapping("/nphies-payers/{id}")
+    public ResponseEntity<NphiesPayer> getById(@PathVariable Long id) {
+        LOG.debug("REST get NPHIES Payer id={}", id);
+
+        return nphiesPayerService.findOne(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+}

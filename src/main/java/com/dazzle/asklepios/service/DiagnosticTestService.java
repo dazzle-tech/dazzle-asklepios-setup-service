@@ -65,7 +65,9 @@ public class DiagnosticTestService {
         DiagnosticTest test = DiagnosticTest.builder()
                 .type(vm.type())
                 .name(vm.name())
+                .shortName(vm.shortName())
                 .internalCode(vm.internalCode())
+                .hl7IntegrationCode(vm.hl7IntegrationCode())
                 .ageSpecific(vm.ageSpecific())
                 .ageGroupList(vm.ageGroupList())
                 .genderSpecific(vm.genderSpecific())
@@ -129,6 +131,8 @@ public class DiagnosticTestService {
 
             existing.setType(vm.type());
             existing.setName(vm.name());
+            existing.setShortName(vm.shortName());
+            existing.setHl7IntegrationCode(vm.hl7IntegrationCode());
             existing.setInternalCode(vm.internalCode());
             existing.setAgeSpecific(vm.ageSpecific());
             existing.setAgeGroupList(vm.ageGroupList());
@@ -279,6 +283,11 @@ public class DiagnosticTestService {
         return repository.findByNameContainingIgnoreCase(name, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findByInternalCode(String internalCode, Pageable pageable) {
+        return repository.findByInternalCodeContainingIgnoreCase(internalCode, pageable);
+    }
+    
     public Page<DiagnosticTest> findByTypeAndName(TestType type, String name, Pageable pageable) {
         return repository.findByTypeAndNameContainingIgnoreCase(type, name, pageable);
     }

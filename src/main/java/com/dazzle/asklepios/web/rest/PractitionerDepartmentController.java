@@ -89,4 +89,11 @@ public class PractitionerDepartmentController {
         service.delete(pId, dId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/practitioner/{practitionerId}/departments/{departmentId}/access")
+    public ResponseEntity<Boolean> hasDepartmentAccess(@PathVariable Long practitionerId, @PathVariable Long departmentId) {
+        boolean hasAccess = service.hasDepartmentAccess(practitionerId, departmentId);
+
+        return ResponseEntity.ok(hasAccess);
+    }
 }

@@ -80,13 +80,17 @@ public class WaseelSbsSetupController {
     @GetMapping("/waseel/item-mapping")
     public ResponseEntity<List<WaseelItemMappingDTO>> searchMappings(
             @RequestParam(required = false) BillingItemTypes itemType,
-            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String itemName,
+            @RequestParam(required = false) String sbsCode,
+            @RequestParam(required = false) String itemCode,
             @ParameterObject Pageable pageable
     ) {
         Page<WaseelItemMappingDTO> page =
                 waseelSbsSetupService.searchMappings(
                         itemType,
-                        search,
+                        itemName,
+                        sbsCode,
+                        itemCode,
                         pageable
                 );
 
