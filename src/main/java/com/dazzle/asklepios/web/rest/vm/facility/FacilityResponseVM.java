@@ -31,7 +31,8 @@ public record FacilityResponseVM(
         Long defaultLabDepartmentId,
         String defaultLabDepartmentName,
         Long defaultRadDepartmentId,
-        String defaultRadDepartmentName
+        String defaultRadDepartmentName,
+        boolean approvingDiagnosticTestSettlePayment
 
 ) implements Serializable {
 
@@ -55,7 +56,8 @@ public record FacilityResponseVM(
                 facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
                 facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getName() : null,
                 facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null,
-                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getName() : null
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getName() : null,
+                facility.getApprovingDiagnosticTestSettlePayment()
         );
     }
 }
