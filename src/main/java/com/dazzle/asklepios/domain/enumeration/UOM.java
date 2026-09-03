@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain.enumeration;
 
 public enum UOM {
 
+
     TABLET,
     CAPSULE,
     MG,
@@ -49,6 +50,7 @@ public enum UOM {
     PATCH,
     APPLICATORFUL,
     UNIT,
+    DENTAL_CARE
 
 }
 
