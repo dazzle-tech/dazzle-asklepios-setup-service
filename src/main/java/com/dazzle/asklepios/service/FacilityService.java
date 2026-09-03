@@ -66,7 +66,7 @@ public class FacilityService {
         facility.setDefaultLabDepartment(defaultLabDepartment);
         Department defaultRadDepartment = vm.defaultRadDepartmentId()!=null? getDepartment(vm.defaultRadDepartmentId()):null;
         facility.setDefaultRadDepartment(defaultRadDepartment);
-
+        facility.setApprovingDiagnosticTestSettlePayment(vm.approvingDiagnosticTestSettlePayment());
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
 
@@ -79,6 +79,7 @@ public class FacilityService {
                 if (vm.name() != null) existing.setName(vm.name());
                 if (vm.type() != null) existing.setType(vm.type());
                 if (vm.code() != null) existing.setCode(vm.code());
+                existing.setApprovingDiagnosticTestSettlePayment(vm.approvingDiagnosticTestSettlePayment());
                 if (vm.emailAddress() != null) existing.setEmailAddress(vm.emailAddress());
                 if (vm.registrationDate() != null) existing.setRegistrationDate(vm.registrationDate());
                 if (vm.phone1() != null) existing.setPhone1(vm.phone1());
@@ -101,6 +102,7 @@ public class FacilityService {
                     validateWorkingDays(vm.workingDays());
                     existing.setWorkingDays(vm.workingDays());
                 }
+
 
                 if (vm.defaultLabDepartmentId() != null) {
                     Department defaultLabDepartment = getDepartment(vm.defaultLabDepartmentId());

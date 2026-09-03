@@ -100,4 +100,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_rad_department_id")
     private Department defaultRadDepartment;
+
+    @Column(name="approving-diagnostic-test-settle-payment")
+    private Boolean approvingDiagnosticTestSettlePayment = false;
 }
