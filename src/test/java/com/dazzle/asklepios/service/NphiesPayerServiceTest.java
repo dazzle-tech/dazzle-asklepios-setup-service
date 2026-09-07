@@ -222,13 +222,7 @@ class NphiesPayerServiceTest {
     }
 
     @Test
-    void findAvailableTpas_returnsActiveAndCurrentlyLinked() {
-        TpaDefinition linked = TpaDefinition.builder()
-                .id(1L)
-                .tpaCode("TPA-1")
-                .name("Linked TPA")
-                .isActive(true)
-                .build();
+    void findAvailableTpas_returnsUnlinkedActive() {
         TpaDefinition available = TpaDefinition.builder()
                 .id(2L)
                 .tpaCode("TPA-2")
@@ -237,31 +231,13 @@ class NphiesPayerServiceTest {
                 .build();
 
         when(nphiesPayerRepository.existsById(5L)).thenReturn(true);
-        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of(linked));
-        when(tpaDefinitionRepository.findByIsActiveTrue()).thenReturn(List.of(linked, available));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of());
+        when(tpaDefinitionRepository.findByIsActiveTrue()).thenReturn(List.of(available));
 
         List<TpaDefinition> result = nphiesPayerService.findAvailableTpas(5L);
 
-        assertThat(result).extracting(TpaDefinition::getId).containsExactly(2L, 1L);
-        assertThat(result).extracting(TpaDefinition::getName).containsExactly("Available TPA", "Linked TPA");
-    }
-
-    @Test
-    void findAvailableTpas_includesInactiveLinkedTpa() {
-        TpaDefinition linkedInactive = TpaDefinition.builder()
-                .id(3L)
-                .tpaCode("TPA-3")
-                .name("Inactive Linked")
-                .isActive(false)
-                .build();
-
-        when(nphiesPayerRepository.existsById(5L)).thenReturn(true);
-        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of(linkedInactive));
-        when(tpaDefinitionRepository.findByIsActiveTrue()).thenReturn(List.of());
-
-        List<TpaDefinition> result = nphiesPayerService.findAvailableTpas(5L);
-
-        assertThat(result).extracting(TpaDefinition::getId).containsExactly(3L);
+        assertThat(result).extracting(TpaDefinition::getId).containsExactly(2L);
+        assertThat(result).extracting(TpaDefinition::getName).containsExactly("Available TPA");
     }
 
     @Test

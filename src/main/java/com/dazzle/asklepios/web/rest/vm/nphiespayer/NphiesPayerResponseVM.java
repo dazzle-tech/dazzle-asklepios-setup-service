@@ -2,7 +2,6 @@ package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.TpaDefinition;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hibernate.Hibernate;
 
 import java.time.Instant;
@@ -77,17 +76,14 @@ public record NphiesPayerResponseVM(
     }
 
     public record LinkedTpaVM(
-            @JsonProperty("id") Long id,
-            @JsonProperty("tpaId") Long tpaId,
-            @JsonProperty("tpaCode") String tpaCode,
-            @JsonProperty("name") String name,
-            @JsonProperty("isActive") Boolean isActive
+            Long id,
+            String tpaCode,
+            String name,
+            Boolean isActive
     ) {
         public static LinkedTpaVM ofEntity(TpaDefinition tpa) {
-            Long tpaId = tpa.getId();
             return new LinkedTpaVM(
-                    tpaId,
-                    tpaId,
+                    tpa.getId(),
                     tpa.getTpaCode(),
                     tpa.getName(),
                     tpa.getIsActive()
