@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -191,7 +192,7 @@ public class NphiesPayerService {
 
     @Transactional(readOnly = true)
     public List<TpaDefinition> findAvailableTpas(Long payerId) {
-        LOG.debug("Find active TPAs not linked to NPHIES Payer id={}", payerId);
+        LOG.debug("Find TPAs that can be linked to NPHIES Payer id={}", payerId);
         if (!nphiesPayerRepository.existsById(payerId)) {
             throw new BadRequestAlertException(
                     "notFound",
@@ -199,11 +200,20 @@ public class NphiesPayerService {
                     "NPHIES payer not found."
             );
         }
-        Set<Long> linkedIds = tpaDefinitionRepository.findByInsuranceCompanies_Id(payerId).stream()
-                .map(TpaDefinition::getId)
-                .collect(Collectors.toSet());
-        return tpaDefinitionRepository.findByIsActiveTrue().stream()
-                .filter(tpa -> !linkedIds.contains(tpa.getId()))
+
+        Map<Long, TpaDefinition> byId = new LinkedHashMap<>();
+        for (TpaDefinition tpa : tpaDefinitionRepository.findByInsuranceCompanies_Id(payerId)) {
+            if (tpa.getId() != null) {
+                byId.put(tpa.getId(), tpa);
+            }
+        }
+        for (TpaDefinition tpa : tpaDefinitionRepository.findByIsActiveTrue()) {
+            if (tpa.getId() != null) {
+                byId.putIfAbsent(tpa.getId(), tpa);
+            }
+        }
+
+        return byId.values().stream()
                 .sorted(Comparator.comparing(TpaDefinition::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .toList();
     }
