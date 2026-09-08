@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,7 +58,7 @@ public class ICDTreeService {
                 icdCoding, categoryCode, pageable
         );
 
-        return icdDiagnosisRepository.findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
+        return icdDiagnosisRepository.findByIcdCodingAndCategoryCodeAndIsDisplayTrue(icdCoding, categoryCode, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -89,10 +91,14 @@ public class ICDTreeService {
         }
 
         Page<ICDCategory> childrenPage =
-                icdCategoryRepository.findByIcdCodingAndParentCategory_CategoryCode(icdCoding, categoryCode, pageable);
+                icdCategoryRepository.findByIcdCodingAndParentCategory_CategoryCode(
+                        icdCoding,
+                        categoryCode,
+                        categoryPageable(pageable)
+                );
 
         Page<ICDDiagnosis> diagnosesPage =
-                icdDiagnosisRepository.findByIcdCodingAndCategoryCode(icdCoding, categoryCode, pageable);
+                icdDiagnosisRepository.findByIcdCodingAndCategoryCodeAndIsDisplayTrue(icdCoding, categoryCode, pageable);
 
         LOG.debug(
                 "[GET NODE DETAILS] childrenCount={} diagnosesCount={}",
@@ -112,6 +118,7 @@ public class ICDTreeService {
         LOG.debug("[FIND DIAGNOSES BY KEYWORD] keyword='{}' pageable={}", keyword, pageable);
 
         String normalizedKeyword = keyword == null ? "" : keyword.trim().toLowerCase();
+        String likePattern = "%" + normalizedKeyword + "%";
 
         Specification<ICDDiagnosis> specification = (root, query, cb) -> {
             Predicate excludeRanges = cb.or(
@@ -125,13 +132,13 @@ public class ICDTreeService {
             );
 
             Predicate searchInCode =
-                    cb.like(cb.lower(cb.coalesce(root.get("icdCode"), "")), "%" + normalizedKeyword + "%");
+                    cb.like(cb.lower(cb.coalesce(root.get("icdCode"), "")), likePattern);
 
             Predicate searchInShortDescription =
-                    cb.like(cb.lower(cb.coalesce(root.get("icdShortDescription"), "")), "%" + normalizedKeyword + "%");
+                    cb.like(cb.lower(cb.coalesce(root.get("icdShortDescription"), "")), likePattern);
 
             Predicate searchInFullDescription =
-                    cb.like(cb.lower(cb.coalesce(root.get("icdFullDescription"), "")), "%" + normalizedKeyword + "%");
+                    cb.like(cb.lower(cb.coalesce(root.get("icdFullDescription"), "")), likePattern);
 
             Predicate searchPredicate = cb.or(
                     searchInCode,
@@ -146,6 +153,13 @@ public class ICDTreeService {
 
         LOG.debug("[FIND DIAGNOSES BY KEYWORD] resultCount={}", page.getTotalElements());
         return page;
+    }
+
+    private Pageable categoryPageable(Pageable pageable) {
+        if (!pageable.isPaged()) {
+            return Pageable.unpaged();
+        }
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("categoryCode"));
     }
 
     @Transactional(readOnly = true)
