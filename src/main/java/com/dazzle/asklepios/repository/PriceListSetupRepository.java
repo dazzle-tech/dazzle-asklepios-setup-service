@@ -117,4 +117,23 @@ public interface PriceListSetupRepository
             @Param("payerId") Long payerId,
             @Param("nphiesPayerId") Long nphiesPayerId
     );
+
+    @Query("""
+            SELECT pls FROM PriceListSetup pls
+            WHERE (
+                    pls.payerId = :payerId
+                    OR pls.nphiesPayerId = :payerId
+            )
+              AND (
+                    :search IS NULL OR :search = ''
+                    OR LOWER(pls.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                    OR LOWER(COALESCE(pls.shortName, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+              )
+            ORDER BY pls.name
+            """)
+    Page<PriceListSetup> searchByPayerId(
+            @Param("payerId") Long payerId,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }
