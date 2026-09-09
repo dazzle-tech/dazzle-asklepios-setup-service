@@ -9,6 +9,10 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ICDDiagnosisRepository
         extends JpaRepository<ICDDiagnosis, Long>, JpaSpecificationExecutor<ICDDiagnosis> {
 
-    Page<ICDDiagnosis> findByIcdCodingAndCategoryCode(String icdCoding, String categoryCode, Pageable pageable);
+    Page<ICDDiagnosis> findByIcdCodingAndCategoryCodeAndIsDisplayTrue(
+            String icdCoding,
+            String categoryCode,
+            Pageable pageable
+    );
 
 }

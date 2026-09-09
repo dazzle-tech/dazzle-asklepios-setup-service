@@ -51,4 +51,8 @@ public class ICDDiagnosis implements Serializable {
 
     @Column(name = "icd_full_description", columnDefinition = "text")
     private String icdFullDescription;
+
+    @Builder.Default
+    @Column(name = "is_display", nullable = false)
+    private Boolean isDisplay = Boolean.TRUE;
 }
