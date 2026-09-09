@@ -27,6 +27,7 @@ public enum Screen {
     LEDGER_ACCOUNT,
     PRICE_LISTS,
     CLAIMS,
+    PATIENTS_LIST,
 
     // System Setup
     ALLERGENS,
