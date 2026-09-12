@@ -116,9 +116,8 @@ public class CoverageContractService {
             String search,
             Pageable pageable
     ) {
-        Boolean activeFilter = isActive != null ? isActive : Boolean.TRUE;
         String q = search == null || search.isBlank() ? null : search.trim();
-        return coverageContractRepository.search(guarantorType, companyId, activeFilter, className, q, pageable)
+        return coverageContractRepository.search(guarantorType, companyId, isActive, className, q, pageable)
                 .map(this::toResponse);
     }
 

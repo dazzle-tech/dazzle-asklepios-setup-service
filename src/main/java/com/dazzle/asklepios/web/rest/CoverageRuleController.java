@@ -119,7 +119,7 @@ public class CoverageRuleController {
     @GetMapping("/terms/{termId:\\d+}/items")
     public ResponseEntity<List<CoverageTermItemVM>> listTermItems(
             @PathVariable Long termId,
-            @RequestParam(required = false, defaultValue = "true") Boolean isActive,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listTermItems(termId, isActive, pageable));
@@ -142,7 +142,7 @@ public class CoverageRuleController {
     @GetMapping("/{contractId:\\d+}/discounts")
     public ResponseEntity<List<CoverageDiscountVM>> listDiscounts(
             @PathVariable Long contractId,
-            @RequestParam(required = false, defaultValue = "true") Boolean isActive,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listDiscounts(contractId, isActive, pageable));
@@ -165,7 +165,7 @@ public class CoverageRuleController {
     @GetMapping("/{contractId:\\d+}/exclusions")
     public ResponseEntity<List<CoverageExclusionVM>> listExclusions(
             @PathVariable Long contractId,
-            @RequestParam(required = false, defaultValue = "true") Boolean isActive,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listExclusions(contractId, isActive, pageable));

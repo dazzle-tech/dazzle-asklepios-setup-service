@@ -33,10 +33,13 @@ public class CoveragePreApproval extends AbstractAuditingEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "coverage_contract_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coverage_contract_id")
     private CoverageContract coverageContract;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tpa_definition_id")
+    private TpaDefinition tpaDefinition;
 
     @NotNull
     @Enumerated(EnumType.STRING)

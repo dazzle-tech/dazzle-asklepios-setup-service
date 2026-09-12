@@ -2,7 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
-import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,10 +35,13 @@ public class CoverageExclusion extends AbstractAuditingEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "coverage_contract_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coverage_contract_id")
     private CoverageContract coverageContract;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tpa_definition_id")
+    private TpaDefinition tpaDefinition;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -46,11 +49,14 @@ public class CoverageExclusion extends AbstractAuditingEntity<Long> {
     private CoverageRuleTarget exclusionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "service_category", length = 50)
-    private ServiceCategory serviceCategory;
+    @Column(name = "billing_item_type", length = 50)
+    private BillingItemTypes billingItemType;
 
     @Column(name = "service_id")
     private Long serviceId;
+
+    @Column(name = "item_name", length = 255)
+    private String itemName;
 
     @Builder.Default
     @Column(name = "all_diagnoses", nullable = false)

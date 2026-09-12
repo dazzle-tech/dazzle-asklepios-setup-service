@@ -16,4 +16,12 @@ public interface CoverageDiscountRepository extends JpaRepository<CoverageDiscou
     );
 
     Page<CoverageDiscount> findByCoverageContract_Id(Long contractId, Pageable pageable);
+
+    Page<CoverageDiscount> findByTpaDefinition_IdAndIsActive(
+            Long tpaId,
+            Boolean isActive,
+            Pageable pageable
+    );
+
+    Page<CoverageDiscount> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
 }

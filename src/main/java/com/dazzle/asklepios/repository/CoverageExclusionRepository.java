@@ -16,4 +16,12 @@ public interface CoverageExclusionRepository extends JpaRepository<CoverageExclu
     );
 
     Page<CoverageExclusion> findByCoverageContract_Id(Long contractId, Pageable pageable);
+
+    Page<CoverageExclusion> findByTpaDefinition_IdAndIsActive(
+            Long tpaId,
+            Boolean isActive,
+            Pageable pageable
+    );
+
+    Page<CoverageExclusion> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
 }

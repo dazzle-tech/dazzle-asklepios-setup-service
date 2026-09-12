@@ -16,4 +16,12 @@ public interface CoveragePreApprovalRepository extends JpaRepository<CoveragePre
     );
 
     Page<CoveragePreApproval> findByCoverageContract_Id(Long contractId, Pageable pageable);
+
+    Page<CoveragePreApproval> findByTpaDefinition_IdAndIsActive(
+            Long tpaId,
+            Boolean isActive,
+            Pageable pageable
+    );
+
+    Page<CoveragePreApproval> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
 }
