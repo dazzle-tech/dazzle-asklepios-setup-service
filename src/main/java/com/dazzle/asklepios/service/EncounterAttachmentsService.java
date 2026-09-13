@@ -1,9 +1,15 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
+import com.dazzle.asklepios.domain.ApLovValue;
 import com.dazzle.asklepios.domain.EncounterAttachments;
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.EncounterAttachmentSource;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
+import com.dazzle.asklepios.repository.ApLovValueRepository;
 import com.dazzle.asklepios.repository.EncounterAttachementsRepository;
+import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -23,6 +29,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -32,6 +39,8 @@ public class EncounterAttachmentsService {
     private final EncounterAttachementsRepository repo;
     private final AttachmentProperties props;
     private final AttachmentStorageService storage;
+    private final UserRepository userRepository;
+    private final ApLovValueRepository apLovValueRepository;
 
     private static final String ENTITY_NAME = "EncounterAttachments";
 
@@ -106,9 +115,54 @@ public class EncounterAttachmentsService {
 
     public DownloadEncounterAttachmentVM downloadUrl(Long id) {
         LOG.debug("download encounter attachments {}", id);
-        EncounterAttachments encounterAttachments = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
-        PresignedGetObjectRequest getURL = storage.presignGet(encounterAttachments.getSpaceKey(), encounterAttachments.getFilename());
-        return new DownloadEncounterAttachmentVM(getURL.url().toString(), props.getPresignExpirySeconds());
+
+        EncounterAttachments encounterAttachments =
+                repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
+
+        if (encounterAttachments.getType() != null && !encounterAttachments.getType().isEmpty()) {
+            String username = SecurityUtils.getCurrentUserLogin().orElse("system");
+
+            User user = userRepository.findByLogin(username)
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "not_found",
+                            ENTITY_NAME,
+                            "User not found"
+                    ));
+
+            JobRole role = user.getJobRole();
+
+            ApLovValue lovValue = apLovValueRepository.findByKey(encounterAttachments.getType())
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "not_found",
+                            ENTITY_NAME,
+                            "Attachment type not found"
+                    ));
+
+            if ("ATAC_TYP_MED".equals(lovValue.getValueCode())
+                    && !Set.of(
+                    JobRole.HIS_ADMINISTRATOR,
+                    JobRole.PHYSICIAN,
+                    JobRole.NURSE
+            ).contains(role)) {
+
+                throw new BadRequestAlertException(
+                        "not_allowed",
+                        ENTITY_NAME,
+                        "You do not have permission to download this attachment"
+                );
+            }
+        }
+
+        PresignedGetObjectRequest getURL =
+                storage.presignGet(
+                        encounterAttachments.getSpaceKey(),
+                        encounterAttachments.getFilename()
+                );
+
+        return new DownloadEncounterAttachmentVM(
+                getURL.url().toString(),
+                props.getPresignExpirySeconds()
+        );
     }
 
     @Transactional
