@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -128,5 +129,37 @@ public class DiagnosticTestLaboratoryController {
             LOG.warn("No DiagnosticTestLaboratory found for testId={}", testId);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // GET BY IDS (Bulk)
+    // -----------------------------------------------------------------------
+    @GetMapping("/bulk-by-ids")
+    public ResponseEntity<List<DiagnosticTestLaboratoryResponseVM>> bulkByIds(@RequestParam List<Long> ids) {
+        LOG.debug("REST request to get DiagnosticTestLaboratories by ids={}", ids);
+        List<DiagnosticTestLaboratory> laboratories = service.bulkByIds(ids);
+        LOG.info("Retrieved {} DiagnosticTestLaboratories", laboratories.size());
+        
+        return ResponseEntity.ok(
+                laboratories.stream()
+                        .map(DiagnosticTestLaboratoryResponseVM::fromEntity)
+                        .toList()
+        );
+    }
+
+    // -----------------------------------------------------------------------
+    // GET BY TEST IDS (Bulk)
+    // -----------------------------------------------------------------------
+    @GetMapping("/bulk-by-test-ids")
+    public ResponseEntity<List<DiagnosticTestLaboratoryResponseVM>> bulkByTestIds(@RequestParam List<Long> testIds) {
+        LOG.debug("REST request to get DiagnosticTestLaboratories by testIds={}", testIds);
+        List<DiagnosticTestLaboratory> laboratories = service.bulkByTestIds(testIds);
+        LOG.info("Retrieved {} DiagnosticTestLaboratories for {} testIds", laboratories.size(), testIds.size());
+        
+        return ResponseEntity.ok(
+                laboratories.stream()
+                        .map(DiagnosticTestLaboratoryResponseVM::fromEntity)
+                        .toList()
+        );
     }
 }
