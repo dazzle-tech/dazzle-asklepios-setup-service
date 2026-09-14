@@ -1,13 +1,13 @@
 package com.dazzle.asklepios.web.rest.vm.department;
 
 import com.dazzle.asklepios.domain.Department;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
 import java.util.List;
@@ -37,6 +37,11 @@ public record DepartmentCreateVM(
         Boolean requirePractitioner,
         Boolean requireBilling,
         Boolean requirePreAssessment,
+        Boolean ageSpecific,
+        Integer fromAge,
+        AgeUnit fromAgeUnit,
+        Integer toAge,
+        AgeUnit toAgeUnit,
         List<WorkingDayJson> workingDays
 ) implements Serializable {
 
@@ -62,6 +67,11 @@ public record DepartmentCreateVM(
                         department.getRequirePractitioner(),
                         department.getRequireBilling(),
                         department.getRequirePreAssessment(),
+                        department.getAgeSpecific(),
+                        department.getFromAge(),
+                        department.getFromAgeUnit(),
+                        department.getToAge(),
+                        department.getToAgeUnit(),
                         department.getWorkingDays()
                 );
         }
