@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -260,6 +261,44 @@ class DepartmentServiceTest {
         assertThat(updated.get().getFromAgeUnit()).isNull();
         assertThat(updated.get().getToAge()).isNull();
         assertThat(updated.get().getToAgeUnit()).isNull();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificDisabled_ReturnsTrue() {
+        department.setAgeSpecific(false);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(90));
+
+        assertThat(allowed).isTrue();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificEnabledWithinRange_ReturnsTrue() {
+        department.setAgeSpecific(true);
+        department.setFromAge(1);
+        department.setFromAgeUnit(AgeUnit.DAYS);
+        department.setToAge(12);
+        department.setToAgeUnit(AgeUnit.YEARS);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(10));
+
+        assertThat(allowed).isTrue();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificEnabledOutOfRange_ReturnsFalse() {
+        department.setAgeSpecific(true);
+        department.setFromAge(1);
+        department.setFromAgeUnit(AgeUnit.DAYS);
+        department.setToAge(12);
+        department.setToAgeUnit(AgeUnit.YEARS);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(20));
+
+        assertThat(allowed).isFalse();
     }
 
     @Test

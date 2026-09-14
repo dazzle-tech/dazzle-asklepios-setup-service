@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -261,6 +262,82 @@ public class DepartmentService {
             case WEEKS -> basePoint.plusWeeks(amount);
             case MONTHS -> basePoint.plusMonths(amount);
             case YEARS -> basePoint.plusYears(amount);
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPatientAgeAllowed(Long departmentId, LocalDate dateOfBirth) {
+        LOG.debug("Request to check patient age eligibility for departmentId={} dateOfBirth={}", departmentId, dateOfBirth);
+
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Department not found with id " + departmentId,
+                        "department",
+                        "notfound"
+                ));
+
+        if (dateOfBirth == null) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth is required",
+                    "department",
+                    "dateofbirthrequired"
+            );
+        }
+
+        LocalDate today = LocalDate.now();
+        if (dateOfBirth.isAfter(today)) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth cannot be in the future",
+                    "department",
+                    "dateofbirthinvalid"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(department.getAgeSpecific())) {
+            return true;
+        }
+
+        boolean hasFromValue = department.getFromAge() != null;
+        boolean hasFromUnit = department.getFromAgeUnit() != null;
+        boolean hasToValue = department.getToAge() != null;
+        boolean hasToUnit = department.getToAgeUnit() != null;
+
+        if (hasFromValue != hasFromUnit || hasToValue != hasToUnit) {
+            throw new BadRequestAlertException(
+                    "Department age range is misconfigured",
+                    "department",
+                    "agerangeincomplete"
+            );
+        }
+
+        boolean fromAllowed = true;
+        if (hasFromValue) {
+            LocalDate minBirthDate = subtractFromDate(today, department.getFromAge(), department.getFromAgeUnit());
+            fromAllowed = !dateOfBirth.isAfter(minBirthDate);
+        }
+
+        boolean toAllowed = true;
+        if (hasToValue) {
+            LocalDate maxBirthDate = subtractFromDate(today, department.getToAge(), department.getToAgeUnit());
+            toAllowed = !dateOfBirth.isBefore(maxBirthDate);
+        }
+
+        return fromAllowed && toAllowed;
+    }
+
+    private LocalDate subtractFromDate(LocalDate baseDate, Integer value, AgeUnit unit) {
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case YEARS -> baseDate.minusYears(amount);
+            case MONTHS -> baseDate.minusMonths(amount);
+            case WEEKS -> baseDate.minusWeeks(amount);
+            case DAYS -> baseDate.minusDays(amount);
+            case HOURS -> throw new BadRequestAlertException(
+                    "HOURS not supported with dateOfBirth (date only)",
+                    "department",
+                    "invalidageunit"
+            );
         };
     }
 

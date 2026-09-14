@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -423,6 +425,16 @@ public class DepartmentController {
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/department/{departmentId}/age-allowed")
+    public ResponseEntity<Boolean> isPatientAgeAllowed(
+            @PathVariable Long departmentId,
+            @RequestParam("dateOfBirth") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateOfBirth
+    ) {
+        LOG.debug("REST check patient age eligibility departmentId={} dateOfBirth={}", departmentId, dateOfBirth);
+        return ResponseEntity.ok(departmentService.isPatientAgeAllowed(departmentId, dateOfBirth));
+    }
+
     /**
      * {@code GET /department/{id}} : Get a single Department by id.
      */

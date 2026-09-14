@@ -303,4 +303,14 @@ class DepartmentControllerTest {
         mockMvc.perform(patch("/api/setup/department/9999/toggle-active"))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void testIsPatientAgeAllowed() throws Exception {
+        when(departmentService.isPatientAgeAllowed(5000L, java.time.LocalDate.parse("2018-01-10"))).thenReturn(true);
+
+        mockMvc.perform(get("/api/setup/department/5000/age-allowed")
+                        .param("dateOfBirth", "2018-01-10"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
+    }
 }
