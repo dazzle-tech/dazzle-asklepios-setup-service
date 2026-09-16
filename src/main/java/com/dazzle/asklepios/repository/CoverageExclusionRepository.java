@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoverageExclusionRepository extends JpaRepository<CoverageExclusion, Long> {
 
@@ -24,4 +26,8 @@ public interface CoverageExclusionRepository extends JpaRepository<CoverageExclu
     );
 
     Page<CoverageExclusion> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
+
+    List<CoverageExclusion> findByCoverageContract_IdAndIsActiveTrue(Long contractId);
+
+    List<CoverageExclusion> findByTpaDefinition_IdAndIsActiveTrue(Long tpaId);
 }

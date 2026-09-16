@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoverageDiscountRepository extends JpaRepository<CoverageDiscount, Long> {
 
@@ -24,4 +26,8 @@ public interface CoverageDiscountRepository extends JpaRepository<CoverageDiscou
     );
 
     Page<CoverageDiscount> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
+
+    List<CoverageDiscount> findByCoverageContract_IdAndIsActiveTrue(Long contractId);
+
+    List<CoverageDiscount> findByTpaDefinition_IdAndIsActiveTrue(Long tpaId);
 }

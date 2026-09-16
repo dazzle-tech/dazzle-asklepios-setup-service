@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.tpadefinition;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.TpaDefinition;
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import org.hibernate.Hibernate;
 
@@ -16,6 +17,7 @@ public record TpaDefinitionResponseVM(
         GuarantorType guarantorType,
         LocalDate activationDate,
         Boolean isActive,
+        ApprovalCoverageCompany approvalCoverageCompany,
         String taxRegistrationNo,
         Long countryId,
         String countryName,
@@ -53,6 +55,7 @@ public record TpaDefinitionResponseVM(
                 tpa.getGuarantorType(),
                 tpa.getActivationDate(),
                 tpa.getIsActive(),
+                tpa.getApprovalCoverageCompany(),
                 tpa.getTaxRegistrationNo(),
                 tpa.getCountry() != null ? tpa.getCountry().getId() : null,
                 tpa.getCountry() != null && tpa.getCountry().getName() != null

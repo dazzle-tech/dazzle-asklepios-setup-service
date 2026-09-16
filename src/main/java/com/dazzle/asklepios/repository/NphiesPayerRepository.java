@@ -41,6 +41,8 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
             Pageable pageable
     );
 
+    Optional<NphiesPayer> findFirstByNphiesIdIgnoreCase(String nphiesId);
+
     boolean existsByNphiesIdIgnoreCase(String nphiesId);
 
     boolean existsByNphiesIdIgnoreCaseAndIdNot(String nphiesId, Long id);

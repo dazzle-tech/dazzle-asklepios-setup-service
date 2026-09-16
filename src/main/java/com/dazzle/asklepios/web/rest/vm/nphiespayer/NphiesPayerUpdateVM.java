@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -74,6 +75,8 @@ public record NphiesPayerUpdateVM(
         String website,
 
         Boolean isActive,
+
+        ApprovalCoverageCompany approvalCoverageCompany,
 
         List<Long> tpaIds
 

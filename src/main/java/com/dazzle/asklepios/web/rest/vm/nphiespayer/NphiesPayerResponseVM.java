@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.TpaDefinition;
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import org.hibernate.Hibernate;
 
 import java.time.Instant;
@@ -31,6 +32,7 @@ public record NphiesPayerResponseVM(
         String email,
         String website,
         Boolean isActive,
+        ApprovalCoverageCompany approvalCoverageCompany,
         List<Long> tpaIds,
         List<LinkedTpaVM> tpas,
         Instant createdDate,
@@ -68,6 +70,7 @@ public record NphiesPayerResponseVM(
                 payer.getEmail(),
                 payer.getWebsite(),
                 payer.getIsActive(),
+                payer.getApprovalCoverageCompany(),
                 tpas.stream().map(LinkedTpaVM::id).toList(),
                 tpas,
                 payer.getCreatedDate(),

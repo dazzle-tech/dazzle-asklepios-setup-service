@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.tpadefinition;
 
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleLongDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -51,6 +52,8 @@ public record TpaDefinitionUpdateVM(
         @Email
         @Size(max = 255)
         String email,
+
+        ApprovalCoverageCompany approvalCoverageCompany,
 
         @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
         List<Long> insuranceCompanyIds

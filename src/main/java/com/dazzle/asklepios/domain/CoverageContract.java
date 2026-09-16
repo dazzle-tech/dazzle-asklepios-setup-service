@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.CoverageBasis;
 import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
@@ -69,6 +70,10 @@ public class CoverageContract extends AbstractAuditingEntity<Long> {
     @Enumerated(EnumType.STRING)
     @Column(name = "class_name", nullable = false, length = 20)
     private CoverageClassName className;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_coverage_company", length = 20)
+    private ApprovalCoverageCompany approvalCoverageCompany;
 
     @NotNull
     @Builder.Default

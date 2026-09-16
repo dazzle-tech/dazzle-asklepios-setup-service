@@ -93,6 +93,7 @@ class TpaDefinitionServiceTest {
                 null,
                 null,
                 null,
+                null,
                 List.of(5L)
         );
 
@@ -150,6 +151,7 @@ class TpaDefinitionServiceTest {
                 "Riyadh",
                 "0111111111",
                 "tpa@example.com",
+                null,
                 List.of()
         );
 
@@ -176,6 +178,7 @@ class TpaDefinitionServiceTest {
                 null,
                 null,
                 "tpa@example.com",
+                null,
                 insuranceCompanyIds
         );
     }

@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.coverage;
 
+import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.CoverageBasis;
 import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
@@ -36,6 +37,8 @@ public record CoverageContractSaveVM(
 
         @NotNull
         CoverageClassName className,
+
+        ApprovalCoverageCompany approvalCoverageCompany,
 
         Boolean isActive
 ) implements Serializable {}

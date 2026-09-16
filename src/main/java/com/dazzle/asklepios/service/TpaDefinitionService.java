@@ -77,6 +77,7 @@ public class TpaDefinitionService {
                 .address(blankToNull(vm.address()))
                 .phone(blankToNull(vm.phone()))
                 .email(blankToNull(vm.email()))
+                .approvalCoverageCompany(vm.approvalCoverageCompany())
                 .insuranceCompanies(new HashSet<>())
                 .build();
 
@@ -119,6 +120,7 @@ public class TpaDefinitionService {
         existing.setAddress(blankToNull(vm.address()));
         existing.setPhone(blankToNull(vm.phone()));
         existing.setEmail(blankToNull(vm.email()));
+        existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
 
         Set<Long> alreadyLinkedIds = existing.getInsuranceCompanies() == null
                 ? Set.of()

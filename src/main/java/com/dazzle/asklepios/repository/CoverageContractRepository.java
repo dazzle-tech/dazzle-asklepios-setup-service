@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoverageContractRepository extends JpaRepository<CoverageContract, Long> {
 
@@ -24,6 +26,17 @@ public interface CoverageContractRepository extends JpaRepository<CoverageContra
             Long companyId,
             String code,
             Long id
+    );
+
+    @Query("""
+            SELECT c FROM CoverageContract c
+            WHERE c.isActive = true
+              AND c.insurancePayerId = :insurancePayerId
+              AND LOWER(TRIM(c.policyNumber)) = LOWER(:policyNumber)
+            """)
+    List<CoverageContract> findActiveByInsurancePayerIdAndPolicyNumber(
+            @Param("insurancePayerId") Long insurancePayerId,
+            @Param("policyNumber") String policyNumber
     );
 
     @Query("""

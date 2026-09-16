@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoveragePreApprovalItemRepository extends JpaRepository<CoveragePreApprovalItem, Long> {
 
@@ -16,4 +18,6 @@ public interface CoveragePreApprovalItemRepository extends JpaRepository<Coverag
     );
 
     Page<CoveragePreApprovalItem> findByPreApproval_Id(Long preApprovalId, Pageable pageable);
+
+    List<CoveragePreApprovalItem> findByPreApproval_IdAndIsActiveTrue(Long preApprovalId);
 }

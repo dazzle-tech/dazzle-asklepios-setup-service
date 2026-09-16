@@ -61,6 +61,7 @@ public class CoverageContractService {
                 .priceListSetupId(priceList.getId())
                 .parentPayerId(parentPayer != null ? parentPayer.getId() : null)
                 .className(vm.className())
+                .approvalCoverageCompany(vm.approvalCoverageCompany())
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .build());
         return toResponse(saved);
@@ -84,6 +85,7 @@ public class CoverageContractService {
         existing.setPriceListSetupId(priceList.getId());
         existing.setParentPayerId(parentPayer != null ? parentPayer.getId() : null);
         existing.setClassName(vm.className());
+        existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
         if (vm.isActive() != null) {
             existing.setIsActive(vm.isActive());
         }
@@ -182,7 +184,7 @@ public class CoverageContractService {
         }
     }
 
-    private CoverageContractResponseVM toResponse(CoverageContract contract) {
+    public CoverageContractResponseVM toResponse(CoverageContract contract) {
         PriceListSetup priceList = priceListSetupRepository.findById(contract.getPriceListSetupId()).orElse(null);
         NphiesPayer insurancePayer = nphiesPayerRepository.findById(contract.getInsurancePayerId()).orElse(null);
         NphiesPayer parentPayer = contract.getParentPayerId() == null
@@ -207,6 +209,7 @@ public class CoverageContractService {
                 contract.getParentPayerId(),
                 parentPayer == null ? null : coverageLookupService.payerDisplayName(parentPayer),
                 contract.getClassName(),
+                contract.getApprovalCoverageCompany(),
                 contract.getIsActive(),
                 contract.getCreatedBy(),
                 contract.getCreatedDate(),

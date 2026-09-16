@@ -311,6 +311,7 @@ class NphiesPayerServiceTest {
                 "info@example.com",
                 website,
                 true,
+                null,
                 List.of()
         );
     }
@@ -343,6 +344,7 @@ class NphiesPayerServiceTest {
                 "info@example.com",
                 "https://example.com",
                 true,
+                null,
                 List.of()
         );
     }

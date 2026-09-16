@@ -3,9 +3,12 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.service.CoverageContractResolutionService;
 import com.dazzle.asklepios.service.CoverageContractService;
 import com.dazzle.asklepios.service.CoverageLookupService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveRequest;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveResponse;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResponseVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractSaveVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractUpdateVM;
@@ -40,13 +43,16 @@ public class CoverageContractController {
     private static final Logger LOG = LoggerFactory.getLogger(CoverageContractController.class);
 
     private final CoverageContractService coverageContractService;
+    private final CoverageContractResolutionService coverageContractResolutionService;
     private final CoverageLookupService coverageLookupService;
 
     public CoverageContractController(
             CoverageContractService coverageContractService,
+            CoverageContractResolutionService coverageContractResolutionService,
             CoverageLookupService coverageLookupService
     ) {
         this.coverageContractService = coverageContractService;
+        this.coverageContractResolutionService = coverageContractResolutionService;
         this.coverageLookupService = coverageLookupService;
     }
 
@@ -61,6 +67,14 @@ public class CoverageContractController {
     public ResponseEntity<CoverageContractResponseVM> update(@Valid @RequestBody CoverageContractUpdateVM vm) {
         LOG.debug("REST update coverage contract payload={}", vm);
         return ResponseEntity.ok(coverageContractService.update(vm));
+    }
+
+    @PostMapping("/coverage-contracts/resolve")
+    public ResponseEntity<CoverageContractResolveResponse> resolve(
+            @RequestBody CoverageContractResolveRequest request
+    ) {
+        LOG.debug("REST resolve coverage contract payload={}", request);
+        return ResponseEntity.ok(coverageContractResolutionService.resolve(request));
     }
 
     @GetMapping("/coverage-contracts/{id:\\d+}")

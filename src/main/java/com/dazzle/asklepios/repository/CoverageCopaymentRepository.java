@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoverageCopaymentRepository extends JpaRepository<CoverageCopayment, Long> {
 
@@ -16,4 +18,6 @@ public interface CoverageCopaymentRepository extends JpaRepository<CoverageCopay
     );
 
     Page<CoverageCopayment> findByCoverageContract_Id(Long contractId, Pageable pageable);
+
+    List<CoverageCopayment> findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(Long contractId);
 }

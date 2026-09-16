@@ -96,6 +96,7 @@ public class NphiesPayerService {
                 .email(trim(vm.email()))
                 .website(blankToNull(vm.website()))
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
+                .approvalCoverageCompany(vm.approvalCoverageCompany())
                 .build();
 
         NphiesPayer saved = nphiesPayerRepository.save(payer);
@@ -149,6 +150,7 @@ public class NphiesPayerService {
         existing.setEmail(trim(vm.email()));
         existing.setWebsite(blankToNull(vm.website()));
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
+        existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
 
         NphiesPayer saved = nphiesPayerRepository.save(existing);
         syncTpas(saved, vm.tpaIds());

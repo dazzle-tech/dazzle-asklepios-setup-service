@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface CoverageTermRepository extends JpaRepository<CoverageTerm, Long> {
 
@@ -21,5 +23,10 @@ public interface CoverageTermRepository extends JpaRepository<CoverageTerm, Long
             Long contractId,
             CoverageTermType termType,
             Pageable pageable
+    );
+
+    List<CoverageTerm> findByCoverageContract_IdAndTermTypeAndIsActiveTrue(
+            Long contractId,
+            CoverageTermType termType
     );
 }
