@@ -1,10 +1,11 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
+import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
 import org.slf4j.Logger;
@@ -14,7 +15,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
@@ -25,9 +29,11 @@ public class PayorService {
     private static final Logger LOG = LoggerFactory.getLogger(PayorService.class);
 
     private final PayorRepository repo;
+    private final NphiesPayerRepository nphiesPayerRepository;
 
-    public PayorService(PayorRepository repo) {
+    public PayorService(PayorRepository repo, NphiesPayerRepository nphiesPayerRepository) {
         this.repo = repo;
+        this.nphiesPayerRepository = nphiesPayerRepository;
     }
 
     // ------------ CREATE ------------
@@ -50,11 +56,11 @@ public class PayorService {
                 .category(vm.category())
 
                 .address(vm.address())
-                .phone(vm.phone())
+                .phone(requiredText(vm.phone()))
                 .email(vm.email())
-                .contractManagerContact(vm.contractManagerContact())
+                .contractManagerContact(requiredText(vm.contractManagerContact()))
 
-                .startDate(vm.startDate())
+                .startDate(vm.startDate() != null ? vm.startDate() : LocalDate.now())
                 .expiryDate(vm.expiryDate())
                 .renewable(vm.renewable() != null ? vm.renewable() : false)
                 .nphiesId(vm.nphiesId())
@@ -190,7 +196,72 @@ public class PayorService {
             return Optional.empty();
         }
 
-        return repo.findFirstByNphiesId(nphiesId.trim());
+        String trimmed = nphiesId.trim();
+        return repo.findFirstByNphiesIdIgnoreCase(trimmed)
+                .or(() -> repo.findFirstByNphiesId(trimmed));
+    }
+
+    public Payor ensureFromNphiesId(String nphiesId) {
+        if (nphiesId == null || nphiesId.isBlank()) {
+            throw new BadRequestAlertException("NPHIES ID is required.", "payor", "nphiesIdRequired");
+        }
+
+        String trimmed = nphiesId.trim();
+        Optional<Payor> existing = findByNphiesId(trimmed);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        NphiesPayer payer = nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(trimmed)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "NPHIES payer was not found for id " + trimmed + ".",
+                        "payor",
+                        "nphiesPayerNotFound"
+                ));
+
+        String name = firstNonBlank(payer.getNameEn(), payer.getNameAr(), payer.getNphiesId(), trimmed);
+        Payor created = Payor.builder()
+                .code(uniquePayorCode(payer.getNphiesId() == null ? trimmed : payer.getNphiesId()))
+                .name(name)
+                .category(PayorCategory.INSURANCE)
+                .nphiesId(payer.getNphiesId())
+                .waseelPayerId(payer.getNphiesId())
+                .phone(requiredText(firstNonBlank(payer.getPhone(), payer.getMobile())))
+                .contractManagerContact(requiredText(payer.getContactPerson()))
+                .startDate(LocalDate.now())
+                .address(payer.getHeadOfficeAddress())
+                .email(payer.getEmail())
+                .renewable(false)
+                .allowPartialCoverage(false)
+                .acceptCopay(false)
+                .acceptDeductibles(false)
+                .allowPackagePricing(false)
+                .allowDrgBilling(false)
+                .forcePreApproval(false)
+                .isWaseelEnabled(false)
+                .isActive(true)
+                .build();
+
+        LOG.info("Created Payor from NPHIES payer nphiesId={} name={}", created.getNphiesId(), created.getName());
+        return repo.save(created);
+    }
+
+    private static String requiredText(String value) {
+        return firstNonBlank(value, "N/A");
+    }
+
+    private String uniquePayorCode(String nphiesId) {
+        String sanitized = nphiesId == null ? "" : nphiesId.replaceAll("[^A-Za-z0-9_-]", "").toUpperCase(Locale.ROOT);
+        String base = sanitized.isBlank() ? "NPH" : ("NPH-" + sanitized);
+        if (base.length() > 40) {
+            base = base.substring(0, 40);
+        }
+        if (!repo.existsByCodeIgnoreCase(base)) {
+            return base;
+        }
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String withSuffix = base + "-" + suffix;
+        return withSuffix.length() > 50 ? withSuffix.substring(0, 50) : withSuffix;
     }
 
 }

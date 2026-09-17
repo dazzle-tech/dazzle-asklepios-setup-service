@@ -93,21 +93,31 @@ public class CoverageContractController {
     public ResponseEntity<List<CoverageContractResponseVM>> search(
             @RequestParam(required = false) GuarantorType guarantorType,
             @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) Long insurancePayerId,
             @RequestParam(required = false) Boolean isActive,
             @RequestParam(required = false) CoverageClassName className,
             @RequestParam(required = false) String search,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug(
-                "REST search coverage contracts guarantorType={} companyId={} isActive={} className={} search={} pageable={}",
+                "REST search coverage contracts guarantorType={} companyId={} insurancePayerId={} isActive={} className={} search={} pageable={}",
                 guarantorType,
                 companyId,
+                insurancePayerId,
                 isActive,
                 className,
                 search,
                 pageable
         );
-        return paged(coverageContractService.search(guarantorType, companyId, isActive, className, search, pageable));
+        return paged(coverageContractService.search(
+                guarantorType,
+                companyId,
+                insurancePayerId,
+                isActive,
+                className,
+                search,
+                pageable
+        ));
     }
 
     @GetMapping("/coverage-contracts/lookups/companies")

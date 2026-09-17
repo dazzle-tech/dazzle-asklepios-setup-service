@@ -113,13 +113,14 @@ public class CoverageContractService {
     public Page<CoverageContractResponseVM> search(
             GuarantorType guarantorType,
             Long companyId,
+            Long insurancePayerId,
             Boolean isActive,
             CoverageClassName className,
             String search,
             Pageable pageable
     ) {
         String q = search == null || search.isBlank() ? null : search.trim();
-        return coverageContractRepository.search(guarantorType, companyId, isActive, className, q, pageable)
+        return coverageContractRepository.search(guarantorType, companyId, insurancePayerId, isActive, className, q, pageable)
                 .map(this::toResponse);
     }
 

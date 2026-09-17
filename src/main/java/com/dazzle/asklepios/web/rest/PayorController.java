@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.service.PayorService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorResponseVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
@@ -121,5 +120,12 @@ public class PayorController {
                 .map(PayorResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/payor/ensure-from-nphies/{nphiesId}")
+    public ResponseEntity<PayorResponseVM> ensureFromNphies(@PathVariable String nphiesId) {
+        LOG.debug("REST ensure Payor from NPHIES id={}", nphiesId);
+        Payor payor = service.ensureFromNphiesId(nphiesId);
+        return ResponseEntity.ok(PayorResponseVM.ofEntity(payor));
     }
 }

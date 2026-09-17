@@ -70,6 +70,56 @@ class PriceListSetupServiceTest {
     }
 
     @Test
+    void updateAllowsPastStartDateAndPersistsEdits() {
+        PriceListSetup existing = existingCashList();
+        existing.setEffectiveFrom(LocalDate.now().minusDays(30));
+        existing.setName("Old name");
+        when(priceListSetupRepository.findById(5L)).thenReturn(Optional.of(existing));
+        when(priceListSetupRepository.findAllByFacilityIdAndTypeInAndIsActiveTrue(any(), any()))
+                .thenReturn(List.of());
+        when(priceListSetupRepository.findAllByAppliesToAllFacilitiesTrueAndTypeInAndIsActiveTrue(any()))
+                .thenReturn(List.of());
+
+        PriceListSetupDTO dto = cashDto(LocalDate.now().minusDays(30), PriceListSetupStatus.ACTIVE);
+        dto = new PriceListSetupDTO(
+                5L,
+                dto.facilityId(),
+                dto.facilityName(),
+                dto.appliesToAllFacilities(),
+                dto.type(),
+                dto.payerId(),
+                dto.payerName(),
+                dto.nphiesPayerId(),
+                dto.nphiesPayerName(),
+                "Updated Cash",
+                "UC",
+                dto.description(),
+                dto.versionNumber(),
+                dto.effectiveFrom(),
+                dto.effectiveTo(),
+                dto.currency(),
+                dto.status(),
+                dto.taxId(),
+                dto.taxName(),
+                dto.createdDate(),
+                dto.lastModifiedDate(),
+                dto.createdBy(),
+                dto.lastModifiedBy()
+        );
+
+        PriceListSetupDTO result = priceListSetupService.update(5L, dto);
+
+        ArgumentCaptor<PriceListSetup> captor = ArgumentCaptor.forClass(PriceListSetup.class);
+        verify(priceListSetupRepository).save(captor.capture());
+
+        PriceListSetup saved = captor.getValue();
+        assertThat(saved.getName()).isEqualTo("Updated Cash");
+        assertThat(saved.getShortName()).isEqualTo("UC");
+        assertThat(saved.getEffectiveFrom()).isEqualTo(LocalDate.now().minusDays(30));
+        assertThat(result.name()).isEqualTo("Updated Cash");
+    }
+
+    @Test
     void createRejectsPastStartDate() {
         PriceListSetupDTO dto = cashDto(LocalDate.now().minusDays(1), PriceListSetupStatus.ACTIVE);
 

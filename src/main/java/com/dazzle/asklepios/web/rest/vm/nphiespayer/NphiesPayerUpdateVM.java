@@ -1,6 +1,9 @@
 package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
 import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
+import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleApprovalCoverageCompanyDeserializer;
+import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleLongDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +15,7 @@ import java.util.List;
 public record NphiesPayerUpdateVM(
 
         @NotNull(message = "id cannot be null")
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long id,
 
         @NotBlank(message = "nphiesId cannot be blank")
@@ -29,6 +33,7 @@ public record NphiesPayerUpdateVM(
         String shortName,
 
         @NotNull(message = "facilityId cannot be null")
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long facilityId,
 
         @NotBlank(message = "insuranceAuthorityLicenseNo cannot be blank")
@@ -49,8 +54,10 @@ public record NphiesPayerUpdateVM(
         @Size(max = 2000)
         String headOfficeAddress,
 
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long countryId,
 
+        @JsonDeserialize(using = FlexibleLongDeserializer.class)
         Long cityId,
 
         @Size(max = 20)
@@ -76,8 +83,10 @@ public record NphiesPayerUpdateVM(
 
         Boolean isActive,
 
+        @JsonDeserialize(using = FlexibleApprovalCoverageCompanyDeserializer.class)
         ApprovalCoverageCompany approvalCoverageCompany,
 
+        @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
         List<Long> tpaIds
 
 ) implements Serializable {}

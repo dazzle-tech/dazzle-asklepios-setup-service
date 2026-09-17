@@ -167,30 +167,7 @@ public class PriceListSetupService {
     public PriceListSetupDTO update(Long id, PriceListSetupDTO dto) {
         PriceListSetup entity = requireEntity(id);
 
-        entity.setFacilityId(
-                dto.facilityId() != null ? dto.facilityId() : entity.getFacilityId()
-        );
-        if (dto.appliesToAllFacilities() != null) {
-            entity.setAppliesToAllFacilities(dto.appliesToAllFacilities());
-        }
-        if (dto.status() != null) {
-            entity.setStatus(dto.status());
-        }
-        entity.setEffectiveTo(dto.effectiveTo());
-        entity.setTaxId(dto.taxId());
-        if (dto.shortName() != null) {
-            entity.setShortName(blankToNull(dto.shortName()));
-        }
-        if (dto.description() != null) {
-            entity.setDescription(blankToNull(dto.description()));
-        }
-        if (dto.name() != null && !dto.name().isBlank()) {
-            entity.setName(dto.name().trim());
-        }
-
-        if (!isActiveStatus(entity.getStatus()) && dto.effectiveFrom() != null) {
-            entity.setEffectiveFrom(dto.effectiveFrom());
-        }
+        applyCreateFields(entity, dto);
 
         PriceListSetupDTO merged = toDTO(entity);
         validateDto(merged, false);

@@ -43,6 +43,7 @@ public interface CoverageContractRepository extends JpaRepository<CoverageContra
             SELECT c FROM CoverageContract c
             WHERE (:guarantorType IS NULL OR c.guarantorType = :guarantorType)
               AND (:companyId IS NULL OR c.companyId = :companyId)
+              AND (:insurancePayerId IS NULL OR c.insurancePayerId = :insurancePayerId)
               AND (:isActive IS NULL OR c.isActive = :isActive)
               AND (:className IS NULL OR c.className = :className)
               AND (
@@ -54,6 +55,7 @@ public interface CoverageContractRepository extends JpaRepository<CoverageContra
     Page<CoverageContract> search(
             @Param("guarantorType") GuarantorType guarantorType,
             @Param("companyId") Long companyId,
+            @Param("insurancePayerId") Long insurancePayerId,
             @Param("isActive") Boolean isActive,
             @Param("className") CoverageClassName className,
             @Param("search") String search,
