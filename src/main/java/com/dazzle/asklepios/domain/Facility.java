@@ -3,6 +3,7 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -93,6 +94,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name = "working_days", columnDefinition = "json")
     private List<WorkingDayJson> workingDays;
 
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_lab_department_id")
     private Department defaultLabDepartment;
@@ -100,4 +102,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "default_rad_department_id")
     private Department defaultRadDepartment;
+
+    @Column(name="approving-diagnostic-test-settle-payment")
+    private Boolean approvingDiagnosticTestSettlePayment = false;
 }

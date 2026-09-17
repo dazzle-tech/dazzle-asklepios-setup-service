@@ -26,6 +26,8 @@ import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -46,6 +48,9 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional
 public class PriceListSetupService {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(PriceListSetupService.class);
 
     private static final String ENTITY_NAME = "priceListSetup";
 
@@ -245,9 +250,30 @@ public class PriceListSetupService {
                 true
         );
 
+        List<PriceListSetup> candidatePriceLists =
+                findCandidatePriceLists(
+                        request,
+                        coverageType,
+                        pricingDate
+                );
+
+        if (candidatePriceLists.isEmpty()) {
+            LOG.info(
+                    "[RESOLVE] No {} price list found. "
+                            + "Caller will fall back to Setup item price. "
+                            + "facilityId={} itemType={} itemId={}",
+                    coverageType,
+                    request.facilityId(),
+                    itemType,
+                    request.itemId()
+            );
+            return null;
+        }
+
         if (coverageType == BillingCoverageType.INSURANCE
                 && matched != null
                 && !Boolean.TRUE.equals(matched.item().getIsActive())) {
+
             MatchedPrice cashMatched = findMatchingPrice(
                     request,
                     BillingCoverageType.SELF_PAY,
@@ -255,18 +281,29 @@ public class PriceListSetupService {
                     pricingDate,
                     true
             );
+
             if (cashMatched != null
                     && Boolean.TRUE.equals(cashMatched.item().getIsActive())) {
-                return toResolutionDTO(cashMatched.priceList(), cashMatched.item(), true);
+                return toResolutionDTO(
+                        cashMatched.priceList(),
+                        cashMatched.item(),
+                        true
+                );
             }
+
             return null;
         }
 
-        if (matched == null || !Boolean.TRUE.equals(matched.item().getIsActive())) {
+        if (matched == null
+                || !Boolean.TRUE.equals(matched.item().getIsActive())) {
             return null;
         }
 
-        return toResolutionDTO(matched.priceList(), matched.item(), false);
+        return toResolutionDTO(
+                matched.priceList(),
+                matched.item(),
+                false
+        );
     }
 
     @Transactional(readOnly = true)

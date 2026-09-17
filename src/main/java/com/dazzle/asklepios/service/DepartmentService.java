@@ -5,7 +5,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserBookableDepartment;
-import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
@@ -29,6 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -92,6 +94,11 @@ public class DepartmentService {
                 .requirePractitioner(true)
                 .requireBilling(departmentVM.requireBilling())
                 .requirePreAssessment(departmentVM.requirePreAssessment())
+                .ageSpecific(Boolean.TRUE.equals(departmentVM.ageSpecific()))
+                .fromAge(departmentVM.fromAge())
+                .fromAgeUnit(departmentVM.fromAgeUnit())
+                .toAge(departmentVM.toAge())
+                .toAgeUnit(departmentVM.toAgeUnit())
                 .workingDays(normalizeWorkingDays(departmentVM.workingDays()))
                 .build();
 
@@ -159,6 +166,14 @@ public class DepartmentService {
         if (departmentVM.requirePreAssessment() != null) {
             department.setRequirePreAssessment(departmentVM.requirePreAssessment());
         }
+        if (departmentVM.ageSpecific() != null) {
+            department.setAgeSpecific(departmentVM.ageSpecific());
+        }
+            department.setFromAge(departmentVM.fromAge());
+            department.setFromAgeUnit(departmentVM.fromAgeUnit());
+            department.setToAge(departmentVM.toAge());
+            department.setToAgeUnit(departmentVM.toAgeUnit());
+
         if (departmentVM.workingDays() != null) {
             department.setWorkingDays(normalizeWorkingDays(departmentVM.workingDays()));
         }
@@ -175,6 +190,155 @@ public class DepartmentService {
         validateParallelCapacity(department);
         validateAppointableRequirements(department);
         validateEncounterType(department);
+        validateAgeSpecificRange(department);
+    }
+
+    private void validateAgeSpecificRange(Department department) {
+        if (!Boolean.TRUE.equals(department.getAgeSpecific())) {
+            clearAgeSpecificRange(department);
+            return;
+        }
+
+        boolean hasFromValue = department.getFromAge() != null;
+        boolean hasFromUnit = department.getFromAgeUnit() != null;
+        boolean hasToValue = department.getToAge() != null;
+        boolean hasToUnit = department.getToAgeUnit() != null;
+
+        if (hasFromValue != hasFromUnit || hasToValue != hasToUnit) {
+            throw new BadRequestAlertException(
+                    "Each provided age bound must include both value and unit",
+                    "department",
+                    "agerangeincomplete"
+            );
+        }
+
+        if (!hasFromValue && !hasToValue) {
+            throw new BadRequestAlertException(
+                    "Provide at least one bound: fromAge/fromAgeUnit or toAge/toAgeUnit when ageSpecific is true",
+                    "department",
+                    "agerangerequired"
+            );
+        }
+
+        if ((hasFromValue && department.getFromAge() < 0) || (hasToValue && department.getToAge() < 0)) {
+            throw new BadRequestAlertException(
+                    "fromAge and toAge must be 0 or greater when ageSpecific is true",
+                    "department",
+                    "agerangeinvalid"
+            );
+        }
+
+        if (!hasFromValue || !hasToValue) {
+            return;
+        }
+
+        LocalDateTime basePoint = LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime fromBoundary = addAge(basePoint, department.getFromAge(), department.getFromAgeUnit());
+        LocalDateTime toBoundary = addAge(basePoint, department.getToAge(), department.getToAgeUnit());
+
+        if (fromBoundary.isAfter(toBoundary)) {
+            throw new BadRequestAlertException(
+                    "fromAge must be less than or equal to toAge when ageSpecific is true",
+                    "department",
+                    "agerangeorderinvalid"
+            );
+        }
+    }
+
+    private void clearAgeSpecificRange(Department department) {
+        department.setAgeSpecific(false);
+        department.setFromAge(null);
+        department.setFromAgeUnit(null);
+        department.setToAge(null);
+        department.setToAgeUnit(null);
+    }
+
+    private LocalDateTime addAge(LocalDateTime basePoint, Integer value, AgeUnit unit) {
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case HOURS -> basePoint.plusHours(amount);
+            case DAYS -> basePoint.plusDays(amount);
+            case WEEKS -> basePoint.plusWeeks(amount);
+            case MONTHS -> basePoint.plusMonths(amount);
+            case YEARS -> basePoint.plusYears(amount);
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPatientAgeAllowed(Long departmentId, LocalDate dateOfBirth) {
+        LOG.debug("Request to check patient age eligibility for departmentId={} dateOfBirth={}", departmentId, dateOfBirth);
+
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Department not found with id " + departmentId,
+                        "department",
+                        "notfound"
+                ));
+
+        if (dateOfBirth == null) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth is required",
+                    "department",
+                    "dateofbirthrequired"
+            );
+        }
+
+        LocalDate today = LocalDate.now();
+        if (dateOfBirth.isAfter(today)) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth cannot be in the future",
+                    "department",
+                    "dateofbirthinvalid"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(department.getAgeSpecific())) {
+            return true;
+        }
+
+        boolean hasFromValue = department.getFromAge() != null;
+        boolean hasFromUnit = department.getFromAgeUnit() != null;
+        boolean hasToValue = department.getToAge() != null;
+        boolean hasToUnit = department.getToAgeUnit() != null;
+
+        if (hasFromValue != hasFromUnit || hasToValue != hasToUnit) {
+            throw new BadRequestAlertException(
+                    "Department age range is misconfigured",
+                    "department",
+                    "agerangeincomplete"
+            );
+        }
+
+        boolean fromAllowed = true;
+        if (hasFromValue) {
+            LocalDate minBirthDate = subtractFromDate(today, department.getFromAge(), department.getFromAgeUnit());
+            fromAllowed = !dateOfBirth.isAfter(minBirthDate);
+        }
+
+        boolean toAllowed = true;
+        if (hasToValue) {
+            LocalDate maxBirthDate = subtractFromDate(today, department.getToAge(), department.getToAgeUnit());
+            toAllowed = !dateOfBirth.isBefore(maxBirthDate);
+        }
+
+        return fromAllowed && toAllowed;
+    }
+
+    private LocalDate subtractFromDate(LocalDate baseDate, Integer value, AgeUnit unit) {
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case YEARS -> baseDate.minusYears(amount);
+            case MONTHS -> baseDate.minusMonths(amount);
+            case WEEKS -> baseDate.minusWeeks(amount);
+            case DAYS -> baseDate.minusDays(amount);
+            case HOURS -> throw new BadRequestAlertException(
+                    "HOURS not supported with dateOfBirth (date only)",
+                    "department",
+                    "invalidageunit"
+            );
+        };
     }
 
     private void validateEncounterType(Department department) {
@@ -331,7 +495,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public List<Department> findActiveByTypeAndFacility(DepartmentType type, Long facilityId) {
-        LOG.debug("Request to get Active Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
+        LOG.debug("Request to get Active Departments by Type and Facility type={} facilityId={}",
                 type, facilityId);
         return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId);
     }

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.config.TestSecurityConfig;
 import com.dazzle.asklepios.domain.Department;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.DepartmentService;
@@ -45,6 +46,11 @@ class DepartmentControllerTest {
         Department dept = new Department();
         dept.setId(5000L);
         dept.setName("INPATIENT Department");
+        dept.setAgeSpecific(true);
+        dept.setFromAge(1);
+        dept.setFromAgeUnit(AgeUnit.DAYS);
+        dept.setToAge(12);
+        dept.setToAgeUnit(AgeUnit.YEARS);
 
         var pageable = PageRequest.of(0, 10);
         Page<Department> page =
@@ -70,7 +76,12 @@ class DepartmentControllerTest {
 
         mockMvc.perform(get("/api/setup/department/5000"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("INPATIENT Department"));
+                .andExpect(jsonPath("$.name").value("INPATIENT Department"))
+                .andExpect(jsonPath("$.ageSpecific").value(true))
+                .andExpect(jsonPath("$.fromAge").value(1))
+                .andExpect(jsonPath("$.fromAgeUnit").value("DAYS"))
+                .andExpect(jsonPath("$.toAge").value(12))
+                .andExpect(jsonPath("$.toAgeUnit").value("YEARS"));
     }
 
     @Test
@@ -89,9 +100,17 @@ class DepartmentControllerTest {
 
         DepartmentCreateVM createVM = new DepartmentCreateVM(
                 "Neurology", 1L, DepartmentType.INPATIENT_WARD, true, "NEU01",
-                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester",true,true,
+                "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
+
+        dept.setAgeSpecific(true);
+        dept.setFromAge(1);
+        dept.setFromAgeUnit(AgeUnit.DAYS);
+        dept.setToAge(12);
+        dept.setToAgeUnit(AgeUnit.YEARS);
 
         when(departmentService.create(createVM)).thenReturn(dept);
 
@@ -110,12 +129,30 @@ class DepartmentControllerTest {
                       "isActive": true,
                       "createdBy": "tester",
                       "hasMedicalSheets": true,
-                      "hasNurseMedicalSheets": true
+                      "hasNurseMedicalSheets": true,
+                      "parallelCapacityEnabled": false,
+                      "parallelCapacityValue": 1,
+                      "defaultDurationMinutes": 30,
+                      "defaultBufferBeforeMinutes": 0,
+                      "defaultBufferAfterMinutes": 0,
+                      "requirePractitioner": true,
+                      "requireBilling": false,
+                      "requirePreAssessment": false,
+                      "ageSpecific": true,
+                      "fromAge": 1,
+                      "fromAgeUnit": "DAYS",
+                      "toAge": 12,
+                      "toAgeUnit": "YEARS"
                     }
                     """))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/setup/api/department/5001"))
-                .andExpect(jsonPath("$.name").value("Neurology"));
+                .andExpect(jsonPath("$.name").value("Neurology"))
+                .andExpect(jsonPath("$.ageSpecific").value(true))
+                .andExpect(jsonPath("$.fromAge").value(1))
+                .andExpect(jsonPath("$.fromAgeUnit").value("DAYS"))
+                .andExpect(jsonPath("$.toAge").value(12))
+                .andExpect(jsonPath("$.toAgeUnit").value("YEARS"));
     }
 
     @Test
@@ -126,9 +163,17 @@ class DepartmentControllerTest {
 
         DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
                 5000L, "Oncology", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
-                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true,true,true,
+                "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true, true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 7, AgeUnit.DAYS, 15, AgeUnit.YEARS,
                 List.of()
         );
+
+        dept.setAgeSpecific(true);
+        dept.setFromAge(7);
+        dept.setFromAgeUnit(AgeUnit.DAYS);
+        dept.setToAge(15);
+        dept.setToAgeUnit(AgeUnit.YEARS);
 
         when(departmentService.update(5000L, updateVM)).thenReturn(Optional.of(dept));
 
@@ -147,11 +192,29 @@ class DepartmentControllerTest {
                       "encounterType": "CLINIC",
                       "isActive": true,
                       "hasMedicalSheets": true,
-                      "hasNurseMedicalSheets": true
+                      "hasNurseMedicalSheets": true,
+                      "parallelCapacityEnabled": false,
+                      "parallelCapacityValue": 1,
+                      "defaultDurationMinutes": 30,
+                      "defaultBufferBeforeMinutes": 0,
+                      "defaultBufferAfterMinutes": 0,
+                      "requirePractitioner": true,
+                      "requireBilling": false,
+                      "requirePreAssessment": false,
+                      "ageSpecific": true,
+                      "fromAge": 7,
+                      "fromAgeUnit": "DAYS",
+                      "toAge": 15,
+                      "toAgeUnit": "YEARS"
                     }
                     """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Oncology"));
+                .andExpect(jsonPath("$.name").value("Oncology"))
+                .andExpect(jsonPath("$.ageSpecific").value(true))
+                .andExpect(jsonPath("$.fromAge").value(7))
+                .andExpect(jsonPath("$.fromAgeUnit").value("DAYS"))
+                .andExpect(jsonPath("$.toAge").value(15))
+                .andExpect(jsonPath("$.toAgeUnit").value("YEARS"));
     }
 
     @Test
@@ -239,5 +302,15 @@ class DepartmentControllerTest {
 
         mockMvc.perform(patch("/api/setup/department/9999/toggle-active"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testIsPatientAgeAllowed() throws Exception {
+        when(departmentService.isPatientAgeAllowed(5000L, java.time.LocalDate.parse("2018-01-10"))).thenReturn(true);
+
+        mockMvc.perform(get("/api/setup/department/5000/age-allowed")
+                        .param("dateOfBirth", "2018-01-10"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("true"));
     }
 }

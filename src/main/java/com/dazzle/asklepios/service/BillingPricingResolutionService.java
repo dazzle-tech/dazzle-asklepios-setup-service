@@ -282,7 +282,9 @@ public class BillingPricingResolutionService {
         if (priceListPrice == null) {
 
             LOG.info(
-                    "[RESOLVE] No price list found. Falling back to setup price. itemType={} sourceId={}",
+                    "[RESOLVE] No price list found. Falling back to setup item price. "
+                            + "coverageType={} itemType={} sourceId={}",
+                    request.coverageType(),
                     request.billingItemType(),
                     request.sourceId()
             );

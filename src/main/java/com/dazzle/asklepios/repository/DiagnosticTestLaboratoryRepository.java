@@ -4,11 +4,14 @@ import com.dazzle.asklepios.domain.DiagnosticTestLaboratory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface DiagnosticTestLaboratoryRepository extends JpaRepository<DiagnosticTestLaboratory, Long> {
     Optional<DiagnosticTestLaboratory> findByTestId(Long testId);
     boolean existsByTestId(Long testId);
+    
+    List<DiagnosticTestLaboratory> findByTestIdIn(java.util.List<Long> testIds);
 
 }

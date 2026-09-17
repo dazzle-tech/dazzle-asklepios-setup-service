@@ -33,7 +33,8 @@ public record FacilityUpdateVM(
         String timeZone,
         List<WorkingDayJson> workingDays,
         Long defaultLabDepartmentId,
-        Long defaultRadDepartmentId
+        Long defaultRadDepartmentId,
+        boolean approvingDiagnosticTestSettlePayment
 ) implements Serializable {
 
     public static FacilityUpdateVM ofEntity(Facility facility) {
@@ -54,7 +55,8 @@ public record FacilityUpdateVM(
                 facility.getTimeZone(),
                 facility.getWorkingDays(),
                 facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
-                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null
+                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null,
+                facility.getApprovingDiagnosticTestSettlePayment()
 
         );
     }

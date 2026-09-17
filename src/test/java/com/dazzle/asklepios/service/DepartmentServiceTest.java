@@ -2,12 +2,16 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
-
+import com.dazzle.asklepios.repository.ResourceRepository;
+import com.dazzle.asklepios.repository.UserBookableDepartmentRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
+import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
@@ -19,8 +23,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +45,15 @@ class DepartmentServiceTest {
 
     @Mock
     private FacilityRepository facilityRepository;
+
+    @Mock
+    private ResourceRepository resourceRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    @Mock
+    private UserBookableDepartmentRepository userBookableDepartmentRepository;
 
     @InjectMocks
     private DepartmentService departmentService;
@@ -65,8 +78,16 @@ class DepartmentServiceTest {
                 .name("Cardiology")
                 .facility(facility)
                 .type(DepartmentType.OUTPATIENT_CLINIC)
+                .appointable(true)
                 .code("CARD01")
+                .encounterType(EncounterType.CLINIC)
                 .isActive(true)
+                .defaultDurationMinutes(30)
+                .defaultBufferBeforeMinutes(0)
+                .defaultBufferAfterMinutes(0)
+                .requirePractitioner(true)
+                .requireBilling(false)
+                .requirePreAssessment(false)
                 .build();
     }
 
@@ -74,18 +95,25 @@ class DepartmentServiceTest {
     void testCreateDepartment_Success() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
 
         when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
-        when(departmentRepository.save(any(Department.class))).thenReturn(department);
+        when(departmentRepository.save(any(Department.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Department result = departmentService.create(vm);
 
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("Cardiology");
         assertThat(result.getFacility()).isEqualTo(facility);
+        assertThat(result.getAgeSpecific()).isTrue();
+        assertThat(result.getFromAge()).isEqualTo(1);
+        assertThat(result.getFromAgeUnit()).isEqualTo(AgeUnit.DAYS);
+        assertThat(result.getToAge()).isEqualTo(12);
+        assertThat(result.getToAgeUnit()).isEqualTo(AgeUnit.YEARS);
         verify(departmentRepository).save(any(Department.class));
     }
 
@@ -93,7 +121,9 @@ class DepartmentServiceTest {
     void testCreateDepartment_FacilityNotFound() {
         var vm = new DepartmentCreateVM(
                 "Cardiology", 99L, DepartmentType.OUTPATIENT_CLINIC,
-                true, "CARD01", "123456", "email@test.com", null, true, "tester",true,true,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
 
@@ -108,7 +138,9 @@ class DepartmentServiceTest {
     void testUpdateDepartment_Success() {
         var vm = new DepartmentUpdateVM(
                 5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
-                true, "NEW01", "111", "new@test.com", null, false,true,true,
+                true, "NEW01", "111", "new@test.com", EncounterType.CLINIC, false, true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
 
@@ -120,6 +152,153 @@ class DepartmentServiceTest {
 
         assertThat(updated).isPresent();
         assertThat(updated.get().getName()).isEqualTo("Updated Name");
+        assertThat(updated.get().getAgeSpecific()).isTrue();
+        assertThat(updated.get().getFromAge()).isEqualTo(1);
+        assertThat(updated.get().getToAge()).isEqualTo(12);
+    }
+
+    @Test
+    void testCreateDepartment_AgeSpecificRangeInvalidAcrossUnits() {
+        var vm = new DepartmentCreateVM(
+                "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 12, AgeUnit.YEARS, 1, AgeUnit.DAYS,
+                List.of()
+        );
+
+        when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
+
+        assertThrows(BadRequestAlertException.class, () -> departmentService.create(vm));
+        verify(departmentRepository, never()).save(any(Department.class));
+    }
+
+    @Test
+    void testCreateDepartment_AgeSpecific_FromOnly_IsAllowed() {
+        var vm = new DepartmentCreateVM(
+                "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, AgeUnit.DAYS, null, null,
+                List.of()
+        );
+
+        when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
+        when(departmentRepository.save(any(Department.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Department result = departmentService.create(vm);
+
+        assertThat(result.getAgeSpecific()).isTrue();
+        assertThat(result.getFromAge()).isEqualTo(1);
+        assertThat(result.getFromAgeUnit()).isEqualTo(AgeUnit.DAYS);
+        assertThat(result.getToAge()).isNull();
+        assertThat(result.getToAgeUnit()).isNull();
+    }
+
+    @Test
+    void testCreateDepartment_AgeSpecific_ToOnly_IsAllowed() {
+        var vm = new DepartmentCreateVM(
+                "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, null, null, 12, AgeUnit.YEARS,
+                List.of()
+        );
+
+        when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
+        when(departmentRepository.save(any(Department.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Department result = departmentService.create(vm);
+
+        assertThat(result.getAgeSpecific()).isTrue();
+        assertThat(result.getFromAge()).isNull();
+        assertThat(result.getFromAgeUnit()).isNull();
+        assertThat(result.getToAge()).isEqualTo(12);
+        assertThat(result.getToAgeUnit()).isEqualTo(AgeUnit.YEARS);
+    }
+
+    @Test
+    void testCreateDepartment_AgeSpecific_IncompleteFromPair_IsInvalid() {
+        var vm = new DepartmentCreateVM(
+                "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+                true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                true, 1, null, null, null,
+                List.of()
+        );
+
+        when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
+
+        assertThrows(BadRequestAlertException.class, () -> departmentService.create(vm));
+        verify(departmentRepository, never()).save(any(Department.class));
+    }
+
+    @Test
+    void testUpdateDepartment_DisablingAgeSpecificClearsRange() {
+        department.setAgeSpecific(true);
+        department.setFromAge(1);
+        department.setFromAgeUnit(AgeUnit.DAYS);
+        department.setToAge(12);
+        department.setToAgeUnit(AgeUnit.YEARS);
+
+        var vm = new DepartmentUpdateVM(
+                department.getId(), "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
+                true, "NEW01", "111", "new@test.com", EncounterType.CLINIC, false, true, true,
+                false, 1, 30, 0, 0, true, false, false,
+                false, null, null, null, null,
+                List.of()
+        );
+
+        when(facilityRepository.findById(facility.getId())).thenReturn(Optional.of(facility));
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+        when(departmentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Optional<Department> updated = departmentService.update(department.getId(), vm);
+
+        assertThat(updated).isPresent();
+        assertThat(updated.get().getAgeSpecific()).isFalse();
+        assertThat(updated.get().getFromAge()).isNull();
+        assertThat(updated.get().getFromAgeUnit()).isNull();
+        assertThat(updated.get().getToAge()).isNull();
+        assertThat(updated.get().getToAgeUnit()).isNull();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificDisabled_ReturnsTrue() {
+        department.setAgeSpecific(false);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(90));
+
+        assertThat(allowed).isTrue();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificEnabledWithinRange_ReturnsTrue() {
+        department.setAgeSpecific(true);
+        department.setFromAge(1);
+        department.setFromAgeUnit(AgeUnit.DAYS);
+        department.setToAge(12);
+        department.setToAgeUnit(AgeUnit.YEARS);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(10));
+
+        assertThat(allowed).isTrue();
+    }
+
+    @Test
+    void testIsPatientAgeAllowed_AgeSpecificEnabledOutOfRange_ReturnsFalse() {
+        department.setAgeSpecific(true);
+        department.setFromAge(1);
+        department.setFromAgeUnit(AgeUnit.DAYS);
+        department.setToAge(12);
+        department.setToAgeUnit(AgeUnit.YEARS);
+        when(departmentRepository.findById(department.getId())).thenReturn(Optional.of(department));
+
+        boolean allowed = departmentService.isPatientAgeAllowed(department.getId(), LocalDate.now().minusYears(20));
+
+        assertThat(allowed).isFalse();
     }
 
     @Test

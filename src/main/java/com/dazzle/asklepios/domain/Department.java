@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
@@ -108,6 +109,25 @@ public class Department extends AbstractAuditingEntity<Long> implements Serializ
 
     @Column(name = "require_pre_assessment")
     private Boolean requirePreAssessment = false;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "age_specific", nullable = false)
+    private Boolean ageSpecific = false;
+
+    @Column(name = "from_age")
+    private Integer fromAge;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "from_age_unit", length = 20)
+    private AgeUnit fromAgeUnit;
+
+    @Column(name = "to_age")
+    private Integer toAge;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "to_age_unit", length = 20)
+    private AgeUnit toAgeUnit;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "working_days", columnDefinition = "json", nullable = false)

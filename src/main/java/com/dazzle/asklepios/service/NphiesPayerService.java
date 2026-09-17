@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -227,6 +228,12 @@ public class NphiesPayerService {
         );
 
         return payersPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<NphiesPayer> findOne(Long id) {
+        LOG.debug("[FIND NPHIES PAYER] id={}", id);
+        return nphiesPayerRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
