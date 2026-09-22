@@ -149,5 +149,7 @@ Desktop.ini
 ######################
 # Code coverage
 ######################
-coverage/
+# Only ignore report output at repo root. Do not use a bare "coverage/"
+# pattern — it also hides source packages such as web/rest/vm/coverage.
+/coverage/
 .nyc_output/
