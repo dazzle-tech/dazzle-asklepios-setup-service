@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,6 +19,10 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
     @Override
     @EntityGraph(attributePaths = {"facility", "country", "city"})
     Page<NphiesPayer> findAll(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"facility", "country", "city"})
+    List<NphiesPayer> findAll();
 
     @Override
     @EntityGraph(attributePaths = {"facility", "country", "city", "tpas"})
@@ -41,7 +46,27 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
             Pageable pageable
     );
 
+    List<NphiesPayer> findByNphiesIdContainingIgnoreCaseOrNameEnContainingIgnoreCaseOrNameArContainingIgnoreCase(
+            String nphiesId,
+            String nameEn,
+            String nameAr
+    );
+
     Optional<NphiesPayer> findFirstByNphiesIdIgnoreCase(String nphiesId);
+
+    List<NphiesPayer> findByIdIn(Collection<Long> ids);
+
+    @EntityGraph(attributePaths = {"childCompanies"})
+    List<NphiesPayer> findDistinctByIdIn(Collection<Long> ids);
+
+    List<NphiesPayer> findByParentCompanies_Id(Long parentId);
+
+    List<NphiesPayer> findByChildCompanies_Id(Long childId);
+
+    @EntityGraph(attributePaths = {"childCompanies"})
+    List<NphiesPayer> findByChildCompanies_IdIn(Collection<Long> childIds);
+
+    List<NphiesPayer> findDistinctByParentCompanies_IdNotNull();
 
     boolean existsByNphiesIdIgnoreCase(String nphiesId);
 

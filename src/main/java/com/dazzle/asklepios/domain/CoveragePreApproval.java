@@ -34,8 +34,8 @@ public class CoveragePreApproval extends AbstractAuditingEntity<Long> {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coverage_contract_id")
-    private CoverageContract coverageContract;
+    @JoinColumn(name = "coverage_class_id")
+    private CoverageClass coverageClass;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tpa_definition_id")

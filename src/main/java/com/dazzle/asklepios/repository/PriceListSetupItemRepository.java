@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -95,6 +96,62 @@ public interface PriceListSetupItemRepository
     List<PriceListSetupItem> findAllByItemTypeAndSourceId(
             PriceListItemType type,
             Long sourceId
+    );
+
+    List<PriceListSetupItem> findAllByPriceListSetupIdInAndItemTypeAndSourceId(
+            Collection<Long> priceListSetupIds,
+            PriceListItemType itemType,
+            Long sourceId
+    );
+
+    List<PriceListSetupItem> findAllByPriceListSetupIdInAndItemTypeInAndSourceIdIn(
+            Collection<Long> priceListSetupIds,
+            Collection<PriceListItemType> itemTypes,
+            Collection<Long> sourceIds
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdIn(
+            Collection<Long> priceListSetupIds,
+            Pageable pageable
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdInAndItemType(
+            Collection<Long> priceListSetupIds,
+            PriceListItemType itemType,
+            Pageable pageable
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdInAndItemNameContainingIgnoreCase(
+            Collection<Long> priceListSetupIds,
+            String itemName,
+            Pageable pageable
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdInAndItemCodeContainingIgnoreCase(
+            Collection<Long> priceListSetupIds,
+            String itemCode,
+            Pageable pageable
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdInAndItemTypeAndItemNameContainingIgnoreCase(
+            Collection<Long> priceListSetupIds,
+            PriceListItemType itemType,
+            String itemName,
+            Pageable pageable
+    );
+
+    Page<PriceListSetupItem> findAllByPriceListSetupIdInAndItemTypeAndItemCodeContainingIgnoreCase(
+            Collection<Long> priceListSetupIds,
+            PriceListItemType itemType,
+            String itemCode,
+            Pageable pageable
+    );
+
+    long countByPriceListSetupIdIn(Collection<Long> priceListSetupIds);
+
+    long countByPriceListSetupIdInAndItemType(
+            Collection<Long> priceListSetupIds,
+            PriceListItemType itemType
     );
 
     List<PriceListSetupItem> findAllBySourceId(Long sourceId);

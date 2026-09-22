@@ -40,6 +40,8 @@ public interface TpaDefinitionRepository extends JpaRepository<TpaDefinition, Lo
     @EntityGraph(attributePaths = {"country", "city"})
     Page<TpaDefinition> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
+    List<TpaDefinition> findByTpaCodeContainingIgnoreCaseOrNameContainingIgnoreCase(String tpaCode, String name);
+
     @EntityGraph(attributePaths = {"country", "city"})
     Page<TpaDefinition> findByIsActiveTrue(Pageable pageable);
 

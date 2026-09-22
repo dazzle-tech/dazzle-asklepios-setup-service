@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageContract;
 import com.dazzle.asklepios.domain.CoverageCopayment;
 import com.dazzle.asklepios.domain.CoverageDiscount;
@@ -13,7 +14,6 @@ import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
@@ -22,6 +22,7 @@ import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
+import com.dazzle.asklepios.repository.CoverageClassRepository;
 import com.dazzle.asklepios.repository.CoverageContractRepository;
 import com.dazzle.asklepios.repository.CoverageCopaymentRepository;
 import com.dazzle.asklepios.repository.CoverageDiscountRepository;
@@ -47,9 +48,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -57,6 +60,7 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class CoverageContractResolutionService {
 
+    private final CoverageClassRepository coverageClassRepository;
     private final CoverageContractRepository coverageContractRepository;
     private final CoverageCopaymentRepository coverageCopaymentRepository;
     private final CoverageTermRepository coverageTermRepository;
@@ -70,8 +74,10 @@ public class CoverageContractResolutionService {
     private final TpaDefinitionRepository tpaDefinitionRepository;
     private final PriceListSetupRepository priceListSetupRepository;
     private final CoverageContractService coverageContractService;
+    private final CoverageLookupService coverageLookupService;
 
     public CoverageContractResolutionService(
+            CoverageClassRepository coverageClassRepository,
             CoverageContractRepository coverageContractRepository,
             CoverageCopaymentRepository coverageCopaymentRepository,
             CoverageTermRepository coverageTermRepository,
@@ -84,8 +90,10 @@ public class CoverageContractResolutionService {
             NphiesPayerRepository nphiesPayerRepository,
             TpaDefinitionRepository tpaDefinitionRepository,
             PriceListSetupRepository priceListSetupRepository,
-            CoverageContractService coverageContractService
+            CoverageContractService coverageContractService,
+            CoverageLookupService coverageLookupService
     ) {
+        this.coverageClassRepository = coverageClassRepository;
         this.coverageContractRepository = coverageContractRepository;
         this.coverageCopaymentRepository = coverageCopaymentRepository;
         this.coverageTermRepository = coverageTermRepository;
@@ -99,6 +107,7 @@ public class CoverageContractResolutionService {
         this.tpaDefinitionRepository = tpaDefinitionRepository;
         this.priceListSetupRepository = priceListSetupRepository;
         this.coverageContractService = coverageContractService;
+        this.coverageLookupService = coverageLookupService;
     }
 
     public CoverageContractResolveResponse resolve(CoverageContractResolveRequest request) {
@@ -117,7 +126,7 @@ public class CoverageContractResolutionService {
         }
 
         List<CoverageContract> candidates =
-                coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(
+                coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(
                         insurancePayer.getId(),
                         policyNumber
                 );
@@ -138,25 +147,25 @@ public class CoverageContractResolutionService {
         }
 
         Long tpaId = resolveTpaId(request, insurancePayer);
-        CoverageClassName className = parseClassName(request.className());
-        CoverageContract selected = inForce.stream()
-                .max(Comparator.comparingInt(contract -> score(contract, className, tpaId)))
-                .orElse(inForce.get(0));
+        MatchedCoverage matched = selectMatchedCoverage(inForce, request.className(), tpaId);
+        CoverageContract selected = matched.contract();
+        CoverageClass selectedClass = matched.coverageClass();
+        Long classId = selectedClass == null ? null : selectedClass.getId();
 
         EncounterType encounterType = parseEncounterType(request.encounterType());
-        CoverageCopayment copayment = selectCopayment(selected.getId(), encounterType);
-        CoverageMatch coverageMatch = selectCoverage(selected.getId(), request, encounterType);
-        CoverageMatch limitMatch = selectLimit(selected.getId(), request, encounterType);
-        CoverageMatch cashLimitMatch = selectCashLimit(selected.getId(), request, encounterType);
-        CoverageDiscountVM discount = selectDiscount(selected.getId(), tpaId, request, encounterType);
-        CoverageExclusionVM exclusion = selectExclusion(selected.getId(), tpaId, request, encounterType);
-        CoveragePreApprovalReadingVM preApproval = selectPreApproval(selected.getId(), tpaId, request, encounterType);
+        CoverageCopayment copayment = selectCopayment(classId, encounterType);
+        CoverageMatch coverageMatch = selectCoverage(classId, request, encounterType);
+        CoverageMatch limitMatch = selectLimit(classId, request, encounterType);
+        CoverageMatch cashLimitMatch = selectCashLimit(classId, request, encounterType);
+        CoverageDiscountVM discount = selectDiscount(classId, tpaId, request, encounterType);
+        CoverageExclusionVM exclusion = selectExclusion(classId, tpaId, request, encounterType);
+        CoveragePreApprovalReadingVM preApproval = selectPreApproval(classId, tpaId, request, encounterType);
 
         return new CoverageContractResolveResponse(
                 true,
                 buildMatchReason(
                         selected,
-                        className,
+                        selectedClass,
                         tpaId,
                         copayment,
                         encounterType,
@@ -167,7 +176,7 @@ public class CoverageContractResolutionService {
                         exclusion,
                         preApproval
                 ),
-                coverageContractService.toResponse(selected),
+                coverageContractService.toResponse(selected, selectedClass),
                 copayment == null ? null : CoverageCopaymentVM.ofEntity(copayment),
                 coverageMatch.configured(),
                 coverageMatch.uncovered(),
@@ -246,9 +255,71 @@ public class CoverageContractResolutionService {
         return priceList.getEffectiveTo() == null || !asOfDate.isAfter(priceList.getEffectiveTo());
     }
 
-    private int score(CoverageContract contract, CoverageClassName className, Long tpaId) {
+    private MatchedCoverage selectMatchedCoverage(
+            List<CoverageContract> inForce,
+            String requestedClassName,
+            Long tpaId
+    ) {
+        Map<Long, CoverageContract> contractsById = new HashMap<>();
+        for (CoverageContract contract : inForce) {
+            contractsById.put(contract.getId(), contract);
+        }
+        List<CoverageClass> classes = coverageClassRepository.findByCoverageContract_IdInAndIsActiveTrue(contractsById.keySet());
+        Map<Long, List<CoverageClass>> classesByContractId = new HashMap<>();
+        for (CoverageClass coverageClass : classes) {
+            Long contractId = coverageClass.getCoverageContract() == null ? null : coverageClass.getCoverageContract().getId();
+            if (contractId != null && contractsById.containsKey(contractId)) {
+                classesByContractId.computeIfAbsent(contractId, ignored -> new ArrayList<>()).add(coverageClass);
+            }
+        }
+
+        CoverageContract selectedContract = inForce.stream()
+                .max(Comparator.comparingInt(contract -> score(contract, hasMatchingClass(classesByContractId.get(contract.getId()), requestedClassName), tpaId)))
+                .orElse(inForce.get(0));
+        CoverageClass selectedClass = pickClass(classesByContractId.getOrDefault(selectedContract.getId(), List.of()), requestedClassName);
+        return new MatchedCoverage(selectedContract, selectedClass);
+    }
+
+    private boolean hasMatchingClass(List<CoverageClass> classes, String requestedClassName) {
+        if (classes == null || classes.isEmpty()) {
+            return false;
+        }
+        return pickClass(classes, requestedClassName) != null && matchesClassName(pickClass(classes, requestedClassName).getName(), requestedClassName);
+    }
+
+    private CoverageClass pickClass(List<CoverageClass> classes, String requestedClassName) {
+        if (classes == null || classes.isEmpty()) {
+            return null;
+        }
+        if (requestedClassName != null && !requestedClassName.isBlank()) {
+            return classes.stream()
+                    .filter(coverageClass -> matchesClassName(coverageClass.getName(), requestedClassName))
+                    .findFirst()
+                    .orElse(null);
+        }
+        return classes.size() == 1 ? classes.get(0) : null;
+    }
+
+    private boolean matchesClassName(String className, String requestedClassName) {
+        String requested = compactClassName(requestedClassName);
+        String actual = compactClassName(className);
+        if (requested == null || actual == null) {
+            return false;
+        }
+        return actual.equals(requested) || actual.equals(requested.replace("class", ""));
+    }
+
+    private String compactClassName(String raw) {
+        String normalized = normalize(raw);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.replace("class", "").replace("-", "").replace("_", "").replace(" ", "");
+    }
+
+    private int score(CoverageContract contract, boolean classMatched, Long tpaId) {
         int score = 100;
-        if (className != null && className == contract.getClassName()) {
+        if (classMatched) {
             score += 40;
         }
         if (tpaId != null && contract.getGuarantorType() == GuarantorType.TPA && tpaId.equals(contract.getCompanyId())) {
@@ -259,9 +330,12 @@ public class CoverageContractResolutionService {
         return score;
     }
 
-    private CoverageCopayment selectCopayment(Long contractId, EncounterType encounterType) {
+    private CoverageCopayment selectCopayment(Long classId, EncounterType encounterType) {
+        if (classId == null) {
+            return null;
+        }
         List<CoverageCopayment> rows =
-                coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(contractId);
+                coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(classId);
         if (rows.isEmpty()) {
             return null;
         }
@@ -281,31 +355,31 @@ public class CoverageContractResolutionService {
     }
 
     private CoverageMatch selectCoverage(
-            Long contractId,
+            Long classId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(contractId, CoverageTermType.COVERAGE, request, encounterType, true);
+        return selectTermReading(classId, CoverageTermType.COVERAGE, request, encounterType, true);
     }
 
     private CoverageMatch selectLimit(
-            Long contractId,
+            Long classId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(contractId, CoverageTermType.LIMIT, request, encounterType, false);
+        return selectTermReading(classId, CoverageTermType.LIMIT, request, encounterType, false);
     }
 
     private CoverageMatch selectCashLimit(
-            Long contractId,
+            Long classId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(contractId, CoverageTermType.CASH_LIMIT, request, encounterType, false);
+        return selectTermReading(classId, CoverageTermType.CASH_LIMIT, request, encounterType, false);
     }
 
     private CoverageDiscountVM selectDiscount(
-            Long contractId,
+            Long classId,
             Long tpaId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
@@ -320,7 +394,7 @@ public class CoverageContractResolutionService {
 
         CoverageDiscount best = null;
         int bestScore = -1;
-        for (ScoredDiscount candidate : scoredDiscounts(contractId, tpaId)) {
+        for (ScoredDiscount candidate : scoredDiscounts(classId, tpaId)) {
             int score = discountMatchScore(
                     candidate.discount(),
                     candidate.fromContract(),
@@ -337,7 +411,7 @@ public class CoverageContractResolutionService {
     }
 
     private CoverageExclusionVM selectExclusion(
-            Long contractId,
+            Long classId,
             Long tpaId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
@@ -353,7 +427,7 @@ public class CoverageContractResolutionService {
         Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
         CoverageExclusion best = null;
         int bestScore = -1;
-        for (ScoredExclusion candidate : scoredExclusions(contractId, tpaId)) {
+        for (ScoredExclusion candidate : scoredExclusions(classId, tpaId)) {
             int score = exclusionMatchScore(
                     candidate.exclusion(),
                     candidate.fromContract(),
@@ -371,7 +445,7 @@ public class CoverageContractResolutionService {
     }
 
     private CoveragePreApprovalReadingVM selectPreApproval(
-            Long contractId,
+            Long classId,
             Long tpaId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
@@ -388,7 +462,7 @@ public class CoverageContractResolutionService {
         ServiceCategory serviceCategory = resolveServiceCategory(request, billingItemType);
         CoveragePreApprovalReadingVM best = null;
         int bestScore = -1;
-        for (ScoredPreApproval header : scoredPreApprovals(contractId, tpaId)) {
+        for (ScoredPreApproval header : scoredPreApprovals(classId, tpaId)) {
             int headerScore = preApprovalHeaderScore(header.preApproval(), header.fromContract(), request, encounterType);
             if (headerScore < 0) {
                 continue;
@@ -419,10 +493,12 @@ public class CoverageContractResolutionService {
         return best;
     }
 
-    private List<ScoredPreApproval> scoredPreApprovals(Long contractId, Long tpaId) {
+    private List<ScoredPreApproval> scoredPreApprovals(Long classId, Long tpaId) {
         List<ScoredPreApproval> rows = new ArrayList<>();
-        for (CoveragePreApproval preApproval : coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(contractId)) {
-            rows.add(new ScoredPreApproval(preApproval, true));
+        if (classId != null) {
+            for (CoveragePreApproval preApproval : coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredPreApproval(preApproval, true));
+            }
         }
         if (tpaId != null) {
             for (CoveragePreApproval preApproval : coveragePreApprovalRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
@@ -486,7 +562,7 @@ public class CoverageContractResolutionService {
             if (Boolean.TRUE.equals(item.getAllDiagnoses()) || item.getDiagnosisId() == null) {
                 return diagnosisIds.isEmpty() ? -1 : 200;
             }
-            if (diagnosisIds.contains(item.getDiagnosisId())) {
+            if (coverageLookupService.ruleCoversAnyDiagnosis(item.getDiagnosisId(), diagnosisIds)) {
                 return 350;
             }
             return -1;
@@ -531,10 +607,12 @@ public class CoverageContractResolutionService {
         );
     }
 
-    private List<ScoredExclusion> scoredExclusions(Long contractId, Long tpaId) {
+    private List<ScoredExclusion> scoredExclusions(Long classId, Long tpaId) {
         List<ScoredExclusion> rows = new ArrayList<>();
-        for (CoverageExclusion exclusion : coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(contractId)) {
-            rows.add(new ScoredExclusion(exclusion, true));
+        if (classId != null) {
+            for (CoverageExclusion exclusion : coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredExclusion(exclusion, true));
+            }
         }
         if (tpaId != null) {
             for (CoverageExclusion exclusion : coverageExclusionRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
@@ -587,7 +665,7 @@ public class CoverageContractResolutionService {
             if (Boolean.TRUE.equals(exclusion.getAllDiagnoses()) || exclusion.getDiagnosisId() == null) {
                 return diagnosisIds.isEmpty() ? -1 : 200;
             }
-            if (diagnosisIds.contains(exclusion.getDiagnosisId())) {
+            if (coverageLookupService.ruleCoversAnyDiagnosis(exclusion.getDiagnosisId(), diagnosisIds)) {
                 return 350;
             }
             return -1;
@@ -633,10 +711,12 @@ public class CoverageContractResolutionService {
         );
     }
 
-    private List<ScoredDiscount> scoredDiscounts(Long contractId, Long tpaId) {
+    private List<ScoredDiscount> scoredDiscounts(Long classId, Long tpaId) {
         List<ScoredDiscount> rows = new ArrayList<>();
-        for (CoverageDiscount discount : coverageDiscountRepository.findByCoverageContract_IdAndIsActiveTrue(contractId)) {
-            rows.add(new ScoredDiscount(discount, true));
+        if (classId != null) {
+            for (CoverageDiscount discount : coverageDiscountRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredDiscount(discount, true));
+            }
         }
         if (tpaId != null) {
             for (CoverageDiscount discount : coverageDiscountRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
@@ -706,14 +786,17 @@ public class CoverageContractResolutionService {
     }
 
     private CoverageMatch selectTermReading(
-            Long contractId,
+            Long classId,
             CoverageTermType termType,
             CoverageContractResolveRequest request,
             EncounterType encounterType,
             boolean missIsUncovered
     ) {
-        List<CoverageTerm> terms = coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(
-                contractId,
+        if (classId == null) {
+            return CoverageMatch.notConfigured();
+        }
+        List<CoverageTerm> terms = coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(
+                classId,
                 termType
         );
         if (terms.isEmpty()) {
@@ -818,7 +901,7 @@ public class CoverageContractResolutionService {
             }
         }
         if (term.getDiagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS) {
-            if (term.getDiagnosisId() == null || !diagnosisIds.contains(term.getDiagnosisId())) {
+            if (term.getDiagnosisId() == null || !coverageLookupService.ruleCoversAnyDiagnosis(term.getDiagnosisId(), diagnosisIds)) {
                 return -1;
             }
         }
@@ -886,7 +969,7 @@ public class CoverageContractResolutionService {
 
     private String buildMatchReason(
             CoverageContract contract,
-            CoverageClassName className,
+            CoverageClass coverageClass,
             Long tpaId,
             CoverageCopayment copayment,
             EncounterType encounterType,
@@ -899,8 +982,8 @@ public class CoverageContractResolutionService {
     ) {
         StringBuilder reason = new StringBuilder("Matched policy ")
                 .append(contract.getPolicyNumber());
-        if (className != null && className == contract.getClassName()) {
-            reason.append(" and class ").append(contract.getClassName());
+        if (coverageClass != null && coverageClass.getName() != null && !coverageClass.getName().isBlank()) {
+            reason.append(" and class ").append(coverageClass.getName());
         }
         if (tpaId != null && contract.getGuarantorType() == GuarantorType.TPA) {
             reason.append(" on the TPA contract");
@@ -969,19 +1052,7 @@ public class CoverageContractResolutionService {
 
     private record ScoredPreApproval(CoveragePreApproval preApproval, boolean fromContract) {}
 
-    private CoverageClassName parseClassName(String raw) {
-        String normalized = normalize(raw);
-        if (normalized == null) {
-            return null;
-        }
-        String compact = normalized.replace("class", "").replace("-", "").replace("_", "").replace(" ", "");
-        for (CoverageClassName value : CoverageClassName.values()) {
-            if (value.name().equalsIgnoreCase(compact) || value.name().equalsIgnoreCase(normalized)) {
-                return value;
-            }
-        }
-        return null;
-    }
+    private record MatchedCoverage(CoverageContract contract, CoverageClass coverageClass) {}
 
     private EncounterType parseEncounterType(String raw) {
         String normalized = normalize(raw);

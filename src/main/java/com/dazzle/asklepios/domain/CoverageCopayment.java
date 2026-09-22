@@ -37,8 +37,8 @@ public class CoverageCopayment extends AbstractAuditingEntity<Long> {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "coverage_contract_id", nullable = false)
-    private CoverageContract coverageContract;
+    @JoinColumn(name = "coverage_class_id", nullable = false)
+    private CoverageClass coverageClass;
 
     @NotNull
     @Enumerated(EnumType.STRING)

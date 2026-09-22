@@ -11,13 +11,9 @@ import java.util.List;
 @Repository
 public interface CoverageCopaymentRepository extends JpaRepository<CoverageCopayment, Long> {
 
-    Page<CoverageCopayment> findByCoverageContract_IdAndIsActive(
-            Long contractId,
-            Boolean isActive,
-            Pageable pageable
-    );
+    Page<CoverageCopayment> findByCoverageClass_IdAndIsActive(Long classId, Boolean isActive, Pageable pageable);
 
-    Page<CoverageCopayment> findByCoverageContract_Id(Long contractId, Pageable pageable);
+    Page<CoverageCopayment> findByCoverageClass_Id(Long classId, Pageable pageable);
 
-    List<CoverageCopayment> findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(Long contractId);
+    List<CoverageCopayment> findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(Long classId);
 }

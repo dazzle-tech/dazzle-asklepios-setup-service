@@ -11,23 +11,15 @@ import java.util.List;
 @Repository
 public interface CoveragePreApprovalRepository extends JpaRepository<CoveragePreApproval, Long> {
 
-    Page<CoveragePreApproval> findByCoverageContract_IdAndIsActive(
-            Long contractId,
-            Boolean isActive,
-            Pageable pageable
-    );
+    Page<CoveragePreApproval> findByCoverageClass_IdAndIsActive(Long classId, Boolean isActive, Pageable pageable);
 
-    Page<CoveragePreApproval> findByCoverageContract_Id(Long contractId, Pageable pageable);
+    Page<CoveragePreApproval> findByCoverageClass_Id(Long classId, Pageable pageable);
 
-    Page<CoveragePreApproval> findByTpaDefinition_IdAndIsActive(
-            Long tpaId,
-            Boolean isActive,
-            Pageable pageable
-    );
+    Page<CoveragePreApproval> findByTpaDefinition_IdAndIsActive(Long tpaId, Boolean isActive, Pageable pageable);
 
     Page<CoveragePreApproval> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
 
-    List<CoveragePreApproval> findByCoverageContract_IdAndIsActiveTrue(Long contractId);
+    List<CoveragePreApproval> findByCoverageClass_IdAndIsActiveTrue(Long classId);
 
     List<CoveragePreApproval> findByTpaDefinition_IdAndIsActiveTrue(Long tpaId);
 }

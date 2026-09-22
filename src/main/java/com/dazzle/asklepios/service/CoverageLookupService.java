@@ -267,6 +267,36 @@ public class CoverageLookupService {
         return diagnosis;
     }
 
+    public boolean ruleCoversAnyDiagnosis(Long ruleDiagnosisId, Collection<Long> encounterDiagnosisIds) {
+        if (ruleDiagnosisId == null || encounterDiagnosisIds == null || encounterDiagnosisIds.isEmpty()) {
+            return false;
+        }
+        if (encounterDiagnosisIds.contains(ruleDiagnosisId)) {
+            return true;
+        }
+        ICDDiagnosis rule = findDiagnosis(ruleDiagnosisId);
+        if (rule == null) {
+            return false;
+        }
+        for (Long encounterDiagnosisId : encounterDiagnosisIds) {
+            if (encounterDiagnosisId == null) {
+                continue;
+            }
+            ICDDiagnosis encounterDiagnosis = findDiagnosis(encounterDiagnosisId);
+            if (encounterDiagnosis == null) {
+                continue;
+            }
+            if (CoverageIcdCodeMatcher.covers(
+                    rule.getIcdCode(),
+                    encounterDiagnosis.getIcdCode(),
+                    encounterDiagnosis.getCategoryCode()
+            )) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String diagnosisCode(ICDDiagnosis diagnosis) {
         return diagnosis == null ? null : diagnosis.getIcdCode();
     }

@@ -1,11 +1,12 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageContract;
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.PriceListSetup;
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.repository.CoverageContractRepository;
+import com.dazzle.asklepios.repository.CoverageContractSpecifications;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -18,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @Transactional
@@ -48,7 +51,7 @@ public class CoverageContractService {
         validateCompany(vm.guarantorType(), vm.companyId());
         PriceListSetup priceList = coverageLookupService.requireInsurancePriceList(vm.priceListSetupId());
         NphiesPayer insurancePayer = resolveInsurancePayer(vm.guarantorType(), vm.companyId(), vm.insurancePayerId(), priceList);
-        NphiesPayer parentPayer = resolveParentPayer(vm.parentPayerId());
+        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
         ensureUniqueCode(vm.guarantorType(), vm.companyId(), vm.code(), null);
 
         CoverageContract saved = coverageContractRepository.save(CoverageContract.builder()
@@ -60,7 +63,6 @@ public class CoverageContractService {
                 .insurancePayerId(insurancePayer.getId())
                 .priceListSetupId(priceList.getId())
                 .parentPayerId(parentPayer != null ? parentPayer.getId() : null)
-                .className(vm.className())
                 .approvalCoverageCompany(vm.approvalCoverageCompany())
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .build());
@@ -73,7 +75,7 @@ public class CoverageContractService {
         validateCompany(vm.guarantorType(), vm.companyId());
         PriceListSetup priceList = coverageLookupService.requireInsurancePriceList(vm.priceListSetupId());
         NphiesPayer insurancePayer = resolveInsurancePayer(vm.guarantorType(), vm.companyId(), vm.insurancePayerId(), priceList);
-        NphiesPayer parentPayer = resolveParentPayer(vm.parentPayerId());
+        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
         ensureUniqueCode(vm.guarantorType(), vm.companyId(), vm.code(), existing.getId());
 
         existing.setGuarantorType(vm.guarantorType());
@@ -84,7 +86,6 @@ public class CoverageContractService {
         existing.setInsurancePayerId(insurancePayer.getId());
         existing.setPriceListSetupId(priceList.getId());
         existing.setParentPayerId(parentPayer != null ? parentPayer.getId() : null);
-        existing.setClassName(vm.className());
         existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
         if (vm.isActive() != null) {
             existing.setIsActive(vm.isActive());
@@ -115,12 +116,15 @@ public class CoverageContractService {
             Long companyId,
             Long insurancePayerId,
             Boolean isActive,
-            CoverageClassName className,
             String search,
             Pageable pageable
     ) {
         String q = search == null || search.isBlank() ? null : search.trim();
-        return coverageContractRepository.search(guarantorType, companyId, insurancePayerId, isActive, className, q, pageable)
+        return coverageContractRepository
+                .findAll(
+                        CoverageContractSpecifications.search(guarantorType, companyId, insurancePayerId, isActive, q),
+                        pageable
+                )
                 .map(this::toResponse);
     }
 
@@ -169,11 +173,27 @@ public class CoverageContractService {
         throw new BadRequestAlertException("Guarantor type must be Insurance or TPA.", ENTITY, "invalidGuarantorType");
     }
 
-    private NphiesPayer resolveParentPayer(Long parentPayerId) {
-        if (parentPayerId == null) {
+    private NphiesPayer resolveLinkedParent(NphiesPayer insurancePayer) {
+        if (insurancePayer == null || insurancePayer.getId() == null) {
             return null;
         }
-        return coverageLookupService.requireActivePayer(parentPayerId, "Parent name");
+        List<NphiesPayer> parents = nphiesPayerRepository.findByChildCompanies_Id(insurancePayer.getId());
+        if (parents.isEmpty()) {
+            return null;
+        }
+        return parents.get(0);
+    }
+
+    private String formatParentName(NphiesPayer parentPayer) {
+        String code = parentPayer.getNphiesId() == null ? "" : parentPayer.getNphiesId().trim();
+        String name = coverageLookupService.payerDisplayName(parentPayer);
+        if (!code.isBlank() && name != null && !name.isBlank()) {
+            return code + " — " + name;
+        }
+        if (name != null && !name.isBlank()) {
+            return name;
+        }
+        return code.isBlank() ? null : code;
     }
 
     private void ensureUniqueCode(GuarantorType guarantorType, Long companyId, String code, Long id) {
@@ -186,11 +206,13 @@ public class CoverageContractService {
     }
 
     public CoverageContractResponseVM toResponse(CoverageContract contract) {
+        return toResponse(contract, null);
+    }
+
+    public CoverageContractResponseVM toResponse(CoverageContract contract, CoverageClass coverageClass) {
         PriceListSetup priceList = priceListSetupRepository.findById(contract.getPriceListSetupId()).orElse(null);
         NphiesPayer insurancePayer = nphiesPayerRepository.findById(contract.getInsurancePayerId()).orElse(null);
-        NphiesPayer parentPayer = contract.getParentPayerId() == null
-                ? null
-                : nphiesPayerRepository.findById(contract.getParentPayerId()).orElse(null);
+        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
 
         return new CoverageContractResponseVM(
                 contract.getId(),
@@ -207,9 +229,10 @@ public class CoverageContractService {
                 priceList == null ? null : priceList.getName(),
                 priceList == null ? null : priceList.getEffectiveFrom(),
                 priceList == null ? null : priceList.getEffectiveTo(),
-                contract.getParentPayerId(),
-                parentPayer == null ? null : coverageLookupService.payerDisplayName(parentPayer),
-                contract.getClassName(),
+                parentPayer == null ? null : parentPayer.getId(),
+                parentPayer == null ? null : formatParentName(parentPayer),
+                coverageClass == null ? null : coverageClass.getId(),
+                coverageClass == null ? null : coverageClass.getName(),
                 contract.getApprovalCoverageCompany(),
                 contract.getIsActive(),
                 contract.getCreatedBy(),

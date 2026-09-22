@@ -1,6 +1,6 @@
 package com.dazzle.asklepios.service;
 
-import com.dazzle.asklepios.domain.CoverageContract;
+import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageCopayment;
 import com.dazzle.asklepios.domain.CoverageDiscount;
 import com.dazzle.asklepios.domain.CoverageExclusion;
@@ -52,7 +52,7 @@ public class CoverageRuleService {
 
     private static final String TPA_ENTITY = "tpaDefinition";
 
-    private final CoverageContractService coverageContractService;
+    private final CoverageClassService coverageClassService;
     private final CoverageLookupService coverageLookupService;
     private final TpaDefinitionRepository tpaDefinitionRepository;
     private final CoverageCopaymentRepository copaymentRepository;
@@ -64,7 +64,7 @@ public class CoverageRuleService {
     private final CoveragePreApprovalItemRepository preApprovalItemRepository;
 
     public CoverageRuleService(
-            CoverageContractService coverageContractService,
+            CoverageClassService coverageClassService,
             CoverageLookupService coverageLookupService,
             TpaDefinitionRepository tpaDefinitionRepository,
             CoverageCopaymentRepository copaymentRepository,
@@ -75,7 +75,7 @@ public class CoverageRuleService {
             CoveragePreApprovalRepository preApprovalRepository,
             CoveragePreApprovalItemRepository preApprovalItemRepository
     ) {
-        this.coverageContractService = coverageContractService;
+        this.coverageClassService = coverageClassService;
         this.coverageLookupService = coverageLookupService;
         this.tpaDefinitionRepository = tpaDefinitionRepository;
         this.copaymentRepository = copaymentRepository;
@@ -87,12 +87,12 @@ public class CoverageRuleService {
         this.preApprovalItemRepository = preApprovalItemRepository;
     }
 
-    public CoverageCopaymentVM saveCopayment(Long contractId, CoverageCopaymentVM vm) {
-        CoverageContract contract = coverageContractService.getEntity(contractId);
+    public CoverageCopaymentVM saveCopayment(Long classId, CoverageCopaymentVM vm) {
+        CoverageClass coverageClass = coverageClassService.getEntity(classId);
         requirePositive(vm.valueAmount(), "Co-payment value");
         CoverageCopayment entity = vm.id() == null
-                ? CoverageCopayment.builder().coverageContract(contract).isActive(true).build()
-                : requireOwnedCopayment(vm.id(), contractId);
+                ? CoverageCopayment.builder().coverageClass(coverageClass).isActive(true).build()
+                : requireOwnedCopayment(vm.id(), classId);
         entity.setEncounterType(vm.encounterType());
         entity.setValueType(vm.valueType());
         entity.setValueAmount(vm.valueAmount());
@@ -108,20 +108,20 @@ public class CoverageRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoverageCopaymentVM> listCopayments(Long contractId, Boolean isActive, Pageable pageable) {
-        coverageContractService.getEntity(contractId);
+    public Page<CoverageCopaymentVM> listCopayments(Long classId, Boolean isActive, Pageable pageable) {
+        coverageClassService.getEntity(classId);
         Page<CoverageCopayment> page = isActive == null
-                ? copaymentRepository.findByCoverageContract_Id(contractId, pageable)
-                : copaymentRepository.findByCoverageContract_IdAndIsActive(contractId, isActive, pageable);
+                ? copaymentRepository.findByCoverageClass_Id(classId, pageable)
+                : copaymentRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
         return page.map(CoverageCopaymentVM::ofEntity);
     }
 
-    public CoverageTermVM saveTerm(Long contractId, CoverageTermVM vm) {
-        CoverageContract contract = coverageContractService.getEntity(contractId);
+    public CoverageTermVM saveTerm(Long classId, CoverageTermVM vm) {
+        CoverageClass coverageClass = coverageClassService.getEntity(classId);
         validateTerm(vm);
         CoverageTerm entity = vm.id() == null
-                ? CoverageTerm.builder().coverageContract(contract).isActive(true).build()
-                : requireOwnedTerm(vm.id(), contractId);
+                ? CoverageTerm.builder().coverageClass(coverageClass).isActive(true).build()
+                : requireOwnedTerm(vm.id(), classId);
         applyTerm(entity, vm);
         if (vm.id() == null) {
             entity.setIsActive(true);
@@ -132,14 +132,14 @@ public class CoverageRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoverageTermVM> listTerms(Long contractId, CoverageTermType termType, Boolean isActive, Pageable pageable) {
-        coverageContractService.getEntity(contractId);
+    public Page<CoverageTermVM> listTerms(Long classId, CoverageTermType termType, Boolean isActive, Pageable pageable) {
+        coverageClassService.getEntity(classId);
         if (termType == null) {
             throw new BadRequestAlertException("Term type is required.", ENTITY, "termTypeRequired");
         }
         Page<CoverageTerm> page = isActive == null
-                ? termRepository.findByCoverageContract_IdAndTermType(contractId, termType, pageable)
-                : termRepository.findByCoverageContract_IdAndTermTypeAndIsActive(contractId, termType, isActive, pageable);
+                ? termRepository.findByCoverageClass_IdAndTermType(classId, termType, pageable)
+                : termRepository.findByCoverageClass_IdAndTermTypeAndIsActive(classId, termType, isActive, pageable);
         return page.map(this::toTermVm);
     }
 
@@ -168,11 +168,11 @@ public class CoverageRuleService {
         return page.map(this::toTermItemVm);
     }
 
-    public CoverageDiscountVM createDiscount(Long contractId, CoverageDiscountVM vm) {
-        CoverageContract contract = coverageContractService.getEntity(contractId);
+    public CoverageDiscountVM createDiscount(Long classId, CoverageDiscountVM vm) {
+        CoverageClass coverageClass = coverageClassService.getEntity(classId);
         validateDiscount(vm);
         CoverageDiscount entity = CoverageDiscount.builder()
-                .coverageContract(contract)
+                .coverageClass(coverageClass)
                 .targetType(resolveDiscountTarget(vm))
                 .billingItemType(vm.billingItemType())
                 .serviceId(resolveDiscountItemId(vm))
@@ -210,11 +210,11 @@ public class CoverageRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoverageDiscountVM> listDiscounts(Long contractId, Boolean isActive, Pageable pageable) {
-        coverageContractService.getEntity(contractId);
+    public Page<CoverageDiscountVM> listDiscounts(Long classId, Boolean isActive, Pageable pageable) {
+        coverageClassService.getEntity(classId);
         Page<CoverageDiscount> page = isActive == null
-                ? discountRepository.findByCoverageContract_Id(contractId, pageable)
-                : discountRepository.findByCoverageContract_IdAndIsActive(contractId, isActive, pageable);
+                ? discountRepository.findByCoverageClass_Id(classId, pageable)
+                : discountRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
         return page.map(this::toDiscountVm);
     }
 
@@ -227,12 +227,12 @@ public class CoverageRuleService {
         return page.map(this::toDiscountVm);
     }
 
-    public CoverageExclusionVM createExclusion(Long contractId, CoverageExclusionVM vm) {
-        CoverageContract contract = coverageContractService.getEntity(contractId);
+    public CoverageExclusionVM createExclusion(Long classId, CoverageExclusionVM vm) {
+        CoverageClass coverageClass = coverageClassService.getEntity(classId);
         validateExclusion(vm);
         CoverageRuleTarget type = resolveExclusionType(vm);
         CoverageExclusion entity = CoverageExclusion.builder()
-                .coverageContract(contract)
+                .coverageClass(coverageClass)
                 .exclusionType(type)
                 .billingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType())
                 .serviceId(resolveExclusionItemId(vm))
@@ -273,11 +273,11 @@ public class CoverageRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoverageExclusionVM> listExclusions(Long contractId, Boolean isActive, Pageable pageable) {
-        coverageContractService.getEntity(contractId);
+    public Page<CoverageExclusionVM> listExclusions(Long classId, Boolean isActive, Pageable pageable) {
+        coverageClassService.getEntity(classId);
         Page<CoverageExclusion> page = isActive == null
-                ? exclusionRepository.findByCoverageContract_Id(contractId, pageable)
-                : exclusionRepository.findByCoverageContract_IdAndIsActive(contractId, isActive, pageable);
+                ? exclusionRepository.findByCoverageClass_Id(classId, pageable)
+                : exclusionRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
         return page.map(this::toExclusionVm);
     }
 
@@ -290,12 +290,12 @@ public class CoverageRuleService {
         return page.map(this::toExclusionVm);
     }
 
-    public CoveragePreApprovalVM savePreApproval(Long contractId, CoveragePreApprovalVM vm) {
-        CoverageContract contract = coverageContractService.getEntity(contractId);
+    public CoveragePreApprovalVM savePreApproval(Long classId, CoveragePreApprovalVM vm) {
+        CoverageClass coverageClass = coverageClassService.getEntity(classId);
         validatePreApproval(vm);
         CoveragePreApproval entity = vm.id() == null
-                ? CoveragePreApproval.builder().coverageContract(contract).isActive(true).build()
-                : requireOwnedPreApproval(vm.id(), contractId);
+                ? CoveragePreApproval.builder().coverageClass(coverageClass).isActive(true).build()
+                : requireOwnedPreApproval(vm.id(), classId);
         entity.setApprovalScope(vm.approvalScope());
         entity.setFacilityId(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireFacility(vm.facilityId()).getId() : null);
         entity.setDepartmentId(vm.approvalScope() == CoverageApprovalScope.DEPARTMENT
@@ -331,11 +331,11 @@ public class CoverageRuleService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoveragePreApprovalVM> listPreApprovals(Long contractId, Boolean isActive, Pageable pageable) {
-        coverageContractService.getEntity(contractId);
+    public Page<CoveragePreApprovalVM> listPreApprovals(Long classId, Boolean isActive, Pageable pageable) {
+        coverageClassService.getEntity(classId);
         Page<CoveragePreApproval> page = isActive == null
-                ? preApprovalRepository.findByCoverageContract_Id(contractId, pageable)
-                : preApprovalRepository.findByCoverageContract_IdAndIsActive(contractId, isActive, pageable);
+                ? preApprovalRepository.findByCoverageClass_Id(classId, pageable)
+                : preApprovalRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
         return page.map(this::toPreApprovalVm);
     }
 
@@ -571,19 +571,19 @@ public class CoverageRuleService {
         }
     }
 
-    private CoverageCopayment requireOwnedCopayment(Long id, Long contractId) {
+    private CoverageCopayment requireOwnedCopayment(Long id, Long classId) {
         CoverageCopayment entity = copaymentRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Co-payment was not found.", ENTITY, "notFound"));
-        if (!entity.getCoverageContract().getId().equals(contractId)) {
-            throw new BadRequestAlertException("Co-payment does not belong to this contract.", ENTITY, "contractMismatch");
+        if (entity.getCoverageClass() == null || !entity.getCoverageClass().getId().equals(classId)) {
+            throw new BadRequestAlertException("Co-payment does not belong to this class.", ENTITY, "classMismatch");
         }
         return entity;
     }
 
-    private CoverageTerm requireOwnedTerm(Long id, Long contractId) {
+    private CoverageTerm requireOwnedTerm(Long id, Long classId) {
         CoverageTerm entity = requireTerm(id);
-        if (!entity.getCoverageContract().getId().equals(contractId)) {
-            throw new BadRequestAlertException("Coverage term does not belong to this contract.", ENTITY, "contractMismatch");
+        if (entity.getCoverageClass() == null || !entity.getCoverageClass().getId().equals(classId)) {
+            throw new BadRequestAlertException("Coverage term does not belong to this class.", ENTITY, "classMismatch");
         }
         return entity;
     }
@@ -602,10 +602,10 @@ public class CoverageRuleService {
         return entity;
     }
 
-    private CoveragePreApproval requireOwnedPreApproval(Long id, Long contractId) {
+    private CoveragePreApproval requireOwnedPreApproval(Long id, Long classId) {
         CoveragePreApproval entity = requirePreApproval(id);
-        if (entity.getCoverageContract() == null || !entity.getCoverageContract().getId().equals(contractId)) {
-            throw new BadRequestAlertException("Pre-approval does not belong to this contract.", ENTITY, "contractMismatch");
+        if (entity.getCoverageClass() == null || !entity.getCoverageClass().getId().equals(classId)) {
+            throw new BadRequestAlertException("Pre-approval does not belong to this class.", ENTITY, "classMismatch");
         }
         return entity;
     }

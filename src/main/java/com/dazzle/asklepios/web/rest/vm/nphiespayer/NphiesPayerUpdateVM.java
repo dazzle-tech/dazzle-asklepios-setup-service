@@ -87,6 +87,9 @@ public record NphiesPayerUpdateVM(
         ApprovalCoverageCompany approvalCoverageCompany,
 
         @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
-        List<Long> tpaIds
+        List<Long> tpaIds,
+
+        @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
+        List<Long> childCompanyIds
 
 ) implements Serializable {}

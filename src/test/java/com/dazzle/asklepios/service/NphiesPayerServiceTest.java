@@ -269,11 +269,142 @@ class NphiesPayerServiceTest {
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(5L)).thenReturn(List.of());
         when(tpaDefinitionRepository.findByIdIn(anyCollection())).thenReturn(List.of(tpa));
         when(tpaDefinitionRepository.saveAll(anyCollection())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_IdIn(anyCollection())).thenReturn(List.of(tpa));
+        when(nphiesPayerRepository.findDistinctByIdIn(anyCollection())).thenReturn(List.of(payer));
 
         NphiesPayer updated = nphiesPayerService.updateTpas(5L, List.of(9L, 9L));
 
         assertThat(tpa.getInsuranceCompanies()).extracting(NphiesPayer::getId).containsExactly(5L);
         assertThat(updated.getTpas()).extracting(TpaDefinition::getId).containsExactly(9L);
+    }
+
+    @Test
+    void findAvailableChildCompanies_returnsUnlinkedActive() {
+        NphiesPayer available = NphiesPayer.builder()
+                .id(8L)
+                .nphiesId("INS-008")
+                .nameEn("Bupa")
+                .isActive(true)
+                .build();
+
+        when(nphiesPayerRepository.existsById(5L)).thenReturn(true);
+        when(nphiesPayerRepository.findDistinctByParentCompanies_IdNotNull()).thenReturn(List.of());
+        when(nphiesPayerRepository.findByChildCompanies_Id(5L)).thenReturn(List.of());
+        when(nphiesPayerRepository.findByIsActiveTrue()).thenReturn(List.of(available));
+
+        List<NphiesPayer> result = nphiesPayerService.findAvailableChildCompanies(5L);
+
+        assertThat(result).extracting(NphiesPayer::getId).containsExactly(8L);
+    }
+
+    @Test
+    void findAvailableChildCompanies_excludesSelfAndAlreadyLinkedChildren() {
+        NphiesPayer parent = NphiesPayer.builder()
+                .id(5L)
+                .nphiesId("INS-005")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .build();
+        NphiesPayer alreadyChild = NphiesPayer.builder()
+                .id(8L)
+                .nphiesId("INS-008")
+                .nameEn("Bupa")
+                .isActive(true)
+                .build();
+        NphiesPayer available = NphiesPayer.builder()
+                .id(9L)
+                .nphiesId("INS-009")
+                .nameEn("Medgulf")
+                .isActive(true)
+                .build();
+
+        when(nphiesPayerRepository.existsById(5L)).thenReturn(true);
+        when(nphiesPayerRepository.findDistinctByParentCompanies_IdNotNull()).thenReturn(List.of(alreadyChild));
+        when(nphiesPayerRepository.findByChildCompanies_Id(5L)).thenReturn(List.of());
+        when(nphiesPayerRepository.findByIsActiveTrue()).thenReturn(List.of(parent, alreadyChild, available));
+
+        List<NphiesPayer> result = nphiesPayerService.findAvailableChildCompanies(5L);
+
+        assertThat(result).extracting(NphiesPayer::getId).containsExactly(9L);
+    }
+
+    @Test
+    void updateChildCompanies_linksSelectedCompanies() {
+        NphiesPayer payer = NphiesPayer.builder()
+                .id(5L)
+                .nphiesId("INS-001")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .childCompanies(new HashSet<>())
+                .build();
+        NphiesPayer child = NphiesPayer.builder()
+                .id(8L)
+                .nphiesId("INS-008")
+                .nameEn("Bupa")
+                .isActive(true)
+                .build();
+        payer.setChildCompanies(new HashSet<>(Set.of(child)));
+
+        when(nphiesPayerRepository.findById(5L)).thenReturn(Optional.of(payer));
+        when(nphiesPayerRepository.findByParentCompanies_Id(5L)).thenReturn(List.of());
+        when(nphiesPayerRepository.findByIdIn(anyCollection())).thenReturn(List.of(child));
+        when(nphiesPayerRepository.findByChildCompanies_Id(8L)).thenReturn(List.of());
+        when(nphiesPayerRepository.findByChildCompanies_Id(5L)).thenReturn(List.of());
+        when(nphiesPayerRepository.save(any(NphiesPayer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_IdIn(anyCollection())).thenReturn(List.of());
+        when(nphiesPayerRepository.findDistinctByIdIn(anyCollection())).thenReturn(List.of(payer));
+
+        NphiesPayer updated = nphiesPayerService.updateChildCompanies(5L, List.of(8L, 8L));
+
+        assertThat(updated.getChildCompanies()).extracting(NphiesPayer::getId).containsExactly(8L);
+        verify(nphiesPayerRepository).save(payer);
+    }
+
+    @Test
+    void updateChildCompanies_rejectsSelfLink() {
+        NphiesPayer payer = NphiesPayer.builder()
+                .id(5L)
+                .nphiesId("INS-001")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .childCompanies(new HashSet<>())
+                .build();
+
+        when(nphiesPayerRepository.findById(5L)).thenReturn(Optional.of(payer));
+
+        assertThrows(BadRequestAlertException.class, () -> nphiesPayerService.updateChildCompanies(5L, List.of(5L)));
+        verify(nphiesPayerRepository, never()).save(any());
+    }
+
+    @Test
+    void updateChildCompanies_rejectsCompanyAlreadyUnderAnotherParent() {
+        NphiesPayer payer = NphiesPayer.builder()
+                .id(5L)
+                .nphiesId("INS-001")
+                .nameEn("Tawuniya")
+                .isActive(true)
+                .childCompanies(new HashSet<>())
+                .build();
+        NphiesPayer otherParent = NphiesPayer.builder()
+                .id(4L)
+                .nphiesId("INS-004")
+                .nameEn("Other Parent")
+                .isActive(true)
+                .build();
+        NphiesPayer child = NphiesPayer.builder()
+                .id(8L)
+                .nphiesId("INS-008")
+                .nameEn("Bupa")
+                .isActive(true)
+                .build();
+
+        when(nphiesPayerRepository.findById(5L)).thenReturn(Optional.of(payer));
+        when(nphiesPayerRepository.findByParentCompanies_Id(5L)).thenReturn(List.of());
+        when(nphiesPayerRepository.findByIdIn(anyCollection())).thenReturn(List.of(child));
+        when(nphiesPayerRepository.findByChildCompanies_Id(8L)).thenReturn(List.of(otherParent));
+
+        assertThrows(BadRequestAlertException.class, () -> nphiesPayerService.updateChildCompanies(5L, List.of(8L)));
+        verify(nphiesPayerRepository, never()).save(any());
     }
 
     @Test
@@ -312,6 +443,7 @@ class NphiesPayerServiceTest {
                 website,
                 true,
                 null,
+                List.of(),
                 List.of()
         );
     }
@@ -345,6 +477,7 @@ class NphiesPayerServiceTest {
                 "https://example.com",
                 true,
                 null,
+                List.of(),
                 List.of()
         );
     }

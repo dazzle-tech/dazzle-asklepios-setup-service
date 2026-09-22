@@ -81,6 +81,10 @@ public interface PriceListSetupRepository
             Long nphiesPayerId
     );
 
+    List<PriceListSetup> findByNphiesPayerId(Long nphiesPayerId);
+
+    List<PriceListSetup> findByPayerId(Long payerId);
+
     Page<PriceListSetup>
     findAllByFacilityId(
             Long facilityId,
@@ -96,6 +100,14 @@ public interface PriceListSetupRepository
             @Param("facilityId") Long facilityId,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT pls FROM PriceListSetup pls
+            WHERE pls.facilityId = :facilityId
+               OR pls.appliesToAllFacilities = TRUE
+            ORDER BY pls.name
+            """)
+    List<PriceListSetup> listAllVisibleToFacility(@Param("facilityId") Long facilityId);
 
     @Query("""
             SELECT COALESCE(MAX(pls.versionNumber), 0)

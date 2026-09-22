@@ -12,21 +12,21 @@ import java.util.List;
 @Repository
 public interface CoverageTermRepository extends JpaRepository<CoverageTerm, Long> {
 
-    Page<CoverageTerm> findByCoverageContract_IdAndTermTypeAndIsActive(
-            Long contractId,
+    Page<CoverageTerm> findByCoverageClass_IdAndTermTypeAndIsActive(
+            Long classId,
             CoverageTermType termType,
             Boolean isActive,
             Pageable pageable
     );
 
-    Page<CoverageTerm> findByCoverageContract_IdAndTermType(
-            Long contractId,
+    Page<CoverageTerm> findByCoverageClass_IdAndTermType(
+            Long classId,
             CoverageTermType termType,
             Pageable pageable
     );
 
-    List<CoverageTerm> findByCoverageContract_IdAndTermTypeAndIsActiveTrue(
-            Long contractId,
+    List<CoverageTerm> findByCoverageClass_IdAndTermTypeAndIsActiveTrue(
+            Long classId,
             CoverageTermType termType
     );
 }

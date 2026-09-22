@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.service.CoverageContractResolutionService;
@@ -95,17 +94,15 @@ public class CoverageContractController {
             @RequestParam(required = false) Long companyId,
             @RequestParam(required = false) Long insurancePayerId,
             @RequestParam(required = false) Boolean isActive,
-            @RequestParam(required = false) CoverageClassName className,
             @RequestParam(required = false) String search,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug(
-                "REST search coverage contracts guarantorType={} companyId={} insurancePayerId={} isActive={} className={} search={} pageable={}",
+                "REST search coverage contracts guarantorType={} companyId={} insurancePayerId={} isActive={} search={} pageable={}",
                 guarantorType,
                 companyId,
                 insurancePayerId,
                 isActive,
-                className,
                 search,
                 pageable
         );
@@ -114,7 +111,6 @@ public class CoverageContractController {
                 companyId,
                 insurancePayerId,
                 isActive,
-                className,
                 search,
                 pageable
         ));

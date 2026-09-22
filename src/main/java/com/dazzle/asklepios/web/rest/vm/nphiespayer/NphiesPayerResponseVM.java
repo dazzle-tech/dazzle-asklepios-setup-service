@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import org.hibernate.Hibernate;
 
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 
 public record NphiesPayerResponseVM(
@@ -35,6 +36,9 @@ public record NphiesPayerResponseVM(
         ApprovalCoverageCompany approvalCoverageCompany,
         List<Long> tpaIds,
         List<LinkedTpaVM> tpas,
+        List<Long> childCompanyIds,
+        List<LinkedInsuranceVM> childCompanies,
+        LinkedInsuranceVM parentCompany,
         Instant createdDate,
         Instant lastModifiedDate
 ) {
@@ -43,6 +47,19 @@ public record NphiesPayerResponseVM(
         List<LinkedTpaVM> tpas = tpasLoaded
                 ? payer.getTpas().stream().map(LinkedTpaVM::ofEntity).toList()
                 : List.of();
+        boolean childrenLoaded = payer.getChildCompanies() != null
+                && Hibernate.isInitialized(payer.getChildCompanies());
+        List<LinkedInsuranceVM> childCompanies = childrenLoaded
+                ? payer.getChildCompanies().stream()
+                        .sorted(Comparator.comparing(NphiesPayer::getNameEn, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                        .map(LinkedInsuranceVM::ofEntity)
+                        .toList()
+                : List.of();
+        boolean parentsLoaded = payer.getParentCompanies() != null
+                && Hibernate.isInitialized(payer.getParentCompanies());
+        LinkedInsuranceVM parentCompany = parentsLoaded
+                ? payer.getParentCompanies().stream().findFirst().map(LinkedInsuranceVM::ofEntity).orElse(null)
+                : null;
 
         return new NphiesPayerResponseVM(
                 payer.getId(),
@@ -73,6 +90,9 @@ public record NphiesPayerResponseVM(
                 payer.getApprovalCoverageCompany(),
                 tpas.stream().map(LinkedTpaVM::id).toList(),
                 tpas,
+                childCompanies.stream().map(LinkedInsuranceVM::id).toList(),
+                childCompanies,
+                parentCompany,
                 payer.getCreatedDate(),
                 payer.getLastModifiedDate()
         );
@@ -90,6 +110,24 @@ public record NphiesPayerResponseVM(
                     tpa.getTpaCode(),
                     tpa.getName(),
                     tpa.getIsActive()
+            );
+        }
+    }
+
+    public record LinkedInsuranceVM(
+            Long id,
+            String nphiesId,
+            String nameEn,
+            String nameAr,
+            Boolean isActive
+    ) {
+        public static LinkedInsuranceVM ofEntity(NphiesPayer payer) {
+            return new LinkedInsuranceVM(
+                    payer.getId(),
+                    payer.getNphiesId(),
+                    payer.getNameEn(),
+                    payer.getNameAr(),
+                    payer.getIsActive()
             );
         }
     }

@@ -2,7 +2,6 @@ package com.dazzle.asklepios.web.rest.vm.coverage;
 
 import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.CoverageBasis;
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,9 +33,6 @@ public record CoverageContractSaveVM(
         Long priceListSetupId,
 
         Long parentPayerId,
-
-        @NotNull
-        CoverageClassName className,
 
         ApprovalCoverageCompany approvalCoverageCompany,
 

@@ -2,7 +2,6 @@ package com.dazzle.asklepios.web.rest.vm.coverage;
 
 import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.domain.enumeration.CoverageBasis;
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 
 import java.time.Instant;
@@ -25,7 +24,8 @@ public record CoverageContractResponseVM(
         LocalDate endDate,
         Long parentPayerId,
         String parentPayerName,
-        CoverageClassName className,
+        Long classId,
+        String className,
         ApprovalCoverageCompany approvalCoverageCompany,
         Boolean isActive,
         String createdBy,

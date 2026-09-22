@@ -11,23 +11,15 @@ import java.util.List;
 @Repository
 public interface CoverageExclusionRepository extends JpaRepository<CoverageExclusion, Long> {
 
-    Page<CoverageExclusion> findByCoverageContract_IdAndIsActive(
-            Long contractId,
-            Boolean isActive,
-            Pageable pageable
-    );
+    Page<CoverageExclusion> findByCoverageClass_IdAndIsActive(Long classId, Boolean isActive, Pageable pageable);
 
-    Page<CoverageExclusion> findByCoverageContract_Id(Long contractId, Pageable pageable);
+    Page<CoverageExclusion> findByCoverageClass_Id(Long classId, Pageable pageable);
 
-    Page<CoverageExclusion> findByTpaDefinition_IdAndIsActive(
-            Long tpaId,
-            Boolean isActive,
-            Pageable pageable
-    );
+    Page<CoverageExclusion> findByTpaDefinition_IdAndIsActive(Long tpaId, Boolean isActive, Pageable pageable);
 
     Page<CoverageExclusion> findByTpaDefinition_Id(Long tpaId, Pageable pageable);
 
-    List<CoverageExclusion> findByCoverageContract_IdAndIsActiveTrue(Long contractId);
+    List<CoverageExclusion> findByCoverageClass_IdAndIsActiveTrue(Long classId);
 
     List<CoverageExclusion> findByTpaDefinition_IdAndIsActiveTrue(Long tpaId);
 }

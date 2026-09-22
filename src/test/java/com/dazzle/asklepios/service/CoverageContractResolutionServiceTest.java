@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageContract;
 import com.dazzle.asklepios.domain.CoverageCopayment;
 import com.dazzle.asklepios.domain.CoverageDiscount;
@@ -13,7 +14,6 @@ import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageBasis;
-import com.dazzle.asklepios.domain.enumeration.CoverageClassName;
 import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
 import com.dazzle.asklepios.domain.enumeration.CoveragePeriodBasis;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
@@ -24,6 +24,7 @@ import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
+import com.dazzle.asklepios.repository.CoverageClassRepository;
 import com.dazzle.asklepios.repository.CoverageContractRepository;
 import com.dazzle.asklepios.repository.CoverageCopaymentRepository;
 import com.dazzle.asklepios.repository.CoverageDiscountRepository;
@@ -47,14 +48,19 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 class CoverageContractResolutionServiceTest {
+
+    @Mock
+    private CoverageClassRepository coverageClassRepository;
 
     @Mock
     private CoverageContractRepository coverageContractRepository;
@@ -95,19 +101,36 @@ class CoverageContractResolutionServiceTest {
     @Mock
     private CoverageContractService coverageContractService;
 
+    @Mock
+    private CoverageLookupService coverageLookupService;
+
     @InjectMocks
     private CoverageContractResolutionService coverageContractResolutionService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(any(), any()))
+        when(coverageLookupService.ruleCoversAnyDiagnosis(any(), any())).thenAnswer(invocation -> {
+            Long ruleId = invocation.getArgument(0);
+            Collection<?> ids = invocation.getArgument(1);
+            return ruleId != null && ids != null && ids.contains(ruleId);
+        });
+        when(coverageClassRepository.findByCoverageContract_IdInAndIsActiveTrue(any())).thenAnswer(invocation -> {
+            Collection<?> ids = invocation.getArgument(0);
+            return ids.stream().map(id -> CoverageClass.builder()
+                    .id((Long) id)
+                    .name("A")
+                    .isActive(true)
+                    .coverageContract(CoverageContract.builder().id((Long) id).build())
+                    .build()).toList();
+        });
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(any(), any()))
                 .thenReturn(List.of());
-        when(coverageDiscountRepository.findByCoverageContract_IdAndIsActiveTrue(any())).thenReturn(List.of());
+        when(coverageDiscountRepository.findByCoverageClass_IdAndIsActiveTrue(any())).thenReturn(List.of());
         when(coverageDiscountRepository.findByTpaDefinition_IdAndIsActiveTrue(any())).thenReturn(List.of());
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(any())).thenReturn(List.of());
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(any())).thenReturn(List.of());
         when(coverageExclusionRepository.findByTpaDefinition_IdAndIsActiveTrue(any())).thenReturn(List.of());
-        when(coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(any())).thenReturn(List.of());
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(any())).thenReturn(List.of());
         when(coveragePreApprovalRepository.findByTpaDefinition_IdAndIsActiveTrue(any())).thenReturn(List.of());
         when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(any())).thenReturn(List.of());
     }
@@ -123,12 +146,11 @@ class CoverageContractResolutionServiceTest {
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
                 .priceListSetupId(4L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageCopayment clinicCopay = CoverageCopayment.builder()
                 .id(31L)
-                .coverageContract(contract)
+                .coverageClass(CoverageClass.builder().id(contract.getId()).name("A").coverageContract(contract).isActive(true).build())
                 .encounterType(EncounterType.CLINIC)
                 .valueType(InsuranceCoverageType.PERCENTAGE)
                 .valueAmount(new BigDecimal("20"))
@@ -136,7 +158,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
         CoverageCopayment allCopay = CoverageCopayment.builder()
                 .id(32L)
-                .coverageContract(contract)
+                .coverageClass(CoverageClass.builder().id(contract.getId()).name("A").coverageContract(contract).isActive(true).build())
                 .encounterType(EncounterType.ALL)
                 .valueType(InsuranceCoverageType.PERCENTAGE)
                 .valueAmount(new BigDecimal("10"))
@@ -144,7 +166,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(priceListSetupRepository.findById(4L)).thenReturn(Optional.of(
                 PriceListSetup.builder()
@@ -154,9 +176,9 @@ class CoverageContractResolutionServiceTest {
                         .build()
         ));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of(clinicCopay, allCopay));
-        when(coverageContractService.toResponse(contract)).thenReturn(response(contract));
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
                 new CoverageContractResolveRequest(
@@ -182,7 +204,7 @@ class CoverageContractResolutionServiceTest {
     void resolve_unmatchedWhenPolicyDoesNotExist() {
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "missing"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "missing"))
                 .thenReturn(List.of());
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
@@ -204,12 +226,11 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageCopayment allCopay = CoverageCopayment.builder()
                 .id(32L)
-                .coverageContract(contract)
+                .coverageClass(CoverageClass.builder().id(contract.getId()).name("A").coverageContract(contract).isActive(true).build())
                 .encounterType(EncounterType.ALL)
                 .valueType(InsuranceCoverageType.FIXED)
                 .valueAmount(new BigDecimal("75"))
@@ -217,12 +238,12 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findById(9L)).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of(allCopay));
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
                 new CoverageContractResolveRequest(9L, null, null, null, "POL-100", "A", "INPATIENT", LocalDate.now())
@@ -243,7 +264,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageTerm term = CoverageTerm.builder()
@@ -275,13 +295,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.COVERAGE))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.COVERAGE))
                 .thenReturn(List.of(term));
         when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(11L))
                 .thenReturn(List.of(category, service));
@@ -323,7 +343,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageTerm term = CoverageTerm.builder()
@@ -357,13 +376,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.LIMIT))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.LIMIT))
                 .thenReturn(List.of(term));
         when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(41L))
                 .thenReturn(List.of(category, service));
@@ -407,7 +426,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageTerm term = CoverageTerm.builder()
@@ -441,13 +459,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.CASH_LIMIT))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.CASH_LIMIT))
                 .thenReturn(List.of(term));
         when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(61L))
                 .thenReturn(List.of(category, service));
@@ -491,7 +509,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageTerm term = CoverageTerm.builder()
@@ -517,13 +534,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.CASH_LIMIT))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.CASH_LIMIT))
                 .thenReturn(List.of(term));
         when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(41L))
                 .thenReturn(List.of(service));
@@ -561,7 +578,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageTerm term = CoverageTerm.builder()
@@ -587,13 +603,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageTermRepository.findByCoverageContract_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.LIMIT))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.LIMIT))
                 .thenReturn(List.of(term));
         when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(41L))
                 .thenReturn(List.of(service));
@@ -632,7 +648,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageDiscount category = CoverageDiscount.builder()
@@ -656,13 +671,13 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageDiscountRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageDiscountRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(category, service));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
@@ -699,7 +714,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageDiscount contractDiscount = CoverageDiscount.builder()
@@ -720,15 +734,15 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(
                 TpaDefinition.builder().id(3L).isActive(true).build()
         ));
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageDiscountRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageDiscountRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(contractDiscount));
         when(coverageDiscountRepository.findByTpaDefinition_IdAndIsActiveTrue(3L))
                 .thenReturn(List.of(tpaDiscount));
@@ -778,7 +792,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(category, service));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(clinicServiceRequest());
@@ -800,7 +814,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageExclusion contractExclusion = CoverageExclusion.builder()
@@ -820,15 +833,15 @@ class CoverageContractResolutionServiceTest {
 
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(
                 TpaDefinition.builder().id(3L).isActive(true).build()
         ));
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(contractExclusion));
         when(coverageExclusionRepository.findByTpaDefinition_IdAndIsActiveTrue(3L))
                 .thenReturn(List.of(tpaExclusion));
@@ -866,7 +879,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoverageExclusion tpaExclusion = CoverageExclusion.builder()
@@ -880,14 +892,14 @@ class CoverageContractResolutionServiceTest {
 
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(
                 TpaDefinition.builder().id(3L).isActive(true).build()
         ));
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
         when(coverageExclusionRepository.findByTpaDefinition_IdAndIsActiveTrue(3L))
                 .thenReturn(List.of(tpaExclusion));
 
@@ -929,7 +941,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(otherService));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(clinicServiceRequest());
@@ -961,7 +973,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(allDiagnoses, specific));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
@@ -989,6 +1001,47 @@ class CoverageContractResolutionServiceTest {
     }
 
     @Test
+    void resolve_matchesChildDiagnosisWhenRuleUsesParentCode() {
+        CoverageContract contract = matchedContract();
+        CoverageExclusion parentCode = CoverageExclusion.builder()
+                .id(4L)
+                .exclusionType(CoverageRuleTarget.DIAGNOSIS)
+                .diagnosisId(10L)
+                .encounterType(EncounterType.ALL)
+                .excludedResult(YesNoQuestion.YES)
+                .isActive(true)
+                .build();
+
+        stubMatchedContract(contract);
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
+                .thenReturn(List.of(parentCode));
+        when(coverageLookupService.ruleCoversAnyDiagnosis(eq(10L), any()))
+                .thenReturn(true);
+
+        CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
+                new CoverageContractResolveRequest(
+                        null,
+                        "INS-1",
+                        null,
+                        null,
+                        "POL-100",
+                        "A",
+                        "CLINIC",
+                        LocalDate.now(),
+                        1L,
+                        5L,
+                        List.of(11L),
+                        "SERVICE",
+                        90L
+                )
+        );
+
+        assertThat(resolved.matched()).isTrue();
+        assertThat(resolved.exclusion()).isNotNull();
+        assertThat(resolved.exclusion().diagnosisId()).isEqualTo(10L);
+    }
+
+    @Test
     void resolve_skipsUndeterminedExclusionResult() {
         CoverageContract contract = matchedContract();
         CoverageExclusion undetermined = CoverageExclusion.builder()
@@ -1000,7 +1053,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coverageExclusionRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(undetermined));
 
         CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(clinicServiceRequest());
@@ -1030,7 +1083,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(header));
         when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(11L))
                 .thenReturn(List.of(all, service));
@@ -1053,7 +1106,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoveragePreApproval contractHeader = facilityPreApproval(11L);
@@ -1073,15 +1125,15 @@ class CoverageContractResolutionServiceTest {
 
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(
                 TpaDefinition.builder().id(3L).isActive(true).build()
         ));
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
-        when(coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(contractHeader));
         when(coveragePreApprovalRepository.findByTpaDefinition_IdAndIsActiveTrue(3L))
                 .thenReturn(List.of(tpaHeader));
@@ -1122,7 +1174,6 @@ class CoverageContractResolutionServiceTest {
                 .code("C-1")
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
         CoveragePreApproval tpaHeader = facilityPreApproval(18L);
@@ -1136,14 +1187,14 @@ class CoverageContractResolutionServiceTest {
 
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findById(3L)).thenReturn(Optional.of(
                 TpaDefinition.builder().id(3L).isActive(true).build()
         ));
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
         when(coveragePreApprovalRepository.findByTpaDefinition_IdAndIsActiveTrue(3L))
                 .thenReturn(List.of(tpaHeader));
         when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(18L))
@@ -1185,7 +1236,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(header));
         when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(11L))
                 .thenReturn(List.of(otherService));
@@ -1215,7 +1266,7 @@ class CoverageContractResolutionServiceTest {
                 .build();
 
         stubMatchedContract(contract);
-        when(coveragePreApprovalRepository.findByCoverageContract_IdAndIsActiveTrue(21L))
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
                 .thenReturn(List.of(header));
         when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(11L))
                 .thenReturn(List.of(all));
@@ -1245,7 +1296,6 @@ class CoverageContractResolutionServiceTest {
                 .policyNumber("POL-100")
                 .insurancePayerId(9L)
                 .priceListSetupId(4L)
-                .className(CoverageClassName.A)
                 .isActive(true)
                 .build();
     }
@@ -1253,12 +1303,12 @@ class CoverageContractResolutionServiceTest {
     private void stubMatchedContract(CoverageContract contract) {
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
-        when(coverageContractRepository.findActiveByInsurancePayerIdAndPolicyNumber(9L, "pol-100"))
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
                 .thenReturn(List.of(contract));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
-        when(coverageCopaymentRepository.findByCoverageContract_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
                 .thenReturn(List.of());
-        when(coverageContractService.toResponse(any())).thenReturn(response(contract));
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
     }
 
     private CoverageContractResolveRequest clinicServiceRequest() {
@@ -1297,7 +1347,8 @@ class CoverageContractResolutionServiceTest {
                 LocalDate.now().plusDays(1),
                 null,
                 null,
-                contract.getClassName(),
+                21L,
+                "A",
                 contract.getApprovalCoverageCompany(),
                 true,
                 null,

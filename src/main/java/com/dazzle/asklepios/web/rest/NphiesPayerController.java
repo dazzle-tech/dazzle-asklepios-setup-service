@@ -2,11 +2,14 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.service.NphiesPayerService;
+import com.dazzle.asklepios.service.PayerRelationshipDashboardService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerChildCompaniesUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerTpasUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.nphiespayer.PayerRelationshipDashboardVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -36,9 +40,38 @@ public class NphiesPayerController {
     private static final Logger LOG = LoggerFactory.getLogger(NphiesPayerController.class);
 
     private final NphiesPayerService nphiesPayerService;
+    private final PayerRelationshipDashboardService payerRelationshipDashboardService;
 
-    public NphiesPayerController(NphiesPayerService nphiesPayerService) {
+    public NphiesPayerController(
+            NphiesPayerService nphiesPayerService,
+            PayerRelationshipDashboardService payerRelationshipDashboardService
+    ) {
         this.nphiesPayerService = nphiesPayerService;
+        this.payerRelationshipDashboardService = payerRelationshipDashboardService;
+    }
+
+    @GetMapping("/nphies-payers/relationship-dashboard")
+    public ResponseEntity<PayerRelationshipDashboardVM> getRelationshipDashboard(
+            @RequestParam(required = false) String search
+    ) {
+        LOG.debug("REST get NPHIES payer relationship dashboard search={}", search);
+        return ResponseEntity.ok(payerRelationshipDashboardService.build(search));
+    }
+
+    @GetMapping("/nphies-payers/relationship-dashboard/insurances/{id:\\d+}")
+    public ResponseEntity<PayerRelationshipDashboardVM.InsuranceCardVM> getRelationshipInsurance(
+            @PathVariable Long id
+    ) {
+        return payerRelationshipDashboardService.findInsurance(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/nphies-payers/relationship-dashboard/tpas/{id:\\d+}")
+    public ResponseEntity<PayerRelationshipDashboardVM.TpaCardVM> getRelationshipTpa(@PathVariable Long id) {
+        return payerRelationshipDashboardService.findTpa(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/nphies-payers")
@@ -95,6 +128,31 @@ public class NphiesPayerController {
         return ResponseEntity.ok(
                 nphiesPayerService.findAvailableTpas(id).stream()
                         .map(NphiesPayerResponseVM.LinkedTpaVM::ofEntity)
+                        .toList()
+        );
+    }
+
+    @PatchMapping("/nphies-payers/{id:\\d+}/child-companies")
+    public ResponseEntity<NphiesPayerResponseVM> updateChildCompanies(
+            @PathVariable Long id,
+            @RequestBody NphiesPayerChildCompaniesUpdateVM vm
+    ) {
+        LOG.debug("REST update NPHIES Payer child insurance links id={} payload={}", id, vm);
+        NphiesPayer saved = nphiesPayerService.updateChildCompanies(
+                id,
+                vm == null ? List.of() : vm.childCompanyIds()
+        );
+        return ResponseEntity.ok(NphiesPayerResponseVM.ofEntity(saved));
+    }
+
+    @GetMapping("/nphies-payers/{id:\\d+}/available-child-companies")
+    public ResponseEntity<List<NphiesPayerResponseVM.LinkedInsuranceVM>> getAvailableChildCompanies(
+            @PathVariable Long id
+    ) {
+        LOG.debug("REST list available child insurance companies for NPHIES Payer id={}", id);
+        return ResponseEntity.ok(
+                nphiesPayerService.findAvailableChildCompanies(id).stream()
+                        .map(NphiesPayerResponseVM.LinkedInsuranceVM::ofEntity)
                         .toList()
         );
     }
@@ -175,14 +233,5 @@ public class NphiesPayerController {
                 headers,
                 HttpStatus.OK
         );
-    }
-
-    @GetMapping("/nphies-payers/{id}")
-    public ResponseEntity<NphiesPayer> getById(@PathVariable Long id) {
-        LOG.debug("REST get NPHIES Payer id={}", id);
-
-        return nphiesPayerService.findOne(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

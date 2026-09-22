@@ -10,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -107,4 +108,17 @@ public class NphiesPayer extends AbstractAuditingEntity<Long> {
     @Builder.Default
     @ManyToMany(mappedBy = "insuranceCompanies")
     private Set<TpaDefinition> tpas = new HashSet<>();
+
+    @Builder.Default
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "nphies_payer_child_companies",
+            joinColumns = @JoinColumn(name = "parent_nphies_payer_id"),
+            inverseJoinColumns = @JoinColumn(name = "child_nphies_payer_id")
+    )
+    private Set<NphiesPayer> childCompanies = new HashSet<>();
+
+    @Builder.Default
+    @ManyToMany(mappedBy = "childCompanies", fetch = FetchType.LAZY)
+    private Set<NphiesPayer> parentCompanies = new HashSet<>();
 }
