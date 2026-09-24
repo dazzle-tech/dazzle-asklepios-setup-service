@@ -1,7 +1,7 @@
 package com.dazzle.asklepios.service.dto;
 
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +11,7 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record PriceListSetupItemDTO(
 
         Long id,
@@ -38,14 +39,9 @@ public record PriceListSetupItemDTO(
 
         String category,
 
-        EncounterType visitType,
-
         @NotNull
         @DecimalMin("0.00")
         BigDecimal unitPrice,
-
-        @DecimalMin("0.00")
-        BigDecimal cost,
 
         @NotNull
         @DecimalMin("0.00")
@@ -55,8 +51,6 @@ public record PriceListSetupItemDTO(
         Boolean isActive,
 
         Boolean requiresPreAuthorization,
-
-        Boolean visitTypeLocked,
 
         Instant createdDate,
 

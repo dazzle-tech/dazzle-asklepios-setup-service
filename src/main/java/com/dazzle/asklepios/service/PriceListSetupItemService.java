@@ -9,7 +9,6 @@ import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
@@ -28,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -54,9 +54,8 @@ public class PriceListSetupItemService {
     ) {
         PriceListSetup priceListSetup = requirePriceList(priceListSetupId);
 
-        EncounterType visitType = resolveVisitType(priceListSetup, dto);
         validateActiveCatalogItem(dto);
-        validateUniqueWithinPriceList(priceListSetupId, dto, visitType, null);
+        validateUniqueWithinPriceList(priceListSetupId, dto, null);
 
         PriceListSetupItem entity = new PriceListSetupItem();
         entity.setId(null);
@@ -69,9 +68,7 @@ public class PriceListSetupItemService {
         entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setCategory(blankToNull(dto.category()));
-        entity.setVisitType(visitType);
         entity.setUnitPrice(dto.unitPrice());
-        entity.setCost(dto.cost());
         entity.setDiscountPercentage(
                 dto.discountPercentage() != null
                         ? dto.discountPercentage()
@@ -84,7 +81,6 @@ public class PriceListSetupItemService {
                         dto.requiresPreAuthorization()
                 )
         );
-        entity.setVisitTypeLocked(false);
 
         try {
             return toDTO(priceListSetupItemRepository.save(entity));
@@ -107,27 +103,14 @@ public class PriceListSetupItemService {
                                 )
                         );
 
-        PriceListSetup priceListSetup = requirePriceList(priceListSetupId);
-        EncounterType visitType = resolveVisitType(priceListSetup, dto);
-
-        if (visitType != entity.getVisitType()) {
-            if (Boolean.TRUE.equals(entity.getVisitTypeLocked())) {
-                throw new BadRequestAlertException(
-                        "Visit / encounter type cannot be changed after the service has been used for a patient.",
-                        ENTITY,
-                        "visitType.locked"
-                );
-            }
-            validateUniqueWithinPriceList(
-                    priceListSetupId,
-                    dto,
-                    visitType,
-                    itemId
-            );
+        boolean catalogChanged =
+                dto.itemType() != entity.getItemType()
+                        || !Objects.equals(dto.sourceId(), entity.getSourceId());
+        if (catalogChanged) {
+            validateUniqueWithinPriceList(priceListSetupId, dto, itemId);
         }
 
         entity.setCategory(blankToNull(dto.category()));
-        entity.setVisitType(visitType);
         entity.setWaseelItemMappingId(
                 dto.waseelItemMappingId()
         );
@@ -138,7 +121,6 @@ public class PriceListSetupItemService {
         entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setUnitPrice(dto.unitPrice());
-        entity.setCost(dto.cost());
         if (dto.isActive() != null) {
             entity.setIsActive(dto.isActive());
         }
@@ -227,13 +209,6 @@ public class PriceListSetupItemService {
         priceListSetupItemRepository.delete(entity);
     }
 
-    private EncounterType resolveVisitType(
-            PriceListSetup priceListSetup,
-            PriceListSetupItemDTO dto
-    ) {
-        return dto.visitType();
-    }
-
     private void validateActiveCatalogItem(PriceListSetupItemDTO dto) {
         boolean active = switch (dto.itemType()) {
             case SERVICE -> serviceRepository.findById(dto.sourceId())
@@ -263,7 +238,6 @@ public class PriceListSetupItemService {
     private void validateUniqueWithinPriceList(
             Long priceListSetupId,
             PriceListSetupItemDTO dto,
-            EncounterType visitType,
             Long excludeItemId
     ) {
         if (dto.sourceId() == null || dto.itemType() == null) {
@@ -277,25 +251,17 @@ public class PriceListSetupItemService {
                         dto.sourceId()
                 )
                 .stream()
-                .filter(item ->
+                .anyMatch(item ->
                         excludeItemId == null || !excludeItemId.equals(item.getId())
-                )
-                .anyMatch(item -> sameVisitType(item.getVisitType(), visitType));
+                );
 
         if (duplicate) {
             throw new BadRequestAlertException(
-                    "This service is already configured for the selected visit type on this price list.",
+                    "This service is already configured on this price list.",
                     ENTITY,
-                    "item.duplicateVisitType"
+                    "item.duplicate"
             );
         }
-    }
-
-    private boolean sameVisitType(
-            EncounterType first,
-            EncounterType second
-    ) {
-        return first == second;
     }
 
     private BadRequestAlertException mapIntegrityViolation(
@@ -320,9 +286,9 @@ public class PriceListSetupItemService {
                 && (message.contains("uk_price_list_item_code_visit")
                 || message.contains("uk_price_list_item_code"))) {
             return new BadRequestAlertException(
-                    "This service is already configured for the selected visit type on this price list.",
+                    "This service is already configured on this price list.",
                     ENTITY,
-                    "item.duplicateVisitType"
+                    "item.duplicate"
             );
         }
 
@@ -355,13 +321,10 @@ public class PriceListSetupItemService {
                 entity.getNonStandardCode(),
                 entity.getItemName(),
                 entity.getCategory(),
-                entity.getVisitType(),
                 entity.getUnitPrice(),
-                entity.getCost(),
                 entity.getDiscountPercentage(),
                 entity.getIsActive(),
                 entity.getRequiresPreAuthorization(),
-                entity.getVisitTypeLocked(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate(),
                 entity.getCreatedBy(),

@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.pricelist;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
@@ -106,14 +105,11 @@ public record PriceListItemDashboardVM(
             String nonStandardCode,
             String itemName,
             String category,
-            EncounterType visitType,
             BigDecimal unitPrice,
-            BigDecimal cost,
             BigDecimal discountPercentage,
             BigDecimal netPrice,
             Boolean isActive,
             Boolean requiresPreAuthorization,
-            Boolean visitTypeLocked,
             Instant createdDate,
             Instant lastModifiedDate
     ) {}

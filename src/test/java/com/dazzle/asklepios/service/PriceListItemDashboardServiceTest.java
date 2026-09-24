@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.enumeration.Currency;
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
@@ -137,7 +136,6 @@ class PriceListItemDashboardServiceTest {
                 200L,
                 "CBC",
                 "Complete Blood Count",
-                EncounterType.CLINIC,
                 "40.00",
                 "0.00",
                 true
@@ -178,7 +176,6 @@ class PriceListItemDashboardServiceTest {
                 100L,
                 "CONS",
                 "Consultation",
-                EncounterType.CLINIC,
                 "80.00",
                 "0.00",
                 true
@@ -220,7 +217,6 @@ class PriceListItemDashboardServiceTest {
                 3L,
                 "C",
                 "Charlie",
-                EncounterType.CLINIC,
                 "30.00",
                 "0.00",
                 true
@@ -258,8 +254,7 @@ class PriceListItemDashboardServiceTest {
                 eq(PriceListItemType.SERVICE),
                 eq(100L)
         )).thenReturn(List.of(
-                item(11L, 1L, PriceListItemType.SERVICE, 100L, "CONS", "Consultation", EncounterType.CLINIC, "80.00", "10.00", true),
-                item(12L, 1L, PriceListItemType.SERVICE, 100L, "CONS", "Consultation", EncounterType.INPATIENT, "120.00", "0.00", true)
+                item(11L, 1L, PriceListItemType.SERVICE, 100L, "CONS", "Consultation", "80.00", "10.00", true)
         ));
 
         PriceListItemDashboardVM.ItemCardVM card = dashboardService.findItem(
@@ -271,7 +266,7 @@ class PriceListItemDashboardServiceTest {
         assertThat(card.presentInCount()).isEqualTo(1);
         assertThat(card.missingFromCount()).isEqualTo(1);
         assertThat(card.coverageStatus()).isEqualTo(PriceListItemDashboardService.PARTIAL);
-        assertThat(card.hasPriceVariance()).isTrue();
+        assertThat(card.hasPriceVariance()).isFalse();
         assertThat(card.priceLists()).hasSize(2);
 
         PriceListItemDashboardVM.PriceListCoverageVM cash = card.priceLists().stream()
@@ -280,8 +275,8 @@ class PriceListItemDashboardServiceTest {
                 .orElseThrow();
         assertThat(cash.present()).isTrue();
         assertThat(cash.presence()).isEqualTo(PriceListItemDashboardService.PRESENT);
-        assertThat(cash.entries()).extracting(PriceListItemDashboardVM.ItemEntryVM::visitType)
-                .containsExactly(EncounterType.CLINIC, EncounterType.INPATIENT);
+        assertThat(cash.entries()).hasSize(1);
+        assertThat(cash.entries().getFirst().unitPrice()).isEqualByComparingTo("80.00");
         assertThat(cash.entries().getFirst().netPrice()).isEqualByComparingTo("72.0000");
 
         PriceListItemDashboardVM.PriceListCoverageVM insurance = card.priceLists().stream()
@@ -319,7 +314,6 @@ class PriceListItemDashboardServiceTest {
             Long sourceId,
             String itemCode,
             String itemName,
-            EncounterType visitType,
             String unitPrice,
             String discount,
             boolean active
@@ -331,12 +325,10 @@ class PriceListItemDashboardServiceTest {
                 .sourceId(sourceId)
                 .itemCode(itemCode)
                 .itemName(itemName)
-                .visitType(visitType)
                 .unitPrice(new BigDecimal(unitPrice))
                 .discountPercentage(new BigDecimal(discount))
                 .isActive(active)
                 .requiresPreAuthorization(false)
-                .visitTypeLocked(false)
                 .build();
     }
 }
