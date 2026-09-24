@@ -334,6 +334,76 @@ class CoverageContractResolutionServiceTest {
     }
 
     @Test
+    void resolve_coverageWithoutMatchingReadingUsesRuleLimit() {
+        NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
+        CoverageContract contract = CoverageContract.builder()
+                .id(21L)
+                .guarantorType(GuarantorType.INSURANCE)
+                .companyId(9L)
+                .code("C-1")
+                .policyNumber("POL-100")
+                .insurancePayerId(9L)
+                .isActive(true)
+                .build();
+        CoverageTerm term = CoverageTerm.builder()
+                .id(11L)
+                .facilityId(1L)
+                .departmentId(5L)
+                .allDepartments(false)
+                .diagnosisScope(CoverageDiagnosisScope.ALL_DIAGNOSIS)
+                .encounterType(EncounterType.ALL)
+                .valueType(InsuranceCoverageType.FIXED)
+                .limitValue(new BigDecimal("500"))
+                .isActive(true)
+                .build();
+        CoverageTermItem otherService = CoverageTermItem.builder()
+                .id(3L)
+                .billingItemType(BillingItemTypes.SERVICE)
+                .serviceId(28283L)
+                .categoryScope(CoverageRuleTarget.SERVICE)
+                .valueType(InsuranceCoverageType.FIXED)
+                .limitValue(new BigDecimal("10"))
+                .isActive(true)
+                .build();
+
+        when(nphiesPayerRepository.findFirstByNphiesIdIgnoreCase("ins-1")).thenReturn(Optional.of(payer));
+        when(coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(9L, "pol-100"))
+                .thenReturn(List.of(contract));
+        when(tpaDefinitionRepository.findByInsuranceCompanies_Id(9L)).thenReturn(List.of());
+        when(coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(21L))
+                .thenReturn(List.of());
+        when(coverageContractService.toResponse(any(), any())).thenReturn(response(contract));
+        when(coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(21L, CoverageTermType.COVERAGE))
+                .thenReturn(List.of(term));
+        when(coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(11L))
+                .thenReturn(List.of(otherService));
+
+        CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
+                new CoverageContractResolveRequest(
+                        null,
+                        "INS-1",
+                        null,
+                        null,
+                        "POL-100",
+                        "A",
+                        "CLINIC",
+                        LocalDate.now(),
+                        1L,
+                        5L,
+                        List.of(),
+                        "SERVICE",
+                        29272L
+                )
+        );
+
+        assertThat(resolved.matched()).isTrue();
+        assertThat(resolved.uncovered()).isFalse();
+        assertThat(resolved.coverage()).isNotNull();
+        assertThat(resolved.coverage().serviceId()).isNull();
+        assertThat(resolved.coverage().limitValue()).isEqualByComparingTo("500");
+    }
+
+    @Test
     void resolve_prefersSpecificLimitReadingOverCategory() {
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         CoverageContract contract = CoverageContract.builder()
@@ -500,7 +570,7 @@ class CoverageContractResolutionServiceTest {
     }
 
     @Test
-    void resolve_unmatchedCashLimitDoesNotMarkItemUncovered() {
+    void resolve_cashLimitWithoutSpecificItemUsesGeneralHeader() {
         NphiesPayer payer = NphiesPayer.builder().id(9L).nphiesId("INS-1").nameEn("Tawuniya").isActive(true).build();
         CoverageContract contract = CoverageContract.builder()
                 .id(21L)
@@ -565,7 +635,12 @@ class CoverageContractResolutionServiceTest {
 
         assertThat(resolved.matched()).isTrue();
         assertThat(resolved.uncovered()).isFalse();
-        assertThat(resolved.cashLimit()).isNull();
+        assertThat(resolved.cashLimit()).isNotNull();
+        assertThat(resolved.cashLimit().serviceId()).isNull();
+        assertThat(resolved.cashLimit().billingItemType()).isNull();
+        assertThat(resolved.cashLimit().limitValue()).isEqualByComparingTo("500");
+        assertThat(resolved.cashLimit().periodBasis()).isEqualTo(CoveragePeriodBasis.PER_DAY);
+        assertThat(resolved.cashLimit().coverageBasis()).isEqualTo(CoverageBasis.GROSS);
     }
 
     @Test
@@ -634,7 +709,10 @@ class CoverageContractResolutionServiceTest {
 
         assertThat(resolved.matched()).isTrue();
         assertThat(resolved.uncovered()).isFalse();
-        assertThat(resolved.limit()).isNull();
+        assertThat(resolved.limit()).isNotNull();
+        assertThat(resolved.limit().serviceId()).isNull();
+        assertThat(resolved.limit().billingItemType()).isNull();
+        assertThat(resolved.limit().limitValue()).isEqualByComparingTo("500");
         assertThat(resolved.cashLimit()).isNull();
     }
 

@@ -267,6 +267,18 @@ public class CoverageLookupService {
         return diagnosis;
     }
 
+    public boolean ruleCoversAnySelectedDiagnosis(Collection<Long> ruleDiagnosisIds, Collection<Long> encounterDiagnosisIds) {
+        if (ruleDiagnosisIds == null || ruleDiagnosisIds.isEmpty()) {
+            return false;
+        }
+        for (Long ruleDiagnosisId : ruleDiagnosisIds) {
+            if (ruleCoversAnyDiagnosis(ruleDiagnosisId, encounterDiagnosisIds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean ruleCoversAnyDiagnosis(Long ruleDiagnosisId, Collection<Long> encounterDiagnosisIds) {
         if (ruleDiagnosisId == null || encounterDiagnosisIds == null || encounterDiagnosisIds.isEmpty()) {
             return false;

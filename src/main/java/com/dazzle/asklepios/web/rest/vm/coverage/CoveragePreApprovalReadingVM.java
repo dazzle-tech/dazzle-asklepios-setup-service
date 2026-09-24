@@ -5,6 +5,8 @@ import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 
+import java.util.List;
+
 public record CoveragePreApprovalReadingVM(
         Long preApprovalId,
         Long itemId,
@@ -16,5 +18,10 @@ public record CoveragePreApprovalReadingVM(
         ServiceCategory serviceCategory,
         Long serviceId,
         Boolean allDiagnoses,
-        Long diagnosisId
-) {}
+        Long diagnosisId,
+        List<Long> diagnosisIds
+) {
+    public CoveragePreApprovalReadingVM {
+        diagnosisIds = diagnosisIds == null ? List.of() : List.copyOf(diagnosisIds);
+    }
+}

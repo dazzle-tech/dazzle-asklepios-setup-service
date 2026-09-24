@@ -31,6 +31,7 @@ import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageCopaymentVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiagnosisRefVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalItemVM;
@@ -43,6 +44,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Transactional
@@ -231,14 +234,23 @@ public class CoverageRuleService {
         CoverageClass coverageClass = coverageClassService.getEntity(classId);
         validateExclusion(vm);
         CoverageRuleTarget type = resolveExclusionType(vm);
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                type == CoverageRuleTarget.DIAGNOSIS,
+                vm.allDiagnoses(),
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
         CoverageExclusion entity = CoverageExclusion.builder()
                 .coverageClass(coverageClass)
                 .exclusionType(type)
                 .billingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType())
                 .serviceId(resolveExclusionItemId(vm))
                 .itemName(type == CoverageRuleTarget.DIAGNOSIS ? null : blankToNull(vm.serviceName()))
-                .allDiagnoses(Boolean.TRUE.equals(vm.allDiagnoses()) || type == CoverageRuleTarget.DIAGNOSIS && vm.diagnosisId() == null)
-                .diagnosisId(resolveDiagnosisId(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), vm.diagnosisId(), vm.diagnosisCode()))
+                .allDiagnoses(allDiagnosesSelected(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
+                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
+                .diagnosisIds(new ArrayList<>(diagnosisIds))
                 .encounterType(vm.encounterType())
                 .excludedResult(vm.excludedResult() != null ? vm.excludedResult() : YesNoQuestion.YES)
                 .isActive(true)
@@ -250,14 +262,23 @@ public class CoverageRuleService {
         TpaDefinition tpa = requireTpa(tpaId);
         validateExclusion(vm);
         CoverageRuleTarget type = resolveExclusionType(vm);
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                type == CoverageRuleTarget.DIAGNOSIS,
+                vm.allDiagnoses(),
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
         CoverageExclusion entity = CoverageExclusion.builder()
                 .tpaDefinition(tpa)
                 .exclusionType(type)
                 .billingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType())
                 .serviceId(resolveExclusionItemId(vm))
                 .itemName(type == CoverageRuleTarget.DIAGNOSIS ? null : blankToNull(vm.serviceName()))
-                .allDiagnoses(Boolean.TRUE.equals(vm.allDiagnoses()) || type == CoverageRuleTarget.DIAGNOSIS && vm.diagnosisId() == null)
-                .diagnosisId(resolveDiagnosisId(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), vm.diagnosisId(), vm.diagnosisCode()))
+                .allDiagnoses(allDiagnosesSelected(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
+                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
+                .diagnosisIds(new ArrayList<>(diagnosisIds))
                 .encounterType(vm.encounterType())
                 .excludedResult(vm.excludedResult() != null ? vm.excludedResult() : YesNoQuestion.YES)
                 .isActive(true)
@@ -354,14 +375,23 @@ public class CoverageRuleService {
             throw new BadRequestAlertException("Pre-approval must be active to add items.", ENTITY, "inactiveParent");
         }
         validatePreApprovalItem(vm);
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                vm.itemType() == CoverageRuleTarget.DIAGNOSIS,
+                vm.allDiagnoses(),
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
         CoveragePreApprovalItem entity = CoveragePreApprovalItem.builder()
                 .preApproval(parent)
                 .itemType(vm.itemType())
                 .serviceCategory(vm.itemType() == CoverageRuleTarget.CATEGORY ? requireCategory(vm.serviceCategory()) : null)
                 .serviceId(vm.itemType() == CoverageRuleTarget.SERVICE ? requireService(vm.serviceId()).getId() : null)
-                .allDiagnoses(vm.itemType() == CoverageRuleTarget.DIAGNOSIS && (Boolean.TRUE.equals(vm.allDiagnoses()) || vm.diagnosisId() == null)
-                        || vm.itemType() == CoverageRuleTarget.ALL)
-                .diagnosisId(resolveDiagnosisId(vm.itemType() == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), vm.diagnosisId(), vm.diagnosisCode()))
+                .allDiagnoses(vm.itemType() == CoverageRuleTarget.ALL
+                        || allDiagnosesSelected(vm.itemType() == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
+                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
+                .diagnosisIds(new ArrayList<>(diagnosisIds))
                 .isActive(true)
                 .build();
         return toPreApprovalItemVm(preApprovalItemRepository.save(entity));
@@ -388,10 +418,19 @@ public class CoverageRuleService {
         Facility facility = requireFacility(vm.facilityId());
         boolean allDepartments = Boolean.TRUE.equals(vm.allDepartments()) || vm.departmentId() == null;
         Department department = allDepartments ? null : requireDepartment(vm.departmentId(), facility.getId());
-        Long diagnosisId = resolveDiagnosisId(vm.diagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS, false, vm.diagnosisId(), vm.diagnosisCode());
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                vm.diagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS,
+                false,
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
         entity.setTermType(vm.termType());
         entity.setDiagnosisScope(vm.diagnosisScope());
-        entity.setDiagnosisId(diagnosisId);
+        entity.setDiagnosisIds(CoverageDiagnosisSelection.ensureMutable(entity.getDiagnosisIds()));
+        CoverageDiagnosisSelection.replace(entity.getDiagnosisIds(), diagnosisIds);
+        entity.setDiagnosisId(CoverageDiagnosisSelection.first(diagnosisIds));
         entity.setFacilityId(facility.getId());
         entity.setAllDepartments(allDepartments);
         entity.setDepartmentId(department == null ? null : department.getId());
@@ -424,8 +463,10 @@ public class CoverageRuleService {
         if (vm.termType() == null) {
             throw new BadRequestAlertException("Term type is required.", ENTITY, "termTypeRequired");
         }
-        if (vm.diagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS && vm.diagnosisId() == null) {
-            throw new BadRequestAlertException("Specific diagnosis is required.", ENTITY, "diagnosisRequired");
+        if (vm.diagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS
+                && CoverageDiagnosisSelection.isEmpty(requestedDiagnosisIds(vm.diagnoses(), vm.diagnosisIds()), vm.diagnosisId())
+                && (vm.diagnosisCode() == null || vm.diagnosisCode().isBlank())) {
+            throw new BadRequestAlertException("At least one specific diagnosis is required.", ENTITY, "diagnosisRequired");
         }
     }
 
@@ -472,9 +513,9 @@ public class CoverageRuleService {
         CoverageRuleTarget type = resolveExclusionType(vm);
         if (type == CoverageRuleTarget.DIAGNOSIS
                 && !Boolean.TRUE.equals(vm.allDiagnoses())
-                && vm.diagnosisId() == null
+                && CoverageDiagnosisSelection.isEmpty(requestedDiagnosisIds(vm.diagnoses(), vm.diagnosisIds()), vm.diagnosisId())
                 && (vm.diagnosisCode() == null || vm.diagnosisCode().isBlank())) {
-            throw new BadRequestAlertException("Diagnosis is required.", ENTITY, "diagnosisRequired");
+            throw new BadRequestAlertException("At least one diagnosis is required.", ENTITY, "diagnosisRequired");
         }
         if (vm.serviceId() != null && vm.billingItemType() == BillingItemTypes.SERVICE) {
             requireService(vm.serviceId());
@@ -499,6 +540,12 @@ public class CoverageRuleService {
         }
         if (vm.itemType() == CoverageRuleTarget.SERVICE) {
             requireService(vm.serviceId());
+        }
+        if (vm.itemType() == CoverageRuleTarget.DIAGNOSIS
+                && !Boolean.TRUE.equals(vm.allDiagnoses())
+                && CoverageDiagnosisSelection.isEmpty(requestedDiagnosisIds(vm.diagnoses(), vm.diagnosisIds()), vm.diagnosisId())
+                && (vm.diagnosisCode() == null || vm.diagnosisCode().isBlank())) {
+            throw new BadRequestAlertException("At least one diagnosis is required.", ENTITY, "diagnosisRequired");
         }
     }
 
@@ -555,14 +602,80 @@ public class CoverageRuleService {
         return null;
     }
 
-    private Long resolveDiagnosisId(boolean specific, Boolean allDiagnoses, Long diagnosisId, String diagnosisCode) {
+    private List<Long> resolveSelectedDiagnosisIds(
+            boolean specific,
+            Boolean allDiagnoses,
+            List<CoverageDiagnosisRefVM> diagnoses,
+            List<Long> diagnosisIds,
+            Long diagnosisId,
+            String diagnosisCode
+    ) {
         if (!specific || Boolean.TRUE.equals(allDiagnoses)) {
-            return null;
+            return List.of();
         }
-        if (diagnosisId == null && (diagnosisCode == null || diagnosisCode.isBlank())) {
-            return null;
+        List<Long> ids = new ArrayList<>();
+        for (Long id : requestedDiagnosisIds(diagnoses, diagnosisIds)) {
+            ids.add(coverageLookupService.requireDiagnosis(id, null).getId());
         }
-        return coverageLookupService.requireDiagnosis(diagnosisId, diagnosisCode).getId();
+        if (ids.isEmpty() && (diagnosisId != null || (diagnosisCode != null && !diagnosisCode.isBlank()))) {
+            ids.add(coverageLookupService.requireDiagnosis(diagnosisId, diagnosisCode).getId());
+        }
+        return CoverageDiagnosisSelection.unique(ids);
+    }
+
+    private List<Long> requestedDiagnosisIds(List<CoverageDiagnosisRefVM> diagnoses, List<Long> diagnosisIds) {
+        List<Long> ids = new ArrayList<>();
+        if (diagnoses != null) {
+            for (CoverageDiagnosisRefVM diagnosis : diagnoses) {
+                if (diagnosis == null) {
+                    continue;
+                }
+                if (diagnosis.diagnosisId() != null) {
+                    ids.add(diagnosis.diagnosisId());
+                    continue;
+                }
+                if (diagnosis.diagnosisCode() != null && !diagnosis.diagnosisCode().isBlank()) {
+                    ids.add(coverageLookupService.requireDiagnosis(null, diagnosis.diagnosisCode()).getId());
+                }
+            }
+        }
+        if (diagnosisIds != null) {
+            for (Long id : diagnosisIds) {
+                if (id != null) {
+                    ids.add(id);
+                }
+            }
+        }
+        return ids;
+    }
+
+    private boolean allDiagnosesSelected(boolean diagnosisTarget, Boolean allDiagnoses, List<Long> diagnosisIds) {
+        return diagnosisTarget && (Boolean.TRUE.equals(allDiagnoses) || diagnosisIds.isEmpty());
+    }
+
+    private List<CoverageDiagnosisRefVM> toDiagnosisRefs(List<Long> stored, Long fallback) {
+        List<CoverageDiagnosisRefVM> refs = new ArrayList<>();
+        for (Long id : CoverageDiagnosisSelection.ids(stored, fallback)) {
+            ICDDiagnosis diagnosis = coverageLookupService.findDiagnosis(id);
+            refs.add(new CoverageDiagnosisRefVM(
+                    id,
+                    coverageLookupService.diagnosisCode(diagnosis),
+                    coverageLookupService.diagnosisName(diagnosis)
+            ));
+        }
+        return refs;
+    }
+
+    private String diagnosisSummary(List<CoverageDiagnosisRefVM> diagnoses) {
+        List<String> labels = new ArrayList<>();
+        for (CoverageDiagnosisRefVM diagnosis : diagnoses) {
+            if (diagnosis.diagnosisCode() != null && !diagnosis.diagnosisCode().isBlank()) {
+                labels.add(diagnosis.diagnosisCode());
+            } else if (diagnosis.diagnosisName() != null && !diagnosis.diagnosisName().isBlank()) {
+                labels.add(diagnosis.diagnosisName());
+            }
+        }
+        return labels.isEmpty() ? null : String.join(", ", labels);
     }
 
     private void deactivateOnly(Boolean currentlyActive) {
@@ -672,14 +785,17 @@ public class CoverageRuleService {
     private CoverageTermVM toTermVm(CoverageTerm entity) {
         Facility facility = coverageLookupService.findFacility(entity.getFacilityId());
         Department department = coverageLookupService.findDepartment(entity.getDepartmentId());
-        ICDDiagnosis diagnosis = coverageLookupService.findDiagnosis(entity.getDiagnosisId());
+        List<CoverageDiagnosisRefVM> diagnoses = toDiagnosisRefs(entity.getDiagnosisIds(), entity.getDiagnosisId());
+        CoverageDiagnosisRefVM first = diagnoses.isEmpty() ? null : diagnoses.get(0);
         return new CoverageTermVM(
                 entity.getId(),
                 entity.getTermType(),
                 entity.getDiagnosisScope(),
-                entity.getDiagnosisId(),
-                coverageLookupService.diagnosisCode(diagnosis),
-                coverageLookupService.diagnosisName(diagnosis),
+                first == null ? null : first.diagnosisId(),
+                first == null ? null : first.diagnosisCode(),
+                first == null ? null : first.diagnosisName(),
+                diagnoses,
+                CoverageDiagnosisSelection.ids(entity.getDiagnosisIds(), entity.getDiagnosisId()),
                 entity.getFacilityId(),
                 facility == null ? null : facility.getName(),
                 entity.getAllDepartments(),
@@ -763,7 +879,8 @@ public class CoverageRuleService {
                 entity.getBillingItemType() == null || entity.getBillingItemType() == BillingItemTypes.SERVICE
                         ? coverageLookupService.findService(entity.getServiceId())
                         : null;
-        ICDDiagnosis diagnosis = coverageLookupService.findDiagnosis(entity.getDiagnosisId());
+        List<CoverageDiagnosisRefVM> diagnoses = toDiagnosisRefs(entity.getDiagnosisIds(), entity.getDiagnosisId());
+        CoverageDiagnosisRefVM first = diagnoses.isEmpty() ? null : diagnoses.get(0);
         String itemName = blankToNull(entity.getItemName());
         if (itemName == null && service != null) {
             itemName = service.getName();
@@ -779,9 +896,13 @@ public class CoverageRuleService {
                 service == null ? null : service.getCode(),
                 itemName,
                 entity.getAllDiagnoses(),
-                entity.getDiagnosisId(),
-                diagnosis == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "ALL" : null) : coverageLookupService.diagnosisCode(diagnosis),
-                diagnosis == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "All diagnoses" : null) : coverageLookupService.diagnosisName(diagnosis),
+                first == null ? null : first.diagnosisId(),
+                first == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "ALL" : null) : first.diagnosisCode(),
+                first == null
+                        ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "All diagnoses" : null)
+                        : diagnosisSummary(diagnoses),
+                diagnoses,
+                CoverageDiagnosisSelection.ids(entity.getDiagnosisIds(), entity.getDiagnosisId()),
                 entity.getEncounterType(),
                 entity.getExcludedResult(),
                 entity.getIsActive(),
@@ -809,18 +930,27 @@ public class CoverageRuleService {
 
     private CoveragePreApprovalItemVM toPreApprovalItemVm(CoveragePreApprovalItem entity) {
         ServiceSetup service = coverageLookupService.findService(entity.getServiceId());
-        ICDDiagnosis diagnosis = coverageLookupService.findDiagnosis(entity.getDiagnosisId());
+        List<CoverageDiagnosisRefVM> diagnoses = toDiagnosisRefs(entity.getDiagnosisIds(), entity.getDiagnosisId());
+        CoverageDiagnosisRefVM first = diagnoses.isEmpty() ? null : diagnoses.get(0);
         return new CoveragePreApprovalItemVM(
                 entity.getId(),
                 entity.getItemType(),
                 entity.getServiceCategory(),
                 entity.getServiceId(),
                 service == null ? null : service.getCode(),
-                service == null ? (entity.getItemType() == CoverageRuleTarget.ALL ? "All" : null) : service.getName(),
+                service == null
+                        ? (entity.getItemType() == CoverageRuleTarget.ALL
+                            ? "All"
+                            : first == null ? null : diagnosisSummary(diagnoses))
+                        : service.getName(),
                 entity.getAllDiagnoses(),
-                entity.getDiagnosisId(),
-                diagnosis == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "ALL" : null) : coverageLookupService.diagnosisCode(diagnosis),
-                diagnosis == null ? (entity.getItemType() == CoverageRuleTarget.ALL || Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "All" : null) : coverageLookupService.diagnosisName(diagnosis),
+                first == null ? null : first.diagnosisId(),
+                first == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "ALL" : null) : first.diagnosisCode(),
+                first == null
+                        ? (entity.getItemType() == CoverageRuleTarget.ALL || Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "All" : null)
+                        : diagnosisSummary(diagnoses),
+                diagnoses,
+                CoverageDiagnosisSelection.ids(entity.getDiagnosisIds(), entity.getDiagnosisId()),
                 entity.getIsActive(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate()

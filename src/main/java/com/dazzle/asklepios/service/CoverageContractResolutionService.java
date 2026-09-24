@@ -38,6 +38,7 @@ import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveRequest;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveResponse;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageCopaymentVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiagnosisRefVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalReadingVM;
@@ -359,7 +360,13 @@ public class CoverageContractResolutionService {
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(classId, CoverageTermType.COVERAGE, request, encounterType, true);
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.COVERAGE,
+                request,
+                encounterType,
+                true
+        );
     }
 
     private CoverageMatch selectLimit(
@@ -367,7 +374,13 @@ public class CoverageContractResolutionService {
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(classId, CoverageTermType.LIMIT, request, encounterType, false);
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.LIMIT,
+                request,
+                encounterType,
+                false
+        );
     }
 
     private CoverageMatch selectCashLimit(
@@ -375,7 +388,13 @@ public class CoverageContractResolutionService {
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
-        return selectTermReading(classId, CoverageTermType.CASH_LIMIT, request, encounterType, false);
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.CASH_LIMIT,
+                request,
+                encounterType,
+                false
+        );
     }
 
     private CoverageDiscountVM selectDiscount(
@@ -559,10 +578,11 @@ public class CoverageContractResolutionService {
             return -1;
         }
         if (type == CoverageRuleTarget.DIAGNOSIS) {
-            if (Boolean.TRUE.equals(item.getAllDiagnoses()) || item.getDiagnosisId() == null) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(item.getDiagnosisIds(), item.getDiagnosisId());
+            if (Boolean.TRUE.equals(item.getAllDiagnoses()) || selected.isEmpty()) {
                 return diagnosisIds.isEmpty() ? -1 : 200;
             }
-            if (coverageLookupService.ruleCoversAnyDiagnosis(item.getDiagnosisId(), diagnosisIds)) {
+            if (coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
                 return 350;
             }
             return -1;
@@ -592,6 +612,7 @@ public class CoverageContractResolutionService {
             CoveragePreApproval preApproval,
             CoveragePreApprovalItem item
     ) {
+        List<Long> selected = CoverageDiagnosisSelection.ids(item.getDiagnosisIds(), item.getDiagnosisId());
         return new CoveragePreApprovalReadingVM(
                 preApproval.getId(),
                 item.getId(),
@@ -603,7 +624,8 @@ public class CoverageContractResolutionService {
                 item.getServiceCategory(),
                 item.getServiceId(),
                 item.getAllDiagnoses(),
-                item.getDiagnosisId()
+                CoverageDiagnosisSelection.first(selected),
+                selected
         );
     }
 
@@ -662,10 +684,11 @@ public class CoverageContractResolutionService {
             return -1;
         }
         if (type == CoverageRuleTarget.DIAGNOSIS) {
-            if (Boolean.TRUE.equals(exclusion.getAllDiagnoses()) || exclusion.getDiagnosisId() == null) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(exclusion.getDiagnosisIds(), exclusion.getDiagnosisId());
+            if (Boolean.TRUE.equals(exclusion.getAllDiagnoses()) || selected.isEmpty()) {
                 return diagnosisIds.isEmpty() ? -1 : 200;
             }
-            if (coverageLookupService.ruleCoversAnyDiagnosis(exclusion.getDiagnosisId(), diagnosisIds)) {
+            if (coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
                 return 350;
             }
             return -1;
@@ -692,6 +715,10 @@ public class CoverageContractResolutionService {
     }
 
     private CoverageExclusionVM toExclusionVm(CoverageExclusion exclusion) {
+        List<Long> selected = CoverageDiagnosisSelection.ids(exclusion.getDiagnosisIds(), exclusion.getDiagnosisId());
+        List<CoverageDiagnosisRefVM> diagnoses = selected.stream()
+                .map(id -> new CoverageDiagnosisRefVM(id, null, null))
+                .toList();
         return new CoverageExclusionVM(
                 exclusion.getId(),
                 exclusion.getExclusionType(),
@@ -700,9 +727,11 @@ public class CoverageContractResolutionService {
                 null,
                 exclusion.getItemName(),
                 exclusion.getAllDiagnoses(),
-                exclusion.getDiagnosisId(),
+                CoverageDiagnosisSelection.first(selected),
                 null,
                 null,
+                diagnoses,
+                selected,
                 exclusion.getEncounterType(),
                 exclusion.getExcludedResult(),
                 exclusion.getIsActive(),
@@ -785,7 +814,12 @@ public class CoverageContractResolutionService {
         );
     }
 
-    private CoverageMatch selectTermReading(
+    /**
+     * A matching service or category reading wins. A visit that matches the rule
+     * scope but has no reading uses the rule limit. A specific reading always
+     * wins over that general limit.
+     */
+    private CoverageMatch selectReadingWithHeaderFallback(
             Long classId,
             CoverageTermType termType,
             CoverageContractResolveRequest request,
@@ -807,7 +841,6 @@ public class CoverageContractResolutionService {
                     ? CoverageMatch.configuredWithoutEvaluation()
                     : CoverageMatch.notConfigured();
         }
-
         BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
         if (billingItemType == null) {
             return missIsUncovered
@@ -816,40 +849,56 @@ public class CoverageContractResolutionService {
         }
 
         Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
-        CoverageReadingVM bestReading = null;
-        int bestScore = -1;
+        CoverageReadingVM bestSpecific = null;
+        int bestSpecificScore = -1;
+        CoverageReadingVM bestGeneral = null;
+        int bestGeneralScore = -1;
 
         for (CoverageTerm term : terms) {
-            int headerScore = headerMatchScore(term, request.facilityId(), request.departmentId(), encounterType, diagnosisIds);
+            int headerScore = headerMatchScore(
+                    term,
+                    request.facilityId(),
+                    request.departmentId(),
+                    encounterType,
+                    diagnosisIds
+            );
             if (headerScore < 0) {
                 continue;
             }
             List<CoverageTermItem> items = coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(term.getId());
             if (items.isEmpty()) {
-                int score = headerScore * 1000 + 10;
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestReading = toReading(term, null);
+                if (headerScore > bestGeneralScore) {
+                    bestGeneralScore = headerScore;
+                    bestGeneral = toReading(term, null);
                 }
                 continue;
             }
+            boolean matchedItem = false;
             for (CoverageTermItem item : items) {
                 int itemScore = itemMatchScore(item, billingItemType, request.catalogItemId());
                 if (itemScore < 0) {
                     continue;
                 }
+                matchedItem = true;
                 int score = headerScore * 1000 + itemScore;
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestReading = toReading(term, item);
+                if (score > bestSpecificScore) {
+                    bestSpecificScore = score;
+                    bestSpecific = toReading(term, item);
                 }
+            }
+            if (!matchedItem && headerScore > bestGeneralScore) {
+                bestGeneralScore = headerScore;
+                bestGeneral = toReading(term, null);
             }
         }
 
-        if (bestReading == null) {
-            return missIsUncovered ? CoverageMatch.uncoveredItem() : CoverageMatch.notConfigured();
+        if (bestSpecific != null) {
+            return CoverageMatch.covered(bestSpecific);
         }
-        return CoverageMatch.covered(bestReading);
+        if (bestGeneral != null) {
+            return CoverageMatch.covered(bestGeneral);
+        }
+        return missIsUncovered ? CoverageMatch.uncoveredItem() : CoverageMatch.notConfigured();
     }
 
     private CoverageReadingVM toReading(CoverageTerm term, CoverageTermItem item) {
@@ -901,7 +950,8 @@ public class CoverageContractResolutionService {
             }
         }
         if (term.getDiagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS) {
-            if (term.getDiagnosisId() == null || !coverageLookupService.ruleCoversAnyDiagnosis(term.getDiagnosisId(), diagnosisIds)) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(term.getDiagnosisIds(), term.getDiagnosisId());
+            if (selected.isEmpty() || !coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
                 return -1;
             }
         }
