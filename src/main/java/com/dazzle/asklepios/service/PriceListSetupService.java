@@ -9,7 +9,6 @@ import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -209,19 +208,6 @@ public class PriceListSetupService {
         priceListSetupRepository.deleteById(id);
     }
 
-    public void lockVisitType(Long itemId) {
-        PriceListSetupItem item = priceListSetupItemRepository.findById(itemId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException(
-                                "Price list item not found with id: " + itemId
-                        )
-                );
-        if (!Boolean.TRUE.equals(item.getVisitTypeLocked())) {
-            item.setVisitTypeLocked(true);
-            priceListSetupItemRepository.save(item);
-        }
-    }
-
     /**
      * Runtime price resolution used by the patient/billing service.
      */
@@ -345,7 +331,6 @@ public class PriceListSetupService {
                                 priceList.getId(),
                                 itemType,
                                 request.itemId(),
-                                request.visitType(),
                                 true
                         )
                                 .filter(item ->
@@ -373,7 +358,6 @@ public class PriceListSetupService {
                     priceList.getId(),
                     itemType,
                     request.itemId(),
-                    request.visitType(),
                     activeItemsOnly
             );
 
@@ -383,7 +367,6 @@ public class PriceListSetupService {
                         priceList.getId(),
                         itemType,
                         request.itemId(),
-                        request.visitType(),
                         false
                 );
             }
@@ -400,48 +383,23 @@ public class PriceListSetupService {
             Long priceListSetupId,
             PriceListItemType itemType,
             Long sourceId,
-            EncounterType visitType,
             boolean activeOnly
     ) {
-        List<PriceListSetupItem> items =
-                priceListSetupItemRepository
-                        .findAllByPriceListSetupIdAndItemTypeAndSourceId(
-                                priceListSetupId,
-                                itemType,
-                                sourceId
-                        );
-
         if (activeOnly) {
-            items = items.stream()
-                    .filter(item -> Boolean.TRUE.equals(item.getIsActive()))
-                    .toList();
+            return priceListSetupItemRepository
+                    .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
+                            priceListSetupId,
+                            itemType,
+                            sourceId
+                    );
         }
 
-        if (items.isEmpty()) {
-            return Optional.empty();
-        }
-
-        if (visitType != null) {
-            Optional<PriceListSetupItem> exact = items.stream()
-                    .filter(item -> item.getVisitType() == visitType)
-                    .findFirst();
-            if (exact.isPresent()) {
-                return exact;
-            }
-        }
-
-        Optional<PriceListSetupItem> allMatch = items.stream()
-                .filter(item -> item.getVisitType() == null)
-                .findFirst();
-        if (allMatch.isPresent()) {
-            return allMatch;
-        }
-
-        if (visitType == null) {
-            return items.stream().findFirst();
-        }
-
-        return Optional.empty();
+        return priceListSetupItemRepository
+                .findFirstByPriceListSetupIdAndItemTypeAndSourceId(
+                        priceListSetupId,
+                        itemType,
+                        sourceId
+                );
     }
 
     private boolean isEffective(PriceListSetup priceList, LocalDate pricingDate) {
@@ -864,15 +822,12 @@ public class PriceListSetupService {
                     clonedItem.setItemCode(sourceItem.getItemCode());
                     clonedItem.setItemName(sourceItem.getItemName());
                     clonedItem.setCategory(sourceItem.getCategory());
-                    clonedItem.setVisitType(sourceItem.getVisitType());
                     clonedItem.setUnitPrice(sourceItem.getUnitPrice());
-                    clonedItem.setCost(sourceItem.getCost());
                     clonedItem.setDiscountPercentage(sourceItem.getDiscountPercentage());
                     clonedItem.setIsActive(sourceItem.getIsActive());
                     clonedItem.setRequiresPreAuthorization(
                             sourceItem.getRequiresPreAuthorization()
                     );
-                    clonedItem.setVisitTypeLocked(false);
                     return clonedItem;
                 })
                 .toList();

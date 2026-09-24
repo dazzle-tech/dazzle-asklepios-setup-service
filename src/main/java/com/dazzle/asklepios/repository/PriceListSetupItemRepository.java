@@ -2,7 +2,6 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
 import org.springframework.data.domain.Page;
@@ -83,14 +82,6 @@ public interface PriceListSetupItemRepository
             Long priceListSetupId,
             PriceListItemType type,
             Long sourceId
-    );
-
-    Optional<PriceListSetupItem>
-    findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndVisitType(
-            Long priceListSetupId,
-            PriceListItemType type,
-            Long sourceId,
-            EncounterType visitType
     );
 
     List<PriceListSetupItem> findAllByItemTypeAndSourceId(

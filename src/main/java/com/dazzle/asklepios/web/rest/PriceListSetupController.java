@@ -76,14 +76,6 @@ public class PriceListSetupController {
                 .body(result);
     }
 
-    @PostMapping("/price-list-setups/items/{itemId}/lock-visit-type")
-    public ResponseEntity<Void> lockVisitType(
-            @PathVariable Long itemId
-    ) {
-        priceListSetupService.lockVisitType(itemId);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/price-list-setups/insurance-companies")
     public ResponseEntity<List<InsuranceCompanyDTO>> getInsuranceCompanies(
             @RequestParam(required = false) InsuranceCompanySource source,

@@ -59,8 +59,7 @@ public class PriceListItemDashboardService {
                     .thenComparing(PriceListSetup::getId, Comparator.nullsLast(Long::compareTo));
 
     private static final Comparator<ItemEntryVM> ENTRY_ORDER =
-            Comparator.comparing((ItemEntryVM entry) -> entry.visitType() == null ? "" : entry.visitType().name())
-                    .thenComparing(ItemEntryVM::id, Comparator.nullsLast(Long::compareTo));
+            Comparator.comparing(ItemEntryVM::id, Comparator.nullsLast(Long::compareTo));
 
     private final PriceListSetupRepository priceListSetupRepository;
     private final PriceListSetupItemRepository priceListSetupItemRepository;
@@ -422,14 +421,11 @@ public class PriceListItemDashboardService {
                 item.getNonStandardCode(),
                 item.getItemName(),
                 item.getCategory(),
-                item.getVisitType(),
                 item.getUnitPrice(),
-                item.getCost(),
                 item.getDiscountPercentage(),
                 netPrice(item.getUnitPrice(), item.getDiscountPercentage()),
                 item.getIsActive(),
                 item.getRequiresPreAuthorization(),
-                item.getVisitTypeLocked(),
                 item.getCreatedDate(),
                 item.getLastModifiedDate()
         );
