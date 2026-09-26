@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.facility;
 
-import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
@@ -34,30 +33,11 @@ public record FacilityUpdateVM(
         List<WorkingDayJson> workingDays,
         Long defaultLabDepartmentId,
         Long defaultRadDepartmentId,
-        boolean approvingDiagnosticTestSettlePayment
+        boolean approvingDiagnosticTestSettlePayment,
+        String vatRegistrationNumber,
+        Long countryId,
+        Long districtId,
+        String streetAddress,
+        String postalCode
 ) implements Serializable {
-
-    public static FacilityUpdateVM ofEntity(Facility facility) {
-        return new FacilityUpdateVM(
-                facility.getId(),
-                facility.getName(),
-                facility.getCode(),
-                facility.getType(),
-                facility.getEmailAddress(),
-                facility.getPhone1(),
-                facility.getPhone2(),
-                facility.getFax(),
-                facility.getAddressId(),
-                facility.getDefaultCurrency(),
-                facility.getIsActive(),
-                facility.getRuleId(),
-                facility.getRegistrationDate(),
-                facility.getTimeZone(),
-                facility.getWorkingDays(),
-                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
-                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null,
-                facility.getApprovingDiagnosticTestSettlePayment()
-
-        );
-    }
 }

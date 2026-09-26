@@ -32,27 +32,11 @@ public record FacilityCreateVM(
         List<WorkingDayJson> workingDays,
         Long defaultLabDepartmentId,
         Long defaultRadDepartmentId,
-       boolean approvingDiagnosticTestSettlePayment
+        boolean approvingDiagnosticTestSettlePayment,
+        String vatRegistrationNumber,
+        Long countryId,
+        Long districtId,
+        String streetAddress,
+        String postalCode
 ) implements Serializable {
-
-    public static FacilityCreateVM ofEntity(Facility facility) {
-        return new FacilityCreateVM(
-                facility.getName(),
-                facility.getCode(),
-                facility.getType(),
-                facility.getEmailAddress(),
-                facility.getPhone1(),
-                facility.getPhone2(),
-                facility.getFax(),
-                facility.getAddressId(),
-                facility.getDefaultCurrency(),
-                facility.getIsActive(),
-                facility.getRegistrationDate(),
-                facility.getTimeZone(),
-                facility.getWorkingDays(),
-                facility.getDefaultLabDepartment() != null ? facility.getDefaultLabDepartment().getId() : null,
-                facility.getDefaultRadDepartment() != null ? facility.getDefaultRadDepartment().getId() : null,
-                facility.getApprovingDiagnosticTestSettlePayment()
-        );
-    }
 }
