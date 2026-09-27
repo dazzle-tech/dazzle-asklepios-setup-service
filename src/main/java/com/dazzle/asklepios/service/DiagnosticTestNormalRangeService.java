@@ -91,6 +91,10 @@ public class DiagnosticTestNormalRangeService {
         }
         entity.setProfileTest(profile);
         entity.setTest(profile.getTest());
+        entity.setProfileResultType(profile.getResultType() != null ? profile.getResultType().name() : null);
+        if (entity.getIsActive() == null) {
+            entity.setIsActive(true);
+        }
 
         DiagnosticTestNormalRange saved = rangeRepository.save(entity);
         persistLovsIfNeeded(saved, profile.getResultType(), entity.getLovKeys());
@@ -148,6 +152,10 @@ public class DiagnosticTestNormalRangeService {
             entity.setId(id);
             entity.setProfileTest(profile);
             entity.setTest(profile.getTest());
+            entity.setProfileResultType(profile.getResultType() != null ? profile.getResultType().name() : null);
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(existing.getIsActive() != null ? existing.getIsActive() : true);
+            }
 
             DiagnosticTestNormalRange updated = rangeRepository.save(entity);
 
@@ -252,16 +260,19 @@ public class DiagnosticTestNormalRangeService {
 
 
     /**
-     * Deletes a normal range and its LOV rows.
+     * Toggles active status for a normal range.
      */
-    public void delete(Long id) {
-        LOG.debug("[NormalRange] DELETE - start. id={}", id);
+    public Optional<DiagnosticTestNormalRange> toggleActive(Long id) {
+        LOG.debug("[NormalRange] TOGGLE_ACTIVE - start. id={}", id);
 
-        lovRepository.deleteByNormalRangeId(id);
-        LOG.debug("[NormalRange] DELETE - deleted LOVs. id={}", id);
-
-        rangeRepository.deleteById(id);
-        LOG.info("[NormalRange] DELETE - done. id={}", id);
+        return rangeRepository.findById(id)
+                .map(range -> {
+                    boolean nextState = !Boolean.TRUE.equals(range.getIsActive());
+                    range.setIsActive(nextState);
+                    DiagnosticTestNormalRange updated = rangeRepository.save(range);
+                    LOG.info("[NormalRange] TOGGLE_ACTIVE - done. id={} isActive={}", id, nextState);
+                    return updated;
+                });
     }
 
     /**
