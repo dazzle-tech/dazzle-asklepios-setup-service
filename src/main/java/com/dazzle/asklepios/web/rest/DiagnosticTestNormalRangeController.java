@@ -184,17 +184,20 @@ public class DiagnosticTestNormalRangeController {
         );
     }
     /**
-     * {@code DELETE /diagnostic-test-normal-ranges/:id} :
-     * Delete a DiagnosticTestNormalRange by id.
+     * {@code PATCH /diagnostic-test-normal-ranges/:id/toggle-active} :
+     * Toggle isActive for a DiagnosticTestNormalRange by id.
      *
-     * @param id the identifier of the range to delete.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     * @param id the identifier of the range.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated range,
+     *         or {@code 404 (Not Found)} if not found.
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        LOG.debug("REST request to delete DiagnosticTestNormalRange id={}", id);
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestNormalRangeResponseVM> toggleActive(@PathVariable Long id) {
+        LOG.debug("REST request to toggle DiagnosticTestNormalRange active id={}", id);
+        return service.toggleActive(id)
+                .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
