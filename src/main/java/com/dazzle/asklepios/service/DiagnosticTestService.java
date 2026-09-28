@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import com.dazzle.asklepios.repository.DiagnosticTestNormalRangeRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -27,15 +28,18 @@ public class DiagnosticTestService {
 
     private final DiagnosticTestRepository repository;
     private final DiagnosticTestProfileRepository profileRepository;
+    private final DiagnosticTestNormalRangeRepository normalRangeRepository;
     private final BillingRuleReferenceService billingRuleReferenceService;
 
     public DiagnosticTestService(
             DiagnosticTestRepository repository,
             DiagnosticTestProfileRepository profileRepository,
+            DiagnosticTestNormalRangeRepository normalRangeRepository,
             BillingRuleReferenceService billingRuleReferenceService
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
+        this.normalRangeRepository = normalRangeRepository;
         this.billingRuleReferenceService = billingRuleReferenceService;
     }
     private void validateDefaultProfileFields(
@@ -200,6 +204,7 @@ public class DiagnosticTestService {
                         });
 
                 boolean changed = false;
+                boolean resultTypeChanged = false;
 
                 if (!saved.getName().equals(defaultProfile.getName())) {
                     defaultProfile.setName(saved.getName());
@@ -209,6 +214,7 @@ public class DiagnosticTestService {
                 if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != defaultProfile.getResultType()) {
                     defaultProfile.setResultType(vm.defaultProfileResultType());
                     changed = true;
+                    resultTypeChanged = true;
                 }
 
                 if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(defaultProfile.getResultUnit())) {
@@ -233,6 +239,16 @@ public class DiagnosticTestService {
 
                 if (changed) {
                     profileRepository.save(defaultProfile);
+                }
+
+                if (resultTypeChanged) {
+                    int deactivatedCount = normalRangeRepository.deactivateActiveByProfileTestId(defaultProfile.getId());
+                    LOG.info(
+                            "Deactivated normal ranges after default profile resultType update. profileId={} testId={} deactivatedCount={}",
+                            defaultProfile.getId(),
+                            saved.getId(),
+                            deactivatedCount
+                    );
                 }
             }
 
@@ -342,6 +358,7 @@ public class DiagnosticTestService {
             );
         }
     }
+
     private boolean requiresModality(TestType type) {
         return type == TestType.RADIOLOGY;
     }
