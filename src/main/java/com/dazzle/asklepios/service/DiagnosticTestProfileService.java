@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.DiagnosticTestNormalRange;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
+import com.dazzle.asklepios.repository.DiagnosticTestNormalRangeRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -31,13 +33,16 @@ public class DiagnosticTestProfileService {
 
     private final DiagnosticTestProfileRepository repository;
     private final DiagnosticTestRepository diagnosticTestRepository;
+    private final DiagnosticTestNormalRangeRepository normalRangeRepository;
 
     public DiagnosticTestProfileService(
             DiagnosticTestProfileRepository repository,
-            DiagnosticTestRepository diagnosticTestRepository
+            DiagnosticTestRepository diagnosticTestRepository,
+            DiagnosticTestNormalRangeRepository normalRangeRepository
     ) {
         this.repository = repository;
         this.diagnosticTestRepository = diagnosticTestRepository;
+        this.normalRangeRepository = normalRangeRepository;
     }
 
     public DiagnosticTestProfile create(DiagnosticTestProfile entity) {
@@ -101,7 +106,18 @@ public class DiagnosticTestProfileService {
                 entity.setIsActive(existing.getIsActive() != null ? existing.getIsActive() : true);
             }
 
+            // Check if resultType has changed
+            TestResultType existingResultType = existing.getResultType();
+            TestResultType newResultType = entity.getResultType();
+            
             DiagnosticTestProfile saved = repository.save(entity);
+
+            // If resultType changed, deactivate all associated normal ranges
+            if (!Objects.equals(existingResultType, newResultType)) {
+                LOG.debug("[TestProfile] UPDATE - resultType changed from {} to {}. Deactivating normal ranges for profileId={}",
+                        existingResultType, newResultType, id);
+                deactivateNormalRangesForProfile(id);
+            }
 
             LOG.info("[TestProfile] UPDATE - done. id={} testId={} isDefault={} isActive={}",
                     saved.getId(),
@@ -354,5 +370,24 @@ public class DiagnosticTestProfileService {
         return result;
     }
 
+    // -------------------------
+    // helpers
+    // -------------------------
+    private void deactivateNormalRangesForProfile(Long profileTestId) {
+        LOG.debug("[TestProfile] DEACTIVATE_NORMAL_RANGES - start. profileTestId={}", profileTestId);
+        
+        List<DiagnosticTestNormalRange> normalRanges = normalRangeRepository.findAllByProfileTest_Id(profileTestId);
+        LOG.debug("[TestProfile] DEACTIVATE_NORMAL_RANGES - found {} normal ranges to deactivate", normalRanges.size());
+        
+        normalRanges.forEach(range -> {
+            if (Boolean.TRUE.equals(range.getIsActive())) {
+                range.setIsActive(false);
+            }
+        });
+        
+        normalRangeRepository.saveAll(normalRanges);
+        LOG.info("[TestProfile] DEACTIVATE_NORMAL_RANGES - done. profileTestId={} deactivatedCount={}",
+                profileTestId, normalRanges.size());
+    }
 
 }
