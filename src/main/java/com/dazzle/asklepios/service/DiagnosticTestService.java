@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
-import com.dazzle.asklepios.repository.DiagnosticTestNormalRangeRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -28,18 +28,18 @@ public class DiagnosticTestService {
 
     private final DiagnosticTestRepository repository;
     private final DiagnosticTestProfileRepository profileRepository;
-    private final DiagnosticTestNormalRangeRepository normalRangeRepository;
+    private final DiagnosticTestNormalRangeService normalRangeService;
     private final BillingRuleReferenceService billingRuleReferenceService;
 
     public DiagnosticTestService(
             DiagnosticTestRepository repository,
             DiagnosticTestProfileRepository profileRepository,
-            DiagnosticTestNormalRangeRepository normalRangeRepository,
+            DiagnosticTestNormalRangeService normalRangeService,
             BillingRuleReferenceService billingRuleReferenceService
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
-        this.normalRangeRepository = normalRangeRepository;
+        this.normalRangeService = normalRangeService;
         this.billingRuleReferenceService = billingRuleReferenceService;
     }
     private void validateDefaultProfileFields(
@@ -175,12 +175,6 @@ public class DiagnosticTestService {
             DiagnosticTest saved = repository.save(existing);
 
             if (saved.getType() == TestType.LABORATORY) {
-                if (vm.defaultProfileResultType() != null) {
-                    validateDefaultProfileFields(
-                            vm.defaultProfileResultType(),
-                            vm.listOfValueId()
-                    );
-                }
                 DiagnosticTestProfile defaultProfile = profileRepository
                         .findFirstByTest_IdAndIsDefaultTrue(saved.getId())
                         .orElseGet(() -> {
@@ -203,18 +197,27 @@ public class DiagnosticTestService {
                             return profileRepository.save(created);
                         });
 
+                TestResultType targetResultType = vm.defaultProfileResultType() != null
+                        ? vm.defaultProfileResultType()
+                        : defaultProfile.getResultType();
+                TestResultType existingResultType = defaultProfile.getResultType();
+                String existingListOfValueId = defaultProfile.getListOfValueId();
+                String targetListOfValueId = resolveTargetListOfValueId(vm, defaultProfile, targetResultType);
+
+                validateDefaultProfileFields(targetResultType, targetListOfValueId);
+
                 boolean changed = false;
-                boolean resultTypeChanged = false;
+                boolean profileDefinitionChanged = false;
 
                 if (!saved.getName().equals(defaultProfile.getName())) {
                     defaultProfile.setName(saved.getName());
                     changed = true;
                 }
 
-                if (vm.defaultProfileResultType() != null && vm.defaultProfileResultType() != defaultProfile.getResultType()) {
-                    defaultProfile.setResultType(vm.defaultProfileResultType());
+                if (!Objects.equals(targetResultType, defaultProfile.getResultType())) {
+                    defaultProfile.setResultType(targetResultType);
                     changed = true;
-                    resultTypeChanged = true;
+                    profileDefinitionChanged = true;
                 }
 
                 if (vm.defaultProfileResultUnit() != null && !vm.defaultProfileResultUnit().equals(defaultProfile.getResultUnit())) {
@@ -222,9 +225,10 @@ public class DiagnosticTestService {
                     changed = true;
                 }
 
-                if (vm.listOfValueId() != null && !vm.listOfValueId().equals(defaultProfile.getListOfValueId())) {
-                    defaultProfile.setListOfValueId(vm.listOfValueId());
+                if (!Objects.equals(targetListOfValueId, defaultProfile.getListOfValueId())) {
+                    defaultProfile.setListOfValueId(targetListOfValueId);
                     changed = true;
+                    profileDefinitionChanged = true;
                 }
 
                 if (!Boolean.TRUE.equals(defaultProfile.getIsDefault())) {
@@ -241,10 +245,19 @@ public class DiagnosticTestService {
                     profileRepository.save(defaultProfile);
                 }
 
-                if (resultTypeChanged) {
-                    int deactivatedCount = normalRangeRepository.deactivateActiveByProfileTestId(defaultProfile.getId());
+                if (profileDefinitionChanged) {
+                    LOG.debug(
+                            "Default profile definition changed. profileId={} testId={} oldResultType={} newResultType={} oldLovId={} newLovId={}",
+                            defaultProfile.getId(),
+                            saved.getId(),
+                            existingResultType,
+                            defaultProfile.getResultType(),
+                            existingListOfValueId,
+                            defaultProfile.getListOfValueId()
+                    );
+                    int deactivatedCount = normalRangeService.deactivateAndResetByProfile(defaultProfile.getId(), defaultProfile.getResultType());
                     LOG.info(
-                            "Deactivated normal ranges after default profile resultType update. profileId={} testId={} deactivatedCount={}",
+                            "Reset normal ranges after default profile definition update. profileId={} testId={} deactivatedCount={}",
                             defaultProfile.getId(),
                             saved.getId(),
                             deactivatedCount
@@ -342,6 +355,22 @@ public class DiagnosticTestService {
     @Transactional(readOnly = true)
     public List<DiagnosticTest> findAllByIds(List<Long> ids) {
         return repository.findAllById(ids);
+    }
+
+    private String resolveTargetListOfValueId(
+            DiagnosticTestUpdateVM vm,
+            DiagnosticTestProfile defaultProfile,
+            TestResultType targetResultType
+    ) {
+        if (targetResultType != TestResultType.LOV) {
+            return null;
+        }
+
+        if (vm.listOfValueId() != null) {
+            return vm.listOfValueId();
+        }
+
+        return defaultProfile.getListOfValueId();
     }
 
 
