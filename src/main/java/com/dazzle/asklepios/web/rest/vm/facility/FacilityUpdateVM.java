@@ -34,7 +34,6 @@ public record FacilityUpdateVM(
         Long defaultLabDepartmentId,
         Long defaultRadDepartmentId,
         boolean approvingDiagnosticTestSettlePayment,
-        String vatRegistrationNumber,
         Long countryId,
         Long districtId,
         String streetAddress,

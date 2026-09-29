@@ -106,9 +106,6 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name="approving-diagnostic-test-settle-payment")
     private Boolean approvingDiagnosticTestSettlePayment = false;
 
-    @Column(name = "vat_registration_number", length = 50)
-    private String vatRegistrationNumber;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "country_id")
     private Country country;

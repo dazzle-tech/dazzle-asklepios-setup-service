@@ -33,7 +33,6 @@ public record FacilityCreateVM(
         Long defaultLabDepartmentId,
         Long defaultRadDepartmentId,
         boolean approvingDiagnosticTestSettlePayment,
-        String vatRegistrationNumber,
         Long countryId,
         Long districtId,
         String streetAddress,

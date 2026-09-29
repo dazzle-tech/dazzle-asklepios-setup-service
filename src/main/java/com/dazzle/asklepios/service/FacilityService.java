@@ -77,7 +77,6 @@ public class FacilityService {
         Department defaultRadDepartment = vm.defaultRadDepartmentId()!=null? getDepartment(vm.defaultRadDepartmentId()):null;
         facility.setDefaultRadDepartment(defaultRadDepartment);
         facility.setApprovingDiagnosticTestSettlePayment(vm.approvingDiagnosticTestSettlePayment());
-        facility.setVatRegistrationNumber(vm.vatRegistrationNumber());
         facility.setCountry(resolveCountry(vm.countryId()));
         facility.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
         facility.setStreetAddress(vm.streetAddress());
@@ -134,7 +133,6 @@ public class FacilityService {
                     existing.setDefaultRadDepartment(null);
                 }
 
-                existing.setVatRegistrationNumber(vm.vatRegistrationNumber());
                 existing.setCountry(resolveCountry(vm.countryId()));
                 existing.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
                 existing.setStreetAddress(vm.streetAddress());
