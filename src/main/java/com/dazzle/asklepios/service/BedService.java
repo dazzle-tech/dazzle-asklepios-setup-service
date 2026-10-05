@@ -267,6 +267,11 @@ public class BedService {
                         "notfound"
                 ));
 
+        if (existingBed.getStatus() == BedStatus.IN_CLEANING) {
+            LOG.info("[MARK AS IN_CLEANING] Bed id={} already IN_CLEANING, skipping", id);
+            return existingBed;
+        }
+
         if (existingBed.getStatus() != BedStatus.OCCUPIED) {
             LOG.warn(
                     "[MARK AS IN_CLEANING] Failed: Bed id={} currentStatus={} is not OCCUPIED",

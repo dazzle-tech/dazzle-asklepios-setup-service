@@ -1,9 +1,13 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Country;
+import com.dazzle.asklepios.domain.CountryDistrict;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
+import com.dazzle.asklepios.repository.CountryDistrictRepository;
+import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -35,14 +39,20 @@ public class FacilityService {
     private final FacilityRepository facilityRepository;
     private final DuplicationCandidateRepository duplicationCandidateRepository;
     private final DepartmentsRepository departmentsRepository;
+    private final CountryRepository countryRepository;
+    private final CountryDistrictRepository countryDistrictRepository;
 
     public FacilityService(
             FacilityRepository facilityRepository,
             DuplicationCandidateRepository duplicationCandidateRepository,
-            DepartmentsRepository departmentsRepository) {
+            DepartmentsRepository departmentsRepository,
+            CountryRepository countryRepository,
+            CountryDistrictRepository countryDistrictRepository) {
         this.facilityRepository = facilityRepository;
         this.duplicationCandidateRepository = duplicationCandidateRepository;
         this.departmentsRepository = departmentsRepository;
+        this.countryRepository = countryRepository;
+        this.countryDistrictRepository = countryDistrictRepository;
     }
 
     public FacilityResponseVM create(FacilityCreateVM vm) {
@@ -67,12 +77,16 @@ public class FacilityService {
         Department defaultRadDepartment = vm.defaultRadDepartmentId()!=null? getDepartment(vm.defaultRadDepartmentId()):null;
         facility.setDefaultRadDepartment(defaultRadDepartment);
         facility.setApprovingDiagnosticTestSettlePayment(vm.approvingDiagnosticTestSettlePayment());
+        facility.setCountry(resolveCountry(vm.countryId()));
+        facility.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
+        facility.setStreetAddress(vm.streetAddress());
+        facility.setPostalCode(vm.postalCode());
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
 
     }
 
-    public Optional<Facility> update(Long id, FacilityUpdateVM vm) {
+    public Optional<FacilityResponseVM> update(Long id, FacilityUpdateVM vm) {
         LOG.debug("Request to update Facility id={} with {}", id, vm);
         try {
             return facilityRepository.findById(id).map(existing -> {
@@ -119,9 +133,14 @@ public class FacilityService {
                     existing.setDefaultRadDepartment(null);
                 }
 
+                existing.setCountry(resolveCountry(vm.countryId()));
+                existing.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
+                existing.setStreetAddress(vm.streetAddress());
+                existing.setPostalCode(vm.postalCode());
+
                 Facility updated = facilityRepository.save(existing);
                 LOG.debug("Facility updated successfully: {}", updated);
-                return updated;
+                return FacilityResponseVM.ofEntity(updated);
             });
         } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             throw handleConstraintViolation(constraintException);
@@ -232,5 +251,39 @@ public class FacilityService {
     private Department getDepartment(Long departmentId) {
         return departmentsRepository.findById(departmentId)
                 .orElseThrow(() -> new BadRequestAlertException("department.notfound", "Facility", "Department not found: " + departmentId));
+    }
+
+    private Country resolveCountry(Long countryId) {
+        if (countryId == null) {
+            return null;
+        }
+        return countryRepository.findById(countryId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "country.notfound",
+                        "Facility",
+                        "Country not found: " + countryId
+                ));
+    }
+
+    private CountryDistrict resolveDistrict(Long districtId, Long countryId) {
+        if (districtId == null) {
+            return null;
+        }
+        CountryDistrict district = countryDistrictRepository.findById(districtId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "district.notfound",
+                        "Facility",
+                        "City/District not found: " + districtId
+                ));
+        if (countryId != null
+                && district.getCountry() != null
+                && !countryId.equals(district.getCountry().getId())) {
+            throw new BadRequestAlertException(
+                    "district.countryMismatch",
+                    "Facility",
+                    "Selected city/district does not belong to the selected country"
+            );
+        }
+        return district;
     }
 }

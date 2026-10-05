@@ -3,7 +3,6 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.Condition;
 import com.dazzle.asklepios.domain.enumeration.NormalRangeType;
-import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,7 +13,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.NotNull;
@@ -77,6 +75,14 @@ public class DiagnosticTestNormalRange {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "profile_test_id", nullable = false)
     private DiagnosticTestProfile profileTest;
+
+    @Column(name = "profile_result_type", length = 50)
+    private String profileResultType;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 
     @Transient
     private List<String> lovKeys;

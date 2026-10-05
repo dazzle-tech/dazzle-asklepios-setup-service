@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -91,6 +92,10 @@ public class DiagnosticTestNormalRangeService {
         }
         entity.setProfileTest(profile);
         entity.setTest(profile.getTest());
+        entity.setProfileResultType(profile.getResultType() != null ? profile.getResultType().name() : null);
+        if (entity.getIsActive() == null) {
+            entity.setIsActive(true);
+        }
 
         DiagnosticTestNormalRange saved = rangeRepository.save(entity);
         persistLovsIfNeeded(saved, profile.getResultType(), entity.getLovKeys());
@@ -148,6 +153,10 @@ public class DiagnosticTestNormalRangeService {
             entity.setId(id);
             entity.setProfileTest(profile);
             entity.setTest(profile.getTest());
+            entity.setProfileResultType(profile.getResultType() != null ? profile.getResultType().name() : null);
+            if (entity.getIsActive() == null) {
+                entity.setIsActive(existing.getIsActive() != null ? existing.getIsActive() : true);
+            }
 
             DiagnosticTestNormalRange updated = rangeRepository.save(entity);
 
@@ -252,16 +261,96 @@ public class DiagnosticTestNormalRangeService {
 
 
     /**
-     * Deletes a normal range and its LOV rows.
+     * Toggles active status for a normal range.
      */
-    public void delete(Long id) {
-        LOG.debug("[NormalRange] DELETE - start. id={}", id);
+    public Optional<DiagnosticTestNormalRange> toggleActive(Long id) {
+        LOG.debug("[NormalRange] TOGGLE_ACTIVE - start. id={}", id);
 
-        lovRepository.deleteByNormalRangeId(id);
-        LOG.debug("[NormalRange] DELETE - deleted LOVs. id={}", id);
+        return rangeRepository.findById(id)
+                .map(range -> {
+                    boolean nextState = !Boolean.TRUE.equals(range.getIsActive());
+                    range.setIsActive(nextState);
+                    DiagnosticTestNormalRange updated = rangeRepository.save(range);
+                    LOG.info("[NormalRange] TOGGLE_ACTIVE - done. id={} isActive={}", id, nextState);
+                    return updated;
+                });
+    }
 
-        rangeRepository.deleteById(id);
-        LOG.info("[NormalRange] DELETE - done. id={}", id);
+    /**
+     * Deactivates all normal ranges for a profile and clears value-specific fields
+     * while preserving demographic and condition metadata.
+     */
+    public int deactivateAndResetByProfile(Long profileTestId, TestResultType profileResultType) {
+        LOG.debug("[NormalRange] RESET_BY_PROFILE - start. profileTestId={} profileResultType={}", profileTestId, profileResultType);
+
+        List<DiagnosticTestNormalRange> normalRanges = rangeRepository.findAllByProfileTest_Id(profileTestId);
+        if (normalRanges.isEmpty()) {
+            LOG.info("[NormalRange] RESET_BY_PROFILE - no ranges found. profileTestId={}", profileTestId);
+            return 0;
+        }
+
+        int deletedLovCount = lovRepository.deleteAllByProfileTestId(profileTestId);
+        String profileResultTypeValue = profileResultType != null ? profileResultType.name() : null;
+        int resetCount = 0;
+
+        for (DiagnosticTestNormalRange range : normalRanges) {
+            boolean changed = false;
+
+            if (!Boolean.FALSE.equals(range.getIsActive())) {
+                range.setIsActive(false);
+                changed = true;
+            }
+            if (!Objects.equals(range.getProfileResultType(), profileResultTypeValue)) {
+                range.setProfileResultType(profileResultTypeValue);
+                changed = true;
+            }
+            if (range.getResultText() != null) {
+                range.setResultText(null);
+                changed = true;
+            }
+            if (range.getResultLov() != null) {
+                range.setResultLov(null);
+                changed = true;
+            }
+            if (range.getNormalRangeType() != null) {
+                range.setNormalRangeType(null);
+                changed = true;
+            }
+            if (range.getRangeFrom() != null) {
+                range.setRangeFrom(null);
+                changed = true;
+            }
+            if (range.getRangeTo() != null) {
+                range.setRangeTo(null);
+                changed = true;
+            }
+            if (!Boolean.FALSE.equals(range.getCriticalValue())) {
+                range.setCriticalValue(false);
+                changed = true;
+            }
+            if (range.getCriticalValueLessThan() != null) {
+                range.setCriticalValueLessThan(null);
+                changed = true;
+            }
+            if (range.getCriticalValueMoreThan() != null) {
+                range.setCriticalValueMoreThan(null);
+                changed = true;
+            }
+
+            if (changed) {
+                resetCount++;
+            }
+        }
+
+        rangeRepository.saveAll(normalRanges);
+        LOG.info(
+                "[NormalRange] RESET_BY_PROFILE - done. profileTestId={} totalRanges={} rangesAffected={} deletedLovCount={}",
+                profileTestId,
+                normalRanges.size(),
+                resetCount,
+                deletedLovCount
+        );
+        return resetCount;
     }
 
     /**

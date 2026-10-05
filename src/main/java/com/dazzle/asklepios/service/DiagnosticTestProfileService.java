@@ -31,13 +31,16 @@ public class DiagnosticTestProfileService {
 
     private final DiagnosticTestProfileRepository repository;
     private final DiagnosticTestRepository diagnosticTestRepository;
+    private final DiagnosticTestNormalRangeService normalRangeService;
 
     public DiagnosticTestProfileService(
             DiagnosticTestProfileRepository repository,
-            DiagnosticTestRepository diagnosticTestRepository
+            DiagnosticTestRepository diagnosticTestRepository,
+            DiagnosticTestNormalRangeService normalRangeService
     ) {
         this.repository = repository;
         this.diagnosticTestRepository = diagnosticTestRepository;
+        this.normalRangeService = normalRangeService;
     }
 
     public DiagnosticTestProfile create(DiagnosticTestProfile entity) {
@@ -101,7 +104,28 @@ public class DiagnosticTestProfileService {
                 entity.setIsActive(existing.getIsActive() != null ? existing.getIsActive() : true);
             }
 
+            TestResultType existingResultType = existing.getResultType();
+            TestResultType newResultType = entity.getResultType();
+            String existingListOfValueId = existing.getListOfValueId();
+            String newListOfValueId = entity.getListOfValueId();
+            boolean resultTypeChanged = !Objects.equals(existingResultType, newResultType);
+            boolean listOfValueChanged = !Objects.equals(existingListOfValueId, newListOfValueId);
+            
             DiagnosticTestProfile saved = repository.save(entity);
+
+            if (resultTypeChanged || listOfValueChanged) {
+                LOG.debug(
+                        "[TestProfile] UPDATE - profile definition changed. profileId={} resultTypeChanged={} oldResultType={} newResultType={} listOfValueChanged={} oldLovId={} newLovId={}",
+                        id,
+                        resultTypeChanged,
+                        existingResultType,
+                        newResultType,
+                        listOfValueChanged,
+                        existingListOfValueId,
+                        newListOfValueId
+                );
+                normalRangeService.deactivateAndResetByProfile(saved.getId(), saved.getResultType());
+            }
 
             LOG.info("[TestProfile] UPDATE - done. id={} testId={} isDefault={} isActive={}",
                     saved.getId(),

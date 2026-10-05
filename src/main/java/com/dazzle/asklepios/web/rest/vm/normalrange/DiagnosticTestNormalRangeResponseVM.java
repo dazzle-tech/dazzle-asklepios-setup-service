@@ -29,7 +29,7 @@ public record DiagnosticTestNormalRangeResponseVM(
         Double criticalValueLessThan,
         Double criticalValueMoreThan,
         Long profileTestId,
-
+        Boolean isActive,
         List<String> lovKeys
 ) {
     public static DiagnosticTestNormalRangeResponseVM fromEntity(DiagnosticTestNormalRange e) {
@@ -52,6 +52,7 @@ public record DiagnosticTestNormalRangeResponseVM(
                 .criticalValueLessThan(e.getCriticalValueLessThan())
                 .criticalValueMoreThan(e.getCriticalValueMoreThan())
                 .profileTestId(e.getProfileTest() != null ? e.getProfileTest().getId() : null)
+                .isActive(e.getIsActive())
                 .lovKeys(e.getLovKeys())
                 .build();
     }

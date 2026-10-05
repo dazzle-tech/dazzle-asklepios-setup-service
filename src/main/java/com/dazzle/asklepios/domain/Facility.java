@@ -105,4 +105,18 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
 
     @Column(name="approving-diagnostic-test-settle-payment")
     private Boolean approvingDiagnosticTestSettlePayment = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "country_id")
+    private Country country;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "district_id")
+    private CountryDistrict district;
+
+    @Column(name = "street_address", length = 255)
+    private String streetAddress;
+
+    @Column(name = "postal_code", length = 50)
+    private String postalCode;
 }

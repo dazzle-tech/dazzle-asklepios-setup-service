@@ -29,6 +29,7 @@ public record DiagnosticTestNormalRangeUpdateVM(
         Boolean criticalValue,
         Double criticalValueLessThan,
         Double criticalValueMoreThan,
+        Boolean isActive,
         @NotNull Long profileTestId,
         List<String> lovKeys
 ) {
@@ -50,6 +51,7 @@ public record DiagnosticTestNormalRangeUpdateVM(
                 .criticalValue(criticalValue)
                 .criticalValueLessThan(criticalValueLessThan)
                 .criticalValueMoreThan(criticalValueMoreThan)
+                .isActive(isActive)
                 .profileTest(DiagnosticTestProfile.builder().id(profileTestId).build())
                 .lovKeys(lovKeys)
                 .build();

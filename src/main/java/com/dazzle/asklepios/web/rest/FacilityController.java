@@ -75,7 +75,6 @@ public class FacilityController {
         LOG.debug("REST request to update Facility : {}, {}", id, facilityVM);
 
         return facilityService.update(id, facilityVM)
-                .map(FacilityResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

@@ -52,6 +52,7 @@ public class ReportTemplateController {
     // الباقي مثل ما هو
     @GetMapping("/report-template")
     public ResponseEntity<List<ReportTemplateResponseVM>> list(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list ReportTemplate pageable={}", pageable);
         Page<ReportTemplate> page = service.findAll(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -65,6 +66,7 @@ public class ReportTemplateController {
 
     @GetMapping("/report-template/active")
     public ResponseEntity<List<ReportTemplateResponseVM>> listActive(@ParameterObject Pageable pageable) {
+        LOG.debug("REST listActive ReportTemplate pageable={}", pageable);
         Page<ReportTemplate> page = service.findAllActive(pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -78,6 +80,7 @@ public class ReportTemplateController {
 
     @GetMapping("/report-template/{id}")
     public ResponseEntity<ReportTemplateResponseVM> get(@PathVariable Long id) {
+        LOG.debug("REST get ReportTemplate id={}", id);
         return service.findOne(id)
                 .map(ReportTemplateResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -89,6 +92,7 @@ public class ReportTemplateController {
             @PathVariable String name,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST findByName ReportTemplate name={} pageable={}", name, pageable);
         Page<ReportTemplate> page = service.findByName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -102,6 +106,7 @@ public class ReportTemplateController {
 
     @PatchMapping("/report-template/{id}/toggle-active")
     public ResponseEntity<ReportTemplateResponseVM> toggleActive(@PathVariable Long id) {
+        LOG.debug("REST toggleActive ReportTemplate id={}", id);
         return service.toggleIsActive(id)
                 .map(ReportTemplateResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -110,6 +115,7 @@ public class ReportTemplateController {
 
     @DeleteMapping("/report-template/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        LOG.debug("REST delete ReportTemplate id={}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
