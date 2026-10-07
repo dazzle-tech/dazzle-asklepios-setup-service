@@ -234,6 +234,16 @@ public class RoomController {
         return ResponseEntity.ok(room);
     }
 
+    @GetMapping("/room/internalJob/{id}")
+    public ResponseEntity<Room> findByIdInternal(
+            @PathVariable("id") @NotNull Long roomId
+    ) {
+        LOG.debug("REST find Room internal by id={}", roomId);
+
+        Room room = roomService.findById(roomId);
+        return ResponseEntity.ok(room);
+    }
+
     @GetMapping("/search/by-name/{name}")
     public ResponseEntity<List<Room>> findByName(
             @PathVariable @NotNull String name,

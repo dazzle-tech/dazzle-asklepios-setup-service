@@ -126,6 +126,7 @@ public enum Screen {
 
     // Clinics Management
     PATIENTS_VISITS_LIST,
+    OPD_VISIT_LIST,
     REVIEW_RESULTS,
     TESTS_RESULTS,
 
