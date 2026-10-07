@@ -160,6 +160,15 @@ public class PractitionerController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/practitioner/internalJob/{id}")
+    public ResponseEntity<PractitionerResponseVM> getPractitionerInternal(@PathVariable Long id) {
+        LOG.debug("REST get Practitioner internal id={}", id);
+        return practitionerService.findOne(id)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 
     /**
      * Search practitioner by name (case-insensitive).
