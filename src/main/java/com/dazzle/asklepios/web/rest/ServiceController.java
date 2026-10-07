@@ -260,6 +260,16 @@ public class ServiceController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/service/internalJob/{id}")
+    public ResponseEntity<ServiceResponseVM> getByIdInternal(@PathVariable Long id) {
+        LOG.debug("REST get Service internal by id={}", id);
+
+        return serviceService.findOne(id)
+                .map(ServiceResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/service/bulk")
     public ResponseEntity<List<ServiceResponseVM>> getBulkByIds(
             @RequestParam List<Long> ids
