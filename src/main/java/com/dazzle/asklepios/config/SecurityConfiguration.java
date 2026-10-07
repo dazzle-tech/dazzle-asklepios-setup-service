@@ -41,6 +41,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/facility", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/languages", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/system-config","GET")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/api/setup/organization-definition/internalJob", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/department/internalJob/*", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/user-department/department/internalJob/**", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/practitioner/internalJob/*", "GET")).permitAll()
