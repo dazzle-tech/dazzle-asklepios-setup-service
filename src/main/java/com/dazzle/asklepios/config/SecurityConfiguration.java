@@ -49,6 +49,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/room/internalJob/*", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/service/internalJob/*", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/catalog/internalJob/*", "GET")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/api/setup/country/internalJob/*", "GET")).permitAll()
                                 .requestMatchers(new AntPathRequestMatcher("/api/setup/diagnostic-test/internalJob/*", "GET")).permitAll()
                                 .requestMatchers(mvc.pattern("/setup/api/**")).permitAll()
                                 .requestMatchers(mvc.pattern("/api/admin/**")).hasAuthority(AuthoritiesConstants.ADMIN)
