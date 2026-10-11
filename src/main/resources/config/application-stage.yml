@@ -69,6 +69,10 @@ setup:
     exposed-headers: '*'
     allow-credentials: true
     max-age: 1800
+  portal:
+    # Shared secret for GET /api/setup/country/external/active.
+    # Callers send it in the X-Portal-Secret header. Set PATIENT_PORTAL_SECRET in each environment.
+    secret: ${PATIENT_PORTAL_SECRET:}
   security:
     authentication:
       jwt:

@@ -60,6 +60,10 @@ server:
     min-response-size: 1024
 
 setup:
+  portal:
+    # Shared secret for GET /api/setup/country/external/active.
+    # Callers send it in the X-Portal-Secret header. Set PATIENT_PORTAL_SECRET in each environment.
+    secret: ${PATIENT_PORTAL_SECRET:}
   security:
     authentication:
       jwt:
