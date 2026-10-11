@@ -233,4 +233,10 @@ public class CountryController {
         Country country = countryService.findById(id);
         return ResponseEntity.ok(country);
     }
+
+    @GetMapping("/country/internalJob/{id}")
+    public ResponseEntity<CountryResponseVM> getCountryInternal(@PathVariable Long id) {
+        LOG.debug("REST get country internal id={}", id);
+        return ResponseEntity.ok(CountryResponseVM.ofEntity(countryService.findById(id)));
+    }
 }
