@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.PractitionerDepartment;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
@@ -544,5 +545,25 @@ public class PractitionerService {
         }
 
         return Optional.empty();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findByJobRole(JobRole jobRole, Pageable pageable) {
+        return practitionerRepository.findByJobRole(jobRole, pageable);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findLinkedToUser(Pageable pageable) {
+        return practitionerRepository.findByUserIsNotNull(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findNotLinkedToUser(Pageable pageable) {
+        return practitionerRepository.findByUserIsNull(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findByStatus(boolean isActive, Pageable pageable) {
+        return practitionerRepository.findByIsActive(isActive, pageable);
     }
 }
