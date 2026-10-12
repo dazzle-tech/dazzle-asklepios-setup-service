@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.BillingRule;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import com.dazzle.asklepios.repository.BillingRuleRepository;
 import com.dazzle.asklepios.service.dto.BillingRuleDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -69,6 +70,7 @@ public class BillingRuleService {
                         .name(normalizeName(dto.name()))
                         .billingItemType(dto.billingItemType())
                         .billingTrigger(dto.billingTrigger())
+                        .paymentType(dto.paymentType())
                         .isDefault(Boolean.TRUE.equals(dto.isDefault()))
                         .build();
 
@@ -185,6 +187,10 @@ public class BillingRuleService {
 
         existing.setBillingTrigger(
                 dto.billingTrigger()
+        );
+
+        existing.setPaymentType(
+                dto.paymentType()
         );
 
         existing.setIsDefault(
@@ -515,6 +521,56 @@ public class BillingRuleService {
                     "trigger.required"
             );
         }
+
+        if (dto.paymentType() == null) {
+            throw new BadRequestAlertException(
+                    "Payment type is required",
+                    ENTITY_NAME,
+                    "paymentType.required"
+            );
+        }
+
+        validateDiagnosticTrigger(
+                dto.billingItemType(),
+                dto.billingTrigger()
+        );
+    }
+
+    private void validateDiagnosticTrigger(
+            BillingItemTypes billingItemType,
+            BillingTrigger billingTrigger
+    ) {
+        boolean laboratoryOrRadiology =
+                billingItemType == BillingItemTypes.LABORATORY
+                        || billingItemType == BillingItemTypes.RADIOLOGY;
+
+        if (billingTrigger == BillingTrigger.COLLECT_SAMPLE
+                && billingItemType != BillingItemTypes.LABORATORY) {
+            throw new BadRequestAlertException(
+                    "Collect Sample is available for laboratory rules only",
+                    ENTITY_NAME,
+                    "trigger.serviceType"
+            );
+        }
+
+        if (isDiagnosticWorkflowTrigger(billingTrigger)
+                && !laboratoryOrRadiology) {
+            throw new BadRequestAlertException(
+                    "Submit Order, Collect Sample, Accept Order, and Approved "
+                            + "are available for laboratory and radiology rules only",
+                    ENTITY_NAME,
+                    "trigger.serviceType"
+            );
+        }
+    }
+
+    private boolean isDiagnosticWorkflowTrigger(
+            BillingTrigger billingTrigger
+    ) {
+        return billingTrigger == BillingTrigger.SUBMIT_ORDER
+                || billingTrigger == BillingTrigger.COLLECT_SAMPLE
+                || billingTrigger == BillingTrigger.ACCEPT_ORDER
+                || billingTrigger == BillingTrigger.APPROVED;
     }
 
     private void validateUniqueName(
