@@ -118,6 +118,29 @@ public class CountryController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    /**
+     * Active countries for a system caller. Authentication is the {@code X-Portal-Secret} header
+     * ({@code PATIENT_PORTAL_SECRET}), checked by {@link com.dazzle.asklepios.security.CountryListSecretFilter},
+     * not a bearer token.
+     */
+    @GetMapping("/country/external/active")
+    public ResponseEntity<List<CountryResponseVM>> getActiveCountriesForExternal(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Countries for external caller pageable={}", pageable);
+
+        Page<Country> page = countryService.findActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
 
     @GetMapping("/country/by-name/{name}")
     public ResponseEntity<List<CountryResponseVM>> getByName(
@@ -209,5 +232,11 @@ public class CountryController {
         LOG.debug("REST get country id={}", id);
         Country country = countryService.findById(id);
         return ResponseEntity.ok(country);
+    }
+
+    @GetMapping("/country/internalJob/{id}")
+    public ResponseEntity<CountryResponseVM> getCountryInternal(@PathVariable Long id) {
+        LOG.debug("REST get country internal id={}", id);
+        return ResponseEntity.ok(CountryResponseVM.ofEntity(countryService.findById(id)));
     }
 }

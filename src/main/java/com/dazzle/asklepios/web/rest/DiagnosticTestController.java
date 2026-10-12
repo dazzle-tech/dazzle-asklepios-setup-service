@@ -202,6 +202,16 @@ public class DiagnosticTestController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/diagnostic-test/internalJob/{id}")
+    public ResponseEntity<DiagnosticTestResponseVM> getInternal(@PathVariable Long id) {
+        LOG.debug("REST request to get DiagnosticTest internal id={}", id);
+
+        return service.findOne(id)
+                .map(this::enrichWithDefaultProfile)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/diagnostic-test/{id}/toggle-active")
     public ResponseEntity<DiagnosticTestResponseVM> toggleActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);

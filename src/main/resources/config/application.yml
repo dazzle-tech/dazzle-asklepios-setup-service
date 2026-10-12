@@ -199,4 +199,8 @@ setup:
         description: "Main server"
       - url: "https://backup.asklepios.com/api"
         description: "Backup server"
+  portal:
+    # Shared secret for GET /api/setup/country/external/active.
+    # Callers send it in the X-Portal-Secret header. Set PATIENT_PORTAL_SECRET in each environment.
+    secret: ${PATIENT_PORTAL_SECRET:}
   security:

@@ -86,6 +86,18 @@ public class OrganizationDefinitionController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/organization-definition/internalJob")
+    public ResponseEntity<List<OrganizationDefinitionResponseVM>> getAllOrganizationDefinitionsInternal() {
+        LOG.debug("REST get all OrganizationDefinitions internal");
+
+        List<OrganizationDefinitionResponseVM> result = organizationDefinitionService.findAll()
+                .stream()
+                .map(OrganizationDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(result);
+    }
+
     /**
      * {@code GET /organization-definition/{id}} : Get a single OrganizationDefinition by id.
      */
