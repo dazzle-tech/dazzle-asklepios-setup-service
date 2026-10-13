@@ -162,7 +162,7 @@ public class PriceListItemDashboardService {
         BigDecimal minPrice = null;
         BigDecimal maxPrice = null;
         int presentInCount = 0;
-        PriceListSetupItem sample = matches.getFirst();
+        PriceListSetupItem sample = matches.get(0);
 
         for (PriceListSetup priceList : priceLists) {
             List<ItemEntryVM> entries = entriesByListId.getOrDefault(priceList.getId(), List.of()).stream()
