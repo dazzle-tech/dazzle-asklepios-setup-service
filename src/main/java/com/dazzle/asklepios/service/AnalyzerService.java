@@ -40,6 +40,7 @@ public class AnalyzerService {
         Analyzer entity = Analyzer.builder()
                 .code(incoming.getCode())
                 .type(incoming.getType())
+                .facility(incoming.getFacility())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()) || incoming.getIsActive() == null)
                 .build();
         try {
@@ -49,19 +50,9 @@ public class AnalyzerService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage());
-            String lower = message != null ? message.toLowerCase() : "";
             LOG.error("Database constraint violation while creating analyzer: {}", message, ex);
-            if (lower.contains("unique") && lower.contains("code") ||
-                    lower.contains("duplicate") && lower.contains("code")) {
-                throw new BadRequestAlertException(
-                        "An analyzer with the same code already exists.",
-                        "analyzer",
-                        "unique.code"
-                );
-            }
-
             throw new BadRequestAlertException(
-                    "Database constraint violated while creating analyzer (check unique code or required fields).",
+                    "Database constraint violated while creating analyzer (check required fields).",
                     "analyzer",
                     "db.constraint"
             );
@@ -79,6 +70,7 @@ public class AnalyzerService {
                 .orElseThrow(() -> new NotFoundAlertException("Analyzer not found with id " + id, "analyzer", "notfound"));
         existing.setCode(incoming.getCode());
         existing.setType(incoming.getType());
+        existing.setFacility(incoming.getFacility());
         existing.setIsActive(incoming.getIsActive());
         existing.setLastModifiedDate(Instant.now());
         existing.setLastModifiedBy(incoming.getLastModifiedBy());
@@ -89,21 +81,9 @@ public class AnalyzerService {
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
             Throwable root = getRootCause(ex);
             String message = (root != null ? root.getMessage() : ex.getMessage());
-            String lower = message != null ? message.toLowerCase() : "";
-
             LOG.error("Database constraint violation while updating analyzer: {}", message, ex);
-
-            if (lower.contains("unique") && lower.contains("code") ||
-                    lower.contains("duplicate") && lower.contains("code")) {
-                throw new BadRequestAlertException(
-                        "Another analyzer with the same code already exists.",
-                        "analyzer",
-                        "unique.code"
-                );
-            }
-
             throw new BadRequestAlertException(
-                    "Database constraint violated while updating analyzer (check unique code or required fields).",
+                    "Database constraint violated while updating analyzer (check required fields).",
                     "analyzer",
                     "db.constraint"
             );
@@ -132,6 +112,12 @@ public class AnalyzerService {
     public Page<Analyzer> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
         LOG.debug("Fetching Analyzers by code like='{}' pageable={}", code, pageable);
         return analyzerRepository.findByCodeContainingIgnoreCase(code, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Analyzer> findByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching Analyzers by facilityId={} pageable={}", facilityId, pageable);
+        return analyzerRepository.findByFacility_Id(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Analyzer;
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.service.AnalyzerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.analyzer.AnalyzerCreateVM;
@@ -51,6 +52,7 @@ public class AnalyzerController {
         Analyzer toCreate = Analyzer.builder()
                 .code(vm.code())
                 .type(vm.type())
+                .facility(Facility.builder().id(vm.facilityId()).build())
                 .isActive(vm.isActive() == null || Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
@@ -73,6 +75,7 @@ public class AnalyzerController {
         Analyzer patch = new Analyzer();
         patch.setCode(vm.code());
         patch.setType(vm.type());
+        patch.setFacility(Facility.builder().id(vm.facilityId()).build());
         patch.setIsActive(vm.isActive());
 
         return analyzerService.update(id, patch)
@@ -107,6 +110,24 @@ public class AnalyzerController {
     ) {
         LOG.debug("REST list Analyzers by type={} pageable={}", type, pageable);
         Page<Analyzer> page = analyzerService.findByType(type, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<AnalyzerResponseVM> body = page.getContent()
+                .stream()
+                .map(AnalyzerResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/analyzer/by-facility/{facilityId}")
+    public ResponseEntity<List<AnalyzerResponseVM>> getByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Analyzers by facilityId={} pageable={}", facilityId, pageable);
+        Page<Analyzer> page = analyzerService.findByFacilityId(facilityId, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

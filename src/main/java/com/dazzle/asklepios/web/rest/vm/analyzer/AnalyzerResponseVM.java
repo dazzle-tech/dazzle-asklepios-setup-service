@@ -8,6 +8,7 @@ public record AnalyzerResponseVM(
         Long id,
         String code,
         String type,
+        Long facilityId,
         Boolean isActive
 ) implements Serializable {
 
@@ -16,6 +17,7 @@ public record AnalyzerResponseVM(
                 analyzer.getId(),
                 analyzer.getCode(),
                 analyzer.getType(),
+                analyzer.getFacility() != null ? analyzer.getFacility().getId() : null,
                 analyzer.getIsActive()
         );
     }

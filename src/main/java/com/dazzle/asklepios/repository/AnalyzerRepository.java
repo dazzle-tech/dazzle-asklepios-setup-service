@@ -13,4 +13,6 @@ public interface AnalyzerRepository extends JpaRepository<Analyzer, Long> {
     Page<Analyzer> findByCodeContainingIgnoreCase(String code, Pageable pageable);
 
     Page<Analyzer> findByIsActiveTrue(Pageable pageable);
+
+    Page<Analyzer> findByFacility_Id(Long facilityId, Pageable pageable);
 }
