@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,5 +71,13 @@ public interface PractitionersRepository extends JpaRepository<Practitioner, Lon
     Optional<Practitioner> findByUser_LoginIgnoreCase(String login);
 
     Page<Practitioner> findByIdInAndIsActiveTrue(List<Long> ids, Pageable pageable);
+
+    Page<Practitioner> findByJobRole(JobRole jobRole, Pageable pageable);
+
+    Page<Practitioner> findByUserIsNotNull(Pageable pageable);
+
+    Page<Practitioner> findByUserIsNull(Pageable pageable);
+
+    Page<Practitioner> findByIsActive(boolean isActive, Pageable pageable);
 }
 

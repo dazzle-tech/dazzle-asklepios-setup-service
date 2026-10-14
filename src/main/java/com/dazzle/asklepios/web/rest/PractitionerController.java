@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Practitioner;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.PractitionerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -431,6 +432,69 @@ public class PractitionerController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/practitioner/by-linked-user")
+    public ResponseEntity<List<PractitionerResponseVM>> getByLinkedUser(
+            @RequestParam boolean linked,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by linked user linked={} pageable={}",
+                linked,
+                pageable
+        );
+        Page<Practitioner> page = linked
+                ? practitionerService.findLinkedToUser(pageable)
+                : practitionerService.findNotLinkedToUser(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-status")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionersByStatus(
+            @RequestParam boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by status isActive={} pageable={}",
+                isActive,
+                pageable
+        );
+        Page<Practitioner> page = practitionerService.findByStatus(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-jobRole/{jobRole}")
+    public ResponseEntity<List<PractitionerResponseVM>> getByJobRole(
+            @PathVariable JobRole jobRole,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Practitioners by jobRole={} page={}", jobRole, pageable);
+        Page<Practitioner> page = practitionerService.findByJobRole(jobRole, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
 }
