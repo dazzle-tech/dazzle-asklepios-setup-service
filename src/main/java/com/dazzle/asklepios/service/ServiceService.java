@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.ServiceItems;
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
 import com.dazzle.asklepios.repository.ServiceItemsRepository;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -246,6 +248,24 @@ public class ServiceService {
     public Page<ServiceSetup> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
         LOG.debug("Fetching Services by code='{}' (no facility filter)", code);
         return serviceRepository.findByCodeContainingIgnoreCase(code, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByAbbreviationContainingIgnoreCase(String abbreviation, Pageable pageable) {
+        LOG.debug("Fetching Services by abbreviation='{}' (no facility filter)", abbreviation);
+        return serviceRepository.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByPrice(BigDecimal price, Pageable pageable) {
+        LOG.debug("Fetching Services by price={} (no facility filter)", price);
+        return serviceRepository.findByPrice(price, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByCurrency(Currency currency, Pageable pageable) {
+        LOG.debug("Fetching Services by currency={} (no facility filter)", currency);
+        return serviceRepository.findByCurrency(currency, pageable);
     }
 
 
