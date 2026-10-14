@@ -171,6 +171,54 @@ public class DiagnosticTestController {
         );
     }
 
+    @GetMapping("/diagnostic-test/by-short-name/{shortName}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByShortName(
+            @PathVariable String shortName,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to search DiagnosticTests by shortName='{}' page={}",
+                shortName,
+                pageable
+        );
+
+        Page<DiagnosticTest> page = service.findByShortName(shortName, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/diagnostic-test/by-status/{isActive}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findByStatus(
+            @PathVariable Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to search DiagnosticTests by isActive={} page={}",
+                isActive,
+                pageable
+        );
+
+        Page<DiagnosticTest> page = service.findByIsActive(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/diagnostic-test/by-type-and-name")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByTypeAndName(
             @RequestParam(required = false) TestType type,
