@@ -27,6 +27,13 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
             Pageable pageable
     );
 
+    Page<DiagnosticTest> findByShortNameContainingIgnoreCase(
+            String shortName,
+            Pageable pageable
+    );
+
+    Page<DiagnosticTest> findByIsActive(Boolean isActive, Pageable pageable);
+
     Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
 
     Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(
