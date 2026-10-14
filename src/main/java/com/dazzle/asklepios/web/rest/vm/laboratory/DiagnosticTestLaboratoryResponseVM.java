@@ -35,7 +35,8 @@ public record DiagnosticTestLaboratoryResponseVM(
         String testInstructions,
         String category,
         String tubeType,
-        Timing timing
+        Timing timing,
+        Long analyzerId
 ) implements Serializable {
 
     public static DiagnosticTestLaboratoryResponseVM fromEntity(DiagnosticTestLaboratory e) {
@@ -63,7 +64,12 @@ public record DiagnosticTestLaboratoryResponseVM(
                 e.getTestInstructions(),
                 e.getCategory(),
                 e.getTubeType(),
-                e.getTiming()
+                e.getTiming(),
+                // NOTE: only the FK id is read here — calling getAnalyzer().getCode() would
+                // force-initialize the lazy proxy outside the transaction and throw
+                // LazyInitializationException. Accessing getId() on the proxy is safe since
+                // Hibernate keeps the identifier without loading the target row.
+                e.getAnalyzer() != null ? e.getAnalyzer().getId() : null
         );
     }
 }
