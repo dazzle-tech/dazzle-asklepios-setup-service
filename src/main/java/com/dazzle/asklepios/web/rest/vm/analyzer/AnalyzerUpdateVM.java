@@ -10,7 +10,6 @@ public record AnalyzerUpdateVM(
         @NotNull Long id,
         @NotEmpty String code,
         @NotEmpty String type,
-        @NotNull Long facilityId,
         @NotNull Boolean isActive
 ) implements Serializable {
 
@@ -19,7 +18,6 @@ public record AnalyzerUpdateVM(
                 analyzer.getId(),
                 analyzer.getCode(),
                 analyzer.getType(),
-                analyzer.getFacility() != null ? analyzer.getFacility().getId() : null,
                 analyzer.getIsActive()
         );
     }

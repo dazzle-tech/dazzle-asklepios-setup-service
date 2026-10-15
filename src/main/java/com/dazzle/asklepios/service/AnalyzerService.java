@@ -40,7 +40,6 @@ public class AnalyzerService {
         Analyzer entity = Analyzer.builder()
                 .code(incoming.getCode())
                 .type(incoming.getType())
-                .facility(incoming.getFacility())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()) || incoming.getIsActive() == null)
                 .build();
         try {
@@ -70,7 +69,6 @@ public class AnalyzerService {
                 .orElseThrow(() -> new NotFoundAlertException("Analyzer not found with id " + id, "analyzer", "notfound"));
         existing.setCode(incoming.getCode());
         existing.setType(incoming.getType());
-        existing.setFacility(incoming.getFacility());
         existing.setIsActive(incoming.getIsActive());
         existing.setLastModifiedDate(Instant.now());
         existing.setLastModifiedBy(incoming.getLastModifiedBy());
@@ -112,12 +110,6 @@ public class AnalyzerService {
     public Page<Analyzer> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
         LOG.debug("Fetching Analyzers by code like='{}' pageable={}", code, pageable);
         return analyzerRepository.findByCodeContainingIgnoreCase(code, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Page<Analyzer> findByFacilityId(Long facilityId, Pageable pageable) {
-        LOG.debug("Fetching Analyzers by facilityId={} pageable={}", facilityId, pageable);
-        return analyzerRepository.findByFacility_Id(facilityId, pageable);
     }
 
     @Transactional(readOnly = true)
