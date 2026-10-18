@@ -131,7 +131,7 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     private String descriptionCode;
 
     @Convert(converter = MedDistributeAreaListConverter.class)
-    @Column(name = "med_distribute_area", length = 50)
+    @Column(name = "med_distribute_area", length = 150)
     private List<MedDistributeArea> medDistributeArea;
 
     @NotNull
