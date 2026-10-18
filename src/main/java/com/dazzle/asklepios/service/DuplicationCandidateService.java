@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DuplicationCandidate;
+import com.dazzle.asklepios.domain.enumeration.DuplicationField;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import org.slf4j.Logger;
@@ -98,7 +99,27 @@ public class DuplicationCandidateService {
     /** Search by role fragment */
     @Transactional(readOnly = true)
     public List<DuplicationCandidate> findByRoleFilter(String roleFilter) {
-        return repository.findByRuleContaining(roleFilter);
+        return repository.findByRuleContainingIgnoreCase(roleFilter);
+    }
+
+    /** Search by rule (case-insensitive) */
+    @Transactional(readOnly = true)
+    public List<DuplicationCandidate> findByRule(String rule) {
+        return repository.findByRuleContainingIgnoreCase(rule);
+    }
+
+    /** Search by active/inactive status */
+    @Transactional(readOnly = true)
+    public List<DuplicationCandidate> findByStatus(boolean isActive) {
+        return repository.findByIsActive(isActive);
+    }
+
+    /** Search by the value of one duplication field (e.g. FIRST_NAME = true); a missing key counts as false */
+    @Transactional(readOnly = true)
+    public List<DuplicationCandidate> findByField(DuplicationField field, boolean value) {
+        return repository.findAll().stream()
+                .filter(c -> Boolean.TRUE.equals(c.getFields() != null ? c.getFields().get(field.name()) : null) == value)
+                .toList();
     }
 
     /** Update fields JSON from Map directly */
