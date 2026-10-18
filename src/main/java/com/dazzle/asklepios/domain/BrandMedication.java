@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.converter.MedDistributeAreaListConverter;
+import com.dazzle.asklepios.domain.enumeration.MedDistributeArea;
 import com.dazzle.asklepios.domain.enumeration.Unit;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -102,6 +105,38 @@ public class BrandMedication extends AbstractAuditingEntity<Long> implements Ser
     @ManyToOne(optional = false)
     @JoinColumn(name = "uom_group_unit_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_uom_group_unit_id"))
     private UomGroupUnit uomGroupUnit;
+
+    /** Unit (from the selected UOM group) that the price is based on */
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "price_base_uom_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_price_base_uom_id"))
+    private UomGroupUnit priceBaseUom;
+
+    /** The currency is taken from this facility */
+    @NotNull
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "facility_id", nullable = false, foreignKey = @ForeignKey(name = "fk_bm_facility_id"))
+    private Facility facility;
+
+    @Column(name = "registration_number", length = 100)
+    private String registrationNumber;
+
+    @Column(name = "integration_code", length = 100)
+    private String integrationCode;
+
+    @Column(name = "gtin_code", length = 50)
+    private String gtinCode;
+
+    @Column(name = "description_code", length = 100)
+    private String descriptionCode;
+
+    @Convert(converter = MedDistributeAreaListConverter.class)
+    @Column(name = "med_distribute_area", length = 50)
+    private List<MedDistributeArea> medDistributeArea;
+
+    @NotNull
+    @Column(name = "local_market", nullable = false)
+    private Boolean localMarket;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "billing_rule_id")
