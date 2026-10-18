@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.web.rest.vm.brandMedication;
 
 import com.dazzle.asklepios.domain.BrandMedication;
+import com.dazzle.asklepios.domain.enumeration.MedDistributeArea;
 import com.dazzle.asklepios.domain.enumeration.Unit;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record BrandMedicationResponseVM(
         Long id,
@@ -26,7 +28,15 @@ public record BrandMedicationResponseVM(
         Long uomGroupUnitId,
         BigDecimal price,
         String currency,
-        Long billingRuleId
+        Long billingRuleId,
+        Long facilityId,
+        Long priceBaseUomId,
+        String registrationNumber,
+        String integrationCode,
+        String gtinCode,
+        String descriptionCode,
+        List<MedDistributeArea> medDistributeArea,
+        Boolean localMarket
 ) {
     public static BrandMedicationResponseVM ofEntity(BrandMedication entity, boolean hasActiveIngredient) {
         if (entity == null) return null;
@@ -53,7 +63,15 @@ public record BrandMedicationResponseVM(
                 entity.getCurrency(),
                 entity.getBillingRule() != null
                         ? entity.getBillingRule().getId()
-                        : null
+                        : null,
+                entity.getFacility() != null ? entity.getFacility().getId() : null,
+                entity.getPriceBaseUom() != null ? entity.getPriceBaseUom().getId() : null,
+                entity.getRegistrationNumber(),
+                entity.getIntegrationCode(),
+                entity.getGtinCode(),
+                entity.getDescriptionCode(),
+                entity.getMedDistributeArea(),
+                entity.getLocalMarket()
         );
     }
 }
