@@ -18,7 +18,9 @@ public record BillingAdjustmentResolveRequest(
 
         DiscountApplicableOn discountApplicableOn,
 
-        LocalDate pricingDate
+        LocalDate pricingDate,
+
+        Boolean patientCitizen
 
 ) {
 }
