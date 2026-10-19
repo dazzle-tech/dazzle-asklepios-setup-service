@@ -6,6 +6,8 @@ import com.dazzle.asklepios.domain.enumeration.TestType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -48,6 +50,33 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
 
     Page<DiagnosticTest> findByTypeAndIsActiveTrue(
             TestType type,
+            Pageable pageable
+    );
+
+    Page<DiagnosticTest> findByTypeAndIsActiveTrueAndNameContainingIgnoreCase(
+            TestType type,
+            String name,
+            Pageable pageable
+    );
+
+    /**
+     * Active tests by type, optionally narrowed by catalog membership and/or
+     * case-insensitive partial name match. Filters are applied before pagination.
+     */
+    @Query("""
+            SELECT t FROM DiagnosticTest t
+            WHERE t.type = :type
+              AND t.isActive = true
+              AND (:name IS NULL OR LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%')))
+              AND (:catalogId IS NULL OR EXISTS (
+                    SELECT 1 FROM CatalogDiagnosticTest cdt
+                    WHERE cdt.test = t AND cdt.catalog.id = :catalogId
+                  ))
+            """)
+    Page<DiagnosticTest> searchActiveByType(
+            @Param("type") TestType type,
+            @Param("name") String name,
+            @Param("catalogId") Long catalogId,
             Pageable pageable
     );
 }

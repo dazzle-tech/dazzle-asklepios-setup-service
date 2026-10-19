@@ -356,10 +356,43 @@ public class DiagnosticTestService {
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findActiveByType(TestType type, Pageable pageable) {
+        return findActiveByType(type, null, null, pageable);
+    }
 
-        LOG.debug("Fetch active DiagnosticTests by type: {}, pageable={}", type, pageable);
+    /**
+     * Active tests by type with optional name (case-insensitive partial) and catalog filters.
+     * Search/filter runs in the database before pagination is applied.
+     */
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findActiveByType(
+            TestType type,
+            String name,
+            Long catalogId,
+            Pageable pageable
+    ) {
+        String trimmedName = (name == null || name.isBlank()) ? null : name.trim();
 
-        return repository.findByTypeAndIsActiveTrue(type, pageable);
+        LOG.debug(
+                "Fetch active DiagnosticTests by type={}, name='{}', catalogId={}, pageable={}",
+                type,
+                trimmedName,
+                catalogId,
+                pageable
+        );
+
+        if (trimmedName == null && catalogId == null) {
+            return repository.findByTypeAndIsActiveTrue(type, pageable);
+        }
+
+        if (catalogId == null) {
+            return repository.findByTypeAndIsActiveTrueAndNameContainingIgnoreCase(
+                    type,
+                    trimmedName,
+                    pageable
+            );
+        }
+
+        return repository.searchActiveByType(type, trimmedName, catalogId, pageable);
     }
 
     @Transactional(readOnly = true)
