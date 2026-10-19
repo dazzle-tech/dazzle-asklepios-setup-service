@@ -286,34 +286,41 @@ public class DiagnosticTestController {
                 HttpStatus.OK
         );
     }
-// Add to DiagnosticTestController.java
-@GetMapping("/diagnostic-test/active/by-type/{type}")
-public ResponseEntity<List<DiagnosticTestResponseVM>> findActiveByType(
-        @PathVariable @NotNull TestType type,
-        @ParameterObject Pageable pageable
-) {
-    LOG.debug("REST request to find ACTIVE DiagnosticTests by type={} page={}", type, pageable);
+    @GetMapping("/diagnostic-test/active/by-type/{type}")
+    public ResponseEntity<List<DiagnosticTestResponseVM>> findActiveByType(
+            @PathVariable @NotNull TestType type,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long catalogId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to find ACTIVE DiagnosticTests by type={}, name='{}', catalogId={} page={}",
+                type,
+                name,
+                catalogId,
+                pageable
+        );
 
-    if (type == null) {
-        throw new BadRequestAlertException(
-                "typeRequired",
-                "diagnosticTest",
-                "Test type is required"
+        if (type == null) {
+            throw new BadRequestAlertException(
+                    "typeRequired",
+                    "diagnosticTest",
+                    "Test type is required"
+            );
+        }
+
+        Page<DiagnosticTest> page = service.findActiveByType(type, name, catalogId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                enrichWithDefaultProfiles(page.getContent()),
+                headers,
+                HttpStatus.OK
         );
     }
-
-    Page<DiagnosticTest> page = service.findActiveByType(type, pageable);
-
-    HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
-            ServletUriComponentsBuilder.fromCurrentRequest(), page
-    );
-
-    return new ResponseEntity<>(
-            enrichWithDefaultProfiles(page.getContent()),
-            headers,
-            HttpStatus.OK
-    );
-}
 
     @GetMapping("/diagnostic-test/by-ids")
     public ResponseEntity<List<DiagnosticTestResponseVM>> getByIds(
