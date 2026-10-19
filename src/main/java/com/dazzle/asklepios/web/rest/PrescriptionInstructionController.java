@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
 import com.dazzle.asklepios.domain.enumeration.MedFrequency;
 import com.dazzle.asklepios.domain.enumeration.MedRoa;
 import com.dazzle.asklepios.domain.enumeration.UOM;
+import java.math.BigDecimal;
 import com.dazzle.asklepios.service.PrescriptionInstructionService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
@@ -82,6 +83,16 @@ public class PrescriptionInstructionController {
     public ResponseEntity<List<PrescriptionInstruction>> byUnit(@PathVariable UOM unit,
                                                                 @ParameterObject Pageable pageable) {
         Page<PrescriptionInstruction> page = service.findByUnit(unit, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    /** GET by dose (paged) */
+    @GetMapping("/prescription-instruction/by-dose/{dose}")
+    public ResponseEntity<List<PrescriptionInstruction>> byDose(@PathVariable BigDecimal dose,
+                                                                @ParameterObject Pageable pageable) {
+        Page<PrescriptionInstruction> page = service.findByDose(dose, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
