@@ -81,7 +81,8 @@ public class BillingPricingResolutionService {
                         request.facilityId(),
                         request.currency(),
                         request.taxApplicableOn(),
-                        pricingDate
+                        pricingDate,
+                        request.patientCitizen()
                 );
 
         Discount resolvedDiscount =
@@ -180,7 +181,8 @@ public class BillingPricingResolutionService {
                             request.facilityId(),
                             request.currency(),
                             request.taxApplicableOn(),
-                            pricingDate
+                            pricingDate,
+                            request.patientCitizen()
                     );
         }
 

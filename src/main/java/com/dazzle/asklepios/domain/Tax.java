@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import jakarta.persistence.Column;
@@ -80,6 +81,12 @@ public class Tax extends AbstractAuditingEntity<Long> implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "applicable_on",nullable = false,length = 30)
     private TaxApplicableOn applicableOn;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "citizen_category", nullable = false, length = 30)
+    private TaxCitizenCategory citizenCategory = TaxCitizenCategory.ALL;
 
     @NotNull
     @Column(name = "valid_from",nullable = false)
