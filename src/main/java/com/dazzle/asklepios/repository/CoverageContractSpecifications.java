@@ -35,10 +35,7 @@ public final class CoverageContractSpecifications {
             }
             if (search != null && !search.isBlank()) {
                 String like = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("code")), like),
-                        cb.like(cb.lower(root.get("policyNumber")), like)
-                ));
+                predicates.add(cb.like(cb.lower(root.get("code")), like));
             }
             return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
         };

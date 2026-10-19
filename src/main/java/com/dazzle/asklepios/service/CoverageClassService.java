@@ -2,7 +2,9 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageContract;
+import com.dazzle.asklepios.domain.InsuranceCompanyPolicy;
 import com.dazzle.asklepios.repository.CoverageClassRepository;
+import com.dazzle.asklepios.repository.InsuranceCompanyPolicyRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassResponseVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassSaveVM;
@@ -23,13 +25,16 @@ public class CoverageClassService {
 
     private final CoverageClassRepository coverageClassRepository;
     private final CoverageContractService coverageContractService;
+    private final InsuranceCompanyPolicyRepository insuranceCompanyPolicyRepository;
 
     public CoverageClassService(
             CoverageClassRepository coverageClassRepository,
-            CoverageContractService coverageContractService
+            CoverageContractService coverageContractService,
+            InsuranceCompanyPolicyRepository insuranceCompanyPolicyRepository
     ) {
         this.coverageClassRepository = coverageClassRepository;
         this.coverageContractService = coverageContractService;
+        this.insuranceCompanyPolicyRepository = insuranceCompanyPolicyRepository;
     }
 
     public CoverageClassResponseVM create(CoverageClassSaveVM vm) {
@@ -62,6 +67,30 @@ public class CoverageClassService {
         CoverageClass existing = getEntity(id);
         existing.setIsActive(!Boolean.TRUE.equals(existing.getIsActive()));
         return CoverageClassResponseVM.of(coverageClassRepository.save(existing));
+    }
+
+    public CoverageClassResponseVM linkPolicy(Long classId, Long insuranceCompanyPolicyId) {
+        LOG.debug("Link coverage class id={} to policy id={}", classId, insuranceCompanyPolicyId);
+        CoverageClass coverageClass = getEntity(classId);
+        CoverageContract contract = coverageClass.getCoverageContract();
+        InsuranceCompanyPolicy policy = insuranceCompanyPolicyRepository.findById(insuranceCompanyPolicyId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Policy was not found.",
+                        ENTITY,
+                        "policyNotFound"
+                ));
+
+        Long insuranceCompanyId = policy.getInsuranceCompany() == null ? null : policy.getInsuranceCompany().getId();
+        if (contract.getInsurancePayerId() == null || !contract.getInsurancePayerId().equals(insuranceCompanyId)) {
+            throw new BadRequestAlertException(
+                    "This policy does not belong to the contract insurance company.",
+                    ENTITY,
+                    "policyCompanyMismatch"
+            );
+        }
+
+        coverageClass.setInsuranceCompanyPolicy(policy);
+        return CoverageClassResponseVM.of(coverageClassRepository.save(coverageClass));
     }
 
     @Transactional(readOnly = true)

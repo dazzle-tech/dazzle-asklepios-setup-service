@@ -28,9 +28,4 @@ public interface CoverageContractRepository
     List<CoverageContract> findByInsurancePayerId(Long insurancePayerId);
 
     List<CoverageContract> findByGuarantorTypeAndCompanyId(GuarantorType guarantorType, Long companyId);
-
-    List<CoverageContract> findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(
-            Long insurancePayerId,
-            String policyNumber
-    );
 }

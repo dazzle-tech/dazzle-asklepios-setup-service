@@ -51,11 +51,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -126,11 +128,26 @@ public class CoverageContractResolutionService {
             return CoverageContractResolveResponse.unmatched("Insurance company was not found for this coverage.");
         }
 
-        List<CoverageContract> candidates =
-                coverageContractRepository.findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(
+        List<CoverageClass> linkedClasses = coverageClassRepository
+                .findByIsActiveTrueAndCoverageContract_IsActiveTrueAndCoverageContract_InsurancePayerIdAndInsuranceCompanyPolicy_PolicyNumberIgnoreCase(
                         insurancePayer.getId(),
                         policyNumber
                 );
+        if (linkedClasses == null) {
+            linkedClasses = List.of();
+        }
+        List<CoverageContract> candidates = linkedClasses.stream()
+                .map(CoverageClass::getCoverageContract)
+                .filter(contract -> contract != null && contract.getId() != null)
+                .collect(Collectors.toMap(
+                        CoverageContract::getId,
+                        contract -> contract,
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
+                .toList();
         if (candidates.isEmpty()) {
             return CoverageContractResolveResponse.unmatched(
                     "No active coverage contract matches this insurance policy."
@@ -1030,8 +1047,12 @@ public class CoverageContractResolutionService {
             CoverageExclusionVM exclusion,
             CoveragePreApprovalReadingVM preApproval
     ) {
-        StringBuilder reason = new StringBuilder("Matched policy ")
-                .append(contract.getPolicyNumber());
+        StringBuilder reason = new StringBuilder("Matched coverage");
+        if (coverageClass != null
+                && coverageClass.getInsuranceCompanyPolicy() != null
+                && coverageClass.getInsuranceCompanyPolicy().getPolicyNumber() != null) {
+            reason.append(" policy ").append(coverageClass.getInsuranceCompanyPolicy().getPolicyNumber());
+        }
         if (coverageClass != null && coverageClass.getName() != null && !coverageClass.getName().isBlank()) {
             reason.append(" and class ").append(coverageClass.getName());
         }

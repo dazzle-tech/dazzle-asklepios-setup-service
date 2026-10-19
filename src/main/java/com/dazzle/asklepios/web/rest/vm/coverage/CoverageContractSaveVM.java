@@ -20,10 +20,6 @@ public record CoverageContractSaveVM(
         @Size(max = 50)
         String code,
 
-        @NotBlank
-        @Size(max = 100)
-        String policyNumber,
-
         @NotNull
         CoverageBasis coverageBasis,
 

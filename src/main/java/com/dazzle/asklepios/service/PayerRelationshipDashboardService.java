@@ -384,7 +384,7 @@ public class PayerRelationshipDashboardService {
                     return new ContractItemVM(
                             contract.getId(),
                             contract.getCode(),
-                            contract.getPolicyNumber(),
+                            null,
                             contract.getGuarantorType() == null ? null : contract.getGuarantorType().name(),
                             classNamesByContractId.get(contract.getId()),
                             contract.getIsActive(),

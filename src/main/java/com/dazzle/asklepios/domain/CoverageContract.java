@@ -45,10 +45,6 @@ public class CoverageContract extends AbstractAuditingEntity<Long> {
     @Column(name = "code", nullable = false, length = 50)
     private String code;
 
-    @NotBlank
-    @Column(name = "policy_number", nullable = false, length = 100)
-    private String policyNumber;
-
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "coverage_basis", nullable = false, length = 20)

@@ -58,7 +58,6 @@ public class CoverageContractService {
                 .guarantorType(vm.guarantorType())
                 .companyId(vm.companyId())
                 .code(vm.code().trim())
-                .policyNumber(vm.policyNumber().trim())
                 .coverageBasis(vm.coverageBasis())
                 .insurancePayerId(insurancePayer.getId())
                 .priceListSetupId(priceList.getId())
@@ -81,7 +80,6 @@ public class CoverageContractService {
         existing.setGuarantorType(vm.guarantorType());
         existing.setCompanyId(vm.companyId());
         existing.setCode(vm.code().trim());
-        existing.setPolicyNumber(vm.policyNumber().trim());
         existing.setCoverageBasis(vm.coverageBasis());
         existing.setInsurancePayerId(insurancePayer.getId());
         existing.setPriceListSetupId(priceList.getId());
@@ -221,7 +219,6 @@ public class CoverageContractService {
                 coverageLookupService.companyName(contract.getGuarantorType(), contract.getCompanyId()),
                 coverageLookupService.companyCode(contract.getGuarantorType(), contract.getCompanyId()),
                 contract.getCode(),
-                contract.getPolicyNumber(),
                 contract.getCoverageBasis(),
                 contract.getInsurancePayerId(),
                 insurancePayer == null ? null : coverageLookupService.payerDisplayName(insurancePayer),
