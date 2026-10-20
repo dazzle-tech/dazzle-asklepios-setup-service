@@ -11,8 +11,6 @@ public record PayerRelationshipDashboardVM(
     public record SummaryVM(
             int insuranceCount,
             int tpaCount,
-            int parentCompanyCount,
-            int childCompanyCount,
             int insurancesWithContracts,
             int insurancesWithPriceLists,
             int tpasWithContracts
@@ -23,8 +21,7 @@ public record PayerRelationshipDashboardVM(
             String nphiesId,
             String nameEn,
             String nameAr,
-            Boolean isActive,
-            String role
+            Boolean isActive
     ) {}
 
     public record TpaListItemVM(
@@ -53,13 +50,13 @@ public record PayerRelationshipDashboardVM(
 
     public record ContractItemVM(
             Long id,
-            String code,
             String policyNumber,
             String guarantorType,
             String className,
             Boolean isActive,
             Long insurancePayerId,
             String insurancePayerName,
+            String parentPayerName,
             Long priceListSetupId,
             String priceListName
     ) {}
@@ -72,9 +69,6 @@ public record PayerRelationshipDashboardVM(
             Boolean isActive,
             String approvalCoverageCompany,
             String facilityName,
-            String role,
-            LinkedPartyVM parent,
-            List<LinkedPartyVM> childCompanies,
             List<LinkedPartyVM> tpas,
             List<PriceListItemVM> priceLists,
             List<ContractItemVM> contracts

@@ -40,6 +40,10 @@ public class PayorService {
     public Payor create(PayorSaveVM vm) {
         LOG.debug("Create Payor payload={}", vm);
 
+        if (vm.category() == PayorCategory.INSURANCE) {
+            return linkInsuranceCompany(vm);
+        }
+
         if (repo.existsByCodeIgnoreCase(vm.code())) {
             throw new BadRequestAlertException(
                     "codeExists",
@@ -125,8 +129,101 @@ public class PayorService {
         existing.setForcePreApproval(vm.forcePreApproval() != null ? vm.forcePreApproval() : existing.getForcePreApproval());
 
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
+        applyInsuranceCompanyIdentity(existing);
 
         return repo.save(existing);
+    }
+
+    /**
+     * Keeps the operational payor row aligned with the insurance company.
+     * Plans and patient insurance still store this row id.
+     */
+    public Payor syncFromInsuranceCompany(NphiesPayer payer) {
+        return syncFromInsuranceCompany(payer, null);
+    }
+
+    public Payor syncFromInsuranceCompany(NphiesPayer payer, String previousNphiesId) {
+        if (payer == null || payer.getNphiesId() == null || payer.getNphiesId().isBlank()) {
+            throw new BadRequestAlertException("NPHIES ID is required.", "payor", "nphiesIdRequired");
+        }
+
+        Payor linked = findByNphiesId(payer.getNphiesId()).orElse(null);
+        if (linked == null && previousNphiesId != null && !previousNphiesId.isBlank()) {
+            linked = findByNphiesId(previousNphiesId).orElse(null);
+        }
+        if (linked == null) {
+            linked = ensureFromNphiesId(payer.getNphiesId());
+        }
+        linked.setName(firstNonBlank(payer.getNameEn(), payer.getNameAr(), linked.getName()));
+        linked.setNphiesId(payer.getNphiesId());
+        linked.setCategory(PayorCategory.INSURANCE);
+        linked.setPhone(requiredText(firstNonBlank(payer.getPhone(), payer.getMobile(), linked.getPhone())));
+        linked.setEmail(firstNonBlank(payer.getEmail(), linked.getEmail()));
+        linked.setAddress(firstNonBlank(payer.getHeadOfficeAddress(), linked.getAddress()));
+        linked.setContractManagerContact(
+                requiredText(firstNonBlank(payer.getContactPerson(), linked.getContractManagerContact()))
+        );
+        linked.setIsActive(payer.getIsActive() == null || Boolean.TRUE.equals(payer.getIsActive()));
+        return repo.save(linked);
+    }
+
+    private Payor linkInsuranceCompany(PayorSaveVM vm) {
+        String nphiesId = vm.nphiesId() == null ? null : vm.nphiesId().trim();
+        if (nphiesId == null || nphiesId.isBlank()) {
+            throw new BadRequestAlertException(
+                    "Insurance companies are one record. Add the company under Insurance Companies.",
+                    "payor",
+                    "insuranceCompany.useMaster"
+            );
+        }
+
+        NphiesPayer payer = nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(nphiesId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "The insurance company was not found.",
+                        "payor",
+                        "nphiesPayerNotFound"
+                ));
+
+        Payor linked = syncFromInsuranceCompany(payer);
+        validateDates(vm.startDate(), vm.expiryDate());
+        if (vm.startDate() != null) {
+            linked.setStartDate(vm.startDate());
+        }
+        linked.setExpiryDate(vm.expiryDate());
+        if (vm.renewable() != null) {
+            linked.setRenewable(vm.renewable());
+        }
+        if (vm.waseelPayerId() != null && !vm.waseelPayerId().isBlank()) {
+            linked.setWaseelPayerId(vm.waseelPayerId());
+        }
+        if (vm.tpaNphiesId() != null) {
+            linked.setTpaNphiesId(vm.tpaNphiesId());
+        }
+        if (vm.isWaseelEnabled() != null) {
+            linked.setIsWaseelEnabled(vm.isWaseelEnabled());
+        }
+        linked.setAllowPartialCoverage(bool(vm.allowPartialCoverage()));
+        linked.setAcceptCopay(bool(vm.acceptCopay()));
+        linked.setAcceptDeductibles(bool(vm.acceptDeductibles()));
+        linked.setAllowPackagePricing(bool(vm.allowPackagePricing()));
+        linked.setAllowDrgBilling(bool(vm.allowDrgBilling()));
+        linked.setForcePreApproval(bool(vm.forcePreApproval()));
+        return repo.save(linked);
+    }
+
+    private void applyInsuranceCompanyIdentity(Payor payor) {
+        if (payor.getCategory() != PayorCategory.INSURANCE
+                || payor.getNphiesId() == null
+                || payor.getNphiesId().isBlank()) {
+            return;
+        }
+
+        nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(payor.getNphiesId().trim())
+                .ifPresent(payer -> {
+                    payor.setName(firstNonBlank(payer.getNameEn(), payer.getNameAr(), payor.getName()));
+                    payor.setNphiesId(payer.getNphiesId());
+                    payor.setIsActive(payer.getIsActive() == null || Boolean.TRUE.equals(payer.getIsActive()));
+                });
     }
 
     private void validateDates(java.time.LocalDate start, java.time.LocalDate expiry) {

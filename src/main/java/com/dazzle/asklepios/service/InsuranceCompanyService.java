@@ -1,25 +1,16 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.NphiesPayer;
-import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.InsuranceCompanySource;
-import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
-import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.service.dto.InsuranceCompanyCreateVM;
 import com.dazzle.asklepios.service.dto.InsuranceCompanyDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +21,7 @@ public class InsuranceCompanyService {
 
     private final NphiesPayerRepository nphiesPayerRepository;
 
-    private final PayorRepository payorRepository;
+    private final PayorService payorService;
 
     @Transactional(readOnly = true)
     public Page<InsuranceCompanyDTO> search(
@@ -38,62 +29,32 @@ public class InsuranceCompanyService {
             String search,
             Pageable pageable
     ) {
-        if (source == InsuranceCompanySource.NPHIES) {
+        if (source != null) {
             return searchNphies(search, pageable);
         }
-
-        if (source == InsuranceCompanySource.PAYOR) {
-            return searchPayors(search, pageable);
-        }
-
-        Page<InsuranceCompanyDTO> nphies = searchNphies(search, pageable);
-        Page<InsuranceCompanyDTO> payors = searchPayors(search, pageable);
-
-        List<InsuranceCompanyDTO> combined = new ArrayList<>();
-        combined.addAll(nphies.getContent());
-        combined.addAll(payors.getContent());
-
-        return new PageImpl<>(
-                combined,
-                pageable,
-                nphies.getTotalElements() + payors.getTotalElements()
-        );
+        return searchNphies(search, pageable);
     }
 
     public InsuranceCompanyDTO createInternal(InsuranceCompanyCreateVM vm) {
-        String name = vm.name().trim();
-        String code = vm.code() != null && !vm.code().isBlank()
-                ? vm.code().trim()
-                : generateCode(name);
-
-        if (payorRepository.existsByCodeIgnoreCase(code)) {
+        String nphiesId = blankToNull(vm.nphiesId());
+        String code = blankToNull(vm.code());
+        NphiesPayer payer = null;
+        if (nphiesId != null) {
+            payer = nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(nphiesId).orElse(null);
+        }
+        if (payer == null && code != null) {
+            payer = nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(code).orElse(null);
+        }
+        if (payer == null) {
             throw new BadRequestAlertException(
-                    "An insurance company with this code already exists.",
+                    "Insurance companies are one record. Create the company under Insurance Companies.",
                     ENTITY,
-                    "code.exists"
+                    "insuranceCompany.useMaster"
             );
         }
 
-        Payor payor = Payor.builder()
-                .code(code)
-                .name(name)
-                .category(PayorCategory.INSURANCE)
-                .nphiesId(blankToNull(vm.nphiesId()))
-                .phone("N/A")
-                .contractManagerContact("N/A")
-                .startDate(java.time.LocalDate.now())
-                .renewable(false)
-                .allowPartialCoverage(false)
-                .acceptCopay(false)
-                .acceptDeductibles(false)
-                .allowPackagePricing(false)
-                .allowDrgBilling(false)
-                .forcePreApproval(false)
-                .isWaseelEnabled(false)
-                .isActive(true)
-                .build();
-
-        return toPayorDto(payorRepository.save(payor));
+        payorService.syncFromInsuranceCompany(payer);
+        return toNphiesDto(payer);
     }
 
     private Page<InsuranceCompanyDTO> searchNphies(
@@ -113,27 +74,6 @@ public class InsuranceCompanyService {
         return page.map(this::toNphiesDto);
     }
 
-    private Page<InsuranceCompanyDTO> searchPayors(
-            String search,
-            Pageable pageable
-    ) {
-        Page<Payor> page;
-        if (search == null || search.isBlank()) {
-            page = payorRepository.findByIsActiveTrueAndCategory(
-                    PayorCategory.INSURANCE,
-                    pageable
-            );
-        } else {
-            page = payorRepository.findByIsActiveTrueAndCategoryAndNameContainingIgnoreCase(
-                    PayorCategory.INSURANCE,
-                    search.trim(),
-                    pageable
-            );
-        }
-
-        return page.map(this::toPayorDto);
-    }
-
     private InsuranceCompanyDTO toNphiesDto(NphiesPayer payer) {
         return new InsuranceCompanyDTO(
                 payer.getId(),
@@ -146,32 +86,6 @@ public class InsuranceCompanyService {
                 payer.getNphiesId(),
                 payer.getIsActive()
         );
-    }
-
-    private InsuranceCompanyDTO toPayorDto(Payor payor) {
-        return new InsuranceCompanyDTO(
-                payor.getId(),
-                InsuranceCompanySource.PAYOR,
-                payor.getId(),
-                null,
-                payor.getCode(),
-                payor.getName(),
-                null,
-                payor.getNphiesId(),
-                payor.getIsActive()
-        );
-    }
-
-    private String generateCode(String name) {
-        String prefix = name.replaceAll("[^A-Za-z0-9]", "")
-                .toUpperCase(Locale.ROOT);
-        if (prefix.length() > 8) {
-            prefix = prefix.substring(0, 8);
-        }
-        if (prefix.isBlank()) {
-            prefix = "INS";
-        }
-        return prefix + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
     }
 
     private String blankToNull(String value) {

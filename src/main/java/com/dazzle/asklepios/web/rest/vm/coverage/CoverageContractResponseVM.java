@@ -13,7 +13,6 @@ public record CoverageContractResponseVM(
         Long companyId,
         String companyName,
         String companyCode,
-        String code,
         CoverageBasis coverageBasis,
         Long insurancePayerId,
         String insurancePayerName,

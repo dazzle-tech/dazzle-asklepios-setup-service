@@ -143,7 +143,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .priceListSetupId(4L)
                 .isActive(true)
@@ -223,7 +222,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -260,7 +258,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -338,7 +335,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -407,7 +403,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -489,7 +484,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -571,7 +565,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -644,7 +637,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -716,7 +708,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -781,7 +772,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(3L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -880,7 +870,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(3L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -944,7 +933,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(3L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -1170,7 +1158,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(3L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -1237,7 +1224,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(3L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .isActive(true)
                 .build();
@@ -1357,7 +1343,6 @@ class CoverageContractResolutionServiceTest {
                 .id(21L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(9L)
-                .code("C-1")
                 .insurancePayerId(9L)
                 .priceListSetupId(4L)
                 .isActive(true)
@@ -1415,7 +1400,6 @@ class CoverageContractResolutionServiceTest {
                 contract.getCompanyId(),
                 "Tawuniya",
                 "INS-1",
-                contract.getCode(),
                 contract.getCoverageBasis(),
                 contract.getInsurancePayerId(),
                 "Tawuniya",

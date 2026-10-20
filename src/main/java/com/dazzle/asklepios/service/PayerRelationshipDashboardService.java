@@ -71,7 +71,6 @@ public class PayerRelationshipDashboardService {
     public PayerRelationshipDashboardVM build(String search) {
         String query = search == null ? "" : search.trim();
         List<NphiesPayer> payers = loadPayers(query);
-        attachFamily(payers);
         List<TpaDefinition> tpas = loadTpas(query);
         SummaryVM summary = query.isEmpty() ? toSummary(payers, tpas) : null;
         return new PayerRelationshipDashboardVM(
@@ -83,11 +82,10 @@ public class PayerRelationshipDashboardService {
 
     public Optional<InsuranceCardVM> findInsurance(Long id) {
         return nphiesPayerRepository.findById(id).map(payer -> {
-            attachFamily(List.of(payer));
             List<TpaDefinition> linkedTpas = tpaDefinitionRepository.findByInsuranceCompanies_Id(id);
             List<PriceListSetup> priceLists = loadPriceLists(id);
             Map<Long, PriceListSetup> priceListsById = indexBy(priceLists, PriceListSetup::getId);
-            Map<Long, NphiesPayer> payersById = indexBy(relatedPayers(payer), NphiesPayer::getId);
+            Map<Long, NphiesPayer> payersById = indexBy(List.of(payer), NphiesPayer::getId);
             return toInsuranceCard(
                     payer,
                     linkedTpas,
@@ -127,64 +125,13 @@ public class PayerRelationshipDashboardService {
         return tpas.stream().sorted(TPA_ORDER).toList();
     }
 
-    private void attachFamily(List<NphiesPayer> payers) {
-        Map<Long, NphiesPayer> payersById = indexBy(payers, NphiesPayer::getId);
-        if (payersById.isEmpty()) {
-            return;
-        }
-
-        Map<Long, Set<NphiesPayer>> childrenByParentId = new HashMap<>();
-        for (NphiesPayer loaded : nphiesPayerRepository.findDistinctByIdIn(payersById.keySet())) {
-            childrenByParentId.put(
-                    loaded.getId(),
-                    loaded.getChildCompanies() == null ? new HashSet<>() : new HashSet<>(loaded.getChildCompanies())
-            );
-        }
-
-        Map<Long, NphiesPayer> parentByChildId = new HashMap<>();
-        for (NphiesPayer payer : payers) {
-            Set<NphiesPayer> children = childrenByParentId.getOrDefault(payer.getId(), new HashSet<>());
-            payer.setChildCompanies(children);
-            for (NphiesPayer child : children) {
-                if (child.getId() != null) {
-                    parentByChildId.put(child.getId(), payer);
-                }
-            }
-        }
-
-        Set<Long> missingParentIds = new HashSet<>();
-        for (NphiesPayer payer : payers) {
-            if (!parentByChildId.containsKey(payer.getId())) {
-                missingParentIds.add(payer.getId());
-            }
-        }
-        if (!missingParentIds.isEmpty()) {
-            for (NphiesPayer parent : nphiesPayerRepository.findByChildCompanies_IdIn(missingParentIds)) {
-                if (parent.getChildCompanies() == null) {
-                    continue;
-                }
-                for (NphiesPayer child : parent.getChildCompanies()) {
-                    if (child.getId() != null && missingParentIds.contains(child.getId())) {
-                        parentByChildId.put(child.getId(), parent);
-                    }
-                }
-            }
-        }
-
-        for (NphiesPayer payer : payers) {
-            NphiesPayer parent = parentByChildId.get(payer.getId());
-            payer.setParentCompanies(parent == null ? new HashSet<>() : new HashSet<>(Set.of(parent)));
-        }
-    }
-
     private InsuranceListItemVM toInsuranceListItem(NphiesPayer payer) {
         return new InsuranceListItemVM(
                 payer.getId(),
                 payer.getNphiesId(),
                 payer.getNameEn(),
                 payer.getNameAr(),
-                payer.getIsActive(),
-                roleOf(payer)
+                payer.getIsActive()
         );
     }
 
@@ -200,14 +147,6 @@ public class PayerRelationshipDashboardService {
             Map<Long, NphiesPayer> payersById,
             Map<Long, PriceListSetup> priceListsById
     ) {
-        LinkedPartyVM parent = payer.getParentCompanies() == null
-                ? null
-                : payer.getParentCompanies().stream().findFirst().map(this::toParty).orElse(null);
-        List<LinkedPartyVM> children = sortedParties(
-                payer.getChildCompanies() == null
-                        ? List.of()
-                        : payer.getChildCompanies().stream().map(this::toParty).toList()
-        );
         return new InsuranceCardVM(
                 payer.getId(),
                 payer.getNphiesId(),
@@ -216,9 +155,6 @@ public class PayerRelationshipDashboardService {
                 payer.getIsActive(),
                 payer.getApprovalCoverageCompany() == null ? null : payer.getApprovalCoverageCompany().name(),
                 facilityName(payer),
-                roleOf(payer),
-                parent,
-                children,
                 sortedParties(linkedTpas.stream().map(this::toParty).toList()),
                 priceLists.stream()
                         .sorted(Comparator.comparing(PriceListSetup::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
@@ -262,15 +198,7 @@ public class PayerRelationshipDashboardService {
             }
         }
         int insurancesWithPriceLists = 0;
-        int parentCompanyCount = 0;
-        int childCompanyCount = 0;
         for (NphiesPayer payer : payers) {
-            String role = roleOf(payer);
-            if ("PARENT".equals(role)) {
-                parentCompanyCount++;
-            } else if ("CHILD".equals(role)) {
-                childCompanyCount++;
-            }
             if (payer.getId() != null && priceListsByPayerId.containsKey(payer.getId())) {
                 insurancesWithPriceLists++;
             }
@@ -278,33 +206,10 @@ public class PayerRelationshipDashboardService {
         return new SummaryVM(
                 payers.size(),
                 tpas.size(),
-                parentCompanyCount,
-                childCompanyCount,
                 (int) payers.stream().filter(payer -> insurancesWithContracts.contains(payer.getId())).count(),
                 insurancesWithPriceLists,
                 (int) tpas.stream().filter(tpa -> tpasWithContracts.contains(tpa.getId())).count()
         );
-    }
-
-    private String roleOf(NphiesPayer payer) {
-        boolean hasChildren = payer.getChildCompanies() != null && !payer.getChildCompanies().isEmpty();
-        boolean hasParent = payer.getParentCompanies() != null && !payer.getParentCompanies().isEmpty();
-        if (hasChildren) {
-            return "PARENT";
-        }
-        return hasParent ? "CHILD" : "STANDALONE";
-    }
-
-    private List<NphiesPayer> relatedPayers(NphiesPayer payer) {
-        List<NphiesPayer> related = new ArrayList<>();
-        related.add(payer);
-        if (payer.getParentCompanies() != null) {
-            related.addAll(payer.getParentCompanies());
-        }
-        if (payer.getChildCompanies() != null) {
-            related.addAll(payer.getChildCompanies());
-        }
-        return related;
     }
 
     private List<PriceListSetup> loadPriceLists(Long payerId) {
@@ -324,6 +229,9 @@ public class PayerRelationshipDashboardService {
         for (CoverageContract contract : contracts) {
             if (contract.getInsurancePayerId() != null) {
                 payerIds.add(contract.getInsurancePayerId());
+            }
+            if (contract.getParentPayerId() != null) {
+                payerIds.add(contract.getParentPayerId());
             }
             if (contract.getPriceListSetupId() != null) {
                 priceListIds.add(contract.getPriceListSetupId());
@@ -377,19 +285,20 @@ public class PayerRelationshipDashboardService {
     ) {
         Map<Long, String> classNamesByContractId = classNamesByContract(contracts);
         return contracts.stream()
-                .sorted(Comparator.comparing(CoverageContract::getCode, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(Comparator.comparing(CoverageContract::getId, Comparator.nullsLast(Long::compareTo)))
                 .map(contract -> {
                     NphiesPayer insurance = payersById.get(contract.getInsurancePayerId());
+                    NphiesPayer parent = payersById.get(contract.getParentPayerId());
                     PriceListSetup priceList = priceListsById.get(contract.getPriceListSetupId());
                     return new ContractItemVM(
                             contract.getId(),
-                            contract.getCode(),
                             null,
                             contract.getGuarantorType() == null ? null : contract.getGuarantorType().name(),
                             classNamesByContractId.get(contract.getId()),
                             contract.getIsActive(),
                             contract.getInsurancePayerId(),
                             insurance == null ? null : payerDisplayName(insurance),
+                            parent == null ? null : payerDisplayName(parent),
                             contract.getPriceListSetupId(),
                             priceList == null ? null : priceList.getName()
                     );

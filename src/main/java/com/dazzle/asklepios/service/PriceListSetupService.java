@@ -27,6 +27,7 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,6 +39,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -77,7 +79,6 @@ public class PriceListSetupService {
 
         PriceListSetup entity = new PriceListSetup();
         applyCreateFields(entity, dto);
-        entity.setIsActive(true);
 
         PriceListSetup savedEntity = priceListSetupRepository.save(entity);
         return toDTO(savedEntity);
@@ -97,6 +98,10 @@ public class PriceListSetupService {
         boolean cloneItems = request == null || request.cloneItems() == null
                 || Boolean.TRUE.equals(request.cloneItems());
 
+        PriceListSetupStatus status = request != null && request.status() != null
+                ? request.status()
+                : PriceListSetupStatus.ACTIVE;
+
         PriceListSetup clone = new PriceListSetup();
         clone.setFacilityId(
                 request != null && request.facilityId() != null
@@ -108,9 +113,16 @@ public class PriceListSetupService {
                         ? request.appliesToAllFacilities()
                         : Boolean.TRUE.equals(source.getAppliesToAllFacilities())
         );
-        clone.setType(source.getType());
-        clone.setPayerId(source.getPayerId());
-        clone.setNphiesPayerId(source.getNphiesPayerId());
+        clone.setType(
+                request != null && request.type() != null
+                        ? request.type()
+                        : source.getType()
+        );
+        Long companyId = request != null
+                ? resolveInsuranceCompanyId(request.payerId(), request.nphiesPayerId())
+                : resolveInsuranceCompanyId(source.getPayerId(), source.getNphiesPayerId());
+        clone.setPayerId(companyId);
+        clone.setNphiesPayerId(companyId);
         clone.setName(
                 request != null && request.name() != null && !request.name().isBlank()
                         ? request.name().trim()
@@ -118,33 +130,48 @@ public class PriceListSetupService {
         );
         clone.setShortName(
                 request != null && request.shortName() != null
-                        ? request.shortName()
+                        ? blankToNull(request.shortName())
                         : source.getShortName()
         );
         clone.setDescription(
                 request != null && request.description() != null
-                        ? request.description()
+                        ? blankToNull(request.description())
                         : source.getDescription()
         );
-        clone.setTaxId(
-                request != null && request.taxId() != null
-                        ? request.taxId()
-                        : source.getTaxId()
+        clone.setTaxId(request != null ? request.taxId() : source.getTaxId());
+        clone.setVersionNumber(nextVersionForUniqueKey(clone));
+        clone.setEffectiveFrom(
+                request != null ? request.effectiveFrom() : source.getEffectiveFrom()
         );
-        clone.setVersionNumber(nextVersionNumber(source));
-        clone.setEffectiveFrom(null);
-        clone.setEffectiveTo(null);
-        clone.setCurrency(source.getCurrency());
-        clone.setStatus(PriceListSetupStatus.INACTIVE);
-        clone.setIsActive(true);
+        clone.setEffectiveTo(
+                request != null ? request.effectiveTo() : source.getEffectiveTo()
+        );
+        clone.setCurrency(
+                request != null && request.currency() != null
+                        ? request.currency()
+                        : source.getCurrency()
+        );
+        clone.setStatus(status);
+        clone.setIsActive(status == PriceListSetupStatus.ACTIVE);
 
-        PriceListSetup saved = priceListSetupRepository.save(clone);
-
-        if (cloneItems) {
-            cloneItems(sourceId, saved.getId());
+        PriceListSetupDTO dto = toDTO(clone);
+        validateDto(dto, false);
+        if (status == PriceListSetupStatus.ACTIVE) {
+            validateNoOverlappingInterval(null, dto);
+            validateSingleActiveList(null, dto);
         }
 
-        return toDTO(saved);
+        try {
+            PriceListSetup saved = priceListSetupRepository.save(clone);
+
+            if (cloneItems) {
+                cloneItems(sourceId, saved.getId());
+            }
+
+            return toDTO(saved);
+        } catch (DataIntegrityViolationException exception) {
+            throw mapCloneIntegrityViolation(exception);
+        }
     }
 
     public PriceListSetupDTO activate(Long id) {
@@ -567,8 +594,9 @@ public class PriceListSetupService {
                 Boolean.TRUE.equals(dto.appliesToAllFacilities())
         );
         entity.setType(dto.type());
-        entity.setPayerId(dto.payerId());
-        entity.setNphiesPayerId(dto.nphiesPayerId());
+        Long companyId = resolveInsuranceCompanyId(dto.payerId(), dto.nphiesPayerId());
+        entity.setPayerId(companyId);
+        entity.setNphiesPayerId(companyId);
         entity.setName(dto.name().trim());
         entity.setShortName(blankToNull(dto.shortName()));
         entity.setDescription(blankToNull(dto.description()));
@@ -581,9 +609,11 @@ public class PriceListSetupService {
         entity.setEffectiveFrom(dto.effectiveFrom());
         entity.setEffectiveTo(dto.effectiveTo());
         entity.setCurrency(dto.currency());
-        entity.setStatus(
-                dto.status() != null ? dto.status() : PriceListSetupStatus.ACTIVE
-        );
+        PriceListSetupStatus status = dto.status() != null
+                ? dto.status()
+                : PriceListSetupStatus.ACTIVE;
+        entity.setStatus(status);
+        entity.setIsActive(status == PriceListSetupStatus.ACTIVE);
     }
 
     private void validateDto(PriceListSetupDTO dto, boolean creating) {
@@ -811,7 +841,15 @@ public class PriceListSetupService {
             return;
         }
 
+        Set<String> seenItemCodes = new HashSet<>();
         List<PriceListSetupItem> clonedItems = sourceItems.stream()
+                .filter(sourceItem ->
+                        sourceItem.getItemCode() != null
+                                && !sourceItem.getItemCode().isBlank()
+                )
+                .filter(sourceItem ->
+                        seenItemCodes.add(sourceItem.getItemCode().trim())
+                )
                 .map(sourceItem -> {
                     PriceListSetupItem clonedItem = new PriceListSetupItem();
                     clonedItem.setPriceListSetupId(targetPriceListSetupId);
@@ -820,19 +858,42 @@ public class PriceListSetupService {
                     clonedItem.setItemType(sourceItem.getItemType());
                     clonedItem.setSourceId(sourceItem.getSourceId());
                     clonedItem.setItemCode(sourceItem.getItemCode());
+                    clonedItem.setNonStandardCode(sourceItem.getNonStandardCode());
                     clonedItem.setItemName(sourceItem.getItemName());
                     clonedItem.setCategory(sourceItem.getCategory());
-                    clonedItem.setUnitPrice(sourceItem.getUnitPrice());
-                    clonedItem.setDiscountPercentage(sourceItem.getDiscountPercentage());
-                    clonedItem.setIsActive(sourceItem.getIsActive());
+                    clonedItem.setUnitPrice(
+                            sourceItem.getUnitPrice() != null
+                                    ? sourceItem.getUnitPrice()
+                                    : BigDecimal.ZERO
+                    );
+                    clonedItem.setDiscountPercentage(
+                            sourceItem.getDiscountPercentage() != null
+                                    ? sourceItem.getDiscountPercentage()
+                                    : BigDecimal.ZERO
+                    );
+                    clonedItem.setIsActive(
+                            sourceItem.getIsActive() != null
+                                    ? sourceItem.getIsActive()
+                                    : Boolean.TRUE
+                    );
                     clonedItem.setRequiresPreAuthorization(
-                            sourceItem.getRequiresPreAuthorization()
+                            Boolean.TRUE.equals(sourceItem.getRequiresPreAuthorization())
                     );
                     return clonedItem;
                 })
                 .toList();
 
         priceListSetupItemRepository.saveAll(clonedItems);
+    }
+
+    private Integer nextVersionForUniqueKey(PriceListSetup priceList) {
+        Integer max = priceListSetupRepository.findMaxVersionNumber(
+                priceList.getFacilityId(),
+                priceList.getType(),
+                priceList.getPayerId(),
+                priceList.getNphiesPayerId()
+        );
+        return (max == null ? 0 : max) + 1;
     }
 
     private Integer nextVersionNumber(PriceListSetup source) {
@@ -845,22 +906,61 @@ public class PriceListSetupService {
         return (max == null ? 0 : max) + 1;
     }
 
+    private Long resolveInsuranceCompanyId(Long payerId, Long nphiesPayerId) {
+        if (nphiesPayerId != null && nphiesPayerRepository.existsById(nphiesPayerId)) {
+            return nphiesPayerId;
+        }
+        if (payerId != null && nphiesPayerRepository.existsById(payerId)) {
+            return payerId;
+        }
+        if (payerId != null) {
+            Long fromPayor = payorRepository.findById(payerId)
+                    .map(Payor::getNphiesId)
+                    .filter(id -> id != null && !id.isBlank())
+                    .flatMap(nphiesPayerRepository::findFirstByNphiesIdIgnoreCase)
+                    .map(NphiesPayer::getId)
+                    .orElse(null);
+            if (fromPayor != null) {
+                return fromPayor;
+            }
+        }
+        return nphiesPayerId != null ? nphiesPayerId : payerId;
+    }
+
+    private String insuranceCompanyName(PriceListSetup entity) {
+        Long companyId = entity.getNphiesPayerId() != null
+                ? entity.getNphiesPayerId()
+                : entity.getPayerId();
+        if (companyId != null) {
+            String name = nphiesPayerRepository.findById(companyId)
+                    .map(NphiesPayer::getNameEn)
+                    .orElse(null);
+            if (name != null) {
+                return name;
+            }
+        }
+        if (entity.getPayerId() != null) {
+            String fromPayor = payorRepository.findById(entity.getPayerId())
+                    .map(Payor::getName)
+                    .orElse(null);
+            if (fromPayor != null) {
+                return fromPayor;
+            }
+        }
+        if (entity.getNphiesPayerId() != null) {
+            return nphiesPayerRepository.findById(entity.getNphiesPayerId())
+                    .map(NphiesPayer::getNameEn)
+                    .orElse(null);
+        }
+        return null;
+    }
+
     private PriceListSetupDTO toDTO(PriceListSetup entity) {
         String facilityName = facilityRepository.findById(entity.getFacilityId())
                 .map(facility -> facility.getName())
                 .orElse(null);
 
-        String payerName = entity.getPayerId() == null
-                ? null
-                : payorRepository.findById(entity.getPayerId())
-                        .map(Payor::getName)
-                        .orElse(null);
-
-        String nphiesPayerName = entity.getNphiesPayerId() == null
-                ? null
-                : nphiesPayerRepository.findById(entity.getNphiesPayerId())
-                        .map(NphiesPayer::getNameEn)
-                        .orElse(null);
+        String companyName = insuranceCompanyName(entity);
 
         String taxName = entity.getTaxId() == null
                 ? null
@@ -877,9 +977,9 @@ public class PriceListSetupService {
                 entity.getAppliesToAllFacilities(),
                 entity.getType(),
                 entity.getPayerId(),
-                payerName,
+                companyName,
                 entity.getNphiesPayerId(),
-                nphiesPayerName,
+                companyName,
                 entity.getName(),
                 entity.getShortName(),
                 entity.getDescription(),
@@ -922,6 +1022,75 @@ public class PriceListSetupService {
 
     private boolean isActiveStatus(PriceListSetupStatus status) {
         return status == PriceListSetupStatus.ACTIVE;
+    }
+
+    private BadRequestAlertException mapCloneIntegrityViolation(
+            DataIntegrityViolationException exception
+    ) {
+        String message = exception.getMostSpecificCause() != null
+                ? exception.getMostSpecificCause().getMessage()
+                : exception.getMessage();
+
+        if (message != null && message.contains("uk_price_list_setup_version")) {
+            return new BadRequestAlertException(
+                    "A price list with this facility, type, insurance company, and version already exists.",
+                    ENTITY_NAME,
+                    "version.duplicate"
+            );
+        }
+
+        if (message != null && message.contains("fk_price_list_setup_payer")) {
+            return new BadRequestAlertException(
+                    "The selected company could not be saved because an old database link still allows only NPHIES ids. Apply the latest database update and try again.",
+                    ENTITY_NAME,
+                    "payer.fk"
+            );
+        }
+
+        if (message != null
+                && (message.contains("fk_price_list_item_mapping")
+                || message.contains("fk_price_list_item_sbs"))) {
+            return new BadRequestAlertException(
+                    "Some items point at a catalog record that no longer exists. "
+                            + "Turn off Also clone items, or fix the source price list.",
+                    ENTITY_NAME,
+                    "item.catalogMissing"
+            );
+        }
+
+        if (message != null && message.contains("ck_price_list_setup_dates")) {
+            return new BadRequestAlertException(
+                    "The end date must be later than the start date.",
+                    ENTITY_NAME,
+                    "effectiveDate.invalidRange"
+            );
+        }
+
+        if (message != null && message.contains("price_list_setup_item_pkey")) {
+            return new BadRequestAlertException(
+                    "Unable to allocate a new price-list item ID. "
+                            + "The database sequence is out of sync.",
+                    ENTITY_NAME,
+                    "item.idSequenceOutOfSync"
+            );
+        }
+
+        if (message != null
+                && (message.contains("uk_price_list_item_code_visit")
+                || message.contains("uk_price_list_item_code")
+                || message.contains("item_code"))) {
+            return new BadRequestAlertException(
+                    "This service is already configured on this price list.",
+                    ENTITY_NAME,
+                    "item.duplicate"
+            );
+        }
+
+        return new BadRequestAlertException(
+                "Unable to clone the price list because of a data constraint.",
+                ENTITY_NAME,
+                "clone.constraint"
+        );
     }
 
     private String blankToNull(String value) {

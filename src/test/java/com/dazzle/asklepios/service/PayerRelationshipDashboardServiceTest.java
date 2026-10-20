@@ -19,7 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -66,8 +65,6 @@ class PayerRelationshipDashboardServiceTest {
                 .nphiesId("INS-008")
                 .nameEn("Bupa")
                 .isActive(true)
-                .parentCompanies(new HashSet<>())
-                .childCompanies(new HashSet<>())
                 .tpas(new HashSet<>())
                 .build();
         parent = NphiesPayer.builder()
@@ -75,11 +72,8 @@ class PayerRelationshipDashboardServiceTest {
                 .nphiesId("INS-005")
                 .nameEn("Tawuniya")
                 .isActive(true)
-                .parentCompanies(new HashSet<>())
-                .childCompanies(new HashSet<>(Set.of(child)))
                 .tpas(new HashSet<>())
                 .build();
-        child.getParentCompanies().add(parent);
         tpa = TpaDefinition.builder()
                 .id(9L)
                 .tpaCode("TPA-1")
@@ -99,7 +93,6 @@ class PayerRelationshipDashboardServiceTest {
                 .id(70L)
                 .guarantorType(GuarantorType.INSURANCE)
                 .companyId(8L)
-                .code("C-1")
                 .insurancePayerId(8L)
                 .priceListSetupId(44L)
                 .isActive(true)
@@ -108,7 +101,6 @@ class PayerRelationshipDashboardServiceTest {
                 .id(71L)
                 .guarantorType(GuarantorType.TPA)
                 .companyId(9L)
-                .code("C-2")
                 .insurancePayerId(8L)
                 .priceListSetupId(44L)
                 .isActive(true)
@@ -118,10 +110,6 @@ class PayerRelationshipDashboardServiceTest {
     @Test
     void build_returnsLightListAndSummary() {
         when(nphiesPayerRepository.findAll()).thenReturn(List.of(parent, child));
-        when(nphiesPayerRepository.findDistinctByIdIn(anyCollection())).thenAnswer(invocation -> {
-            Collection<Long> ids = invocation.getArgument(0);
-            return List.of(parent, child).stream().filter(payer -> ids.contains(payer.getId())).toList();
-        });
         when(tpaDefinitionRepository.findAll()).thenReturn(List.of(tpa));
         when(coverageContractRepository.findAll()).thenReturn(List.of(insuranceContract, tpaContract));
         when(priceListSetupRepository.findAll()).thenReturn(List.of(priceList));
@@ -129,11 +117,10 @@ class PayerRelationshipDashboardServiceTest {
         PayerRelationshipDashboardVM dashboard = dashboardService.build(null);
 
         assertThat(dashboard.summary().insuranceCount()).isEqualTo(2);
-        assertThat(dashboard.summary().parentCompanyCount()).isEqualTo(1);
-        assertThat(dashboard.summary().childCompanyCount()).isEqualTo(1);
+        assertThat(dashboard.summary().insurancesWithContracts()).isEqualTo(1);
         assertThat(dashboard.insurances())
-                .extracting(PayerRelationshipDashboardVM.InsuranceListItemVM::role)
-                .containsExactlyInAnyOrder("PARENT", "CHILD");
+                .extracting(PayerRelationshipDashboardVM.InsuranceListItemVM::nameEn)
+                .containsExactlyInAnyOrder("Tawuniya", "Bupa");
         assertThat(dashboard.tpas()).extracting(PayerRelationshipDashboardVM.TpaListItemVM::tpaCode)
                 .containsExactly("TPA-1");
     }
@@ -145,8 +132,6 @@ class PayerRelationshipDashboardServiceTest {
                 "Bupa",
                 "Bupa"
         )).thenReturn(List.of(child));
-        when(nphiesPayerRepository.findDistinctByIdIn(anyCollection())).thenReturn(List.of(child));
-        when(nphiesPayerRepository.findByChildCompanies_IdIn(anyCollection())).thenReturn(List.of(parent));
         when(tpaDefinitionRepository.findByTpaCodeContainingIgnoreCaseOrNameContainingIgnoreCase("Bupa", "Bupa"))
                 .thenReturn(List.of());
 
@@ -155,7 +140,6 @@ class PayerRelationshipDashboardServiceTest {
         assertThat(dashboard.summary()).isNull();
         assertThat(dashboard.insurances()).extracting(PayerRelationshipDashboardVM.InsuranceListItemVM::nameEn)
                 .containsExactly("Bupa");
-        assertThat(dashboard.insurances().get(0).role()).isEqualTo("CHILD");
         verify(coverageContractRepository, never()).findAll();
         verify(priceListSetupRepository, never()).findAll();
     }
@@ -163,8 +147,6 @@ class PayerRelationshipDashboardServiceTest {
     @Test
     void findInsurance_loadsDetailsForOnePayer() {
         when(nphiesPayerRepository.findById(8L)).thenReturn(Optional.of(child));
-        when(nphiesPayerRepository.findDistinctByIdIn(anyCollection())).thenReturn(List.of(child));
-        when(nphiesPayerRepository.findByChildCompanies_IdIn(anyCollection())).thenReturn(List.of(parent));
         when(tpaDefinitionRepository.findByInsuranceCompanies_Id(8L)).thenReturn(List.of(tpa));
         when(coverageContractRepository.findByInsurancePayerId(8L)).thenReturn(List.of(insuranceContract));
         when(coverageClassRepository.findByCoverageContract_IdIn(anyCollection())).thenReturn(List.of());
@@ -173,8 +155,7 @@ class PayerRelationshipDashboardServiceTest {
 
         PayerRelationshipDashboardVM.InsuranceCardVM card = dashboardService.findInsurance(8L).orElseThrow();
 
-        assertThat(card.role()).isEqualTo("CHILD");
-        assertThat(card.parent().name()).isEqualTo("Tawuniya");
+        assertThat(card.nameEn()).isEqualTo("Bupa");
         assertThat(card.tpas()).extracting(PayerRelationshipDashboardVM.LinkedPartyVM::id).containsExactly(9L);
         assertThat(card.priceLists()).extracting(PayerRelationshipDashboardVM.PriceListItemVM::name)
                 .containsExactly("Bupa 2026");
