@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.service.BillingRuleReferenceService;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 
@@ -197,6 +199,54 @@ public class ServiceController {
         );
     }
 
+
+    @GetMapping("/service/by-abbreviation/{abbreviation}")
+    public ResponseEntity<List<ServiceResponseVM>> getByAbbreviation(
+            @PathVariable String abbreviation,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by abbreviation={} pageable={}", abbreviation, pageable);
+        Page<ServiceSetup> page = serviceService.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/by-price/{price}")
+    public ResponseEntity<List<ServiceResponseVM>> getByPrice(
+            @PathVariable BigDecimal price,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by price={} pageable={}", price, pageable);
+        Page<ServiceSetup> page = serviceService.findByPrice(price, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/by-currency/{currency}")
+    public ResponseEntity<List<ServiceResponseVM>> getByCurrency(
+            @PathVariable Currency currency,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by currency={} pageable={}", currency, pageable);
+        Page<ServiceSetup> page = serviceService.findByCurrency(currency, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
 
     @GetMapping("/service/by-status/{isActive}")
     public ResponseEntity<List<ServiceResponseVM>> getByStatus(

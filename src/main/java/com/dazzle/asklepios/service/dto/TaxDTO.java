@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service.dto;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
+import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -41,6 +42,8 @@ public record TaxDTO(
 
         @NotNull
         TaxApplicableOn applicableOn,
+
+        TaxCitizenCategory citizenCategory,
 
         @NotNull
         LocalDate validFrom,

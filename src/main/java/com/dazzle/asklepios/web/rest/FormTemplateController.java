@@ -69,9 +69,12 @@ public class FormTemplateController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Long facilityId,
             @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String description,
             Pageable pageable
     ) {
-        Page<FormTemplateResponseVM> page = service.list(facilityId, departmentId, q, pageable);
+        Page<FormTemplateResponseVM> page = (description != null && !description.isBlank())
+                ? service.listByDescription(description, pageable)
+                : service.list(facilityId, departmentId, q, pageable);
 
         LOG.debug("REST request to list FormTemplates: facilityId={}, departmentId={}, page={}, size={}, sort={}",
                 facilityId, departmentId,

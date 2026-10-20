@@ -67,6 +67,12 @@ public class PrescriptionInstructionService {
     }
 
     @Transactional(readOnly = true)
+    public Page<PrescriptionInstruction> findByDose(BigDecimal dose, Pageable pageable) {
+        LOG.debug("List PrescriptionInstructions by dose={} page={}", dose, pageable);
+        return repository.findByDose(dose, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<PrescriptionInstruction> findByRoute(MedRoa route, Pageable pageable) {
         LOG.debug("List PrescriptionInstructions by route='{}' page={}", route, pageable);
         return repository.findByRout(route, pageable);

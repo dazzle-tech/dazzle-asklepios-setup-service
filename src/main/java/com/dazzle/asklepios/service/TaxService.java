@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Tax;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
+import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.TaxRepository;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -81,6 +83,7 @@ public class TaxService {
                 .currency(taxDTO.currency())
                 .calculationType(taxDTO.calculationType())
                 .applicableOn(taxDTO.applicableOn())
+                .citizenCategory(resolveCitizenCategory(taxDTO))
                 .validFrom(taxDTO.validFrom())
                 .validTo(taxDTO.validTo())
                 .description(trimToNull(taxDTO.description()))
@@ -154,7 +157,8 @@ public class TaxService {
         if (Boolean.TRUE.equals(taxDTO.isDefault())) {
             clearExistingDefaultTax(
                     taxDTO.facilityId(),
-                    id
+                    id,
+                    resolveCitizenCategory(taxDTO)
             );
         }
 
@@ -167,6 +171,7 @@ public class TaxService {
         existing.setCurrency(taxDTO.currency());
         existing.setCalculationType(taxDTO.calculationType());
         existing.setApplicableOn(taxDTO.applicableOn());
+        existing.setCitizenCategory(resolveCitizenCategory(taxDTO));
         existing.setValidFrom(taxDTO.validFrom());
         existing.setValidTo(taxDTO.validTo());
         existing.setIsDefault(Boolean.TRUE.equals(taxDTO.isDefault()));
@@ -266,7 +271,8 @@ public class TaxService {
 
         clearExistingDefaultTax(
                 tax.getFacilityId(),
-                tax.getId()
+                tax.getId(),
+                tax.getCitizenCategory()
         );
 
         tax.setIsDefault(true);
@@ -401,78 +407,131 @@ public class TaxService {
     public Tax resolveApplicableTax(
             Long facilityId,
             Currency currency,
-            LocalDate pricingDate
+            TaxApplicableOn applicableOn,
+            LocalDate pricingDate,
+            Boolean patientCitizen
     ) {
         LocalDate effectiveDate =
                 pricingDate == null
                         ? LocalDate.now()
                         : pricingDate;
 
-        List<Tax> effectiveTaxes =
+        return selectApplicableTax(
                 findEffectiveTaxes(
                         facilityId,
                         effectiveDate
-                );
+                ),
+                currency,
+                applicableOn,
+                patientCitizen
+        );
+    }
 
-        return effectiveTaxes.stream()
+    private Tax selectApplicableTax(
+            List<Tax> taxes,
+            Currency currency,
+            TaxApplicableOn applicableOn,
+            Boolean patientCitizen
+    ) {
+        return taxes.stream()
+                .filter(Tax::getActive)
+                .filter(tax -> matchesApplicableOn(tax, applicableOn))
                 .filter(tax ->
                         tax.getCurrency() == null
                                 || tax.getCurrency() == currency
                 )
-                .filter(Tax::getActive)
+                .filter(tax -> matchesCitizenCategory(tax, patientCitizen))
                 .sorted(
-                        java.util.Comparator
-                                .comparing(
+                        Comparator
+                                .comparingInt((Tax tax) ->
+                                        applicableOnSpecificity(tax, applicableOn)
+                                )
+                                .thenComparingInt(tax ->
+                                        citizenSpecificity(tax, patientCitizen)
+                                )
+                                .thenComparing(
                                         Tax::getIsDefault,
-                                        java.util.Comparator.reverseOrder()
+                                        Comparator.reverseOrder()
                                 )
                                 .thenComparing(
                                         Tax::getId,
-                                        java.util.Comparator.reverseOrder()
+                                        Comparator.reverseOrder()
                                 )
                 )
                 .findFirst()
                 .orElse(null);
     }
 
-    @Transactional(readOnly = true)
-    public Tax resolveApplicableTax(
-            Long facilityId,
-            Currency currency,
-            TaxApplicableOn applicableOn,
-            LocalDate pricingDate
+    private boolean matchesApplicableOn(
+            Tax tax,
+            TaxApplicableOn requested
     ) {
-        LocalDate effectiveDate =
-                pricingDate == null
-                        ? LocalDate.now()
-                        : pricingDate;
+        if (requested == null || tax.getApplicableOn() == requested) {
+            return true;
+        }
 
-        return findEffectiveTaxes(
-                facilityId,
-                effectiveDate
-        )
-                .stream()
-                .filter(Tax::getActive)
-                .filter(tax ->
-                        tax.getApplicableOn() == applicableOn
-                )
-                .filter(tax ->
-                        tax.getCurrency() == null
-                                || tax.getCurrency() == currency
-                )
-                .sorted(
-                        java.util.Comparator
-                                .comparing(
-                                        Tax::getIsDefault,
-                                        java.util.Comparator.reverseOrder()
-                                )
-                                .thenComparing(
-                                        Tax::getId,
-                                        java.util.Comparator.reverseOrder()
-                                )
-                )
-                .findFirst()
-                .orElse(null);
+        return isItemCategory(requested)
+                && tax.getApplicableOn() == TaxApplicableOn.CHARGE_LINE;
+    }
+
+    private int applicableOnSpecificity(
+            Tax tax,
+            TaxApplicableOn requested
+    ) {
+        if (requested == null || tax.getApplicableOn() == requested) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    private boolean isItemCategory(TaxApplicableOn applicableOn) {
+        return applicableOn != null
+                && applicableOn != TaxApplicableOn.INVOICE
+                && applicableOn != TaxApplicableOn.CHARGE_LINE;
+    }
+
+    private TaxCitizenCategory categoryOf(Tax tax) {
+        return tax.getCitizenCategory() == null
+                ? TaxCitizenCategory.ALL
+                : tax.getCitizenCategory();
+    }
+
+    private boolean matchesCitizenCategory(
+            Tax tax,
+            Boolean patientCitizen
+    ) {
+        TaxCitizenCategory category = categoryOf(tax);
+
+        if (category == TaxCitizenCategory.ALL) {
+            return true;
+        }
+
+        if (patientCitizen == null) {
+            return false;
+        }
+
+        TaxCitizenCategory expected = Boolean.TRUE.equals(patientCitizen)
+                ? TaxCitizenCategory.CITIZEN
+                : TaxCitizenCategory.NON_CITIZEN;
+
+        return category == expected;
+    }
+
+    private int citizenSpecificity(
+            Tax tax,
+            Boolean patientCitizen
+    ) {
+        return matchesCitizenCategory(tax, patientCitizen)
+                && categoryOf(tax) != TaxCitizenCategory.ALL
+                ? 0
+                : 1;
+    }
+
+    private TaxCitizenCategory resolveCitizenCategory(TaxDTO dto) {
+        return dto.citizenCategory() == null
+                ? TaxCitizenCategory.ALL
+                : dto.citizenCategory();
     }
 
     @Transactional(readOnly = true)
@@ -737,13 +796,22 @@ public class TaxService {
 
     private void clearExistingDefaultTax(
             Long facilityId,
-            Long excludedId
+            Long excludedId,
+            TaxCitizenCategory citizenCategory
     ) {
+        TaxCitizenCategory category =
+                citizenCategory == null
+                        ? TaxCitizenCategory.ALL
+                        : citizenCategory;
+
         List<Tax> defaults =
                 taxRepository
-                        .findAllByFacilityIdAndIsDefaultTrue(
-                                facilityId
+                        .findAllByFacilityIdAndIsDefaultTrueAndCitizenCategory(
+                                facilityId,
+                                category
                         );
+
+        List<Tax> cleared = new ArrayList<>();
 
         for (Tax existingDefault : defaults) {
             if (
@@ -756,10 +824,11 @@ public class TaxService {
             }
 
             existingDefault.setIsDefault(false);
+            cleared.add(existingDefault);
         }
 
-        if (!defaults.isEmpty()) {
-            taxRepository.saveAll(defaults);
+        if (!cleared.isEmpty()) {
+            taxRepository.saveAll(cleared);
             taxRepository.flush();
         }
     }
