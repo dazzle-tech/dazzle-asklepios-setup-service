@@ -2,12 +2,15 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestProfile;
+import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
+import com.dazzle.asklepios.repository.LoincCodeRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
+import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +20,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -30,17 +36,20 @@ public class DiagnosticTestService {
     private final DiagnosticTestProfileRepository profileRepository;
     private final DiagnosticTestNormalRangeService normalRangeService;
     private final BillingRuleReferenceService billingRuleReferenceService;
+    private final LoincCodeRepository loincCodeRepository;
 
     public DiagnosticTestService(
             DiagnosticTestRepository repository,
             DiagnosticTestProfileRepository profileRepository,
             DiagnosticTestNormalRangeService normalRangeService,
-            BillingRuleReferenceService billingRuleReferenceService
+            BillingRuleReferenceService billingRuleReferenceService,
+            LoincCodeRepository loincCodeRepository
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
         this.normalRangeService = normalRangeService;
         this.billingRuleReferenceService = billingRuleReferenceService;
+        this.loincCodeRepository = loincCodeRepository;
     }
     private void validateDefaultProfileFields(
             TestResultType resultType,
@@ -94,6 +103,7 @@ public class DiagnosticTestService {
                                 billingRuleReferenceService.toBillingItemType(vm.type())
                         )
                 )
+                .loincCode(resolveLoincCode(vm.type(), vm.loincCodeId()))
                 .build();
 
         validateAppointableRequirements(test);
@@ -170,6 +180,7 @@ public class DiagnosticTestService {
                             billingRuleReferenceService.toBillingItemType(vm.type())
                     )
             );
+            existing.setLoincCode(resolveLoincCode(vm.type(), vm.loincCodeId()));
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
@@ -267,6 +278,85 @@ public class DiagnosticTestService {
 
             return saved;
         });
+    }
+
+    /**
+     * Maps diagnostic tests to response VMs inside a read transaction.
+     * Reloads associations needed for the response via repository entity-graph fetch
+     * (batch by ids) so pagination queries stay free of join-fetch and LOINC is
+     * initialized before mapping.
+     */
+    @Transactional(readOnly = true)
+    public DiagnosticTestResponseVM toResponseVM(DiagnosticTest diagnosticTest) {
+        if (diagnosticTest == null || diagnosticTest.getId() == null) {
+            return null;
+        }
+        List<DiagnosticTestResponseVM> mapped = toResponseVMs(List.of(diagnosticTest));
+        return mapped.isEmpty() ? null : mapped.get(0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiagnosticTestResponseVM> toResponseVMs(List<DiagnosticTest> diagnosticTests) {
+        if (diagnosticTests == null || diagnosticTests.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> diagnosticTestIds = diagnosticTests.stream()
+                .map(DiagnosticTest::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (diagnosticTestIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, DiagnosticTest> withLoincById = repository.findWithLoincByIdIn(diagnosticTestIds).stream()
+                .collect(Collectors.toMap(
+                        DiagnosticTest::getId,
+                        Function.identity(),
+                        (existing, duplicate) -> existing
+                ));
+
+        Map<Long, DiagnosticTestProfile> defaultProfileByTestId = profileRepository
+                .findAllByTest_IdInAndIsDefaultTrue(diagnosticTestIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getTest().getId(),
+                        Function.identity(),
+                        (existing, duplicate) -> existing
+                ));
+
+        return diagnosticTests.stream()
+                .map(original -> {
+                    if (original.getId() == null) {
+                        return null;
+                    }
+                    DiagnosticTest test = withLoincById.get(original.getId());
+                    if (test == null) {
+                        return null;
+                    }
+
+                    DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(test);
+
+                    if (test.getType() != TestType.LABORATORY) {
+                        return responseVM;
+                    }
+
+                    DiagnosticTestProfile defaultProfile = defaultProfileByTestId.get(test.getId());
+                    if (defaultProfile == null) {
+                        return responseVM;
+                    }
+
+                    return responseVM.withDefaultProfile(
+                            defaultProfile.getId(),
+                            defaultProfile.getResultUnit(),
+                            defaultProfile.getResultType(),
+                            defaultProfile.getListOfValueId()
+                    );
+                })
+                .filter(Objects::nonNull)
+                .toList();
     }
 
     private void validateAppointableRequirements(DiagnosticTest diagnosticTest) {
@@ -397,6 +487,10 @@ public class DiagnosticTestService {
 
     @Transactional(readOnly = true)
     public List<DiagnosticTest> findAllByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        // Plain load only; LOINC is batch-initialized in transactional toResponseVMs.
         return repository.findAllById(ids);
     }
 
@@ -433,5 +527,17 @@ public class DiagnosticTestService {
 
     private boolean requiresModality(TestType type) {
         return type == TestType.RADIOLOGY;
+    }
+
+    private LoincCode resolveLoincCode(TestType type, Long loincCodeId) {
+        if (type != TestType.LABORATORY || loincCodeId == null) {
+            return null;
+        }
+        return loincCodeRepository.findById(loincCodeId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "LOINC code not found",
+                        "diagnosticTest",
+                        "loincnotfound"
+                ));
     }
 }

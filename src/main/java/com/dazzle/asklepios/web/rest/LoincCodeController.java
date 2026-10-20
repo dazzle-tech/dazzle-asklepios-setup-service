@@ -55,6 +55,13 @@ public class LoincCodeController {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
+    @GetMapping("/loinc/{id:\\d+}")
+    public ResponseEntity<LoincCode> getById(@PathVariable Long id) {
+        return repository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     // ====================== FILTERS ======================
 
     @GetMapping("/loinc/by-category/{category}")
