@@ -1,19 +1,28 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
-import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 
 @Repository
 public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, Long> {
+
+    /**
+     * Batch-load diagnostic tests with LOINC initialized for response mapping.
+     * Used after paginated queries so page totals/filters stay accurate without join-fetch.
+     */
+    @EntityGraph(attributePaths = "loincCode")
+    @Query("SELECT t FROM DiagnosticTest t WHERE t.id IN :ids")
+    List<DiagnosticTest> findWithLoincByIdIn(@Param("ids") Collection<Long> ids);
 
     Page<DiagnosticTest> findByType(TestType type, Pageable pageable);
 

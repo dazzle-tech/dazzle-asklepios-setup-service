@@ -1,9 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
-import com.dazzle.asklepios.domain.DiagnosticTestProfile;
 import com.dazzle.asklepios.domain.enumeration.TestType;
-import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.service.DiagnosticTestService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -33,7 +31,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -43,11 +40,9 @@ public class DiagnosticTestController {
     private static final Logger LOG = LoggerFactory.getLogger(DiagnosticTestController.class);
 
     private final DiagnosticTestService service;
-    private final DiagnosticTestProfileRepository profileRepository;
 
-    public DiagnosticTestController(DiagnosticTestService service, DiagnosticTestProfileRepository profileRepository) {
+    public DiagnosticTestController(DiagnosticTestService service) {
         this.service = service;
-        this.profileRepository = profileRepository;
     }
 
     @PostMapping("/diagnostic-test")
@@ -55,9 +50,7 @@ public class DiagnosticTestController {
         LOG.debug("REST request to create DiagnosticTest payload={}", vm);
 
         DiagnosticTest test = service.create(vm);
-
-        // enrich single response too
-        DiagnosticTestResponseVM response = enrichWithDefaultProfile(test);
+        DiagnosticTestResponseVM response = service.toResponseVM(test);
         LOG.debug("Result for  created DiagnosticTest id={} response={}", test.getId(), response);
         return ResponseEntity
                 .created(URI.create("/api/setup/diagnostic-test/" + test.getId()))
@@ -69,7 +62,7 @@ public class DiagnosticTestController {
         LOG.debug("REST request to update DiagnosticTest id={} payload={}", id, vm);
 
         return service.update(id, vm)
-                .map(updated -> ResponseEntity.ok(enrichWithDefaultProfile(updated)))
+                .map(updated -> ResponseEntity.ok(service.toResponseVM(updated)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -84,7 +77,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -101,7 +94,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -121,7 +114,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -141,7 +134,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -165,7 +158,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -189,7 +182,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -213,7 +206,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -234,7 +227,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -245,7 +238,7 @@ public class DiagnosticTestController {
         LOG.debug("REST request to get DiagnosticTest id={}", id);
 
         return service.findOne(id)
-                .map(this::enrichWithDefaultProfile)
+                .map(service::toResponseVM)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -255,7 +248,7 @@ public class DiagnosticTestController {
         LOG.debug("REST request to get DiagnosticTest internal id={}", id);
 
         return service.findOne(id)
-                .map(this::enrichWithDefaultProfile)
+                .map(service::toResponseVM)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -265,7 +258,7 @@ public class DiagnosticTestController {
         LOG.debug("REST toggle Diagnostic Setup isActive id={}", id);
 
         return service.toggleIsActive(id)
-                .map(this::enrichWithDefaultProfile)
+                .map(service::toResponseVM)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -281,11 +274,12 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
     }
+
     @GetMapping("/diagnostic-test/active/by-type/{type}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findActiveByType(
             @PathVariable @NotNull TestType type,
@@ -316,7 +310,7 @@ public class DiagnosticTestController {
         );
 
         return new ResponseEntity<>(
-                enrichWithDefaultProfiles(page.getContent()),
+                service.toResponseVMs(page.getContent()),
                 headers,
                 HttpStatus.OK
         );
@@ -336,74 +330,12 @@ public class DiagnosticTestController {
 
         // Optional: keep same input order
         var map = tests.stream().collect(Collectors.toMap(DiagnosticTest::getId, t -> t, (a, b) -> a));
-        List<DiagnosticTestResponseVM> body = ids.stream()
+        List<DiagnosticTest> ordered = ids.stream()
                 .map(map::get)
                 .filter(java.util.Objects::nonNull)
-                .map(this::enrichWithDefaultProfile)
                 .toList();
 
-        return ResponseEntity.ok(body);
-    }
-
-    private DiagnosticTestResponseVM enrichWithDefaultProfile(DiagnosticTest diagnosticTest) {
-        DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
-
-        if (diagnosticTest.getType() != TestType.LABORATORY) {
-            return responseVM;
-        }
-
-        return profileRepository
-                .findFirstByTest_IdAndIsDefaultTrue(diagnosticTest.getId())
-                .map(defaultProfile ->
-                        responseVM.withDefaultProfile(
-                                defaultProfile.getId(),
-                                defaultProfile.getResultUnit(),
-                                defaultProfile.getResultType(),
-                                defaultProfile.getListOfValueId()
-                        )
-                )
-                .orElse(responseVM);
-    }
-
-    private List<DiagnosticTestResponseVM> enrichWithDefaultProfiles(List<DiagnosticTest> diagnosticTests) {
-        if (diagnosticTests == null || diagnosticTests.isEmpty()) {
-            return List.of();
-        }
-
-        List<Long> diagnosticTestIds = diagnosticTests.stream()
-                .map(DiagnosticTest::getId)
-                .toList();
-
-        Map<Long, DiagnosticTestProfile> defaultProfileByTestId = profileRepository
-                .findAllByTest_IdInAndIsDefaultTrue(diagnosticTestIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        profile -> profile.getTest().getId(),
-                        profile -> profile,
-                        (existing, duplicate) -> existing
-                ));
-
-        return diagnosticTests.stream()
-                .map(diagnosticTest -> {
-                    DiagnosticTestResponseVM responseVM = DiagnosticTestResponseVM.ofEntity(diagnosticTest);
-
-                    if (diagnosticTest.getType() != TestType.LABORATORY) {
-                        return responseVM;
-                    }
-
-                    DiagnosticTestProfile defaultProfile = defaultProfileByTestId.get(diagnosticTest.getId());
-                    if (defaultProfile == null) {
-                        return responseVM;
-                    }
-
-                    return responseVM.withDefaultProfile(
-                            defaultProfile.getId(),
-                            defaultProfile.getResultUnit(),
-                            defaultProfile.getResultType(),
-                            defaultProfile.getListOfValueId()
-                    );
-                })
-                .toList();
+        return ResponseEntity.ok(service.toResponseVMs(ordered));
     }
 
 }
