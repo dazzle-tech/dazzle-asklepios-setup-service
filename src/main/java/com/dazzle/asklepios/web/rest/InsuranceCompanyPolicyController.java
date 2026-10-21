@@ -1,7 +1,9 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.InsuranceCompanyPolicy;
+import com.dazzle.asklepios.service.CoverageClassService;
 import com.dazzle.asklepios.service.InsuranceCompanyPolicyService;
+import com.dazzle.asklepios.web.rest.vm.coverage.PolicyCoverageClassResponseVM;
 import com.dazzle.asklepios.web.rest.vm.insurancecompanypolicy.InsuranceCompanyPolicyResponseVM;
 import com.dazzle.asklepios.web.rest.vm.insurancecompanypolicy.InsuranceCompanyPolicySaveVM;
 import jakarta.validation.Valid;
@@ -25,9 +27,14 @@ public class InsuranceCompanyPolicyController {
     private static final Logger LOG = LoggerFactory.getLogger(InsuranceCompanyPolicyController.class);
 
     private final InsuranceCompanyPolicyService insuranceCompanyPolicyService;
+    private final CoverageClassService coverageClassService;
 
-    public InsuranceCompanyPolicyController(InsuranceCompanyPolicyService insuranceCompanyPolicyService) {
+    public InsuranceCompanyPolicyController(
+            InsuranceCompanyPolicyService insuranceCompanyPolicyService,
+            CoverageClassService coverageClassService
+    ) {
         this.insuranceCompanyPolicyService = insuranceCompanyPolicyService;
+        this.coverageClassService = coverageClassService;
     }
 
     @PostMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies")
@@ -52,5 +59,18 @@ public class InsuranceCompanyPolicyController {
                 .map(InsuranceCompanyPolicyResponseVM::ofEntity)
                 .toList();
         return ResponseEntity.ok(policies);
+    }
+
+    @GetMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies/{policyId:\\d+}/classes")
+    public ResponseEntity<List<PolicyCoverageClassResponseVM>> listClasses(
+            @PathVariable Long insuranceCompanyId,
+            @PathVariable Long policyId
+    ) {
+        LOG.debug(
+                "REST list coverage classes for policy insuranceCompanyId={} policyId={}",
+                insuranceCompanyId,
+                policyId
+        );
+        return ResponseEntity.ok(coverageClassService.listByPolicy(insuranceCompanyId, policyId));
     }
 }

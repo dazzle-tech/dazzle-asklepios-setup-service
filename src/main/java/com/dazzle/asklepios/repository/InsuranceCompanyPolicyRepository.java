@@ -13,6 +13,8 @@ public interface InsuranceCompanyPolicyRepository extends JpaRepository<Insuranc
     @EntityGraph(attributePaths = "insuranceCompany")
     List<InsuranceCompanyPolicy> findByInsuranceCompany_IdOrderByValidFromDescIdDesc(Long insuranceCompanyId);
 
+    boolean existsByIdAndInsuranceCompany_Id(Long id, Long insuranceCompanyId);
+
     boolean existsByInsuranceCompany_IdAndPolicyCodeIgnoreCase(Long insuranceCompanyId, String policyCode);
 
     boolean existsByInsuranceCompany_IdAndPolicyNumberIgnoreCase(Long insuranceCompanyId, String policyNumber);

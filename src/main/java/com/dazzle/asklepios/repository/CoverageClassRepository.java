@@ -34,6 +34,9 @@ public interface CoverageClassRepository extends JpaRepository<CoverageClass, Lo
             String policyNumber
     );
 
+    @EntityGraph(attributePaths = "coverageContract")
+    List<CoverageClass> findByInsuranceCompanyPolicy_IdOrderByNameAscIdAsc(Long policyId);
+
     boolean existsByCoverageContract_IdAndNameIgnoreCase(Long contractId, String name);
 
     boolean existsByCoverageContract_IdAndNameIgnoreCaseAndIdNot(Long contractId, String name, Long id);
