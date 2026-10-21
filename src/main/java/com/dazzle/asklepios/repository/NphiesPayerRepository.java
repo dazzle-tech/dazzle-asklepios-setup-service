@@ -56,18 +56,6 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
 
     List<NphiesPayer> findByIdIn(Collection<Long> ids);
 
-    @EntityGraph(attributePaths = {"childCompanies"})
-    List<NphiesPayer> findDistinctByIdIn(Collection<Long> ids);
-
-    List<NphiesPayer> findByParentCompanies_Id(Long parentId);
-
-    List<NphiesPayer> findByChildCompanies_Id(Long childId);
-
-    @EntityGraph(attributePaths = {"childCompanies"})
-    List<NphiesPayer> findByChildCompanies_IdIn(Collection<Long> childIds);
-
-    List<NphiesPayer> findDistinctByParentCompanies_IdNotNull();
-
     boolean existsByNphiesIdIgnoreCase(String nphiesId);
 
     boolean existsByNphiesIdIgnoreCaseAndIdNot(String nphiesId, Long id);

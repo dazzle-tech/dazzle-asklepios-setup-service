@@ -12,9 +12,6 @@ public record CoverageCopaymentVM(
         EncounterType encounterType,
         InsuranceCoverageType valueType,
         BigDecimal valueAmount,
-        Boolean discountOnExcluded,
-        Boolean discountOnCash,
-        Boolean discountOnExceededCash,
         Boolean isActive,
         Instant createdDate,
         Instant lastModifiedDate
@@ -25,9 +22,6 @@ public record CoverageCopaymentVM(
                 entity.getEncounterType(),
                 entity.getValueType(),
                 entity.getValueAmount(),
-                entity.getDiscountOnExcluded(),
-                entity.getDiscountOnCash(),
-                entity.getDiscountOnExceededCash(),
                 entity.getIsActive(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate()

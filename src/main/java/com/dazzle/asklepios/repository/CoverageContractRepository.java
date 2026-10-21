@@ -12,25 +12,9 @@ import java.util.List;
 public interface CoverageContractRepository
         extends JpaRepository<CoverageContract, Long>, JpaSpecificationExecutor<CoverageContract> {
 
-    boolean existsByGuarantorTypeAndCompanyIdAndCodeIgnoreCase(
-            GuarantorType guarantorType,
-            Long companyId,
-            String code
-    );
-
-    boolean existsByGuarantorTypeAndCompanyIdAndCodeIgnoreCaseAndIdNot(
-            GuarantorType guarantorType,
-            Long companyId,
-            String code,
-            Long id
-    );
-
     List<CoverageContract> findByInsurancePayerId(Long insurancePayerId);
 
-    List<CoverageContract> findByGuarantorTypeAndCompanyId(GuarantorType guarantorType, Long companyId);
+    List<CoverageContract> findByInsurancePayerIdAndIsActiveTrue(Long insurancePayerId);
 
-    List<CoverageContract> findByIsActiveTrueAndInsurancePayerIdAndPolicyNumberIgnoreCase(
-            Long insurancePayerId,
-            String policyNumber
-    );
+    List<CoverageContract> findByGuarantorTypeAndCompanyId(GuarantorType guarantorType, Long companyId);
 }

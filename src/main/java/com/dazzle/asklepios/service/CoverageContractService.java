@@ -20,7 +20,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -51,20 +56,19 @@ public class CoverageContractService {
         validateCompany(vm.guarantorType(), vm.companyId());
         PriceListSetup priceList = coverageLookupService.requireInsurancePriceList(vm.priceListSetupId());
         NphiesPayer insurancePayer = resolveInsurancePayer(vm.guarantorType(), vm.companyId(), vm.insurancePayerId(), priceList);
-        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
-        ensureUniqueCode(vm.guarantorType(), vm.companyId(), vm.code(), null);
+        Boolean isActive = vm.isActive() != null ? vm.isActive() : Boolean.TRUE;
+        Long parentPayerId = resolveParentPayerId(vm.parentPayerId(), insurancePayer.getId());
+        ensureSingleActivePeriod(insurancePayer.getId(), priceList, isActive, null);
 
         CoverageContract saved = coverageContractRepository.save(CoverageContract.builder()
                 .guarantorType(vm.guarantorType())
                 .companyId(vm.companyId())
-                .code(vm.code().trim())
-                .policyNumber(vm.policyNumber().trim())
                 .coverageBasis(vm.coverageBasis())
                 .insurancePayerId(insurancePayer.getId())
                 .priceListSetupId(priceList.getId())
-                .parentPayerId(parentPayer != null ? parentPayer.getId() : null)
+                .parentPayerId(parentPayerId)
                 .approvalCoverageCompany(vm.approvalCoverageCompany())
-                .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
+                .isActive(isActive)
                 .build());
         return toResponse(saved);
     }
@@ -75,27 +79,29 @@ public class CoverageContractService {
         validateCompany(vm.guarantorType(), vm.companyId());
         PriceListSetup priceList = coverageLookupService.requireInsurancePriceList(vm.priceListSetupId());
         NphiesPayer insurancePayer = resolveInsurancePayer(vm.guarantorType(), vm.companyId(), vm.insurancePayerId(), priceList);
-        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
-        ensureUniqueCode(vm.guarantorType(), vm.companyId(), vm.code(), existing.getId());
+        Boolean isActive = vm.isActive() != null ? vm.isActive() : existing.getIsActive();
+        Long parentPayerId = resolveParentPayerId(vm.parentPayerId(), insurancePayer.getId());
+        ensureSingleActivePeriod(insurancePayer.getId(), priceList, isActive, existing.getId());
 
         existing.setGuarantorType(vm.guarantorType());
         existing.setCompanyId(vm.companyId());
-        existing.setCode(vm.code().trim());
-        existing.setPolicyNumber(vm.policyNumber().trim());
         existing.setCoverageBasis(vm.coverageBasis());
         existing.setInsurancePayerId(insurancePayer.getId());
         existing.setPriceListSetupId(priceList.getId());
-        existing.setParentPayerId(parentPayer != null ? parentPayer.getId() : null);
+        existing.setParentPayerId(parentPayerId);
         existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
-        if (vm.isActive() != null) {
-            existing.setIsActive(vm.isActive());
-        }
+        existing.setIsActive(isActive);
         return toResponse(coverageContractRepository.save(existing));
     }
 
     public CoverageContractResponseVM toggleActive(Long id) {
         CoverageContract existing = getEntity(id);
-        existing.setIsActive(!Boolean.TRUE.equals(existing.getIsActive()));
+        boolean nextActive = !Boolean.TRUE.equals(existing.getIsActive());
+        if (nextActive) {
+            PriceListSetup priceList = priceListSetupRepository.findById(existing.getPriceListSetupId()).orElse(null);
+            ensureSingleActivePeriod(existing.getInsurancePayerId(), priceList, true, existing.getId());
+        }
+        existing.setIsActive(nextActive);
         return toResponse(coverageContractRepository.save(existing));
     }
 
@@ -165,7 +171,7 @@ public class CoverageContractService {
             if (!coverageLookupService.isPayerLinkedToTpa(companyId, insurancePayerId)) {
                 throw new BadRequestAlertException("Selected insurance is not linked to this TPA.", ENTITY, "priceListMismatch");
             }
-            if (listPayerId == null || !insurancePayerId.equals(listPayerId)) {
+            if (!insurancePayerId.equals(listPayerId)) {
                 throw new BadRequestAlertException("Selected price list does not belong to the selected insurance name.", ENTITY, "priceListMismatch");
             }
             return coverageLookupService.requireActivePayer(insurancePayerId, "Insurance name");
@@ -173,15 +179,79 @@ public class CoverageContractService {
         throw new BadRequestAlertException("Guarantor type must be Insurance or TPA.", ENTITY, "invalidGuarantorType");
     }
 
-    private NphiesPayer resolveLinkedParent(NphiesPayer insurancePayer) {
-        if (insurancePayer == null || insurancePayer.getId() == null) {
+    private Long resolveParentPayerId(Long parentPayerId, Long insurancePayerId) {
+        if (parentPayerId == null) {
             return null;
         }
-        List<NphiesPayer> parents = nphiesPayerRepository.findByChildCompanies_Id(insurancePayer.getId());
-        if (parents.isEmpty()) {
-            return null;
+        if (parentPayerId.equals(insurancePayerId)) {
+            throw new BadRequestAlertException(
+                    "Parent insurance cannot be the same insurance company.",
+                    ENTITY,
+                    "parentSameAsInsurance"
+            );
         }
-        return parents.get(0);
+        return coverageLookupService.requireActivePayer(parentPayerId, "Parent insurance").getId();
+    }
+
+    private void ensureSingleActivePeriod(
+            Long insurancePayerId,
+            PriceListSetup priceList,
+            Boolean isActive,
+            Long currentId
+    ) {
+        if (!Boolean.TRUE.equals(isActive) || insurancePayerId == null) {
+            return;
+        }
+        List<CoverageContract> activeContracts = coverageContractRepository
+                .findByInsurancePayerIdAndIsActiveTrue(insurancePayerId);
+        if (activeContracts.isEmpty()) {
+            return;
+        }
+
+        Set<Long> priceListIds = new HashSet<>();
+        if (priceList != null && priceList.getId() != null) {
+            priceListIds.add(priceList.getId());
+        }
+        for (CoverageContract other : activeContracts) {
+            if (other.getPriceListSetupId() != null) {
+                priceListIds.add(other.getPriceListSetupId());
+            }
+        }
+        Map<Long, PriceListSetup> priceListsById = new HashMap<>();
+        if (!priceListIds.isEmpty()) {
+            for (PriceListSetup list : priceListSetupRepository.findAllById(priceListIds)) {
+                priceListsById.put(list.getId(), list);
+            }
+        }
+        if (priceList != null && priceList.getId() != null) {
+            priceListsById.put(priceList.getId(), priceList);
+        }
+
+        LocalDate from = priceList == null ? null : priceList.getEffectiveFrom();
+        LocalDate to = priceList == null ? null : priceList.getEffectiveTo();
+        for (CoverageContract other : activeContracts) {
+            if (currentId != null && currentId.equals(other.getId())) {
+                continue;
+            }
+            PriceListSetup otherList = priceListsById.get(other.getPriceListSetupId());
+            LocalDate otherFrom = otherList == null ? null : otherList.getEffectiveFrom();
+            LocalDate otherTo = otherList == null ? null : otherList.getEffectiveTo();
+            if (periodsOverlap(from, to, otherFrom, otherTo)) {
+                throw new BadRequestAlertException(
+                        "This insurance company already has an active contract for this period. Only one active contract is allowed for the same dates.",
+                        ENTITY,
+                        "activeContractPeriodOverlap"
+                );
+            }
+        }
+    }
+
+    private boolean periodsOverlap(LocalDate from, LocalDate to, LocalDate otherFrom, LocalDate otherTo) {
+        LocalDate start = from == null ? LocalDate.MIN : from;
+        LocalDate end = to == null ? LocalDate.MAX : to;
+        LocalDate otherStart = otherFrom == null ? LocalDate.MIN : otherFrom;
+        LocalDate otherEnd = otherTo == null ? LocalDate.MAX : otherTo;
+        return !start.isAfter(otherEnd) && !otherStart.isAfter(end);
     }
 
     private String formatParentName(NphiesPayer parentPayer) {
@@ -196,15 +266,6 @@ public class CoverageContractService {
         return code.isBlank() ? null : code;
     }
 
-    private void ensureUniqueCode(GuarantorType guarantorType, Long companyId, String code, Long id) {
-        boolean exists = id == null
-                ? coverageContractRepository.existsByGuarantorTypeAndCompanyIdAndCodeIgnoreCase(guarantorType, companyId, code)
-                : coverageContractRepository.existsByGuarantorTypeAndCompanyIdAndCodeIgnoreCaseAndIdNot(guarantorType, companyId, code, id);
-        if (exists) {
-            throw new BadRequestAlertException("Coverage code already exists for this company.", ENTITY, "codeExists");
-        }
-    }
-
     public CoverageContractResponseVM toResponse(CoverageContract contract) {
         return toResponse(contract, null);
     }
@@ -212,7 +273,9 @@ public class CoverageContractService {
     public CoverageContractResponseVM toResponse(CoverageContract contract, CoverageClass coverageClass) {
         PriceListSetup priceList = priceListSetupRepository.findById(contract.getPriceListSetupId()).orElse(null);
         NphiesPayer insurancePayer = nphiesPayerRepository.findById(contract.getInsurancePayerId()).orElse(null);
-        NphiesPayer parentPayer = resolveLinkedParent(insurancePayer);
+        NphiesPayer parentPayer = contract.getParentPayerId() == null
+                ? null
+                : nphiesPayerRepository.findById(contract.getParentPayerId()).orElse(null);
 
         return new CoverageContractResponseVM(
                 contract.getId(),
@@ -220,8 +283,6 @@ public class CoverageContractService {
                 contract.getCompanyId(),
                 coverageLookupService.companyName(contract.getGuarantorType(), contract.getCompanyId()),
                 coverageLookupService.companyCode(contract.getGuarantorType(), contract.getCompanyId()),
-                contract.getCode(),
-                contract.getPolicyNumber(),
                 contract.getCoverageBasis(),
                 contract.getInsurancePayerId(),
                 insurancePayer == null ? null : coverageLookupService.payerDisplayName(insurancePayer),

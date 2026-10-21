@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.service.NphiesPayerService;
 import com.dazzle.asklepios.service.PayerRelationshipDashboardService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerChildCompaniesUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerTpasUpdateVM;
@@ -128,31 +127,6 @@ public class NphiesPayerController {
         return ResponseEntity.ok(
                 nphiesPayerService.findAvailableTpas(id).stream()
                         .map(NphiesPayerResponseVM.LinkedTpaVM::ofEntity)
-                        .toList()
-        );
-    }
-
-    @PatchMapping("/nphies-payers/{id:\\d+}/child-companies")
-    public ResponseEntity<NphiesPayerResponseVM> updateChildCompanies(
-            @PathVariable Long id,
-            @RequestBody NphiesPayerChildCompaniesUpdateVM vm
-    ) {
-        LOG.debug("REST update NPHIES Payer child insurance links id={} payload={}", id, vm);
-        NphiesPayer saved = nphiesPayerService.updateChildCompanies(
-                id,
-                vm == null ? List.of() : vm.childCompanyIds()
-        );
-        return ResponseEntity.ok(NphiesPayerResponseVM.ofEntity(saved));
-    }
-
-    @GetMapping("/nphies-payers/{id:\\d+}/available-child-companies")
-    public ResponseEntity<List<NphiesPayerResponseVM.LinkedInsuranceVM>> getAvailableChildCompanies(
-            @PathVariable Long id
-    ) {
-        LOG.debug("REST list available child insurance companies for NPHIES Payer id={}", id);
-        return ResponseEntity.ok(
-                nphiesPayerService.findAvailableChildCompanies(id).stream()
-                        .map(NphiesPayerResponseVM.LinkedInsuranceVM::ofEntity)
                         .toList()
         );
     }

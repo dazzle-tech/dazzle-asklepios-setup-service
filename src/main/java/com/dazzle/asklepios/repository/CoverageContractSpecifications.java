@@ -1,7 +1,11 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.CoverageContract;
+import com.dazzle.asklepios.domain.NphiesPayer;
+import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -33,11 +37,25 @@ public final class CoverageContractSpecifications {
             if (isActive != null) {
                 predicates.add(cb.equal(root.get("isActive"), isActive));
             }
-            if (search != null && !search.isBlank()) {
+            if (search != null && !search.isBlank() && query != null) {
                 String like = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
+                Subquery<Long> payerIds = query.subquery(Long.class);
+                Root<NphiesPayer> payer = payerIds.from(NphiesPayer.class);
+                payerIds.select(payer.get("id"));
+                payerIds.where(cb.or(
+                        cb.like(cb.lower(payer.get("nameEn")), like),
+                        cb.like(cb.lower(payer.get("nameAr")), like),
+                        cb.like(cb.lower(payer.get("nphiesId")), like)
+                ));
+
+                Subquery<Long> priceListIds = query.subquery(Long.class);
+                Root<PriceListSetup> priceList = priceListIds.from(PriceListSetup.class);
+                priceListIds.select(priceList.get("id"));
+                priceListIds.where(cb.like(cb.lower(priceList.get("name")), like));
+
                 predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("code")), like),
-                        cb.like(cb.lower(root.get("policyNumber")), like)
+                        root.get("insurancePayerId").in(payerIds),
+                        root.get("priceListSetupId").in(priceListIds)
                 ));
             }
             return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));

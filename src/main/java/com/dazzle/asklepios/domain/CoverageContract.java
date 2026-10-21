@@ -11,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -40,14 +39,6 @@ public class CoverageContract extends AbstractAuditingEntity<Long> {
     @NotNull
     @Column(name = "company_id", nullable = false)
     private Long companyId;
-
-    @NotBlank
-    @Column(name = "code", nullable = false, length = 50)
-    private String code;
-
-    @NotBlank
-    @Column(name = "policy_number", nullable = false, length = 100)
-    private String policyNumber;
 
     @NotNull
     @Enumerated(EnumType.STRING)

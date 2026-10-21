@@ -13,7 +13,6 @@ import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
-import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -45,19 +44,22 @@ public class NphiesPayerService {
     private final CountryRepository countryRepository;
     private final CountryDistrictRepository countryDistrictRepository;
     private final TpaDefinitionRepository tpaDefinitionRepository;
+    private final PayorService payorService;
 
     public NphiesPayerService(
             NphiesPayerRepository nphiesPayerRepository,
             FacilityRepository facilityRepository,
             CountryRepository countryRepository,
             CountryDistrictRepository countryDistrictRepository,
-            TpaDefinitionRepository tpaDefinitionRepository
+            TpaDefinitionRepository tpaDefinitionRepository,
+            PayorService payorService
     ) {
         this.nphiesPayerRepository = nphiesPayerRepository;
         this.facilityRepository = facilityRepository;
         this.countryRepository = countryRepository;
         this.countryDistrictRepository = countryDistrictRepository;
         this.tpaDefinitionRepository = tpaDefinitionRepository;
+        this.payorService = payorService;
     }
 
     public NphiesPayer create(NphiesPayerSaveVM vm) {
@@ -103,8 +105,9 @@ public class NphiesPayerService {
 
         NphiesPayer saved = nphiesPayerRepository.save(payer);
         syncTpas(saved, vm.tpaIds());
-        syncChildCompanies(saved, vm.childCompanyIds());
-        return reloadWithLinks(saved.getId(), saved);
+        NphiesPayer reloaded = reloadWithLinks(saved.getId(), saved);
+        payorService.syncFromInsuranceCompany(reloaded);
+        return reloaded;
     }
 
     public NphiesPayer update(NphiesPayerUpdateVM vm) {
@@ -129,6 +132,7 @@ public class NphiesPayerService {
         validateWebsite(vm.website());
         validateCityRequiresCountry(vm.countryId(), vm.cityId());
 
+        String previousNphiesId = existing.getNphiesId();
         Long currentFacilityId = existing.getFacility() != null ? existing.getFacility().getId() : null;
         Facility facility = requireFacility(vm.facilityId(), currentFacilityId);
         Country country = resolveCountry(vm.countryId());
@@ -157,9 +161,7 @@ public class NphiesPayerService {
 
         NphiesPayer saved = nphiesPayerRepository.save(existing);
         syncTpas(saved, vm.tpaIds());
-        if (vm.childCompanyIds() != null) {
-            syncChildCompanies(saved, vm.childCompanyIds());
-        }
+        payorService.syncFromInsuranceCompany(saved, previousNphiesId);
         return reloadWithLinks(saved.getId(), saved);
     }
 
@@ -176,24 +178,13 @@ public class NphiesPayerService {
         return reloadWithLinks(existing.getId(), existing);
     }
 
-    public NphiesPayer updateChildCompanies(Long id, List<Long> childCompanyIds) {
-        LOG.debug("Update NPHIES Payer child insurance links id={} childCompanyIds={}", id, childCompanyIds);
-
-        NphiesPayer existing = nphiesPayerRepository.findById(id)
-                .orElseThrow(() -> new BadRequestAlertException(
-                        "notFound",
-                        ENTITY_NAME,
-                        "NPHIES payer not found."
-                ));
-        syncChildCompanies(existing, childCompanyIds);
-        return reloadWithLinks(existing.getId(), existing);
-    }
-
     public Optional<NphiesPayer> toggleIsActive(Long id) {
         LOG.debug("Toggle NPHIES Payer isActive id={}", id);
         return nphiesPayerRepository.findById(id).map(payer -> {
             payer.setIsActive(!Boolean.TRUE.equals(payer.getIsActive()));
-            return nphiesPayerRepository.save(payer);
+            NphiesPayer saved = nphiesPayerRepository.save(payer);
+            payorService.syncFromInsuranceCompany(saved);
+            return saved;
         });
     }
 
@@ -226,40 +217,6 @@ public class NphiesPayerService {
         return tpaDefinitionRepository.findByIsActiveTrue().stream()
                 .filter(tpa -> !linkedIds.contains(tpa.getId()))
                 .sorted(Comparator.comparing(TpaDefinition::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<NphiesPayer> findAvailableChildCompanies(Long payerId) {
-        LOG.debug("Find active insurance companies not linked under NPHIES Payer id={}", payerId);
-        if (!nphiesPayerRepository.existsById(payerId)) {
-            throw new BadRequestAlertException(
-                    "notFound",
-                    ENTITY_NAME,
-                    "NPHIES payer not found."
-            );
-        }
-
-        Set<Long> excludedIds = new HashSet<>();
-        excludedIds.add(payerId);
-        nphiesPayerRepository.findDistinctByParentCompanies_IdNotNull().stream()
-                .map(NphiesPayer::getId)
-                .forEach(excludedIds::add);
-
-        Long current = payerId;
-        Set<Long> visited = new HashSet<>();
-        while (current != null && visited.add(current)) {
-            List<NphiesPayer> parents = nphiesPayerRepository.findByChildCompanies_Id(current);
-            if (parents.isEmpty()) {
-                break;
-            }
-            current = parents.get(0).getId();
-            excludedIds.add(current);
-        }
-
-        return nphiesPayerRepository.findByIsActiveTrue().stream()
-                .filter(payer -> payer.getId() != null && !excludedIds.contains(payer.getId()))
-                .sorted(Comparator.comparing(NphiesPayer::getNameEn, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .toList();
     }
 
@@ -338,8 +295,6 @@ public class NphiesPayerService {
 
     private void attachLinks(List<NphiesPayer> payers) {
         attachTpas(payers);
-        attachChildCompanies(payers);
-        attachParentCompanies(payers);
     }
 
     private void attachTpas(List<NphiesPayer> payers) {
@@ -421,158 +376,6 @@ public class NphiesPayerService {
         tpaDefinitionRepository.saveAll(currentlyLinked);
         tpaDefinitionRepository.saveAll(selected);
         payer.setTpas(new HashSet<>(selected));
-    }
-
-    private void attachChildCompanies(List<NphiesPayer> payers) {
-        if (payers == null || payers.isEmpty()) {
-            return;
-        }
-
-        Set<Long> payerIds = payers.stream()
-                .map(NphiesPayer::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(HashSet::new));
-        if (payerIds.isEmpty()) {
-            return;
-        }
-
-        Map<Long, Set<NphiesPayer>> childrenByParentId = new HashMap<>();
-        for (NphiesPayer loaded : nphiesPayerRepository.findDistinctByIdIn(payerIds)) {
-            Set<NphiesPayer> children = loaded.getChildCompanies() == null
-                    ? new HashSet<>()
-                    : new HashSet<>(loaded.getChildCompanies());
-            childrenByParentId.put(loaded.getId(), children);
-        }
-
-        for (NphiesPayer payer : payers) {
-            payer.setChildCompanies(childrenByParentId.getOrDefault(payer.getId(), new HashSet<>()));
-        }
-    }
-
-    private void attachParentCompanies(List<NphiesPayer> payers) {
-        if (payers == null || payers.isEmpty()) {
-            return;
-        }
-
-        Set<Long> payerIds = payers.stream()
-                .map(NphiesPayer::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(HashSet::new));
-        if (payerIds.isEmpty()) {
-            return;
-        }
-
-        Map<Long, NphiesPayer> parentByChildId = new HashMap<>();
-        for (NphiesPayer parent : nphiesPayerRepository.findByChildCompanies_IdIn(payerIds)) {
-            if (parent.getChildCompanies() == null) {
-                continue;
-            }
-            Hibernate.initialize(parent.getChildCompanies());
-            for (NphiesPayer child : parent.getChildCompanies()) {
-                if (child.getId() != null && payerIds.contains(child.getId())) {
-                    parentByChildId.put(child.getId(), parent);
-                }
-            }
-        }
-
-        for (NphiesPayer payer : payers) {
-            NphiesPayer parent = parentByChildId.get(payer.getId());
-            payer.setParentCompanies(parent == null ? new HashSet<>() : new HashSet<>(Set.of(parent)));
-        }
-    }
-
-    private void syncChildCompanies(NphiesPayer payer, List<Long> childCompanyIds) {
-        Set<Long> desiredIds = uniqueIds(childCompanyIds);
-        if (payer.getId() != null && desiredIds.contains(payer.getId())) {
-            throw new BadRequestAlertException(
-                    "cannotLinkSelf",
-                    ENTITY_NAME,
-                    "An insurance company cannot be linked to itself."
-            );
-        }
-
-        List<NphiesPayer> currentlyLinked = payer.getId() == null
-                ? List.of()
-                : nphiesPayerRepository.findByParentCompanies_Id(payer.getId());
-        Set<Long> currentIds = currentlyLinked.stream()
-                .map(NphiesPayer::getId)
-                .collect(Collectors.toSet());
-
-        if (desiredIds.equals(currentIds)) {
-            payer.setChildCompanies(new HashSet<>(currentlyLinked));
-            return;
-        }
-
-        List<NphiesPayer> selected = desiredIds.isEmpty()
-                ? List.of()
-                : nphiesPayerRepository.findByIdIn(desiredIds);
-        if (selected.size() != desiredIds.size()) {
-            throw new BadRequestAlertException(
-                    "childCompanyNotFound",
-                    ENTITY_NAME,
-                    "One or more insurance companies were not found."
-            );
-        }
-
-        for (NphiesPayer child : selected) {
-            if (currentIds.contains(child.getId())) {
-                continue;
-            }
-            if (!Boolean.TRUE.equals(child.getIsActive())) {
-                throw new BadRequestAlertException(
-                        "inactiveChildCompanyCannotLink",
-                        ENTITY_NAME,
-                        "Inactive insurance companies cannot be linked as children."
-                );
-            }
-            List<NphiesPayer> existingParents = nphiesPayerRepository.findByChildCompanies_Id(child.getId());
-            boolean hasOtherParent = existingParents.stream()
-                    .anyMatch(parent -> parent.getId() != null && !parent.getId().equals(payer.getId()));
-            if (hasOtherParent) {
-                throw new BadRequestAlertException(
-                        "childCompanyAlreadyLinked",
-                        ENTITY_NAME,
-                        "Insurance company is already linked under another parent."
-                );
-            }
-            if (isAncestor(child.getId(), payer.getId())) {
-                throw new BadRequestAlertException(
-                        "childCompanyCycle",
-                        ENTITY_NAME,
-                        "An insurance company cannot be linked under one of its children."
-                );
-            }
-        }
-
-        if (payer.getChildCompanies() == null) {
-            payer.setChildCompanies(new HashSet<>());
-        } else {
-            Hibernate.initialize(payer.getChildCompanies());
-            payer.getChildCompanies().clear();
-        }
-        payer.getChildCompanies().addAll(selected);
-        nphiesPayerRepository.save(payer);
-        payer.setChildCompanies(new HashSet<>(selected));
-    }
-
-    private boolean isAncestor(Long possibleAncestorId, Long payerId) {
-        if (possibleAncestorId == null || payerId == null) {
-            return false;
-        }
-        Long current = payerId;
-        Set<Long> visited = new HashSet<>();
-        while (current != null && visited.add(current)) {
-            List<NphiesPayer> parents = nphiesPayerRepository.findByChildCompanies_Id(current);
-            if (parents.isEmpty()) {
-                return false;
-            }
-            Long parentId = parents.get(0).getId();
-            if (possibleAncestorId.equals(parentId)) {
-                return true;
-            }
-            current = parentId;
-        }
-        return false;
     }
 
     private Facility requireActiveFacility(Long facilityId) {

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.service.CoverageClassService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassPolicyLinkVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassResponseVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassSaveVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassUpdateVM;
@@ -61,6 +62,15 @@ public class CoverageClassController {
     @PatchMapping("/coverage-classes/{id:\\d+}/toggle-active")
     public ResponseEntity<CoverageClassResponseVM> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(coverageClassService.toggleActive(id));
+    }
+
+    @PutMapping("/coverage-classes/{id:\\d+}/policy")
+    public ResponseEntity<CoverageClassResponseVM> linkPolicy(
+            @PathVariable Long id,
+            @Valid @RequestBody CoverageClassPolicyLinkVM vm
+    ) {
+        LOG.debug("REST link coverage class id={} to policy id={}", id, vm.insuranceCompanyPolicyId());
+        return ResponseEntity.ok(coverageClassService.linkPolicy(id, vm.insuranceCompanyPolicyId()));
     }
 
     @GetMapping("/coverage-contracts/{contractId:\\d+}/classes")

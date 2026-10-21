@@ -265,6 +265,19 @@ public class PriceListItemDashboardService {
         return new Lookups(payerNames, nphiesPayerNames, facilityNames);
     }
 
+    private String insuranceCompanyName(PriceListSetup list, Lookups lookups) {
+        String name = list.getNphiesPayerId() == null
+                ? null
+                : lookups.nphiesPayerNames().get(list.getNphiesPayerId());
+        if (name == null && list.getPayerId() != null) {
+            name = lookups.nphiesPayerNames().get(list.getPayerId());
+        }
+        if (name == null && list.getPayerId() != null) {
+            name = lookups.payerNames().get(list.getPayerId());
+        }
+        return name;
+    }
+
     private PriceListColumnVM toColumn(PriceListSetup list, Lookups lookups) {
         return new PriceListColumnVM(
                 list.getId(),
@@ -284,9 +297,9 @@ public class PriceListItemDashboardService {
                         : lookups.facilityNames().get(list.getFacilityId()),
                 list.getAppliesToAllFacilities(),
                 list.getPayerId(),
-                lookups.payerNames().get(list.getPayerId()),
+                insuranceCompanyName(list, lookups),
                 list.getNphiesPayerId(),
-                lookups.nphiesPayerNames().get(list.getNphiesPayerId())
+                insuranceCompanyName(list, lookups)
         );
     }
 

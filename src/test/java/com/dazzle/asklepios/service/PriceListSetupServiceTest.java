@@ -10,6 +10,7 @@ import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.repository.TaxRepository;
+import com.dazzle.asklepios.service.dto.PriceListSetupCloneRequest;
 import com.dazzle.asklepios.service.dto.PriceListSetupDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.junit.jupiter.api.BeforeEach;
@@ -149,10 +150,14 @@ class PriceListSetupServiceTest {
     }
 
     @Test
-    void cloneCreatesInactiveListWithoutStartDate() {
+    void cloneWithoutRequestDefaultsToActiveAndKeepsSourceDates() {
         PriceListSetup source = existingCashList();
         when(priceListSetupRepository.findById(5L)).thenReturn(Optional.of(source));
         when(priceListSetupItemRepository.findAllByPriceListSetupId(5L)).thenReturn(List.of());
+        when(priceListSetupRepository.findAllByFacilityIdAndTypeInAndIsActiveTrue(any(), any()))
+                .thenReturn(List.of());
+        when(priceListSetupRepository.findAllByAppliesToAllFacilitiesTrueAndTypeInAndIsActiveTrue(any()))
+                .thenReturn(List.of());
 
         var result = priceListSetupService.clonePriceList(5L, null);
 
@@ -160,9 +165,90 @@ class PriceListSetupServiceTest {
         verify(priceListSetupRepository).save(captor.capture());
 
         PriceListSetup cloned = captor.getValue();
-        assertThat(cloned.getEffectiveFrom()).isNull();
+        assertThat(cloned.getEffectiveFrom()).isEqualTo(source.getEffectiveFrom());
+        assertThat(cloned.getEffectiveTo()).isEqualTo(source.getEffectiveTo());
+        assertThat(cloned.getStatus()).isEqualTo(PriceListSetupStatus.ACTIVE);
+        assertThat(cloned.getIsActive()).isTrue();
+        assertThat(result.status()).isEqualTo(PriceListSetupStatus.ACTIVE);
+    }
+
+    @Test
+    void clonePersistsDatesAndDoesNotMarkInactiveListActive() {
+        PriceListSetup source = existingCashList();
+        when(priceListSetupRepository.findById(5L)).thenReturn(Optional.of(source));
+        when(priceListSetupItemRepository.findAllByPriceListSetupId(5L)).thenReturn(List.of());
+
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = LocalDate.of(2026, 12, 31);
+        PriceListSetupCloneRequest request = new PriceListSetupCloneRequest(
+                true,
+                1L,
+                false,
+                PriceListSetupType.CASH,
+                null,
+                null,
+                "Cash Copy",
+                null,
+                null,
+                2,
+                from,
+                to,
+                Currency.SAR,
+                PriceListSetupStatus.INACTIVE,
+                null
+        );
+
+        priceListSetupService.clonePriceList(5L, request);
+
+        ArgumentCaptor<PriceListSetup> captor = ArgumentCaptor.forClass(PriceListSetup.class);
+        verify(priceListSetupRepository).save(captor.capture());
+
+        PriceListSetup cloned = captor.getValue();
+        assertThat(cloned.getName()).isEqualTo("Cash Copy");
+        assertThat(cloned.getEffectiveFrom()).isEqualTo(from);
+        assertThat(cloned.getEffectiveTo()).isEqualTo(to);
         assertThat(cloned.getStatus()).isEqualTo(PriceListSetupStatus.INACTIVE);
-        assertThat(result.status()).isEqualTo(PriceListSetupStatus.INACTIVE);
+        assertThat(cloned.getIsActive()).isFalse();
+    }
+
+    @Test
+    void cloneActiveStatusRequiresStartDateAndSetsIsActiveTrue() {
+        PriceListSetup source = existingCashList();
+        when(priceListSetupRepository.findById(5L)).thenReturn(Optional.of(source));
+        when(priceListSetupItemRepository.findAllByPriceListSetupId(5L)).thenReturn(List.of());
+        when(priceListSetupRepository.findAllByFacilityIdAndTypeInAndIsActiveTrue(any(), any()))
+                .thenReturn(List.of());
+        when(priceListSetupRepository.findAllByAppliesToAllFacilitiesTrueAndTypeInAndIsActiveTrue(any()))
+                .thenReturn(List.of());
+
+        LocalDate from = LocalDate.now();
+        PriceListSetupCloneRequest request = new PriceListSetupCloneRequest(
+                false,
+                1L,
+                false,
+                PriceListSetupType.CASH,
+                null,
+                null,
+                "Cash Active Copy",
+                null,
+                null,
+                2,
+                from,
+                from.plusMonths(1),
+                Currency.SAR,
+                PriceListSetupStatus.ACTIVE,
+                null
+        );
+
+        priceListSetupService.clonePriceList(5L, request);
+
+        ArgumentCaptor<PriceListSetup> captor = ArgumentCaptor.forClass(PriceListSetup.class);
+        verify(priceListSetupRepository).save(captor.capture());
+
+        PriceListSetup cloned = captor.getValue();
+        assertThat(cloned.getEffectiveFrom()).isEqualTo(from);
+        assertThat(cloned.getStatus()).isEqualTo(PriceListSetupStatus.ACTIVE);
+        assertThat(cloned.getIsActive()).isTrue();
     }
 
     private PriceListSetupDTO cashDto(LocalDate start, PriceListSetupStatus status) {

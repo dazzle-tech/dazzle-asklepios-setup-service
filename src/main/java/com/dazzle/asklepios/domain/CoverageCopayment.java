@@ -54,18 +54,6 @@ public class CoverageCopayment extends AbstractAuditingEntity<Long> {
     @Column(name = "value_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal valueAmount;
 
-    @Builder.Default
-    @Column(name = "discount_on_excluded", nullable = false)
-    private Boolean discountOnExcluded = false;
-
-    @Builder.Default
-    @Column(name = "discount_on_cash", nullable = false)
-    private Boolean discountOnCash = false;
-
-    @Builder.Default
-    @Column(name = "discount_on_exceeded_cash", nullable = false)
-    private Boolean discountOnExceededCash = false;
-
     @NotNull
     @Builder.Default
     @Column(name = "is_active", nullable = false)
