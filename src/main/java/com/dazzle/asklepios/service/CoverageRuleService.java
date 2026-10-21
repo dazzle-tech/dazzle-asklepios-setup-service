@@ -99,9 +99,6 @@ public class CoverageRuleService {
         entity.setEncounterType(vm.encounterType());
         entity.setValueType(vm.valueType());
         entity.setValueAmount(vm.valueAmount());
-        entity.setDiscountOnExcluded(Boolean.TRUE.equals(vm.discountOnExcluded()));
-        entity.setDiscountOnCash(Boolean.TRUE.equals(vm.discountOnCash()));
-        entity.setDiscountOnExceededCash(Boolean.TRUE.equals(vm.discountOnExceededCash()));
         if (vm.id() == null) {
             entity.setIsActive(true);
         } else if (vm.isActive() != null) {
@@ -117,6 +114,13 @@ public class CoverageRuleService {
                 ? copaymentRepository.findByCoverageClass_Id(classId, pageable)
                 : copaymentRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
         return page.map(CoverageCopaymentVM::ofEntity);
+    }
+
+    public CoverageCopaymentVM toggleCopaymentActive(Long id) {
+        CoverageCopayment entity = copaymentRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Co-payment was not found.", ENTITY, "notFound"));
+        entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
+        return CoverageCopaymentVM.ofEntity(copaymentRepository.save(entity));
     }
 
     public CoverageTermVM saveTerm(Long classId, CoverageTermVM vm) {
@@ -146,6 +150,12 @@ public class CoverageRuleService {
         return page.map(this::toTermVm);
     }
 
+    public CoverageTermVM toggleTermActive(Long id) {
+        CoverageTerm entity = requireTerm(id);
+        entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
+        return toTermVm(termRepository.save(entity));
+    }
+
     public CoverageTermItemVM saveTermItem(Long termId, CoverageTermItemVM vm) {
         CoverageTerm term = termRepository.findById(termId)
                 .orElseThrow(() -> new BadRequestAlertException("Coverage term was not found.", ENTITY, "notFound"));
@@ -173,35 +183,35 @@ public class CoverageRuleService {
 
     public CoverageDiscountVM createDiscount(Long classId, CoverageDiscountVM vm) {
         CoverageClass coverageClass = coverageClassService.getEntity(classId);
-        validateDiscount(vm);
         CoverageDiscount entity = CoverageDiscount.builder()
                 .coverageClass(coverageClass)
-                .targetType(resolveDiscountTarget(vm))
-                .billingItemType(vm.billingItemType())
-                .serviceId(resolveDiscountItemId(vm))
-                .itemName(blankToNull(vm.serviceName()))
-                .encounterType(vm.encounterType())
-                .discountType(vm.discountType())
-                .discountValue(vm.discountValue())
                 .isActive(true)
                 .build();
+        applyDiscount(entity, vm);
+        return toDiscountVm(discountRepository.save(entity));
+    }
+
+    public CoverageDiscountVM updateDiscount(Long classId, CoverageDiscountVM vm) {
+        coverageClassService.getEntity(classId);
+        CoverageDiscount entity = requireOwnedDiscount(vm.id(), classId);
+        applyDiscount(entity, vm);
         return toDiscountVm(discountRepository.save(entity));
     }
 
     public CoverageDiscountVM createTpaDiscount(Long tpaId, CoverageDiscountVM vm) {
         TpaDefinition tpa = requireTpa(tpaId);
-        validateDiscount(vm);
         CoverageDiscount entity = CoverageDiscount.builder()
                 .tpaDefinition(tpa)
-                .targetType(resolveDiscountTarget(vm))
-                .billingItemType(vm.billingItemType())
-                .serviceId(resolveDiscountItemId(vm))
-                .itemName(blankToNull(vm.serviceName()))
-                .encounterType(vm.encounterType())
-                .discountType(vm.discountType())
-                .discountValue(vm.discountValue())
                 .isActive(true)
                 .build();
+        applyDiscount(entity, vm);
+        return toDiscountVm(discountRepository.save(entity));
+    }
+
+    public CoverageDiscountVM updateTpaDiscount(Long tpaId, CoverageDiscountVM vm) {
+        requireTpa(tpaId);
+        CoverageDiscount entity = requireOwnedTpaDiscount(vm.id(), tpaId);
+        applyDiscount(entity, vm);
         return toDiscountVm(discountRepository.save(entity));
     }
 
@@ -232,57 +242,37 @@ public class CoverageRuleService {
 
     public CoverageExclusionVM createExclusion(Long classId, CoverageExclusionVM vm) {
         CoverageClass coverageClass = coverageClassService.getEntity(classId);
-        validateExclusion(vm);
-        CoverageRuleTarget type = resolveExclusionType(vm);
-        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
-                type == CoverageRuleTarget.DIAGNOSIS,
-                vm.allDiagnoses(),
-                vm.diagnoses(),
-                vm.diagnosisIds(),
-                vm.diagnosisId(),
-                vm.diagnosisCode()
-        );
         CoverageExclusion entity = CoverageExclusion.builder()
                 .coverageClass(coverageClass)
-                .exclusionType(type)
-                .billingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType())
-                .serviceId(resolveExclusionItemId(vm))
-                .itemName(type == CoverageRuleTarget.DIAGNOSIS ? null : blankToNull(vm.serviceName()))
-                .allDiagnoses(allDiagnosesSelected(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
-                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
-                .diagnosisIds(new ArrayList<>(diagnosisIds))
-                .encounterType(vm.encounterType())
-                .excludedResult(vm.excludedResult() != null ? vm.excludedResult() : YesNoQuestion.YES)
+                .diagnosisIds(new ArrayList<>())
                 .isActive(true)
                 .build();
+        applyExclusion(entity, vm);
+        return toExclusionVm(exclusionRepository.save(entity));
+    }
+
+    public CoverageExclusionVM updateExclusion(Long classId, CoverageExclusionVM vm) {
+        coverageClassService.getEntity(classId);
+        CoverageExclusion entity = requireOwnedExclusion(vm.id(), classId);
+        applyExclusion(entity, vm);
         return toExclusionVm(exclusionRepository.save(entity));
     }
 
     public CoverageExclusionVM createTpaExclusion(Long tpaId, CoverageExclusionVM vm) {
         TpaDefinition tpa = requireTpa(tpaId);
-        validateExclusion(vm);
-        CoverageRuleTarget type = resolveExclusionType(vm);
-        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
-                type == CoverageRuleTarget.DIAGNOSIS,
-                vm.allDiagnoses(),
-                vm.diagnoses(),
-                vm.diagnosisIds(),
-                vm.diagnosisId(),
-                vm.diagnosisCode()
-        );
         CoverageExclusion entity = CoverageExclusion.builder()
                 .tpaDefinition(tpa)
-                .exclusionType(type)
-                .billingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType())
-                .serviceId(resolveExclusionItemId(vm))
-                .itemName(type == CoverageRuleTarget.DIAGNOSIS ? null : blankToNull(vm.serviceName()))
-                .allDiagnoses(allDiagnosesSelected(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
-                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
-                .diagnosisIds(new ArrayList<>(diagnosisIds))
-                .encounterType(vm.encounterType())
-                .excludedResult(vm.excludedResult() != null ? vm.excludedResult() : YesNoQuestion.YES)
+                .diagnosisIds(new ArrayList<>())
                 .isActive(true)
                 .build();
+        applyExclusion(entity, vm);
+        return toExclusionVm(exclusionRepository.save(entity));
+    }
+
+    public CoverageExclusionVM updateTpaExclusion(Long tpaId, CoverageExclusionVM vm) {
+        requireTpa(tpaId);
+        CoverageExclusion entity = requireOwnedTpaExclusion(vm.id(), tpaId);
+        applyExclusion(entity, vm);
         return toExclusionVm(exclusionRepository.save(entity));
     }
 
@@ -369,39 +359,35 @@ public class CoverageRuleService {
         return page.map(this::toPreApprovalVm);
     }
 
+    public CoveragePreApprovalVM togglePreApprovalActive(Long id) {
+        CoveragePreApproval entity = requirePreApproval(id);
+        entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
+        return toPreApprovalVm(preApprovalRepository.save(entity));
+    }
+
     public CoveragePreApprovalItemVM createPreApprovalItem(Long preApprovalId, CoveragePreApprovalItemVM vm) {
         CoveragePreApproval parent = requirePreApproval(preApprovalId);
-        if (!Boolean.TRUE.equals(parent.getIsActive())) {
+        if (vm.id() == null && !Boolean.TRUE.equals(parent.getIsActive())) {
             throw new BadRequestAlertException("Pre-approval must be active to add items.", ENTITY, "inactiveParent");
         }
-        validatePreApprovalItem(vm);
-        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
-                vm.itemType() == CoverageRuleTarget.DIAGNOSIS,
-                vm.allDiagnoses(),
-                vm.diagnoses(),
-                vm.diagnosisIds(),
-                vm.diagnosisId(),
-                vm.diagnosisCode()
-        );
-        CoveragePreApprovalItem entity = CoveragePreApprovalItem.builder()
-                .preApproval(parent)
-                .itemType(vm.itemType())
-                .serviceCategory(vm.itemType() == CoverageRuleTarget.CATEGORY ? requireCategory(vm.serviceCategory()) : null)
-                .serviceId(vm.itemType() == CoverageRuleTarget.SERVICE ? requireService(vm.serviceId()).getId() : null)
-                .allDiagnoses(vm.itemType() == CoverageRuleTarget.ALL
-                        || allDiagnosesSelected(vm.itemType() == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds))
-                .diagnosisId(CoverageDiagnosisSelection.first(diagnosisIds))
-                .diagnosisIds(new ArrayList<>(diagnosisIds))
-                .isActive(true)
-                .build();
+        CoveragePreApprovalItem entity = vm.id() == null
+                ? CoveragePreApprovalItem.builder()
+                    .preApproval(parent)
+                    .diagnosisIds(new ArrayList<>())
+                    .isActive(true)
+                    .build()
+                : requireOwnedPreApprovalItem(vm.id(), preApprovalId);
+        applyPreApprovalItem(entity, vm);
+        if (vm.id() == null) {
+            entity.setIsActive(true);
+        }
         return toPreApprovalItemVm(preApprovalItemRepository.save(entity));
     }
 
     public CoveragePreApprovalItemVM deactivatePreApprovalItem(Long id) {
         CoveragePreApprovalItem entity = preApprovalItemRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Pre-approval item was not found.", ENTITY, "notFound"));
-        deactivateOnly(entity.getIsActive());
-        entity.setIsActive(false);
+        entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
         return toPreApprovalItemVm(preApprovalItemRepository.save(entity));
     }
 
@@ -497,6 +483,60 @@ public class CoverageRuleService {
             return requireService(vm.serviceId()).getId();
         }
         return vm.serviceId();
+    }
+
+    private void applyDiscount(CoverageDiscount entity, CoverageDiscountVM vm) {
+        validateDiscount(vm);
+        entity.setTargetType(resolveDiscountTarget(vm));
+        entity.setBillingItemType(vm.billingItemType());
+        entity.setServiceId(resolveDiscountItemId(vm));
+        entity.setItemName(blankToNull(vm.serviceName()));
+        entity.setEncounterType(vm.encounterType());
+        entity.setDiscountType(vm.discountType());
+        entity.setDiscountValue(vm.discountValue());
+    }
+
+    private void applyExclusion(CoverageExclusion entity, CoverageExclusionVM vm) {
+        validateExclusion(vm);
+        CoverageRuleTarget type = resolveExclusionType(vm);
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                type == CoverageRuleTarget.DIAGNOSIS,
+                vm.allDiagnoses(),
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
+        entity.setExclusionType(type);
+        entity.setBillingItemType(type == CoverageRuleTarget.DIAGNOSIS ? null : vm.billingItemType());
+        entity.setServiceId(resolveExclusionItemId(vm));
+        entity.setItemName(type == CoverageRuleTarget.DIAGNOSIS ? null : blankToNull(vm.serviceName()));
+        entity.setAllDiagnoses(allDiagnosesSelected(type == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds));
+        entity.setDiagnosisIds(CoverageDiagnosisSelection.ensureMutable(entity.getDiagnosisIds()));
+        CoverageDiagnosisSelection.replace(entity.getDiagnosisIds(), diagnosisIds);
+        entity.setDiagnosisId(CoverageDiagnosisSelection.first(diagnosisIds));
+        entity.setEncounterType(vm.encounterType());
+        entity.setExcludedResult(vm.excludedResult() != null ? vm.excludedResult() : YesNoQuestion.YES);
+    }
+
+    private void applyPreApprovalItem(CoveragePreApprovalItem entity, CoveragePreApprovalItemVM vm) {
+        validatePreApprovalItem(vm);
+        List<Long> diagnosisIds = resolveSelectedDiagnosisIds(
+                vm.itemType() == CoverageRuleTarget.DIAGNOSIS,
+                vm.allDiagnoses(),
+                vm.diagnoses(),
+                vm.diagnosisIds(),
+                vm.diagnosisId(),
+                vm.diagnosisCode()
+        );
+        entity.setItemType(vm.itemType());
+        entity.setServiceCategory(vm.itemType() == CoverageRuleTarget.CATEGORY ? requireCategory(vm.serviceCategory()) : null);
+        entity.setServiceId(vm.itemType() == CoverageRuleTarget.SERVICE ? requireService(vm.serviceId()).getId() : null);
+        entity.setAllDiagnoses(vm.itemType() == CoverageRuleTarget.ALL
+                || allDiagnosesSelected(vm.itemType() == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds));
+        entity.setDiagnosisIds(CoverageDiagnosisSelection.ensureMutable(entity.getDiagnosisIds()));
+        CoverageDiagnosisSelection.replace(entity.getDiagnosisIds(), diagnosisIds);
+        entity.setDiagnosisId(CoverageDiagnosisSelection.first(diagnosisIds));
     }
 
     private void validateDiscount(CoverageDiscountVM vm) {
@@ -678,12 +718,6 @@ public class CoverageRuleService {
         return labels.isEmpty() ? null : String.join(", ", labels);
     }
 
-    private void deactivateOnly(Boolean currentlyActive) {
-        if (!Boolean.TRUE.equals(currentlyActive)) {
-            throw new BadRequestAlertException("Only an active record can be changed to inactive.", ENTITY, "alreadyInactive");
-        }
-    }
-
     private CoverageCopayment requireOwnedCopayment(Long id, Long classId) {
         CoverageCopayment entity = copaymentRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Co-payment was not found.", ENTITY, "notFound"));
@@ -711,6 +745,66 @@ public class CoverageRuleService {
                 .orElseThrow(() -> new BadRequestAlertException("Coverage term item was not found.", ENTITY, "notFound"));
         if (!entity.getCoverageTerm().getId().equals(termId)) {
             throw new BadRequestAlertException("Item does not belong to this coverage term.", ENTITY, "termMismatch");
+        }
+        return entity;
+    }
+
+    private CoverageDiscount requireOwnedDiscount(Long id, Long classId) {
+        CoverageDiscount entity = requireDiscount(id);
+        if (entity.getCoverageClass() == null || !entity.getCoverageClass().getId().equals(classId)) {
+            throw new BadRequestAlertException("Discount does not belong to this class.", ENTITY, "classMismatch");
+        }
+        return entity;
+    }
+
+    private CoverageDiscount requireOwnedTpaDiscount(Long id, Long tpaId) {
+        CoverageDiscount entity = requireDiscount(id);
+        if (entity.getTpaDefinition() == null || !entity.getTpaDefinition().getId().equals(tpaId)) {
+            throw new BadRequestAlertException("Discount does not belong to this TPA.", TPA_ENTITY, "tpaMismatch");
+        }
+        return entity;
+    }
+
+    private CoverageDiscount requireDiscount(Long id) {
+        if (id == null) {
+            throw new BadRequestAlertException("Discount id is required.", ENTITY, "idRequired");
+        }
+        return discountRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Discount was not found.", ENTITY, "notFound"));
+    }
+
+    private CoverageExclusion requireOwnedExclusion(Long id, Long classId) {
+        CoverageExclusion entity = requireExclusion(id);
+        if (entity.getCoverageClass() == null || !entity.getCoverageClass().getId().equals(classId)) {
+            throw new BadRequestAlertException("Exclusion does not belong to this class.", ENTITY, "classMismatch");
+        }
+        return entity;
+    }
+
+    private CoverageExclusion requireOwnedTpaExclusion(Long id, Long tpaId) {
+        CoverageExclusion entity = requireExclusion(id);
+        if (entity.getTpaDefinition() == null || !entity.getTpaDefinition().getId().equals(tpaId)) {
+            throw new BadRequestAlertException("Exclusion does not belong to this TPA.", TPA_ENTITY, "tpaMismatch");
+        }
+        return entity;
+    }
+
+    private CoverageExclusion requireExclusion(Long id) {
+        if (id == null) {
+            throw new BadRequestAlertException("Exclusion id is required.", ENTITY, "idRequired");
+        }
+        return exclusionRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Exclusion was not found.", ENTITY, "notFound"));
+    }
+
+    private CoveragePreApprovalItem requireOwnedPreApprovalItem(Long id, Long preApprovalId) {
+        if (id == null) {
+            throw new BadRequestAlertException("Pre-approval item id is required.", ENTITY, "idRequired");
+        }
+        CoveragePreApprovalItem entity = preApprovalItemRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Pre-approval item was not found.", ENTITY, "notFound"));
+        if (entity.getPreApproval() == null || !entity.getPreApproval().getId().equals(preApprovalId)) {
+            throw new BadRequestAlertException("Item does not belong to this pre-approval.", ENTITY, "preApprovalMismatch");
         }
         return entity;
     }

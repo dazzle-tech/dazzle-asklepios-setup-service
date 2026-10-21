@@ -51,6 +51,14 @@ public class TpaRuleController {
         return ResponseEntity.created(URI.create("/api/setup/tpa-definitions/" + tpaId + "/discounts/" + body.id())).body(body);
     }
 
+    @PutMapping("/{tpaId:\\d+}/discounts")
+    public ResponseEntity<CoverageDiscountVM> updateDiscount(
+            @PathVariable Long tpaId,
+            @Valid @RequestBody CoverageDiscountVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.updateTpaDiscount(tpaId, vm));
+    }
+
     @PatchMapping("/discounts/{id:\\d+}/deactivate")
     public ResponseEntity<CoverageDiscountVM> deactivateDiscount(@PathVariable Long id) {
         return ResponseEntity.ok(coverageRuleService.deactivateDiscount(id));
@@ -73,6 +81,14 @@ public class TpaRuleController {
         LOG.debug("REST create TPA exclusion tpaId={} payload={}", tpaId, vm);
         CoverageExclusionVM body = coverageRuleService.createTpaExclusion(tpaId, vm);
         return ResponseEntity.created(URI.create("/api/setup/tpa-definitions/" + tpaId + "/exclusions/" + body.id())).body(body);
+    }
+
+    @PutMapping("/{tpaId:\\d+}/exclusions")
+    public ResponseEntity<CoverageExclusionVM> updateExclusion(
+            @PathVariable Long tpaId,
+            @Valid @RequestBody CoverageExclusionVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.updateTpaExclusion(tpaId, vm));
     }
 
     @PatchMapping("/exclusions/{id:\\d+}/deactivate")
@@ -106,6 +122,11 @@ public class TpaRuleController {
         return ResponseEntity.ok(coverageRuleService.saveTpaPreApproval(tpaId, vm));
     }
 
+    @PatchMapping("/pre-approvals/{id:\\d+}/toggle-active")
+    public ResponseEntity<CoveragePreApprovalVM> togglePreApprovalActive(@PathVariable Long id) {
+        return ResponseEntity.ok(coverageRuleService.togglePreApprovalActive(id));
+    }
+
     @GetMapping("/{tpaId:\\d+}/pre-approvals")
     public ResponseEntity<List<CoveragePreApprovalVM>> listPreApprovals(
             @PathVariable Long tpaId,
@@ -124,6 +145,14 @@ public class TpaRuleController {
         return ResponseEntity.created(URI.create("/api/setup/tpa-definitions/pre-approvals/" + preApprovalId + "/items/" + body.id())).body(body);
     }
 
+    @PutMapping("/pre-approvals/{preApprovalId:\\d+}/items")
+    public ResponseEntity<CoveragePreApprovalItemVM> updatePreApprovalItem(
+            @PathVariable Long preApprovalId,
+            @Valid @RequestBody CoveragePreApprovalItemVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.createPreApprovalItem(preApprovalId, vm));
+    }
+
     @PatchMapping("/pre-approval-items/{id:\\d+}/deactivate")
     public ResponseEntity<CoveragePreApprovalItemVM> deactivatePreApprovalItem(@PathVariable Long id) {
         return ResponseEntity.ok(coverageRuleService.deactivatePreApprovalItem(id));
@@ -132,7 +161,7 @@ public class TpaRuleController {
     @GetMapping("/pre-approvals/{preApprovalId:\\d+}/items")
     public ResponseEntity<List<CoveragePreApprovalItemVM>> listPreApprovalItems(
             @PathVariable Long preApprovalId,
-            @RequestParam(required = false, defaultValue = "true") Boolean isActive,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listPreApprovalItems(preApprovalId, isActive, pageable));

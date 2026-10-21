@@ -63,6 +63,11 @@ public class CoverageRuleController {
         return ResponseEntity.ok(coverageRuleService.saveCopayment(classId, vm));
     }
 
+    @PatchMapping("/coverage-classes/copayments/{id:\\d+}/toggle-active")
+    public ResponseEntity<CoverageCopaymentVM> toggleCopaymentActive(@PathVariable Long id) {
+        return ResponseEntity.ok(coverageRuleService.toggleCopaymentActive(id));
+    }
+
     @GetMapping("/coverage-classes/{classId:\\d+}/copayments")
     public ResponseEntity<List<CoverageCopaymentVM>> listCopayments(
             @PathVariable Long classId,
@@ -87,6 +92,11 @@ public class CoverageRuleController {
             @Valid @RequestBody CoverageTermVM vm
     ) {
         return ResponseEntity.ok(coverageRuleService.saveTerm(classId, vm));
+    }
+
+    @PatchMapping("/coverage-classes/terms/{id:\\d+}/toggle-active")
+    public ResponseEntity<CoverageTermVM> toggleTermActive(@PathVariable Long id) {
+        return ResponseEntity.ok(coverageRuleService.toggleTermActive(id));
     }
 
     @GetMapping("/coverage-classes/{classId:\\d+}/terms")
@@ -143,6 +153,14 @@ public class CoverageRuleController {
         return ResponseEntity.created(URI.create("/api/setup/coverage-classes/" + classId + "/discounts/" + body.id())).body(body);
     }
 
+    @PutMapping("/coverage-classes/{classId:\\d+}/discounts")
+    public ResponseEntity<CoverageDiscountVM> updateDiscount(
+            @PathVariable Long classId,
+            @Valid @RequestBody CoverageDiscountVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.updateDiscount(classId, vm));
+    }
+
     @PatchMapping({
             "/coverage-classes/discounts/{id:\\d+}/deactivate",
             "/coverage-contracts/discounts/{id:\\d+}/deactivate"
@@ -167,6 +185,14 @@ public class CoverageRuleController {
     ) {
         CoverageExclusionVM body = coverageRuleService.createExclusion(classId, vm);
         return ResponseEntity.created(URI.create("/api/setup/coverage-classes/" + classId + "/exclusions/" + body.id())).body(body);
+    }
+
+    @PutMapping("/coverage-classes/{classId:\\d+}/exclusions")
+    public ResponseEntity<CoverageExclusionVM> updateExclusion(
+            @PathVariable Long classId,
+            @Valid @RequestBody CoverageExclusionVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.updateExclusion(classId, vm));
     }
 
     @PatchMapping({
@@ -203,6 +229,11 @@ public class CoverageRuleController {
         return ResponseEntity.ok(coverageRuleService.savePreApproval(classId, vm));
     }
 
+    @PatchMapping("/coverage-classes/pre-approvals/{id:\\d+}/toggle-active")
+    public ResponseEntity<CoveragePreApprovalVM> togglePreApprovalActive(@PathVariable Long id) {
+        return ResponseEntity.ok(coverageRuleService.togglePreApprovalActive(id));
+    }
+
     @GetMapping("/coverage-classes/{classId:\\d+}/pre-approvals")
     public ResponseEntity<List<CoveragePreApprovalVM>> listPreApprovals(
             @PathVariable Long classId,
@@ -224,6 +255,17 @@ public class CoverageRuleController {
         return ResponseEntity.created(URI.create("/api/setup/coverage-classes/pre-approvals/" + preApprovalId + "/items/" + body.id())).body(body);
     }
 
+    @PutMapping({
+            "/coverage-classes/pre-approvals/{preApprovalId:\\d+}/items",
+            "/coverage-contracts/pre-approvals/{preApprovalId:\\d+}/items"
+    })
+    public ResponseEntity<CoveragePreApprovalItemVM> updatePreApprovalItem(
+            @PathVariable Long preApprovalId,
+            @Valid @RequestBody CoveragePreApprovalItemVM vm
+    ) {
+        return ResponseEntity.ok(coverageRuleService.createPreApprovalItem(preApprovalId, vm));
+    }
+
     @PatchMapping({
             "/coverage-classes/pre-approval-items/{id:\\d+}/deactivate",
             "/coverage-contracts/pre-approval-items/{id:\\d+}/deactivate"
@@ -238,7 +280,7 @@ public class CoverageRuleController {
     })
     public ResponseEntity<List<CoveragePreApprovalItemVM>> listPreApprovalItems(
             @PathVariable Long preApprovalId,
-            @RequestParam(required = false, defaultValue = "true") Boolean isActive,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listPreApprovalItems(preApprovalId, isActive, pageable));
