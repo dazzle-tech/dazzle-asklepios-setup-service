@@ -61,7 +61,8 @@ server:
 
 setup:
   portal:
-    # Shared secret for GET /api/setup/country/external/active.
+    # Shared secret for GET /api/setup/country/external/active
+    # and GET /api/setup/mobile-app-config/value/{configKey}.
     # Callers send it in the X-Portal-Secret header. Set PATIENT_PORTAL_SECRET in each environment.
     secret: ${PATIENT_PORTAL_SECRET:}
   security:

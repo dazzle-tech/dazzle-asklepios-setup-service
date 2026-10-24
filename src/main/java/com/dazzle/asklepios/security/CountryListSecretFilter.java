@@ -17,8 +17,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Authorizes {@code GET /api/setup/country/external/active} with {@code PATIENT_PORTAL_SECRET}.
- * This route is not checked against a bearer token.
+ * Authorizes external GET routes with {@code PATIENT_PORTAL_SECRET}.
+ * These routes are not checked against a bearer token.
+ * <ul>
+ *   <li>{@code GET /api/setup/country/external/active}</li>
+ *   <li>{@code GET /api/setup/mobile-app-config/value/{configKey}}</li>
+ * </ul>
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -30,18 +34,22 @@ public class CountryListSecretFilter extends OncePerRequestFilter {
 
     private static final String EXTERNAL_ACTIVE_COUNTRY_PATH = "/api/setup/country/external/active";
 
+    private static final String MOBILE_APP_CONFIG_VALUE_PREFIX = "/api/setup/mobile-app-config/value/";
+
     private final String portalSecret;
 
     public CountryListSecretFilter(@Value("${setup.portal.secret:}") String portalSecret) {
         this.portalSecret = portalSecret == null ? "" : portalSecret;
         if (this.portalSecret.isBlank()) {
-            LOG.warn("setup.portal.secret is not set; GET /api/setup/country/external/active will reject every request");
+            LOG.warn(
+                "setup.portal.secret is not set; external country and mobile app config value requests will reject every request"
+            );
         }
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !isCountryListRequest(request);
+        return !isSecretProtectedRequest(request);
     }
 
     @Override
@@ -69,11 +77,12 @@ public class CountryListSecretFilter extends OncePerRequestFilter {
         }
     }
 
-    private static boolean isCountryListRequest(HttpServletRequest request) {
+    private static boolean isSecretProtectedRequest(HttpServletRequest request) {
         if (!HttpMethod.GET.matches(request.getMethod())) {
             return false;
         }
-        return EXTERNAL_ACTIVE_COUNTRY_PATH.equals(requestPath(request));
+        String path = requestPath(request);
+        return EXTERNAL_ACTIVE_COUNTRY_PATH.equals(path) || path.startsWith(MOBILE_APP_CONFIG_VALUE_PREFIX);
     }
 
     private static String requestPath(HttpServletRequest request) {
