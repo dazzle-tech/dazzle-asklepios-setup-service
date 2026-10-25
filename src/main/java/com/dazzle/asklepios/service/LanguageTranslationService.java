@@ -98,6 +98,24 @@ public class LanguageTranslationService {
         return translationRepository.findByLangKeyAndTranslationTextContainingIgnoreCase(langKey, value, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<LanguageTranslation> findByLangKeyAndTranslationKey(String langKey, String key, Pageable pageable) {
+        LOG.debug("[FIND BY KEY] langKey={} key='{}' pageable={}", langKey, key, pageable);
+        return translationRepository.findByLangKeyAndTranslationKeyContainingIgnoreCase(langKey, key, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LanguageTranslation> findByLangKeyAndVerified(String langKey, Boolean verified, Pageable pageable) {
+        LOG.debug("[FIND BY VERIFIED] langKey={} verified={} pageable={}", langKey, verified, pageable);
+        return translationRepository.findByLangKeyAndVerified(langKey, verified, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<LanguageTranslation> findByLangKeyAndTranslated(String langKey, Boolean translated, Pageable pageable) {
+        LOG.debug("[FIND BY TRANSLATED] langKey={} translated={} pageable={}", langKey, translated, pageable);
+        return translationRepository.findByLangKeyAndTranslated(langKey, translated, pageable);
+    }
+
 
     public boolean delete(Long id) {
         LOG.debug("Request to delete LanguageTranslation : {}", id);
