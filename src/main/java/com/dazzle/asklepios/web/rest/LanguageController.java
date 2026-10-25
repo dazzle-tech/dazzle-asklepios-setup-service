@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Language;
+import com.dazzle.asklepios.domain.enumeration.Direction;
 import com.dazzle.asklepios.service.LanguageService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +62,24 @@ public class LanguageController {
         LOG.debug("REST request to get LanguageMaster by langKey={}", langKey);
         return languageService.findByLangKey(langKey)
                 .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search/by-name/{langName}")
+    public ResponseEntity<List<Language>> findByName(@PathVariable @NotNull String langName) {
+        LOG.debug("REST find Languages by langName='{}'", langName);
+        return ResponseEntity.ok(languageService.findByName(langName.trim()));
+    }
+
+    @GetMapping("/search/by-code/{langKey}")
+    public ResponseEntity<List<Language>> findByCode(@PathVariable @NotNull String langKey) {
+        LOG.debug("REST find Languages by langKey='{}'", langKey);
+        return ResponseEntity.ok(languageService.findByCode(langKey.trim()));
+    }
+
+    @GetMapping("/search/by-direction/{direction}")
+    public ResponseEntity<List<Language>> findByDirection(@PathVariable @NotNull Direction direction) {
+        LOG.debug("REST find Languages by direction={}", direction);
+        return ResponseEntity.ok(languageService.findByDirection(direction));
     }
 
     @DeleteMapping("/{id}")
