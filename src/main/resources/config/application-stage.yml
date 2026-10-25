@@ -71,7 +71,7 @@ setup:
     max-age: 1800
   portal:
     # Shared secret for GET /api/setup/country/external/active
-    # and GET /api/setup/mobile-app-config/value/{configKey}.
+    # and GET /api/setup/mobile-app-config/value?keys=...
     # Callers send it in the X-Portal-Secret header. Set PATIENT_PORTAL_SECRET in each environment.
     secret: ${PATIENT_PORTAL_SECRET:}
   security:

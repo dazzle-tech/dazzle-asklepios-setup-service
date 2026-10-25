@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.MobileAppConfigKey;
+import com.dazzle.asklepios.domain.enumeration.MobileAppConfigType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,6 +44,11 @@ public class MobileAppConfig extends AbstractAuditingEntity<Long> implements Ser
     @Enumerated(EnumType.STRING)
     @Column(name = "config_key", nullable = false, length = 100, unique = true)
     private MobileAppConfigKey configKey;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "config_type", nullable = false, length = 20)
+    private MobileAppConfigType configType;
 
     @NotNull
     @Size(max = 4000)

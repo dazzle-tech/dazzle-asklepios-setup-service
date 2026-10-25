@@ -21,7 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * These routes are not checked against a bearer token.
  * <ul>
  *   <li>{@code GET /api/setup/country/external/active}</li>
- *   <li>{@code GET /api/setup/mobile-app-config/value/{configKey}}</li>
+ *   <li>{@code GET /api/setup/mobile-app-config/value?keys=...}</li>
  * </ul>
  */
 @Component
@@ -34,7 +34,7 @@ public class CountryListSecretFilter extends OncePerRequestFilter {
 
     private static final String EXTERNAL_ACTIVE_COUNTRY_PATH = "/api/setup/country/external/active";
 
-    private static final String MOBILE_APP_CONFIG_VALUE_PREFIX = "/api/setup/mobile-app-config/value/";
+    private static final String MOBILE_APP_CONFIG_VALUE_PATH = "/api/setup/mobile-app-config/value";
 
     private final String portalSecret;
 
@@ -82,7 +82,9 @@ public class CountryListSecretFilter extends OncePerRequestFilter {
             return false;
         }
         String path = requestPath(request);
-        return EXTERNAL_ACTIVE_COUNTRY_PATH.equals(path) || path.startsWith(MOBILE_APP_CONFIG_VALUE_PREFIX);
+        return EXTERNAL_ACTIVE_COUNTRY_PATH.equals(path)
+            || MOBILE_APP_CONFIG_VALUE_PATH.equals(path)
+            || path.startsWith(MOBILE_APP_CONFIG_VALUE_PATH + "/");
     }
 
     private static String requestPath(HttpServletRequest request) {
