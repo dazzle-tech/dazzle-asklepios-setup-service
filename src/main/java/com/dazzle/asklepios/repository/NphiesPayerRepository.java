@@ -23,4 +23,9 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
             String nameAr,
             Pageable pageable
     );
+
+    Page<NphiesPayer> findByIsActive(
+            Boolean isActive,
+            Pageable pageable
+    );
 }

@@ -91,4 +91,18 @@ public class NphiesPayerService {
                 pageable
         );
     }
+
+    @Transactional(readOnly = true)
+    public Page<NphiesPayer> findByStatus(Boolean isActive, Pageable pageable) {
+        LOG.debug(
+                "[FIND BY STATUS] Searching NPHIES payers by isActive={} pageable={}",
+                isActive,
+                pageable
+        );
+
+        return nphiesPayerRepository.findByIsActive(
+                isActive,
+                pageable
+        );
+    }
 }
