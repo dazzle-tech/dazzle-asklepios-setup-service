@@ -65,4 +65,20 @@ public interface PriceListSetupRepository
             Pageable pageable
     );
 
+    Page<PriceListSetup> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<PriceListSetup> findByType(PriceListSetupType type, Pageable pageable);
+
+    Page<PriceListSetup> findByPayerId(Long payerId, Pageable pageable);
+
+    Page<PriceListSetup> findByVersionNumber(Integer versionNumber, Pageable pageable);
+
+    Page<PriceListSetup> findByEffectiveFrom(LocalDate effectiveFrom, Pageable pageable);
+
+    Page<PriceListSetup> findByEffectiveTo(LocalDate effectiveTo, Pageable pageable);
+
+    Page<PriceListSetup> findByCurrency(Currency currency, Pageable pageable);
+
+    Page<PriceListSetup> findByStatus(PriceListSetupStatus status, Pageable pageable);
+
 }
