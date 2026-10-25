@@ -4,7 +4,9 @@ import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record CoveragePreApprovalReadingVM(
@@ -19,7 +21,9 @@ public record CoveragePreApprovalReadingVM(
         Long serviceId,
         Boolean allDiagnoses,
         Long diagnosisId,
-        List<Long> diagnosisIds
+        List<Long> diagnosisIds,
+        InsuranceCoverageType valueType,
+        BigDecimal limitValue
 ) {
     public CoveragePreApprovalReadingVM {
         diagnosisIds = diagnosisIds == null ? List.of() : List.copyOf(diagnosisIds);

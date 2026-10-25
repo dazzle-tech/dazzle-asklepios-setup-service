@@ -1121,6 +1121,8 @@ class CoverageContractResolutionServiceTest {
     void resolve_prefersServicePreApprovalOverAll() {
         CoverageContract contract = matchedContract();
         CoveragePreApproval header = facilityPreApproval(11L);
+        header.setValueType(InsuranceCoverageType.FIXED);
+        header.setLimitValue(new BigDecimal("500"));
         CoveragePreApprovalItem all = CoveragePreApprovalItem.builder()
                 .id(2L)
                 .preApproval(header)
@@ -1149,6 +1151,8 @@ class CoverageContractResolutionServiceTest {
         assertThat(resolved.preApproval()).isNotNull();
         assertThat(resolved.preApproval().itemId()).isEqualTo(3L);
         assertThat(resolved.preApproval().serviceId()).isEqualTo(90L);
+        assertThat(resolved.preApproval().valueType()).isEqualTo(InsuranceCoverageType.FIXED);
+        assertThat(resolved.preApproval().limitValue()).isEqualByComparingTo("500");
         assertThat(resolved.matchReason()).contains("Pre-approval is required");
     }
 

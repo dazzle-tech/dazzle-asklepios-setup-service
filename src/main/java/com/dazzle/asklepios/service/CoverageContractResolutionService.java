@@ -642,7 +642,9 @@ public class CoverageContractResolutionService {
                 item.getServiceId(),
                 item.getAllDiagnoses(),
                 CoverageDiagnosisSelection.first(selected),
-                selected
+                selected,
+                preApproval.getValueType(),
+                preApproval.getLimitValue()
         );
     }
 

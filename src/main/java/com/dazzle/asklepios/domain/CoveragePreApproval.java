@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +20,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "coverage_pre_approval")
@@ -55,6 +58,13 @@ public class CoveragePreApproval extends AbstractAuditingEntity<Long> {
     @Enumerated(EnumType.STRING)
     @Column(name = "encounter_type", length = 30)
     private EncounterType encounterType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "value_type", length = 30)
+    private InsuranceCoverageType valueType;
+
+    @Column(name = "limit_value", precision = 19, scale = 4)
+    private BigDecimal limitValue;
 
     @NotNull
     @Builder.Default

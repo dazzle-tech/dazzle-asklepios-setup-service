@@ -19,6 +19,7 @@ import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
 import com.dazzle.asklepios.repository.CoverageCopaymentRepository;
@@ -307,12 +308,7 @@ public class CoverageRuleService {
         CoveragePreApproval entity = vm.id() == null
                 ? CoveragePreApproval.builder().coverageClass(coverageClass).isActive(true).build()
                 : requireOwnedPreApproval(vm.id(), classId);
-        entity.setApprovalScope(vm.approvalScope());
-        entity.setFacilityId(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireFacility(vm.facilityId()).getId() : null);
-        entity.setDepartmentId(vm.approvalScope() == CoverageApprovalScope.DEPARTMENT
-                ? requireDepartment(vm.departmentId(), null).getId()
-                : null);
-        entity.setEncounterType(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireEncounterType(vm.encounterType()) : null);
+        applyPreApproval(entity, vm);
         if (vm.id() == null) {
             entity.setIsActive(true);
         } else if (vm.isActive() != null) {
@@ -327,12 +323,7 @@ public class CoverageRuleService {
         CoveragePreApproval entity = vm.id() == null
                 ? CoveragePreApproval.builder().tpaDefinition(tpa).isActive(true).build()
                 : requireOwnedTpaPreApproval(vm.id(), tpaId);
-        entity.setApprovalScope(vm.approvalScope());
-        entity.setFacilityId(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireFacility(vm.facilityId()).getId() : null);
-        entity.setDepartmentId(vm.approvalScope() == CoverageApprovalScope.DEPARTMENT
-                ? requireDepartment(vm.departmentId(), null).getId()
-                : null);
-        entity.setEncounterType(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireEncounterType(vm.encounterType()) : null);
+        applyPreApproval(entity, vm);
         if (vm.id() == null) {
             entity.setIsActive(true);
         } else if (vm.isActive() != null) {
@@ -565,12 +556,30 @@ public class CoverageRuleService {
         }
     }
 
+    private void applyPreApproval(CoveragePreApproval entity, CoveragePreApprovalVM vm) {
+        entity.setApprovalScope(vm.approvalScope());
+        entity.setFacilityId(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireFacility(vm.facilityId()).getId() : null);
+        entity.setDepartmentId(vm.approvalScope() == CoverageApprovalScope.DEPARTMENT
+                ? requireDepartment(vm.departmentId(), null).getId()
+                : null);
+        entity.setEncounterType(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireEncounterType(vm.encounterType()) : null);
+        entity.setValueType(vm.valueType());
+        entity.setLimitValue(vm.limitValue());
+    }
+
     private void validatePreApproval(CoveragePreApprovalVM vm) {
         if (vm.approvalScope() == CoverageApprovalScope.FACILITY) {
             requireFacility(vm.facilityId());
             requireEncounterType(vm.encounterType());
         } else if (vm.approvalScope() == CoverageApprovalScope.DEPARTMENT) {
             requireDepartment(vm.departmentId(), null);
+        }
+        if (vm.valueType() == null) {
+            throw new BadRequestAlertException("Value type is required.", ENTITY, "valueTypeRequired");
+        }
+        requirePositive(vm.limitValue(), "Limit value");
+        if (vm.valueType() == InsuranceCoverageType.PERCENTAGE && vm.limitValue().compareTo(new BigDecimal("100")) > 0) {
+            throw new BadRequestAlertException("Percentage limit cannot be greater than 100.", ENTITY, "invalidValue");
         }
     }
 
@@ -1016,6 +1025,8 @@ public class CoverageRuleService {
                 entity.getDepartmentId(),
                 department == null ? null : department.getName(),
                 entity.getEncounterType(),
+                entity.getValueType(),
+                entity.getLimitValue(),
                 entity.getIsActive(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate()
