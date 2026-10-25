@@ -194,11 +194,6 @@ setup:
     contact-email:
     license: unlicensed
     license-url:
-    servers:
-      - url: "https://asklepios.com/api"
-        description: "Main server"
-      - url: "https://backup.asklepios.com/api"
-        description: "Backup server"
   portal:
     # Shared secret for GET /api/setup/country/external/active
     # and GET /api/setup/mobile-app-config/value/{configKey}.

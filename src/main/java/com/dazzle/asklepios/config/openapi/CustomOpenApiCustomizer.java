@@ -1,9 +1,12 @@
 package com.dazzle.asklepios.config.openapi;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +14,7 @@ import org.springframework.core.Ordered;
 
 @Configuration
 public class CustomOpenApiCustomizer implements OpenApiCustomizer, Ordered {
+    private static final String BEARER_AUTH = "bearerAuth";
     private int order = 0;
     private final ApiDocs properties;
 
@@ -25,6 +29,21 @@ public class CustomOpenApiCustomizer implements OpenApiCustomizer, Ordered {
         openAPI.info(apiInfo);
 
         addServersToOpenAPI(openAPI);
+        addBearerAuth(openAPI);
+    }
+
+    private void addBearerAuth(OpenAPI openAPI) {
+        if (openAPI.getComponents() == null) {
+            openAPI.setComponents(new Components());
+        }
+        openAPI.getComponents().addSecuritySchemes(
+            BEARER_AUTH,
+            new SecurityScheme().type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")
+        );
+        SecurityRequirement bearerRequirement = new SecurityRequirement().addList(BEARER_AUTH);
+        if (openAPI.getSecurity() == null || !openAPI.getSecurity().contains(bearerRequirement)) {
+            openAPI.addSecurityItem(bearerRequirement);
+        }
     }
 
     private Contact buildContact() {
@@ -51,6 +70,10 @@ public class CustomOpenApiCustomizer implements OpenApiCustomizer, Ordered {
     }
 
     private void addServersToOpenAPI(OpenAPI openAPI) {
+        // No configured servers: springdoc derives the server from the request (see SpringDocConfiguration)
+        if (properties.getServers() == null) {
+            return;
+        }
         for (ApiDocs.Server server : properties.getServers()) {
             openAPI.addServersItem(buildServer(server));
         }

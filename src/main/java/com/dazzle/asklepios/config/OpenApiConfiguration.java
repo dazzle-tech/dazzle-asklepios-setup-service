@@ -11,17 +11,17 @@ import org.springframework.context.annotation.Profile;
 @Profile(Constants.SPRING_PROFILE_API_DOCS)
 public class OpenApiConfiguration {
 
-    public static final String API_FIRST_PACKAGE = "com.dazzle.asklepios.web.api";
+    public static final String API_PACKAGE = "com.dazzle.asklepios";
 
     @Bean
-    @ConditionalOnMissingBean(name = "apiFirstGroupedOpenAPI")
-    public GroupedOpenApi apiFirstGroupedOpenAPI(
+    @ConditionalOnMissingBean(name = "setupGroupedOpenAPI")
+    public GroupedOpenApi setupGroupedOpenAPI(
         CustomOpenApiCustomizer customOpenApiCustomizer
     ) {
         return GroupedOpenApi.builder()
-            .group("openapi")
+            .group("setup")
             .addOpenApiCustomizer(customOpenApiCustomizer)
-            .packagesToScan(API_FIRST_PACKAGE)
+            .packagesToScan(API_PACKAGE)
             .pathsToMatch("/api/**")
             .build();
     }

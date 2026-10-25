@@ -4,7 +4,7 @@ checkstyle = "10.23.1"
 
 [libraries]
 spring-cloud-dependencies = { module = "org.springframework.cloud:spring-cloud-dependencies", version = "2024.0.1" }
-springdoc-openapi-starter-webmvc-api = { module = "org.springdoc:springdoc-openapi-starter-webmvc-api", version = "2.8.8" }
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version = "2.8.8" }
 jackson-databind-nullable = { module = "org.openapitools:jackson-databind-nullable", version = "0.2.6" }
 cucumber-bom = { module = "io.cucumber:cucumber-bom", version = "7.22.1" }
 testng = { module = "org.testng:testng", version = "7.11.0" }
