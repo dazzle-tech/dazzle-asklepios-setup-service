@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.enumeration.RoomType;
 import com.dazzle.asklepios.domain.Room;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import com.dazzle.asklepios.service.RoomService;
@@ -252,6 +253,108 @@ public class RoomController {
         LOG.debug("REST find Rooms by name='{}' pageable={}", name, pageable);
 
         Page<Room> page = roomService.findByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-facility/{facilityId}")
+    public ResponseEntity<List<Room>> findByFacilityId(
+            @PathVariable @NotNull Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by facilityId={} pageable={}", facilityId, pageable);
+
+        Page<Room> page = roomService.findByFacilityId(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-floor/{floor}")
+    public ResponseEntity<List<Room>> findByFloor(
+            @PathVariable @NotNull String floor,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by floor='{}' pageable={}", floor, pageable);
+
+        Page<Room> page = roomService.findByFloor(floor, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-type/{type}")
+    public ResponseEntity<List<Room>> findByType(
+            @PathVariable @NotNull RoomType type,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by type={} pageable={}", type, pageable);
+
+        Page<Room> page = roomService.findByType(type, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-gender")
+    public ResponseEntity<List<Room>> findByGenderSpecific(
+            @RequestParam(required = false) Gender gender,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by gender specific, gender={} pageable={}", gender, pageable);
+
+        Page<Room> page = roomService.findByGenderSpecific(gender, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-status/{isActive}")
+    public ResponseEntity<List<Room>> findByStatus(
+            @PathVariable @NotNull Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by isActive={} pageable={}", isActive, pageable);
+
+        Page<Room> page = roomService.findByStatus(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/room/search/by-parallel-capacity/{parallelCapacityValue}")
+    public ResponseEntity<List<Room>> findByParallelCapacity(
+            @PathVariable @NotNull Integer parallelCapacityValue,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find Rooms by parallelCapacityValue={} pageable={}", parallelCapacityValue, pageable);
+
+        Page<Room> page = roomService.findByParallelCapacity(parallelCapacityValue, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
