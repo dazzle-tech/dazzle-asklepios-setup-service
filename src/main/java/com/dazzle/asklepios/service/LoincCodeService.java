@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Service for importing and managing LOINC codes */
@@ -143,6 +144,29 @@ public class LoincCodeService {
                 .build());
         LOG.info("LOINC code created: {}", trimmedCode);
         return created;
+    }
+
+    /** Update a LOINC code; a changed code must not belong to another record */
+    @Transactional
+    public Optional<LoincCode> update(Long id, String code, LoincCategory category, String description) {
+        String trimmedCode = code.trim();
+        return repository.findById(id).map(existing -> {
+            repository.findByCode(trimmedCode)
+                    .filter(other -> !other.getId().equals(id))
+                    .ifPresent(other -> {
+                        throw new BadRequestAlertException(
+                                "LOINC code already exists: " + trimmedCode,
+                                "loincode",
+                                "duplicate"
+                        );
+                    });
+            existing.setCode(trimmedCode);
+            existing.setCategory(category);
+            existing.setDescription(description.trim());
+            existing.setLastUpdated(Instant.now());
+            LOG.info("LOINC code updated: id={}, code={}", id, trimmedCode);
+            return repository.save(existing);
+        });
     }
 
     // ====================== READ / FILTER ======================

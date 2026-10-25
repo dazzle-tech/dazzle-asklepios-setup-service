@@ -7,6 +7,7 @@ import com.dazzle.asklepios.service.LoincCodeService;
 import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.loinc.LoincCodeCreateVM;
+import com.dazzle.asklepios.web.rest.vm.loinc.LoincCodeUpdateVM;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -18,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -54,6 +56,13 @@ public class LoincCodeController {
         return ResponseEntity
                 .created(URI.create("/api/setup/loinc/" + created.getId()))
                 .body(created);
+    }
+
+    @PutMapping("/loinc/{id:\\d+}")
+    public ResponseEntity<LoincCode> update(@PathVariable Long id, @Valid @RequestBody LoincCodeUpdateVM vm) {
+        return service.update(id, vm.code(), vm.category(), vm.description())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/loinc/all")
