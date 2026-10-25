@@ -129,6 +129,31 @@ public class NphiesPayerController {
         );
     }
 
+    @GetMapping("/nphies-payers/by-status/{isActive}")
+    public ResponseEntity<List<NphiesPayer>> getByStatus(
+            @PathVariable Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST list NPHIES Payers by isActive={} pageable={}",
+                isActive,
+                pageable
+        );
+
+        Page<NphiesPayer> page = nphiesPayerService.findByStatus(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/nphies-payers/{id}")
     public ResponseEntity<NphiesPayer> getById(@PathVariable Long id) {
         LOG.debug("REST get NPHIES Payer id={}", id);
