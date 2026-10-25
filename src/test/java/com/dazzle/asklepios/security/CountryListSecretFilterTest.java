@@ -57,8 +57,9 @@ class CountryListSecretFilterTest {
         CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
         MockHttpServletRequest request = new MockHttpServletRequest(
             "GET",
-            "/api/setup/mobile-app-config/value/MIN_SUPPORTED_VERSION"
+            "/api/setup/mobile-app-config/value"
         );
+        request.setQueryString("keys=SUPPORT_PHONE&keys=BANNER_IMAGE1");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, (req, res) -> {
@@ -73,8 +74,9 @@ class CountryListSecretFilterTest {
         CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
         MockHttpServletRequest request = new MockHttpServletRequest(
             "GET",
-            "/api/setup/mobile-app-config/value/MIN_SUPPORTED_VERSION"
+            "/api/setup/mobile-app-config/value"
         );
+        request.setQueryString("keys=SUPPORT_PHONE&keys=BANNER_IMAGE1");
         request.addHeader(CountryListSecretFilter.SECRET_HEADER, SECRET);
         MockHttpServletResponse response = new MockHttpServletResponse();
         boolean[] continued = { false };
