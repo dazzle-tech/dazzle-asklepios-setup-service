@@ -160,6 +160,23 @@ public class PolicyDefinitionController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/policy-definition/by-status")
+    public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinitionByStatus(
+            @RequestParam Boolean isActive,
+            @ParameterObject Pageable pageable) {
+        LOG.debug("REST get policy definition by isActive={}", isActive);
+        Page<PolicyDefinition> page = policyDefinitionService.findByStatus(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<PolicyDefinitionResponseVM> body = page.getContent().stream()
+                .map(PolicyDefinitionResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
     @GetMapping("/policy-definition/{id}")
     public ResponseEntity<PolicyDefinitionResponseVM> getOnePolicyDefinitionById(@PathVariable Long id) {
         LOG.debug("REST request to get PolicyDefinition : {}", id);
