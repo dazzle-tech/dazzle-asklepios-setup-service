@@ -124,6 +124,27 @@ public class LoincCodeService {
         return new LoincImportResultDTO(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
     }
 
+    /** Create a single LOINC code; the code must not already exist */
+    @Transactional
+    public LoincCode create(String code, LoincCategory category, String description) {
+        String trimmedCode = code.trim();
+        if (repository.findByCode(trimmedCode).isPresent()) {
+            throw new BadRequestAlertException(
+                    "LOINC code already exists: " + trimmedCode,
+                    "loincode",
+                    "duplicate"
+            );
+        }
+        LoincCode created = repository.save(LoincCode.builder()
+                .code(trimmedCode)
+                .description(description.trim())
+                .category(category)
+                .lastUpdated(Instant.now())
+                .build());
+        LOG.info("LOINC code created: {}", trimmedCode);
+        return created;
+    }
+
     // ====================== READ / FILTER ======================
 
     @Transactional(value = Transactional.TxType.SUPPORTS)

@@ -6,6 +6,8 @@ import com.dazzle.asklepios.repository.LoincCodeRepository;
 import com.dazzle.asklepios.service.LoincCodeService;
 import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.loinc.LoincCodeCreateVM;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -16,12 +18,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -44,7 +48,13 @@ public class LoincCodeController {
         return ResponseEntity.ok(result);
     }
 
-
+    @PostMapping("/loinc")
+    public ResponseEntity<LoincCode> create(@Valid @RequestBody LoincCodeCreateVM vm) {
+        LoincCode created = service.create(vm.code(), vm.category(), vm.description());
+        return ResponseEntity
+                .created(URI.create("/api/setup/loinc/" + created.getId()))
+                .body(created);
+    }
 
     @GetMapping("/loinc/all")
     public ResponseEntity<List<LoincCode>> getAll(@ParameterObject Pageable pageable) {
