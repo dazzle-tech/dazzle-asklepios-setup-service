@@ -520,8 +520,22 @@ public class CoverageRuleService {
                 vm.diagnosisCode()
         );
         entity.setItemType(vm.itemType());
-        entity.setServiceCategory(vm.itemType() == CoverageRuleTarget.CATEGORY ? requireCategory(vm.serviceCategory()) : null);
-        entity.setServiceId(vm.itemType() == CoverageRuleTarget.SERVICE ? requireService(vm.serviceId()).getId() : null);
+        if (vm.itemType() == CoverageRuleTarget.CATEGORY) {
+            BillingItemTypes category = requireCategory(vm.serviceCategory());
+            Long itemId = resolveCategoryItemId(category, vm.serviceId());
+            entity.setServiceCategory(category);
+            entity.setServiceId(itemId);
+            entity.setItemName(itemId == null ? null : blankToNull(vm.serviceName()));
+        } else if (vm.itemType() == CoverageRuleTarget.SERVICE) {
+            ServiceSetup service = requireService(vm.serviceId());
+            entity.setServiceCategory(null);
+            entity.setServiceId(service.getId());
+            entity.setItemName(firstNonBlank(blankToNull(vm.serviceName()), service.getName()));
+        } else {
+            entity.setServiceCategory(null);
+            entity.setServiceId(null);
+            entity.setItemName(null);
+        }
         entity.setAllDiagnoses(vm.itemType() == CoverageRuleTarget.ALL
                 || allDiagnosesSelected(vm.itemType() == CoverageRuleTarget.DIAGNOSIS, vm.allDiagnoses(), diagnosisIds));
         entity.setDiagnosisIds(CoverageDiagnosisSelection.ensureMutable(entity.getDiagnosisIds()));
@@ -609,6 +623,20 @@ public class CoverageRuleService {
             return vm.serviceId() != null ? CoverageRuleTarget.SERVICE : CoverageRuleTarget.CATEGORY;
         }
         return vm.targetType() != null ? vm.targetType() : CoverageRuleTarget.ALL;
+    }
+
+    private Long resolveCategoryItemId(BillingItemTypes category, Long itemId) {
+        if (itemId == null) {
+            return null;
+        }
+        if (category == BillingItemTypes.SERVICE) {
+            return requireService(itemId).getId();
+        }
+        return itemId;
+    }
+
+    private String firstNonBlank(String first, String second) {
+        return first != null ? first : second;
     }
 
     private Long resolveDiscountItemId(CoverageDiscountVM vm) {
@@ -1040,20 +1068,21 @@ public class CoverageRuleService {
     }
 
     private CoveragePreApprovalItemVM toPreApprovalItemVm(CoveragePreApprovalItem entity) {
-        ServiceSetup service = coverageLookupService.findService(entity.getServiceId());
         List<CoverageDiagnosisRefVM> diagnoses = toDiagnosisRefs(entity.getDiagnosisIds(), entity.getDiagnosisId());
         CoverageDiagnosisRefVM first = diagnoses.isEmpty() ? null : diagnoses.get(0);
+        String serviceName = blankToNull(entity.getItemName());
+        if (serviceName == null && entity.getItemType() == CoverageRuleTarget.ALL) {
+            serviceName = "All";
+        } else if (serviceName == null && first != null) {
+            serviceName = diagnosisSummary(diagnoses);
+        }
         return new CoveragePreApprovalItemVM(
                 entity.getId(),
                 entity.getItemType(),
                 entity.getServiceCategory(),
                 entity.getServiceId(),
-                service == null ? null : service.getCode(),
-                service == null
-                        ? (entity.getItemType() == CoverageRuleTarget.ALL
-                            ? "All"
-                            : first == null ? null : diagnosisSummary(diagnoses))
-                        : service.getName(),
+                null,
+                serviceName,
                 entity.getAllDiagnoses(),
                 first == null ? null : first.diagnosisId(),
                 first == null ? (Boolean.TRUE.equals(entity.getAllDiagnoses()) ? "ALL" : null) : first.diagnosisCode(),

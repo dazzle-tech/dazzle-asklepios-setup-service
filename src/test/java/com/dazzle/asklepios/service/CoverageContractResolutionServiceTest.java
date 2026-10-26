@@ -1204,6 +1204,74 @@ class CoverageContractResolutionServiceTest {
     }
 
     @Test
+    void resolve_specificCategoryItemBeatsWholeCategory() {
+        CoverageContract contract = matchedContract();
+        CoveragePreApproval header = facilityPreApproval(11L);
+        CoveragePreApprovalItem wholeLaboratory = CoveragePreApprovalItem.builder()
+                .id(4L)
+                .preApproval(header)
+                .itemType(CoverageRuleTarget.CATEGORY)
+                .serviceCategory(BillingItemTypes.LABORATORY)
+                .isActive(true)
+                .build();
+        CoveragePreApprovalItem specificTest = CoveragePreApprovalItem.builder()
+                .id(6L)
+                .preApproval(header)
+                .itemType(CoverageRuleTarget.CATEGORY)
+                .serviceCategory(BillingItemTypes.LABORATORY)
+                .serviceId(77L)
+                .itemName("CBC")
+                .isActive(true)
+                .build();
+
+        stubMatchedContract(contract);
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
+                .thenReturn(List.of(header));
+        when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(11L))
+                .thenReturn(List.of(wholeLaboratory, specificTest));
+
+        CoverageContractResolveResponse specific = coverageContractResolutionService.resolve(
+                new CoverageContractResolveRequest(
+                        null,
+                        "INS-1",
+                        null,
+                        null,
+                        "POL-100",
+                        "A",
+                        "CLINIC",
+                        LocalDate.now(),
+                        1L,
+                        5L,
+                        List.of(),
+                        "LABORATORY",
+                        77L
+                )
+        );
+        CoverageContractResolveResponse otherTest = coverageContractResolutionService.resolve(
+                new CoverageContractResolveRequest(
+                        null,
+                        "INS-1",
+                        null,
+                        null,
+                        "POL-100",
+                        "A",
+                        "CLINIC",
+                        LocalDate.now(),
+                        1L,
+                        5L,
+                        List.of(),
+                        "LABORATORY",
+                        88L
+                )
+        );
+
+        assertThat(specific.preApproval().itemId()).isEqualTo(6L);
+        assertThat(specific.preApproval().serviceId()).isEqualTo(77L);
+        assertThat(otherTest.preApproval().itemId()).isEqualTo(4L);
+        assertThat(otherTest.preApproval().serviceId()).isNull();
+    }
+
+    @Test
     void resolve_contractPreApprovalBeatsTpaOnSameTarget() {
         CoverageContract contract = CoverageContract.builder()
                 .id(21L)

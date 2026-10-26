@@ -596,10 +596,13 @@ public class CoverageContractResolutionService {
             return -1;
         }
         if (type == CoverageRuleTarget.CATEGORY) {
-            if (billingItemType != null && billingItemType == item.getServiceCategory()) {
-                return 300;
+            if (billingItemType == null || billingItemType != item.getServiceCategory()) {
+                return -1;
             }
-            return -1;
+            if (item.getServiceId() != null) {
+                return catalogItemId != null && catalogItemId.equals(item.getServiceId()) ? 400 : -1;
+            }
+            return 300;
         }
         return billingItemType == null ? -1 : 100;
     }

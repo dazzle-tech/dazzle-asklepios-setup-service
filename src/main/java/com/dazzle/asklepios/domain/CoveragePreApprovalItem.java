@@ -56,6 +56,9 @@ public class CoveragePreApprovalItem extends AbstractAuditingEntity<Long> {
     @Column(name = "service_id")
     private Long serviceId;
 
+    @Column(name = "item_name", length = 255)
+    private String itemName;
+
     @Builder.Default
     @Column(name = "all_diagnoses", nullable = false)
     private Boolean allDiagnoses = false;
