@@ -63,8 +63,6 @@ public class VaccineController {
                 .possibleReactions(vm.possibleReactions())
                 .contraindicationsAndPrecautions(vm.contraindicationsAndPrecautions())
                 .storageAndHandling(vm.storageAndHandling())
-                .facilityId(vm.facilityId())
-                .price(vm.price())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
@@ -96,8 +94,6 @@ public class VaccineController {
         patch.setPossibleReactions(vm.possibleReactions());
         patch.setContraindicationsAndPrecautions(vm.contraindicationsAndPrecautions());
         patch.setStorageAndHandling(vm.storageAndHandling());
-        patch.setFacilityId(vm.facilityId());
-        patch.setPrice(vm.price());
         patch.setIsActive(vm.isActive());
 
         return vaccineService.update(id, patch)

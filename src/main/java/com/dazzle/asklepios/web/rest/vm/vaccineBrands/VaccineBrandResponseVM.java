@@ -12,6 +12,9 @@ public record VaccineBrandResponseVM(
         BigDecimal volume,
         String unit,
         String marketingAuthorizationHolder,
+        Long facilityId,
+        BigDecimal price,
+        String currency,
         Boolean isActive
 ) implements Serializable {
 
@@ -23,6 +26,9 @@ public record VaccineBrandResponseVM(
                 brand.getVolume(),
                 brand.getUnit(),
                 brand.getMarketingAuthorizationHolder(),
+                brand.getFacility() != null ? brand.getFacility().getId() : null,
+                brand.getPrice(),
+                brand.getCurrency(),
                 brand.getIsActive()
         );
     }

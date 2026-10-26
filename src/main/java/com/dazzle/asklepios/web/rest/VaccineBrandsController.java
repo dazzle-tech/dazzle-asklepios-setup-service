@@ -54,10 +54,11 @@ public class VaccineBrandsController {
                 .volume(vm.volume())
                 .unit(vm.unit())
                 .marketingAuthorizationHolder(vm.marketingAuthorizationHolder())
+                .price(vm.price())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
-        VaccineBrands created = vaccineBrandsService.create(vaccineId, toCreate);
+        VaccineBrands created = vaccineBrandsService.create(vaccineId, vm.facilityId(), toCreate);
         VaccineBrandResponseVM body = VaccineBrandResponseVM.ofEntity(created);
 
         return ResponseEntity
@@ -79,9 +80,10 @@ public class VaccineBrandsController {
         patch.setVolume(vm.volume());
         patch.setUnit(vm.unit());
         patch.setMarketingAuthorizationHolder(vm.marketingAuthorizationHolder());
+        patch.setPrice(vm.price());
         patch.setIsActive(vm.isActive());
 
-        return vaccineBrandsService.update(id, vaccineId, patch)
+        return vaccineBrandsService.update(id, vaccineId, vm.facilityId(), patch)
                 .map(VaccineBrandResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
