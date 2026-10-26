@@ -63,6 +63,21 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     @Column(name = "marketing_authorization_holder", length = 255)
     private String marketingAuthorizationHolder;
 
+    /** The currency is taken from this facility */
+    @NotNull
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "facility_id", nullable = false)
+    private Facility facility;
+
+    @NotNull
+    @Column(name = "price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal price;
+
+    /** Always the facility's default currency */
+    @NotNull
+    @Column(name = "currency", length = 10, nullable = false)
+    private String currency;
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;

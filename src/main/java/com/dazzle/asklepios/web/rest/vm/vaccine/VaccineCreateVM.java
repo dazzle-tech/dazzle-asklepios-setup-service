@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.vaccine;
 
-import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Vaccine;
 import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.domain.enumeration.RouteOfAdministration;
@@ -9,7 +8,6 @@ import com.dazzle.asklepios.domain.enumeration.NumberOfDoses;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -28,10 +26,6 @@ public record VaccineCreateVM(
         String possibleReactions,
         String contraindicationsAndPrecautions,
         String storageAndHandling,
-        @NotNull Facility facilityId,
-        @NotNull
-        @Positive
-        BigDecimal price,
         Boolean isActive
 ) implements Serializable {
 
@@ -49,8 +43,6 @@ public record VaccineCreateVM(
                 vaccine.getPossibleReactions(),
                 vaccine.getContraindicationsAndPrecautions(),
                 vaccine.getStorageAndHandling(),
-                vaccine.getFacilityId(),
-                vaccine.getPrice(),
                 vaccine.getIsActive()
         );
     }

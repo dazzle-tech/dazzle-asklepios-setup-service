@@ -54,8 +54,6 @@ public class VaccineService {
                 .possibleReactions(incoming.getPossibleReactions())
                 .contraindicationsAndPrecautions(incoming.getContraindicationsAndPrecautions())
                 .storageAndHandling(incoming.getStorageAndHandling())
-                .facilityId(incoming.getFacilityId())
-                .price(incoming.getPrice())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .build();
 
@@ -96,8 +94,6 @@ public class VaccineService {
         existing.setPossibleReactions(incoming.getPossibleReactions());
         existing.setContraindicationsAndPrecautions(incoming.getContraindicationsAndPrecautions());
         existing.setStorageAndHandling(incoming.getStorageAndHandling());
-        existing.setFacilityId(incoming.getFacilityId());
-        existing.setPrice(incoming.getPrice());
         existing.setIsActive(incoming.getIsActive());
 
         try {
