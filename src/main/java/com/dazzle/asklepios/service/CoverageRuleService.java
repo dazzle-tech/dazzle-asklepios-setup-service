@@ -18,7 +18,6 @@ import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
-import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
@@ -865,9 +864,16 @@ public class CoverageRuleService {
         return coverageLookupService.requireActiveService(id);
     }
 
-    private ServiceCategory requireCategory(ServiceCategory category) {
+    private BillingItemTypes requireCategory(BillingItemTypes category) {
         if (category == null) {
             throw new BadRequestAlertException("Category is required.", ENTITY, "categoryRequired");
+        }
+        if (category == BillingItemTypes.PATHOLOGY) {
+            throw new BadRequestAlertException(
+                    "Category must be medication, laboratory, radiology, procedure, or service.",
+                    ENTITY,
+                    "invalidCategory"
+            );
         }
         return category;
     }

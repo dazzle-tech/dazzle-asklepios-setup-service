@@ -33,7 +33,6 @@ import com.dazzle.asklepios.repository.CoverageExclusionRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
 import com.dazzle.asklepios.repository.CoverageTermItemRepository;
-import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
@@ -86,9 +85,6 @@ class CoverageContractResolutionServiceTest {
 
     @Mock
     private CoveragePreApprovalItemRepository coveragePreApprovalItemRepository;
-
-    @Mock
-    private ServiceRepository serviceRepository;
 
     @Mock
     private NphiesPayerRepository nphiesPayerRepository;
@@ -1154,6 +1150,57 @@ class CoverageContractResolutionServiceTest {
         assertThat(resolved.preApproval().valueType()).isEqualTo(InsuranceCoverageType.FIXED);
         assertThat(resolved.preApproval().limitValue()).isEqualByComparingTo("500");
         assertThat(resolved.matchReason()).contains("Pre-approval is required");
+    }
+
+    @Test
+    void resolve_matchesPreApprovalCategoryByBillingItemType() {
+        CoverageContract contract = matchedContract();
+        CoveragePreApproval header = facilityPreApproval(11L);
+        header.setValueType(InsuranceCoverageType.PERCENTAGE);
+        header.setLimitValue(new BigDecimal("80"));
+        CoveragePreApprovalItem laboratory = CoveragePreApprovalItem.builder()
+                .id(4L)
+                .preApproval(header)
+                .itemType(CoverageRuleTarget.CATEGORY)
+                .serviceCategory(BillingItemTypes.LABORATORY)
+                .isActive(true)
+                .build();
+        CoveragePreApprovalItem medication = CoveragePreApprovalItem.builder()
+                .id(5L)
+                .preApproval(header)
+                .itemType(CoverageRuleTarget.CATEGORY)
+                .serviceCategory(BillingItemTypes.MEDICATION)
+                .isActive(true)
+                .build();
+
+        stubMatchedContract(contract);
+        when(coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(21L))
+                .thenReturn(List.of(header));
+        when(coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(11L))
+                .thenReturn(List.of(laboratory, medication));
+
+        CoverageContractResolveResponse resolved = coverageContractResolutionService.resolve(
+                new CoverageContractResolveRequest(
+                        null,
+                        "INS-1",
+                        null,
+                        null,
+                        "POL-100",
+                        "A",
+                        "CLINIC",
+                        LocalDate.now(),
+                        1L,
+                        5L,
+                        List.of(),
+                        "MEDICATION",
+                        44L
+                )
+        );
+
+        assertThat(resolved.matched()).isTrue();
+        assertThat(resolved.preApproval()).isNotNull();
+        assertThat(resolved.preApproval().itemId()).isEqualTo(5L);
+        assertThat(resolved.preApproval().serviceCategory()).isEqualTo(BillingItemTypes.MEDICATION);
     }
 
     @Test

@@ -8,7 +8,6 @@ import com.dazzle.asklepios.domain.CoverageExclusion;
 import com.dazzle.asklepios.domain.CoveragePreApproval;
 import com.dazzle.asklepios.domain.CoveragePreApprovalItem;
 import com.dazzle.asklepios.domain.CoverageTerm;
-import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.CoverageTermItem;
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.PriceListSetup;
@@ -19,7 +18,6 @@ import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.GuarantorType;
-import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
 import com.dazzle.asklepios.repository.CoverageClassRepository;
@@ -30,7 +28,6 @@ import com.dazzle.asklepios.repository.CoverageExclusionRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
 import com.dazzle.asklepios.repository.CoverageTermItemRepository;
-import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
@@ -72,7 +69,6 @@ public class CoverageContractResolutionService {
     private final CoverageExclusionRepository coverageExclusionRepository;
     private final CoveragePreApprovalRepository coveragePreApprovalRepository;
     private final CoveragePreApprovalItemRepository coveragePreApprovalItemRepository;
-    private final ServiceRepository serviceRepository;
     private final NphiesPayerRepository nphiesPayerRepository;
     private final TpaDefinitionRepository tpaDefinitionRepository;
     private final PriceListSetupRepository priceListSetupRepository;
@@ -89,7 +85,6 @@ public class CoverageContractResolutionService {
             CoverageExclusionRepository coverageExclusionRepository,
             CoveragePreApprovalRepository coveragePreApprovalRepository,
             CoveragePreApprovalItemRepository coveragePreApprovalItemRepository,
-            ServiceRepository serviceRepository,
             NphiesPayerRepository nphiesPayerRepository,
             TpaDefinitionRepository tpaDefinitionRepository,
             PriceListSetupRepository priceListSetupRepository,
@@ -105,7 +100,6 @@ public class CoverageContractResolutionService {
         this.coverageExclusionRepository = coverageExclusionRepository;
         this.coveragePreApprovalRepository = coveragePreApprovalRepository;
         this.coveragePreApprovalItemRepository = coveragePreApprovalItemRepository;
-        this.serviceRepository = serviceRepository;
         this.nphiesPayerRepository = nphiesPayerRepository;
         this.tpaDefinitionRepository = tpaDefinitionRepository;
         this.priceListSetupRepository = priceListSetupRepository;
@@ -495,7 +489,6 @@ public class CoverageContractResolutionService {
         }
 
         Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
-        ServiceCategory serviceCategory = resolveServiceCategory(request, billingItemType);
         CoveragePreApprovalReadingVM best = null;
         int bestScore = -1;
         for (ScoredPreApproval header : scoredPreApprovals(classId, tpaId)) {
@@ -513,7 +506,6 @@ public class CoverageContractResolutionService {
                         item,
                         billingItemType,
                         request.catalogItemId(),
-                        serviceCategory,
                         diagnosisIds
                 );
                 if (itemScore < 0) {
@@ -584,7 +576,6 @@ public class CoverageContractResolutionService {
             CoveragePreApprovalItem item,
             BillingItemTypes billingItemType,
             Long catalogItemId,
-            ServiceCategory serviceCategory,
             Set<Long> diagnosisIds
     ) {
         CoverageRuleTarget type = item.getItemType();
@@ -605,24 +596,12 @@ public class CoverageContractResolutionService {
             return -1;
         }
         if (type == CoverageRuleTarget.CATEGORY) {
-            if (serviceCategory != null && serviceCategory == item.getServiceCategory()) {
+            if (billingItemType != null && billingItemType == item.getServiceCategory()) {
                 return 300;
             }
             return -1;
         }
         return billingItemType == null ? -1 : 100;
-    }
-
-    private ServiceCategory resolveServiceCategory(
-            CoverageContractResolveRequest request,
-            BillingItemTypes billingItemType
-    ) {
-        if (billingItemType != BillingItemTypes.SERVICE || request.catalogItemId() == null) {
-            return null;
-        }
-        return serviceRepository.findById(request.catalogItemId())
-                .map(ServiceSetup::getCategory)
-                .orElse(null);
     }
 
     private CoveragePreApprovalReadingVM toPreApprovalReading(

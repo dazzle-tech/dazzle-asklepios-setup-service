@@ -1,7 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.coverage;
 
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
-import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.Instant;
@@ -11,7 +11,7 @@ import java.util.List;
 public record CoveragePreApprovalItemVM(
         Long id,
         CoverageRuleTarget itemType,
-        ServiceCategory serviceCategory,
+        BillingItemTypes serviceCategory,
         Long serviceId,
         String serviceCode,
         String serviceName,

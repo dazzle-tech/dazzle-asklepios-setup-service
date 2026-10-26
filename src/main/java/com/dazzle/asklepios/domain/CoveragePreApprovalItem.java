@@ -1,7 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
-import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -51,7 +51,7 @@ public class CoveragePreApprovalItem extends AbstractAuditingEntity<Long> {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "service_category", length = 50)
-    private ServiceCategory serviceCategory;
+    private BillingItemTypes serviceCategory;
 
     @Column(name = "service_id")
     private Long serviceId;
