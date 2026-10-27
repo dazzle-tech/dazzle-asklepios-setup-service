@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 public record VaccineBrandUpdateVM(
         @NotNull Long id,
         @NotEmpty String name,
+        @NotEmpty String code,
         @NotEmpty String manufacture,
         @NotNull BigDecimal volume,
         @NotEmpty
@@ -31,6 +32,7 @@ public record VaccineBrandUpdateVM(
         return new VaccineBrandUpdateVM(
                 brand.getId(),
                 brand.getName(),
+                brand.getCode(),
                 brand.getManufacture(),
                 brand.getVolume(),
                 brand.getUnit(),

@@ -4,12 +4,14 @@ import com.dazzle.asklepios.domain.BrandMedication;
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.VaccineBrands;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.repository.VaccineBrandsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,8 @@ public class DefaultItemPricingService {
     private final DiagnosticTestRepository diagnosticTestRepository;
 
     private final BrandMedicationRepository brandMedicationRepository;
+
+    private final VaccineBrandsRepository vaccineBrandsRepository;
 
     public DefaultItemPrice resolve(
             BillingItemTypes billingItemType,
@@ -78,6 +82,12 @@ public class DefaultItemPricingService {
 
             case MEDICATION ->
                     resolveMedication(
+                            sourceId,
+                            requestedCurrency
+                    );
+
+            case VACCINE ->
+                    resolveVaccineBrand(
                             sourceId,
                             requestedCurrency
                     );
@@ -259,6 +269,54 @@ public class DefaultItemPricingService {
                 validatePrice(
                         medication.getPrice(),
                         "Brand medication",
+                        sourceId
+                ),
+                currency
+        );
+    }
+
+    private DefaultItemPrice resolveVaccineBrand(
+            Long sourceId,
+            Currency requestedCurrency
+    ) {
+        VaccineBrands vaccineBrand =
+                vaccineBrandsRepository
+                        .findById(sourceId)
+                        .orElseThrow(() ->
+                                notFound(
+                                        "Vaccine brand",
+                                        sourceId
+                                )
+                        );
+
+        validateActive(
+                vaccineBrand.getIsActive(),
+                "Vaccine brand",
+                sourceId
+        );
+
+        Currency vaccineBrandCurrency =
+                parseCurrency(
+                        vaccineBrand.getCurrency(),
+                        "Vaccine brand",
+                        sourceId
+                );
+
+        Currency currency =
+                validateCurrency(
+                        vaccineBrandCurrency,
+                        requestedCurrency,
+                        "Vaccine brand",
+                        sourceId
+                );
+
+        return new DefaultItemPrice(
+                vaccineBrand.getId(),
+                vaccineBrand.getCode(),
+                vaccineBrand.getName(),
+                validatePrice(
+                        vaccineBrand.getPrice(),
+                        "Vaccine brand",
                         sourceId
                 ),
                 currency

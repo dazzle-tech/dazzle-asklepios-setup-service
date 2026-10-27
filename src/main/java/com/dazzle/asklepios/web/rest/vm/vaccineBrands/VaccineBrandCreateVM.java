@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record VaccineBrandCreateVM(
         @NotEmpty String name,
+        @NotEmpty String code,
         @NotEmpty String manufacture,
         @NotNull BigDecimal volume,
         @NotEmpty
@@ -28,6 +29,7 @@ public record VaccineBrandCreateVM(
     public static VaccineBrandCreateVM ofEntity(VaccineBrands brand) {
         return new VaccineBrandCreateVM(
                 brand.getName(),
+                brand.getCode(),
                 brand.getManufacture(),
                 brand.getVolume(),
                 brand.getUnit(),

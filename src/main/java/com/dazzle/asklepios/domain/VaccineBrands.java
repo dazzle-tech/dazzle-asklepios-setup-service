@@ -48,6 +48,11 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     @Column(nullable = false, length = 255)
     private String name;
 
+    /** Item code used in price lists and Waseel SBS mapping */
+    @NotNull
+    @Column(name = "code", nullable = false, length = 100)
+    private String code;
+
     @NotNull
     @Column(name = "manufacture", nullable = false, length = 255)
     private String manufacture;
