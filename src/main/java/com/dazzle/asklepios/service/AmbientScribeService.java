@@ -21,6 +21,7 @@ import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeAudioRetentionVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeClinicUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeClinicVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribePractitionerVM;
@@ -57,6 +58,14 @@ public class AmbientScribeService {
         this.facilityRepository = facilityRepository;
         this.departmentsRepository = departmentsRepository;
         this.practitionerDepartmentRepository = practitionerDepartmentRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<AmbientScribeAudioRetentionVM> listAudioRetention() {
+        return settingRepository.findByFacilityIdIsNotNullAndAudioRetentionIsNotNull()
+            .stream()
+            .map(setting -> new AmbientScribeAudioRetentionVM(setting.getFacility().getId(), setting.getAudioRetention()))
+            .toList();
     }
 
     @Transactional(readOnly = true)
