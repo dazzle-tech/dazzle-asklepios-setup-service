@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.service.DepartmentService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
+import com.dazzle.asklepios.web.rest.vm.department.DepartmentPublicOptionVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentResponseVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
 import jakarta.validation.Valid;
@@ -240,6 +241,23 @@ public class DepartmentController {
         LOG.debug("REST list active Departments by facilityId={}", facilityId);
         List<DepartmentResponseVM> departmentResponseVM= departmentService.findActiveByFacilityId(facilityId).stream().map(DepartmentResponseVM::ofEntity).toList();
         return ResponseEntity.ok(departmentResponseVM);
+    }
+
+    /**
+     * Public read-only list of active departments for a facility (id + name only).
+     * Used by unauthenticated patient-facing forms such as complaint submission.
+     */
+    @GetMapping("/department/external/active/by-facility/{facilityId:\\d+}")
+    public ResponseEntity<List<DepartmentPublicOptionVM>> getPublicActiveDepartmentsByFacility(
+            @PathVariable Long facilityId
+    ) {
+        LOG.debug("REST list public active Departments by facilityId={}", facilityId);
+        List<DepartmentPublicOptionVM> departments = departmentService
+            .findActiveByFacilityId(facilityId)
+            .stream()
+            .map(DepartmentPublicOptionVM::ofEntity)
+            .toList();
+        return ResponseEntity.ok(departments);
     }
 
     @GetMapping("/department/appointable/by-type/{type}/{facilityId}")
