@@ -12,8 +12,13 @@ public record CoverageContractResolveResponse(
         CoverageReadingVM cashLimit,
         CoverageDiscountVM discount,
         CoverageExclusionVM exclusion,
-        CoveragePreApprovalReadingVM preApproval
+        CoveragePreApprovalReadingVM preApproval,
+        java.util.List<CoveragePreApprovalReadingVM> preApprovals
 ) {
+    public CoverageContractResolveResponse {
+        preApprovals = preApprovals == null ? java.util.List.of() : java.util.List.copyOf(preApprovals);
+    }
+
     public static CoverageContractResolveResponse unmatched(String matchReason) {
         return new CoverageContractResolveResponse(
                 false,
@@ -27,7 +32,8 @@ public record CoverageContractResolveResponse(
                 null,
                 null,
                 null,
-                null
+                null,
+                java.util.List.of()
         );
     }
 }

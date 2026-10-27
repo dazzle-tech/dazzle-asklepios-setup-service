@@ -1,7 +1,9 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
+import com.dazzle.asklepios.domain.enumeration.CoveragePreApprovalLevel;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,6 +67,20 @@ public class CoveragePreApproval extends AbstractAuditingEntity<Long> {
 
     @Column(name = "limit_value", precision = 19, scale = 4)
     private BigDecimal limitValue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "target_level", length = 30)
+    private CoveragePreApprovalLevel targetLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", length = 50)
+    private BillingItemTypes source;
+
+    @Column(name = "source_id")
+    private Long sourceId;
+
+    @Column(name = "subcategory_key", length = 100)
+    private String subcategoryKey;
 
     @NotNull
     @Builder.Default

@@ -53,6 +53,9 @@ public class CoverageTermItem extends AbstractAuditingEntity<Long> {
     @Column(name = "service_id")
     private Long serviceId;
 
+    @Column(name = "subcategory_key", length = 100)
+    private String subcategoryKey;
+
     @Column(name = "item_name", length = 255)
     private String itemName;
 

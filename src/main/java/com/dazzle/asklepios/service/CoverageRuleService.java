@@ -14,6 +14,7 @@ import com.dazzle.asklepios.domain.ICDDiagnosis;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
+import com.dazzle.asklepios.domain.enumeration.CoveragePreApprovalLevel;
 import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
@@ -65,6 +66,7 @@ public class CoverageRuleService {
     private final CoverageExclusionRepository exclusionRepository;
     private final CoveragePreApprovalRepository preApprovalRepository;
     private final CoveragePreApprovalItemRepository preApprovalItemRepository;
+    private final CatalogTargetService catalogTargetService;
 
     public CoverageRuleService(
             CoverageClassService coverageClassService,
@@ -76,7 +78,8 @@ public class CoverageRuleService {
             CoverageDiscountRepository discountRepository,
             CoverageExclusionRepository exclusionRepository,
             CoveragePreApprovalRepository preApprovalRepository,
-            CoveragePreApprovalItemRepository preApprovalItemRepository
+            CoveragePreApprovalItemRepository preApprovalItemRepository,
+            CatalogTargetService catalogTargetService
     ) {
         this.coverageClassService = coverageClassService;
         this.coverageLookupService = coverageLookupService;
@@ -88,6 +91,7 @@ public class CoverageRuleService {
         this.exclusionRepository = exclusionRepository;
         this.preApprovalRepository = preApprovalRepository;
         this.preApprovalItemRepository = preApprovalItemRepository;
+        this.catalogTargetService = catalogTargetService;
     }
 
     public CoverageCopaymentVM saveCopayment(Long classId, CoverageCopaymentVM vm) {
@@ -427,9 +431,10 @@ public class CoverageRuleService {
     private void applyTermItem(CoverageTermItem entity, CoverageTermItemVM vm) {
         CoverageRuleTarget scope = resolveTermItemScope(vm);
         entity.setCategoryScope(scope);
-        entity.setBillingItemType(vm.billingItemType());
+        entity.setBillingItemType(scope == CoverageRuleTarget.ALL ? null : vm.billingItemType());
         entity.setServiceId(resolveTermItemId(vm));
-        entity.setItemName(blankToNull(vm.serviceName()));
+        entity.setSubcategoryKey(scope == CoverageRuleTarget.SUBCATEGORY ? vm.subcategoryKey().trim() : null);
+        entity.setItemName(scope == CoverageRuleTarget.SERVICE ? blankToNull(vm.serviceName()) : null);
         entity.setValueType(vm.valueType());
         entity.setLimitValue(vm.limitValue());
         requirePositive(vm.limitValue(), "Limit value");
@@ -447,9 +452,12 @@ public class CoverageRuleService {
     }
 
     private void validateTermItem(CoverageTermItemVM vm) {
-        if (vm.billingItemType() == null && vm.categoryScope() != null
-                && vm.categoryScope() != CoverageRuleTarget.ALL) {
+        CoverageRuleTarget scope = resolveTermItemScope(vm);
+        if (scope != CoverageRuleTarget.ALL && vm.billingItemType() == null) {
             throw new BadRequestAlertException("Category is required.", ENTITY, "categoryRequired");
+        }
+        if (scope == CoverageRuleTarget.SUBCATEGORY) {
+            catalogTargetService.requireSubcategory(vm.billingItemType(), vm.subcategoryKey());
         }
         if (vm.serviceId() != null && vm.billingItemType() == BillingItemTypes.SERVICE) {
             requireService(vm.serviceId());
@@ -458,10 +466,16 @@ public class CoverageRuleService {
     }
 
     private CoverageRuleTarget resolveTermItemScope(CoverageTermItemVM vm) {
-        if (vm.billingItemType() != null) {
-            return vm.serviceId() != null ? CoverageRuleTarget.SERVICE : CoverageRuleTarget.CATEGORY;
+        if (vm.billingItemType() == null) {
+            return CoverageRuleTarget.ALL;
         }
-        return CoverageRuleTarget.ALL;
+        if (vm.serviceId() != null) {
+            return CoverageRuleTarget.SERVICE;
+        }
+        if (vm.subcategoryKey() != null && !vm.subcategoryKey().isBlank()) {
+            return CoverageRuleTarget.SUBCATEGORY;
+        }
+        return CoverageRuleTarget.CATEGORY;
     }
 
     private Long resolveTermItemId(CoverageTermItemVM vm) {
@@ -570,22 +584,57 @@ public class CoverageRuleService {
     }
 
     private void applyPreApproval(CoveragePreApproval entity, CoveragePreApprovalVM vm) {
-        entity.setApprovalScope(vm.approvalScope());
-        entity.setFacilityId(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireFacility(vm.facilityId()).getId() : null);
-        entity.setDepartmentId(vm.approvalScope() == CoverageApprovalScope.DEPARTMENT
-                ? requireDepartment(vm.departmentId(), null).getId()
-                : null);
-        entity.setEncounterType(vm.approvalScope() == CoverageApprovalScope.FACILITY ? requireEncounterType(vm.encounterType()) : null);
+        CoveragePreApprovalLevel level = vm.targetLevel();
+        Long facilityId = requireFacility(vm.facilityId()).getId();
+        boolean departmentContext = level == CoveragePreApprovalLevel.DEPARTMENT || vm.departmentId() != null;
+        entity.setTargetLevel(level);
+        entity.setFacilityId(facilityId);
+        entity.setDepartmentId(departmentContext ? requireDepartment(vm.departmentId(), facilityId).getId() : null);
+        entity.setApprovalScope(departmentContext ? CoverageApprovalScope.DEPARTMENT : CoverageApprovalScope.FACILITY);
+        entity.setEncounterType(requireEncounterType(vm.encounterType()));
         entity.setValueType(vm.valueType());
         entity.setLimitValue(vm.limitValue());
+        if (level == CoveragePreApprovalLevel.DEPARTMENT) {
+            entity.setSource(null);
+            entity.setSourceId(null);
+            entity.setSubcategoryKey(null);
+            return;
+        }
+        BillingItemTypes source = requireCategory(vm.source());
+        entity.setSource(source);
+        if (level == CoveragePreApprovalLevel.CATEGORY) {
+            entity.setSourceId(null);
+            entity.setSubcategoryKey(null);
+            return;
+        }
+        if (level == CoveragePreApprovalLevel.SUBCATEGORY) {
+            catalogTargetService.requireSubcategory(source, vm.subcategoryKey());
+            entity.setSourceId(null);
+            entity.setSubcategoryKey(vm.subcategoryKey().trim());
+            return;
+        }
+        catalogTargetService.requireItem(source, vm.sourceId());
+        entity.setSourceId(vm.sourceId());
+        entity.setSubcategoryKey(null);
     }
 
     private void validatePreApproval(CoveragePreApprovalVM vm) {
-        if (vm.approvalScope() == CoverageApprovalScope.FACILITY) {
-            requireFacility(vm.facilityId());
-            requireEncounterType(vm.encounterType());
-        } else if (vm.approvalScope() == CoverageApprovalScope.DEPARTMENT) {
-            requireDepartment(vm.departmentId(), null);
+        if (vm.targetLevel() == null) {
+            throw new BadRequestAlertException("Pre-approval level is required.", ENTITY, "targetLevelRequired");
+        }
+        requireFacility(vm.facilityId());
+        requireEncounterType(vm.encounterType());
+        if (vm.targetLevel() == CoveragePreApprovalLevel.DEPARTMENT || vm.departmentId() != null) {
+            requireDepartment(vm.departmentId(), vm.facilityId());
+        }
+        if (vm.targetLevel() == CoveragePreApprovalLevel.CATEGORY) {
+            requireCategory(vm.source());
+        }
+        if (vm.targetLevel() == CoveragePreApprovalLevel.SUBCATEGORY) {
+            catalogTargetService.requireSubcategory(requireCategory(vm.source()), vm.subcategoryKey());
+        }
+        if (vm.targetLevel() == CoveragePreApprovalLevel.ITEM) {
+            catalogTargetService.requireItem(requireCategory(vm.source()), vm.sourceId());
         }
         if (vm.valueType() == null) {
             throw new BadRequestAlertException("Value type is required.", ENTITY, "valueTypeRequired");
@@ -961,6 +1010,9 @@ public class CoverageRuleService {
         if (itemName == null && entity.getCategoryScope() == CoverageRuleTarget.ALL) {
             itemName = "All";
         }
+        String subcategoryLabel = entity.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY
+                ? catalogTargetService.subcategoryLabel(entity.getBillingItemType(), entity.getSubcategoryKey())
+                : null;
         return new CoverageTermItemVM(
                 entity.getId(),
                 entity.getCategoryScope(),
@@ -968,6 +1020,8 @@ public class CoverageRuleService {
                 entity.getServiceId(),
                 service == null ? null : service.getCode(),
                 itemName,
+                entity.getSubcategoryKey(),
+                subcategoryLabel,
                 entity.getValueType(),
                 entity.getLimitValue(),
                 entity.getIsActive(),
@@ -1061,10 +1115,47 @@ public class CoverageRuleService {
                 entity.getEncounterType(),
                 entity.getValueType(),
                 entity.getLimitValue(),
+                entity.getTargetLevel(),
+                entity.getSource(),
+                entity.getSourceId(),
+                entity.getSubcategoryKey(),
+                preApprovalScopeLabel(entity, department == null ? null : department.getName()),
                 entity.getIsActive(),
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate()
         );
+    }
+
+    private String preApprovalScopeLabel(CoveragePreApproval entity, String departmentName) {
+        CoveragePreApprovalLevel level = entity.getTargetLevel();
+        if (level == null) {
+            return "Previous items";
+        }
+        if (level == CoveragePreApprovalLevel.DEPARTMENT) {
+            return departmentName;
+        }
+        if (level == CoveragePreApprovalLevel.CATEGORY) {
+            return entity.getSource() == null ? null : enumWords(entity.getSource().name());
+        }
+        if (level == CoveragePreApprovalLevel.SUBCATEGORY) {
+            return catalogTargetService.subcategoryLabel(entity.getSource(), entity.getSubcategoryKey());
+        }
+        return catalogTargetService.itemLabel(entity.getSource(), entity.getSourceId());
+    }
+
+    private String enumWords(String value) {
+        String[] words = value.toLowerCase().split("_");
+        StringBuilder label = new StringBuilder();
+        for (String word : words) {
+            if (word.isEmpty()) {
+                continue;
+            }
+            if (!label.isEmpty()) {
+                label.append(' ');
+            }
+            label.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return label.toString();
     }
 
     private CoveragePreApprovalItemVM toPreApprovalItemVm(CoveragePreApprovalItem entity) {

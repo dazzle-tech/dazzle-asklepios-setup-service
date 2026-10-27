@@ -14,6 +14,8 @@ public record CoverageTermItemVM(
         Long serviceId,
         String serviceCode,
         String serviceName,
+        String subcategoryKey,
+        String subcategoryLabel,
         InsuranceCoverageType valueType,
         BigDecimal limitValue,
         Boolean isActive,

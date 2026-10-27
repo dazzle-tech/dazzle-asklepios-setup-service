@@ -101,6 +101,9 @@ class CoverageContractResolutionServiceTest {
     @Mock
     private CoverageLookupService coverageLookupService;
 
+    @Mock
+    private CatalogSubcategoryLookup catalogSubcategoryLookup;
+
     @InjectMocks
     private CoverageContractResolutionService coverageContractResolutionService;
 

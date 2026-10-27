@@ -14,6 +14,7 @@ import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
+import com.dazzle.asklepios.domain.enumeration.CoveragePreApprovalLevel;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
@@ -74,6 +75,7 @@ public class CoverageContractResolutionService {
     private final PriceListSetupRepository priceListSetupRepository;
     private final CoverageContractService coverageContractService;
     private final CoverageLookupService coverageLookupService;
+    private final CatalogSubcategoryLookup catalogSubcategoryLookup;
 
     public CoverageContractResolutionService(
             CoverageClassRepository coverageClassRepository,
@@ -89,7 +91,8 @@ public class CoverageContractResolutionService {
             TpaDefinitionRepository tpaDefinitionRepository,
             PriceListSetupRepository priceListSetupRepository,
             CoverageContractService coverageContractService,
-            CoverageLookupService coverageLookupService
+            CoverageLookupService coverageLookupService,
+            CatalogSubcategoryLookup catalogSubcategoryLookup
     ) {
         this.coverageClassRepository = coverageClassRepository;
         this.coverageContractRepository = coverageContractRepository;
@@ -105,6 +108,7 @@ public class CoverageContractResolutionService {
         this.priceListSetupRepository = priceListSetupRepository;
         this.coverageContractService = coverageContractService;
         this.coverageLookupService = coverageLookupService;
+        this.catalogSubcategoryLookup = catalogSubcategoryLookup;
     }
 
     public CoverageContractResolveResponse resolve(CoverageContractResolveRequest request) {
@@ -171,7 +175,8 @@ public class CoverageContractResolutionService {
         CoverageMatch cashLimitMatch = selectCashLimit(classId, request, encounterType);
         CoverageDiscountVM discount = selectDiscount(classId, tpaId, request, encounterType);
         CoverageExclusionVM exclusion = selectExclusion(classId, tpaId, request, encounterType);
-        CoveragePreApprovalReadingVM preApproval = selectPreApproval(classId, tpaId, request, encounterType);
+        List<CoveragePreApprovalReadingVM> preApprovals = selectPreApprovals(classId, tpaId, request, encounterType);
+        CoveragePreApprovalReadingVM preApproval = preApprovals.isEmpty() ? null : preApprovals.get(0);
 
         return new CoverageContractResolveResponse(
                 true,
@@ -197,7 +202,8 @@ public class CoverageContractResolutionService {
                 cashLimitMatch.reading(),
                 discount,
                 exclusion,
-                preApproval
+                preApproval,
+                preApprovals
         );
     }
 
@@ -474,33 +480,44 @@ public class CoverageContractResolutionService {
         return best == null ? null : toExclusionVm(best);
     }
 
-    private CoveragePreApprovalReadingVM selectPreApproval(
+    private List<CoveragePreApprovalReadingVM> selectPreApprovals(
             Long classId,
             Long tpaId,
             CoverageContractResolveRequest request,
             EncounterType encounterType
     ) {
         if (request.billingItemType() == null || request.billingItemType().isBlank()) {
-            return null;
+            return List.of();
         }
         BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
         if (billingItemType == null) {
-            return null;
+            return List.of();
         }
 
+        String subcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
         Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
-        CoveragePreApprovalReadingVM best = null;
-        int bestScore = -1;
+        List<MatchedPreApprovalReading> matched = new ArrayList<>();
         for (ScoredPreApproval header : scoredPreApprovals(classId, tpaId)) {
-            int headerScore = preApprovalHeaderScore(header.preApproval(), header.fromContract(), request, encounterType);
+            CoveragePreApproval rule = header.preApproval();
+            if (rule.getTargetLevel() != null) {
+                if (!contextMatches(rule, request, encounterType) || !targetMatches(rule, billingItemType, subcategory, request.catalogItemId())) {
+                    continue;
+                }
+                matched.add(new MatchedPreApprovalReading(
+                        toHeaderReading(rule),
+                        lineScore(rule, header.fromContract())
+                ));
+                continue;
+            }
+
+            int headerScore = preApprovalHeaderScore(rule, header.fromContract(), request, encounterType);
             if (headerScore < 0) {
                 continue;
             }
             List<CoveragePreApprovalItem> items =
-                    coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(header.preApproval().getId());
-            if (items.isEmpty()) {
-                continue;
-            }
+                    coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(rule.getId());
+            CoveragePreApprovalReadingVM bestLegacy = null;
+            int bestLegacyScore = -1;
             for (CoveragePreApprovalItem item : items) {
                 int itemScore = preApprovalItemScore(
                         item,
@@ -512,13 +529,105 @@ public class CoverageContractResolutionService {
                     continue;
                 }
                 int score = headerScore * 1000 + itemScore;
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = toPreApprovalReading(header.preApproval(), item);
+                if (score > bestLegacyScore) {
+                    bestLegacyScore = score;
+                    bestLegacy = toPreApprovalReading(rule, item);
                 }
             }
+            if (bestLegacy != null) {
+                matched.add(new MatchedPreApprovalReading(bestLegacy, bestLegacyScore));
+            }
         }
-        return best;
+        matched.sort(Comparator.comparingInt(MatchedPreApprovalReading::score).reversed());
+        return matched.stream().map(MatchedPreApprovalReading::reading).toList();
+    }
+
+    private boolean contextMatches(
+            CoveragePreApproval rule,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (rule.getFacilityId() != null
+                && (request.facilityId() == null || !rule.getFacilityId().equals(request.facilityId()))) {
+            return false;
+        }
+        if (rule.getDepartmentId() != null
+                && (request.departmentId() == null || !rule.getDepartmentId().equals(request.departmentId()))) {
+            return false;
+        }
+        EncounterType requiredEncounter = rule.getEncounterType();
+        return requiredEncounter == null
+                || requiredEncounter == EncounterType.ALL
+                || encounterType == requiredEncounter;
+    }
+
+    private boolean targetMatches(
+            CoveragePreApproval rule,
+            BillingItemTypes billingItemType,
+            String subcategory,
+            Long catalogItemId
+    ) {
+        CoveragePreApprovalLevel level = rule.getTargetLevel();
+        if (level == CoveragePreApprovalLevel.DEPARTMENT) {
+            return rule.getDepartmentId() != null;
+        }
+        if (level == CoveragePreApprovalLevel.CATEGORY) {
+            return billingItemType != null && billingItemType == rule.getSource();
+        }
+        if (level == CoveragePreApprovalLevel.SUBCATEGORY) {
+            return billingItemType != null
+                    && billingItemType == rule.getSource()
+                    && subcategory != null
+                    && rule.getSubcategoryKey() != null
+                    && subcategory.equalsIgnoreCase(rule.getSubcategoryKey().trim());
+        }
+        if (level == CoveragePreApprovalLevel.ITEM) {
+            return billingItemType != null
+                    && billingItemType == rule.getSource()
+                    && catalogItemId != null
+                    && catalogItemId.equals(rule.getSourceId());
+        }
+        return false;
+    }
+
+    private int lineScore(CoveragePreApproval rule, boolean fromContract) {
+        int targetScore = switch (rule.getTargetLevel()) {
+            case ITEM -> 400;
+            case SUBCATEGORY -> 300;
+            case CATEGORY -> 200;
+            case DEPARTMENT -> 100;
+        };
+        if (rule.getDepartmentId() != null) {
+            targetScore += 20;
+        }
+        if (rule.getEncounterType() != null && rule.getEncounterType() != EncounterType.ALL) {
+            targetScore += 5;
+        }
+        return targetScore + (fromContract ? 10 : 0);
+    }
+
+    private CoveragePreApprovalReadingVM toHeaderReading(CoveragePreApproval preApproval) {
+        CoverageRuleTarget itemType = preApproval.getTargetLevel() == CoveragePreApprovalLevel.ITEM
+                ? CoverageRuleTarget.SERVICE
+                : preApproval.getTargetLevel() == CoveragePreApprovalLevel.DEPARTMENT
+                        ? null
+                        : CoverageRuleTarget.CATEGORY;
+        return new CoveragePreApprovalReadingVM(
+                preApproval.getId(),
+                null,
+                preApproval.getApprovalScope(),
+                preApproval.getFacilityId(),
+                preApproval.getDepartmentId(),
+                preApproval.getEncounterType(),
+                itemType,
+                preApproval.getSource(),
+                preApproval.getTargetLevel() == CoveragePreApprovalLevel.ITEM ? preApproval.getSourceId() : null,
+                false,
+                null,
+                List.of(),
+                preApproval.getValueType(),
+                preApproval.getLimitValue()
+        );
     }
 
     private List<ScoredPreApproval> scoredPreApprovals(Long classId, Long tpaId) {
@@ -850,6 +959,7 @@ public class CoverageContractResolutionService {
         }
 
         Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
+        String itemSubcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
         CoverageReadingVM bestSpecific = null;
         int bestSpecificScore = -1;
         CoverageReadingVM bestGeneral = null;
@@ -876,7 +986,7 @@ public class CoverageContractResolutionService {
             }
             boolean matchedItem = false;
             for (CoverageTermItem item : items) {
-                int itemScore = itemMatchScore(item, billingItemType, request.catalogItemId());
+                int itemScore = itemMatchScore(item, billingItemType, itemSubcategory, request.catalogItemId());
                 if (itemScore < 0) {
                     continue;
                 }
@@ -976,7 +1086,12 @@ public class CoverageContractResolutionService {
         return score;
     }
 
-    private int itemMatchScore(CoverageTermItem item, BillingItemTypes billingItemType, Long catalogItemId) {
+    private int itemMatchScore(
+            CoverageTermItem item,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId
+    ) {
         if (item.getBillingItemType() == null) {
             return 100;
         }
@@ -986,6 +1101,13 @@ public class CoverageContractResolutionService {
         if (item.getServiceId() != null) {
             if (catalogItemId != null && catalogItemId.equals(item.getServiceId())) {
                 return 300;
+            }
+            return -1;
+        }
+        if (item.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+            String key = item.getSubcategoryKey();
+            if (key != null && itemSubcategory != null && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                return 250;
             }
             return -1;
         }
@@ -1106,6 +1228,8 @@ public class CoverageContractResolutionService {
     private record ScoredExclusion(CoverageExclusion exclusion, boolean fromContract) {}
 
     private record ScoredPreApproval(CoveragePreApproval preApproval, boolean fromContract) {}
+
+    private record MatchedPreApprovalReading(CoveragePreApprovalReadingVM reading, int score) {}
 
     private record MatchedCoverage(CoverageContract contract, CoverageClass coverageClass) {}
 
