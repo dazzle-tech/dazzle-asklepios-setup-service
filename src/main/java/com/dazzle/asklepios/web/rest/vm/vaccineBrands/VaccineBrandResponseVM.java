@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 public record VaccineBrandResponseVM(
         Long id,
         String name,
+        String code,
         String manufacture,
         BigDecimal volume,
         String unit,
@@ -22,6 +23,7 @@ public record VaccineBrandResponseVM(
         return new VaccineBrandResponseVM(
                 brand.getId(),
                 brand.getName(),
+                brand.getCode(),
                 brand.getManufacture(),
                 brand.getVolume(),
                 brand.getUnit(),

@@ -61,6 +61,7 @@ public class VaccineBrandsService {
         VaccineBrands entity = VaccineBrands.builder()
                 .vaccine(refVaccine(vaccineId))
                 .name(incoming.getName())
+                .code(normalizeCode(incoming.getCode()))
                 .manufacture(incoming.getManufacture())
                 .volume(incoming.getVolume())
                 .unit(incoming.getUnit())
@@ -97,6 +98,7 @@ public class VaccineBrandsService {
                 .orElseThrow(() -> new NotFoundAlertException("Vaccine brand not found with id " + id, "vaccineBrand", "notfound"));
 
         existing.setName(incoming.getName());
+        existing.setCode(normalizeCode(incoming.getCode()));
         existing.setManufacture(incoming.getManufacture());
         existing.setVolume(incoming.getVolume());
         existing.setUnit(incoming.getUnit());
@@ -126,6 +128,14 @@ public class VaccineBrandsService {
     public Page<VaccineBrands> findByVaccineId(Long vaccineId, Pageable pageable) {
         LOG.debug("Fetching VaccineBrands by vaccineId={} pageable={}", vaccineId, pageable);
         return vaccineBrandsRepository.findByVaccine_Id(vaccineId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<VaccineBrands> searchActive(String search, Pageable pageable) {
+        LOG.debug("Searching active VaccineBrands search='{}' pageable={}", search, pageable);
+        // An empty search matches every brand; a null parameter cannot be typed by Postgres
+        String normalized = search == null ? "" : search.trim();
+        return vaccineBrandsRepository.searchActive(normalized, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -171,6 +181,10 @@ public class VaccineBrandsService {
         return result;
     }
 
+    private static String normalizeCode(String code) {
+        return code == null ? null : code.trim();
+    }
+
     private Vaccine refVaccine(Long vaccineId) {
         return entityManager.getReference(Vaccine.class, vaccineId);
     }
@@ -194,6 +208,14 @@ public class VaccineBrandsService {
         String msgLower = message != null ? message.toLowerCase() : "";
 
         LOG.error("Database constraint violation while saving vaccine brand: {}", message, constraintException);
+
+        if (msgLower.contains("ux_vaccine_brands_code")) {
+            throw new BadRequestAlertException(
+                    "A vaccine brand with the same code already exists.",
+                    "vaccineBrand",
+                    "unique.code"
+            );
+        }
 
         if (msgLower.contains("ux_vaccine_brands_facility_name_unit_volume")
                 || msgLower.contains("unique constraint")
