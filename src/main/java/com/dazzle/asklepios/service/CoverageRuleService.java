@@ -586,7 +586,8 @@ public class CoverageRuleService {
     private void applyPreApproval(CoveragePreApproval entity, CoveragePreApprovalVM vm) {
         CoveragePreApprovalLevel level = vm.targetLevel();
         Long facilityId = requireFacility(vm.facilityId()).getId();
-        boolean departmentContext = level == CoveragePreApprovalLevel.DEPARTMENT || vm.departmentId() != null;
+        boolean departmentContext = level == CoveragePreApprovalLevel.DEPARTMENT
+                || (level != CoveragePreApprovalLevel.FACILITY && vm.departmentId() != null);
         entity.setTargetLevel(level);
         entity.setFacilityId(facilityId);
         entity.setDepartmentId(departmentContext ? requireDepartment(vm.departmentId(), facilityId).getId() : null);
@@ -594,7 +595,7 @@ public class CoverageRuleService {
         entity.setEncounterType(requireEncounterType(vm.encounterType()));
         entity.setValueType(vm.valueType());
         entity.setLimitValue(vm.limitValue());
-        if (level == CoveragePreApprovalLevel.DEPARTMENT) {
+        if (level == CoveragePreApprovalLevel.FACILITY || level == CoveragePreApprovalLevel.DEPARTMENT) {
             entity.setSource(null);
             entity.setSourceId(null);
             entity.setSubcategoryKey(null);
@@ -624,7 +625,7 @@ public class CoverageRuleService {
         }
         requireFacility(vm.facilityId());
         requireEncounterType(vm.encounterType());
-        if (vm.targetLevel() == CoveragePreApprovalLevel.DEPARTMENT || vm.departmentId() != null) {
+        if (vm.targetLevel() == CoveragePreApprovalLevel.DEPARTMENT) {
             requireDepartment(vm.departmentId(), vm.facilityId());
         }
         if (vm.targetLevel() == CoveragePreApprovalLevel.CATEGORY) {
@@ -1130,6 +1131,9 @@ public class CoverageRuleService {
         CoveragePreApprovalLevel level = entity.getTargetLevel();
         if (level == null) {
             return "Previous items";
+        }
+        if (level == CoveragePreApprovalLevel.FACILITY) {
+            return "All items";
         }
         if (level == CoveragePreApprovalLevel.DEPARTMENT) {
             return departmentName;

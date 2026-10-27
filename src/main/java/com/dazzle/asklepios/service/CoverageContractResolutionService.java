@@ -568,6 +568,9 @@ public class CoverageContractResolutionService {
             Long catalogItemId
     ) {
         CoveragePreApprovalLevel level = rule.getTargetLevel();
+        if (level == CoveragePreApprovalLevel.FACILITY) {
+            return true;
+        }
         if (level == CoveragePreApprovalLevel.DEPARTMENT) {
             return rule.getDepartmentId() != null;
         }
@@ -595,6 +598,7 @@ public class CoverageContractResolutionService {
             case ITEM -> 400;
             case SUBCATEGORY -> 300;
             case CATEGORY -> 200;
+            case FACILITY -> 50;
             case DEPARTMENT -> 100;
         };
         if (rule.getDepartmentId() != null) {
@@ -610,6 +614,7 @@ public class CoverageContractResolutionService {
         CoverageRuleTarget itemType = preApproval.getTargetLevel() == CoveragePreApprovalLevel.ITEM
                 ? CoverageRuleTarget.SERVICE
                 : preApproval.getTargetLevel() == CoveragePreApprovalLevel.DEPARTMENT
+                        || preApproval.getTargetLevel() == CoveragePreApprovalLevel.FACILITY
                         ? null
                         : CoverageRuleTarget.CATEGORY;
         return new CoveragePreApprovalReadingVM(
