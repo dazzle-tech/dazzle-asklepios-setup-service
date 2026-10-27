@@ -191,6 +191,19 @@ public class SystemConfigurationController {
                 service.uploadImage(SystemConfigKey.SIDEBAR_LOGO_DARK, file)
         );
     }
+    @PostMapping(value = "/system-config/prescription-stamp", consumes = "multipart/form-data")
+    public ResponseEntity<SystemConfiguration> uploadPrescriptionStamp(
+            @RequestParam("file") MultipartFile file
+    ) {
+        LOG.info(
+                "REST request to upload prescription stamp. FileName={}, Size={} bytes",
+                file != null ? file.getOriginalFilename() : null,
+                file != null ? file.getSize() : 0
+        );
+        return ResponseEntity.ok(
+                service.uploadImage(SystemConfigKey.PRESCRIPTION_STAMP, file)
+        );
+    }
     @GetMapping("/system-configurations/{key}/resolved-value")
     public ResponseEntity<String> getResolvedValue(@PathVariable SystemConfigKey key) {
         LOG.debug("REST request to get resolved system configuration value: {}", key);
