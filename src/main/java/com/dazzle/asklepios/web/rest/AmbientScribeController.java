@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.service.AmbientScribeService;
+import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeAudioRetentionVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeClinicsEnabledVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeSettingVM;
 import com.dazzle.asklepios.web.rest.vm.ambientScribe.AmbientScribeUpdateVM;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,12 @@ public class AmbientScribeController {
 
     public AmbientScribeController(AmbientScribeService ambientScribeService) {
         this.ambientScribeService = ambientScribeService;
+    }
+
+    @GetMapping("/ambient-scribe/internalJob")
+    public ResponseEntity<List<AmbientScribeAudioRetentionVM>> listAudioRetention() {
+        LOG.debug("REST list Ambient Scribe audio retention for the retention job");
+        return ResponseEntity.ok(ambientScribeService.listAudioRetention());
     }
 
     @GetMapping("/ambient-scribe/by-facility/{facilityId}")
