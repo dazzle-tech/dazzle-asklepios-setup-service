@@ -88,6 +88,22 @@ public class Tax extends AbstractAuditingEntity<Long> implements Serializable {
     @Column(name = "citizen_category", nullable = false, length = 30)
     private TaxCitizenCategory citizenCategory = TaxCitizenCategory.ALL;
 
+    /**
+     * Insurance visits: apply this tax on the patient share (copayment).
+     */
+    @NotNull
+    @Builder.Default
+    @Column(name = "patient_copayment", nullable = false)
+    private Boolean patientCopayment = true;
+
+    /**
+     * Insurance visits: apply this tax on the insurance share (claim).
+     */
+    @NotNull
+    @Builder.Default
+    @Column(name = "claim_share", nullable = false)
+    private Boolean claimShare = true;
+
     @NotNull
     @Column(name = "valid_from",nullable = false)
     private LocalDate validFrom;

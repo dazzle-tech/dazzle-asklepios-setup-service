@@ -45,6 +45,10 @@ public record TaxDTO(
 
         TaxCitizenCategory citizenCategory,
 
+        Boolean patientCopayment,
+
+        Boolean claimShare,
+
         @NotNull
         LocalDate validFrom,
 

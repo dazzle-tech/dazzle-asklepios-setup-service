@@ -84,6 +84,8 @@ public class TaxService {
                 .calculationType(taxDTO.calculationType())
                 .applicableOn(taxDTO.applicableOn())
                 .citizenCategory(resolveCitizenCategory(taxDTO))
+                .patientCopayment(resolveShareFlag(taxDTO.patientCopayment()))
+                .claimShare(resolveShareFlag(taxDTO.claimShare()))
                 .validFrom(taxDTO.validFrom())
                 .validTo(taxDTO.validTo())
                 .description(trimToNull(taxDTO.description()))
@@ -172,6 +174,8 @@ public class TaxService {
         existing.setCalculationType(taxDTO.calculationType());
         existing.setApplicableOn(taxDTO.applicableOn());
         existing.setCitizenCategory(resolveCitizenCategory(taxDTO));
+        existing.setPatientCopayment(resolveShareFlag(taxDTO.patientCopayment()));
+        existing.setClaimShare(resolveShareFlag(taxDTO.claimShare()));
         existing.setValidFrom(taxDTO.validFrom());
         existing.setValidTo(taxDTO.validTo());
         existing.setIsDefault(Boolean.TRUE.equals(taxDTO.isDefault()));
@@ -532,6 +536,13 @@ public class TaxService {
         return dto.citizenCategory() == null
                 ? TaxCitizenCategory.ALL
                 : dto.citizenCategory();
+    }
+
+    /**
+     * Share flags default to true (tax applies on that share).
+     */
+    private Boolean resolveShareFlag(Boolean value) {
+        return value == null || value;
     }
 
     @Transactional(readOnly = true)

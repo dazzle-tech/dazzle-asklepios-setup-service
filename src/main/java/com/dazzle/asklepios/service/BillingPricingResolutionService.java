@@ -129,6 +129,16 @@ public class BillingPricingResolutionService {
                                 resolvedTax
                         ),
 
+                        resolvedTax == null
+                                || !Boolean.FALSE.equals(
+                                        resolvedTax.getPatientCopayment()
+                                ),
+
+                        resolvedTax == null
+                                || !Boolean.FALSE.equals(
+                                        resolvedTax.getClaimShare()
+                                ),
+
                         resolvedDiscount == null
                                 ? null
                                 : resolvedDiscount.getId(),
