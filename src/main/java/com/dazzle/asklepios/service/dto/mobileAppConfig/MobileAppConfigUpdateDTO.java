@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MobileAppConfigUpdateDTO(
         @NotNull MobileAppConfigType configType,
-        @NotBlank @Size(max = 4000) String configValue
+        @NotBlank @Size(max = 4000) String configValue,
+        @Size(max = 1000) String description
 ) {
 }

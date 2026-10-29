@@ -48,10 +48,11 @@ public class MobileAppConfigController {
     @PostMapping(value = "/mobile-app-config/image", consumes = "multipart/form-data")
     public ResponseEntity<MobileAppConfigResponseVM> createImage(
             @RequestParam MobileAppConfigKey configKey,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "description", required = false) String description
     ) {
         LOG.debug("REST create MobileAppConfig image key={}", configKey);
-        MobileAppConfig saved = service.createImage(configKey, file);
+        MobileAppConfig saved = service.createImage(configKey, file, description);
         return ResponseEntity
                 .created(URI.create("/api/setup/mobile-app-config/" + saved.getId()))
                 .body(toResponse(saved));
@@ -69,10 +70,11 @@ public class MobileAppConfigController {
     @PutMapping(value = "/mobile-app-config/{id}/image", consumes = "multipart/form-data")
     public ResponseEntity<MobileAppConfigResponseVM> updateImage(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file
+            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "description", required = false) String description
     ) {
         LOG.debug("REST update MobileAppConfig image id={}", id);
-        return ResponseEntity.ok(toResponse(service.updateImage(id, file)));
+        return ResponseEntity.ok(toResponse(service.updateImage(id, file, description)));
     }
 
     @DeleteMapping("/mobile-app-config/{id}")

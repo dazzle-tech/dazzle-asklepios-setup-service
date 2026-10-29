@@ -8,9 +8,15 @@ import com.dazzle.asklepios.domain.enumeration.MobileAppConfigType;
 public record MobileAppConfigValueVM(
         MobileAppConfigKey configKey,
         MobileAppConfigType configType,
-        String configValue
+        String configValue,
+        String description
 ) {
     public static MobileAppConfigValueVM ofEntity(MobileAppConfig entity, String resolvedValue) {
-        return new MobileAppConfigValueVM(entity.getConfigKey(), entity.getConfigType(), resolvedValue);
+        return new MobileAppConfigValueVM(
+                entity.getConfigKey(),
+                entity.getConfigType(),
+                resolvedValue,
+                entity.getDescription()
+        );
     }
 }

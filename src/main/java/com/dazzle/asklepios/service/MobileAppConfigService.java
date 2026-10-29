@@ -30,6 +30,7 @@ public class MobileAppConfigService {
     private static final Logger LOG = LoggerFactory.getLogger(MobileAppConfigService.class);
     private static final String ENTITY_NAME = "mobileAppConfig";
     private static final int MAX_VALUE_LENGTH = 4000;
+    private static final int MAX_DESCRIPTION_LENGTH = 1000;
 
     private final MobileAppConfigRepository repository;
     private final AttachmentStorageService storage;
@@ -62,6 +63,7 @@ public class MobileAppConfigService {
                 .configKey(dto.configKey())
                 .configType(dto.configType())
                 .configValue(value)
+                .description(normalizeDescription(dto.description()))
                 .build();
 
         return repository.save(entity);
@@ -76,10 +78,11 @@ public class MobileAppConfigService {
         MobileAppConfig entity = getById(id);
         entity.setConfigType(dto.configType());
         entity.setConfigValue(normalizeValue(dto.configValue()));
+        entity.setDescription(normalizeDescription(dto.description()));
         return repository.save(entity);
     }
 
-    public MobileAppConfig createImage(MobileAppConfigKey configKey, MultipartFile file) {
+    public MobileAppConfig createImage(MobileAppConfigKey configKey, MultipartFile file, String description) {
         LOG.debug("Request to create MobileAppConfig image key={}", configKey);
         if (configKey == null) {
             throw new BadRequestAlertException("Key is required", ENTITY_NAME, "keyrequired");
@@ -93,15 +96,19 @@ public class MobileAppConfigService {
                 .configKey(configKey)
                 .configType(MobileAppConfigType.IMAGE)
                 .configValue(storageKey)
+                .description(normalizeDescription(description))
                 .build();
         return repository.save(entity);
     }
 
-    public MobileAppConfig updateImage(Long id, MultipartFile file) {
+    public MobileAppConfig updateImage(Long id, MultipartFile file, String description) {
         LOG.debug("Request to update MobileAppConfig image id={}", id);
         MobileAppConfig entity = getById(id);
         entity.setConfigType(MobileAppConfigType.IMAGE);
-        entity.setConfigValue(storeImage(entity.getConfigKey(), file));
+        if (file != null && !file.isEmpty()) {
+            entity.setConfigValue(storeImage(entity.getConfigKey(), file));
+        }
+        entity.setDescription(normalizeDescription(description));
         return repository.save(entity);
     }
 
@@ -133,7 +140,7 @@ public class MobileAppConfigService {
                 .map(key -> {
                     MobileAppConfig config = found.get(key);
                     if (config == null) {
-                        return new MobileAppConfigValueVM(key, null, null);
+                        return new MobileAppConfigValueVM(key, null, null, null);
                     }
                     return MobileAppConfigValueVM.ofEntity(config, resolveValue(config));
                 })
@@ -240,6 +247,23 @@ public class MobileAppConfigService {
                     "Value must be at most " + MAX_VALUE_LENGTH + " characters",
                     ENTITY_NAME,
                     "valuetoolong");
+        }
+        return value;
+    }
+
+    private static String normalizeDescription(String description) {
+        if (description == null) {
+            return null;
+        }
+        String value = description.trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+        if (value.length() > MAX_DESCRIPTION_LENGTH) {
+            throw new BadRequestAlertException(
+                    "Description must be at most " + MAX_DESCRIPTION_LENGTH + " characters",
+                    ENTITY_NAME,
+                    "descriptiontoolong");
         }
         return value;
     }
