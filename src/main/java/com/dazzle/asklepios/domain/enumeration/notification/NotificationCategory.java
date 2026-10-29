@@ -32,4 +32,5 @@ public enum NotificationCategory {
     DISCHARGE_REPORT_APPROVED,
     OPD_REPORT_APPROVED,
     PATIENT_APP_NOTIFICATION,
+    TASK,
 }
