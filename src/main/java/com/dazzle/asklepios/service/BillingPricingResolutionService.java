@@ -228,6 +228,10 @@ public class BillingPricingResolutionService {
                         : resolvedTax.getCalculationType(),
                 resolveTaxRate(resolvedTax),
                 resolveTaxFixedAmount(resolvedTax),
+                resolvedTax == null
+                        || !Boolean.FALSE.equals(resolvedTax.getPatientCopayment()),
+                resolvedTax == null
+                        || !Boolean.FALSE.equals(resolvedTax.getClaimShare()),
                 resolvedDiscount == null ? null : resolvedDiscount.getId(),
                 resolvedDiscount == null ? null : resolvedDiscount.getCode(),
                 resolvedDiscount == null ? null : resolvedDiscount.getName(),
