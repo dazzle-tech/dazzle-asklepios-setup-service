@@ -32,6 +32,7 @@ import com.dazzle.asklepios.repository.CoverageDiscountRepository;
 import com.dazzle.asklepios.repository.CoverageExclusionRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
+import com.dazzle.asklepios.repository.CoverageTermExclusionRepository;
 import com.dazzle.asklepios.repository.CoverageTermItemRepository;
 import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
@@ -103,6 +104,9 @@ class CoverageContractResolutionServiceTest {
 
     @Mock
     private CatalogSubcategoryLookup catalogSubcategoryLookup;
+
+    @Mock
+    private CoverageTermExclusionRepository coverageTermExclusionRepository;
 
     @InjectMocks
     private CoverageContractResolutionService coverageContractResolutionService;

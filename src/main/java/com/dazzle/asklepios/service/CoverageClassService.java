@@ -87,6 +87,13 @@ public class CoverageClassService {
                         ENTITY,
                         "policyNotFound"
                 ));
+        if (Boolean.FALSE.equals(policy.getIsActive())) {
+            throw new BadRequestAlertException(
+                    "This policy is inactive.",
+                    ENTITY,
+                    "policyInactive"
+            );
+        }
 
         Long insuranceCompanyId = policy.getInsuranceCompany() == null ? null : policy.getInsuranceCompany().getId();
         if (contract.getInsurancePayerId() == null || !contract.getInsurancePayerId().equals(insuranceCompanyId)) {

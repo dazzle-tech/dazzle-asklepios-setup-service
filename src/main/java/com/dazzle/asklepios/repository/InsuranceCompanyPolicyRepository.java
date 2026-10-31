@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InsuranceCompanyPolicyRepository extends JpaRepository<InsuranceCompanyPolicy, Long> {
@@ -18,4 +19,10 @@ public interface InsuranceCompanyPolicyRepository extends JpaRepository<Insuranc
     boolean existsByInsuranceCompany_IdAndPolicyCodeIgnoreCase(Long insuranceCompanyId, String policyCode);
 
     boolean existsByInsuranceCompany_IdAndPolicyNumberIgnoreCase(Long insuranceCompanyId, String policyNumber);
+
+    boolean existsByInsuranceCompany_IdAndPolicyCodeIgnoreCaseAndIdNot(Long insuranceCompanyId, String policyCode, Long id);
+
+    boolean existsByInsuranceCompany_IdAndPolicyNumberIgnoreCaseAndIdNot(Long insuranceCompanyId, String policyNumber, Long id);
+
+    Optional<InsuranceCompanyPolicy> findByIdAndInsuranceCompany_Id(Long id, Long insuranceCompanyId);
 }

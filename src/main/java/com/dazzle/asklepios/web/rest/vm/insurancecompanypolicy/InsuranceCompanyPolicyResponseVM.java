@@ -11,7 +11,8 @@ public record InsuranceCompanyPolicyResponseVM(
         String policyNumber,
         String policyCode,
         LocalDate validFrom,
-        LocalDate validTo
+        LocalDate validTo,
+        Boolean isActive
 ) {
     public static InsuranceCompanyPolicyResponseVM ofEntity(InsuranceCompanyPolicy policy) {
         return new InsuranceCompanyPolicyResponseVM(
@@ -21,7 +22,8 @@ public record InsuranceCompanyPolicyResponseVM(
                 policy.getPolicyNumber(),
                 policy.getPolicyCode(),
                 policy.getValidFrom(),
-                policy.getValidTo()
+                policy.getValidTo(),
+                policy.getIsActive()
         );
     }
 }

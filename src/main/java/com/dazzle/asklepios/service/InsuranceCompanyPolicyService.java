@@ -37,21 +37,62 @@ public class InsuranceCompanyPolicyService {
         LOG.debug("Create insurance company policy insuranceCompanyId={} payload={}", insuranceCompanyId, vm);
 
         NphiesPayer insuranceCompany = requireInsuranceCompany(insuranceCompanyId);
-        String policyName = vm.policyName().trim();
-        String policyNumber = vm.policyNumber().trim();
         String policyCode = vm.policyCode().trim();
+        String policyNumber = blankToNull(vm.policyNumber());
         validateValidity(vm);
-        validateUniqueness(insuranceCompanyId, policyCode, policyNumber);
+        validateUniqueness(insuranceCompanyId, null, policyCode, policyNumber);
 
         InsuranceCompanyPolicy policy = InsuranceCompanyPolicy.builder()
                 .insuranceCompany(insuranceCompany)
-                .policyName(policyName)
-                .policyNumber(policyNumber)
-                .policyCode(policyCode)
-                .validFrom(vm.validFrom())
-                .validTo(vm.validTo())
+                .isActive(vm.isActive() == null || vm.isActive())
                 .build();
+        applyPolicy(policy, vm, policyCode, policyNumber);
+        return save(policy);
+    }
 
+    public InsuranceCompanyPolicy update(Long insuranceCompanyId, Long policyId, InsuranceCompanyPolicySaveVM vm) {
+        LOG.debug("Update insurance company policy insuranceCompanyId={} policyId={} payload={}", insuranceCompanyId, policyId, vm);
+        InsuranceCompanyPolicy policy = requirePolicy(insuranceCompanyId, policyId);
+        String policyCode = vm.policyCode().trim();
+        String policyNumber = blankToNull(vm.policyNumber());
+        validateValidity(vm);
+        validateUniqueness(insuranceCompanyId, policyId, policyCode, policyNumber);
+
+        applyPolicy(policy, vm, policyCode, policyNumber);
+        if (vm.isActive() != null) {
+            policy.setIsActive(vm.isActive());
+        }
+        return save(policy);
+    }
+
+    public InsuranceCompanyPolicy toggleActive(Long insuranceCompanyId, Long policyId) {
+        LOG.debug("Toggle insurance company policy active insuranceCompanyId={} policyId={}", insuranceCompanyId, policyId);
+        InsuranceCompanyPolicy policy = requirePolicy(insuranceCompanyId, policyId);
+        policy.setIsActive(!Boolean.TRUE.equals(policy.getIsActive()));
+        return insuranceCompanyPolicyRepository.save(policy);
+    }
+
+    @Transactional(readOnly = true)
+    public List<InsuranceCompanyPolicy> findByInsuranceCompanyId(Long insuranceCompanyId) {
+        LOG.debug("List insurance company policies insuranceCompanyId={}", insuranceCompanyId);
+        requireInsuranceCompany(insuranceCompanyId);
+        return insuranceCompanyPolicyRepository.findByInsuranceCompany_IdOrderByValidFromDescIdDesc(insuranceCompanyId);
+    }
+
+    private void applyPolicy(
+            InsuranceCompanyPolicy policy,
+            InsuranceCompanyPolicySaveVM vm,
+            String policyCode,
+            String policyNumber
+    ) {
+        policy.setPolicyName(vm.policyName().trim());
+        policy.setPolicyNumber(policyNumber);
+        policy.setPolicyCode(policyCode);
+        policy.setValidFrom(vm.validFrom());
+        policy.setValidTo(vm.validTo());
+    }
+
+    private InsuranceCompanyPolicy save(InsuranceCompanyPolicy policy) {
         try {
             return insuranceCompanyPolicyRepository.save(policy);
         } catch (DataIntegrityViolationException exception) {
@@ -63,11 +104,20 @@ public class InsuranceCompanyPolicyService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public List<InsuranceCompanyPolicy> findByInsuranceCompanyId(Long insuranceCompanyId) {
-        LOG.debug("List insurance company policies insuranceCompanyId={}", insuranceCompanyId);
-        requireInsuranceCompany(insuranceCompanyId);
-        return insuranceCompanyPolicyRepository.findByInsuranceCompany_IdOrderByValidFromDescIdDesc(insuranceCompanyId);
+    private InsuranceCompanyPolicy requirePolicy(Long insuranceCompanyId, Long policyId) {
+        return insuranceCompanyPolicyRepository.findByIdAndInsuranceCompany_Id(policyId, insuranceCompanyId)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Policy not found.",
+                        ENTITY_NAME,
+                        "notfound"
+                ));
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private NphiesPayer requireInsuranceCompany(Long insuranceCompanyId) {
@@ -80,7 +130,7 @@ public class InsuranceCompanyPolicyService {
     }
 
     private void validateValidity(InsuranceCompanyPolicySaveVM vm) {
-        if (vm.validTo().isBefore(vm.validFrom())) {
+        if (vm.validTo() != null && vm.validTo().isBefore(vm.validFrom())) {
             throw new BadRequestAlertException(
                     "Valid to must be on or after valid from.",
                     ENTITY_NAME,
@@ -89,15 +139,24 @@ public class InsuranceCompanyPolicyService {
         }
     }
 
-    private void validateUniqueness(Long insuranceCompanyId, String policyCode, String policyNumber) {
-        if (insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyCodeIgnoreCase(insuranceCompanyId, policyCode)) {
+    private void validateUniqueness(Long insuranceCompanyId, Long policyId, String policyCode, String policyNumber) {
+        boolean codeExists = policyId == null
+                ? insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyCodeIgnoreCase(insuranceCompanyId, policyCode)
+                : insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyCodeIgnoreCaseAndIdNot(insuranceCompanyId, policyCode, policyId);
+        if (codeExists) {
             throw new BadRequestAlertException(
                     "A policy with this code already exists for the insurance company.",
                     ENTITY_NAME,
                     "policycode.exists"
             );
         }
-        if (insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyNumberIgnoreCase(insuranceCompanyId, policyNumber)) {
+        if (policyNumber == null) {
+            return;
+        }
+        boolean numberExists = policyId == null
+                ? insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyNumberIgnoreCase(insuranceCompanyId, policyNumber)
+                : insuranceCompanyPolicyRepository.existsByInsuranceCompany_IdAndPolicyNumberIgnoreCaseAndIdNot(insuranceCompanyId, policyNumber, policyId);
+        if (numberExists) {
             throw new BadRequestAlertException(
                     "A policy with this number already exists for the insurance company.",
                     ENTITY_NAME,

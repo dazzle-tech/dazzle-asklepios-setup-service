@@ -13,7 +13,6 @@ public record InsuranceCompanyPolicySaveVM(
         @Size(max = 255)
         String policyName,
 
-        @NotBlank(message = "policyNumber cannot be blank")
         @Size(max = 100)
         String policyNumber,
 
@@ -24,7 +23,19 @@ public record InsuranceCompanyPolicySaveVM(
         @NotNull(message = "validFrom cannot be null")
         LocalDate validFrom,
 
-        @NotNull(message = "validTo cannot be null")
-        LocalDate validTo
+        LocalDate validTo,
 
-) implements Serializable {}
+        Boolean isActive
+
+) implements Serializable {
+
+    public InsuranceCompanyPolicySaveVM(
+            String policyName,
+            String policyNumber,
+            String policyCode,
+            LocalDate validFrom,
+            LocalDate validTo
+    ) {
+        this(policyName, policyNumber, policyCode, validFrom, validTo, null);
+    }
+}

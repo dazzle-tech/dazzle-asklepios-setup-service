@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.CoverageExclusion;
 import com.dazzle.asklepios.domain.CoveragePreApproval;
 import com.dazzle.asklepios.domain.CoveragePreApprovalItem;
 import com.dazzle.asklepios.domain.CoverageTerm;
+import com.dazzle.asklepios.domain.CoverageTermExclusion;
 import com.dazzle.asklepios.domain.CoverageTermItem;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
@@ -27,6 +28,7 @@ import com.dazzle.asklepios.repository.CoverageDiscountRepository;
 import com.dazzle.asklepios.repository.CoverageExclusionRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
+import com.dazzle.asklepios.repository.CoverageTermExclusionRepository;
 import com.dazzle.asklepios.repository.CoverageTermItemRepository;
 import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.TpaDefinitionRepository;
@@ -37,6 +39,7 @@ import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalItemVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermItemVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermVM;
 import org.springframework.data.domain.Page;
@@ -67,6 +70,7 @@ public class CoverageRuleService {
     private final CoveragePreApprovalRepository preApprovalRepository;
     private final CoveragePreApprovalItemRepository preApprovalItemRepository;
     private final CatalogTargetService catalogTargetService;
+    private final CoverageTermExclusionRepository termExclusionRepository;
 
     public CoverageRuleService(
             CoverageClassService coverageClassService,
@@ -79,7 +83,8 @@ public class CoverageRuleService {
             CoverageExclusionRepository exclusionRepository,
             CoveragePreApprovalRepository preApprovalRepository,
             CoveragePreApprovalItemRepository preApprovalItemRepository,
-            CatalogTargetService catalogTargetService
+            CatalogTargetService catalogTargetService,
+            CoverageTermExclusionRepository termExclusionRepository
     ) {
         this.coverageClassService = coverageClassService;
         this.coverageLookupService = coverageLookupService;
@@ -92,6 +97,7 @@ public class CoverageRuleService {
         this.preApprovalRepository = preApprovalRepository;
         this.preApprovalItemRepository = preApprovalItemRepository;
         this.catalogTargetService = catalogTargetService;
+        this.termExclusionRepository = termExclusionRepository;
     }
 
     public CoverageCopaymentVM saveCopayment(Long classId, CoverageCopaymentVM vm) {
@@ -183,6 +189,44 @@ public class CoverageRuleService {
                 ? termItemRepository.findByCoverageTerm_Id(termId, pageable)
                 : termItemRepository.findByCoverageTerm_IdAndIsActive(termId, isActive, pageable);
         return page.map(this::toTermItemVm);
+    }
+
+    public CoverageTermExclusionVM saveTermExclusion(Long termId, CoverageTermExclusionVM vm) {
+        CoverageTerm term = requireTerm(termId);
+        if (term.getTermType() != CoverageTermType.LIMIT) {
+            throw new BadRequestAlertException(
+                    "Exclusions can only be added to a Coverage Limit rule.",
+                    ENTITY,
+                    "termExclusionNotLimit"
+            );
+        }
+        validateTermExclusion(vm);
+        CoverageTermExclusion entity = vm.id() == null
+                ? CoverageTermExclusion.builder().coverageTerm(term).isActive(true).build()
+                : requireOwnedTermExclusion(vm.id(), termId);
+        applyTermExclusion(entity, vm);
+        if (vm.isActive() != null) {
+            entity.setIsActive(vm.isActive());
+        } else if (vm.id() == null) {
+            entity.setIsActive(true);
+        }
+        return toTermExclusionVm(termExclusionRepository.save(entity));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CoverageTermExclusionVM> listTermExclusions(Long termId, Boolean isActive, Pageable pageable) {
+        requireTerm(termId);
+        Page<CoverageTermExclusion> page = isActive == null
+                ? termExclusionRepository.findByCoverageTerm_Id(termId, pageable)
+                : termExclusionRepository.findByCoverageTerm_IdAndIsActive(termId, isActive, pageable);
+        return page.map(this::toTermExclusionVm);
+    }
+
+    public CoverageTermExclusionVM toggleTermExclusionActive(Long id) {
+        CoverageTermExclusion entity = termExclusionRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Coverage limit exclusion was not found.", ENTITY, "notFound"));
+        entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
+        return toTermExclusionVm(termExclusionRepository.save(entity));
     }
 
     public CoverageDiscountVM createDiscount(Long classId, CoverageDiscountVM vm) {
@@ -489,11 +533,48 @@ public class CoverageRuleService {
         return vm.serviceId();
     }
 
+    private void applyTermExclusion(CoverageTermExclusion entity, CoverageTermExclusionVM vm) {
+        CoverageRuleTarget scope = resolveTermExclusionScope(vm);
+        String subcategoryKey = blankToNull(vm.subcategoryKey());
+        Long itemId = scope == CoverageRuleTarget.SERVICE
+                ? resolveCategoryItemId(vm.billingItemType(), vm.serviceId())
+                : null;
+        entity.setCategoryScope(scope);
+        entity.setBillingItemType(vm.billingItemType());
+        entity.setSubcategoryKey(subcategoryKey);
+        entity.setServiceId(itemId);
+        entity.setItemName(itemId == null ? null : blankToNull(vm.serviceName()));
+    }
+
+    private void validateTermExclusion(CoverageTermExclusionVM vm) {
+        if (vm.billingItemType() == null) {
+            throw new BadRequestAlertException("Category is required.", ENTITY, "categoryRequired");
+        }
+        if (blankToNull(vm.subcategoryKey()) != null) {
+            catalogTargetService.requireSubcategory(vm.billingItemType(), vm.subcategoryKey());
+        }
+        if (vm.serviceId() != null) {
+            catalogTargetService.requireItem(vm.billingItemType(), vm.serviceId());
+        }
+    }
+
+    private CoverageRuleTarget resolveTermExclusionScope(CoverageTermExclusionVM vm) {
+        if (vm.serviceId() != null) {
+            return CoverageRuleTarget.SERVICE;
+        }
+        if (blankToNull(vm.subcategoryKey()) != null) {
+            return CoverageRuleTarget.SUBCATEGORY;
+        }
+        return CoverageRuleTarget.CATEGORY;
+    }
+
     private void applyDiscount(CoverageDiscount entity, CoverageDiscountVM vm) {
         validateDiscount(vm);
-        entity.setTargetType(resolveDiscountTarget(vm));
+        CoverageRuleTarget target = resolveDiscountTarget(vm);
+        entity.setTargetType(target);
         entity.setBillingItemType(vm.billingItemType());
         entity.setServiceId(resolveDiscountItemId(vm));
+        entity.setSubcategoryKey(target == CoverageRuleTarget.SUBCATEGORY ? vm.subcategoryKey().trim() : null);
         entity.setItemName(blankToNull(vm.serviceName()));
         entity.setEncounterType(vm.encounterType());
         entity.setDiscountType(vm.discountType());
@@ -560,7 +641,10 @@ public class CoverageRuleService {
     private void validateDiscount(CoverageDiscountVM vm) {
         requirePositive(vm.discountValue(), "Discount value");
         if (vm.targetType() == CoverageRuleTarget.DIAGNOSIS) {
-            throw new BadRequestAlertException("Discount can apply to all items, a category, or a service.", ENTITY, "invalidTarget");
+            throw new BadRequestAlertException("Discount can apply to all items, a category, a subcategory, or a service.", ENTITY, "invalidTarget");
+        }
+        if (resolveDiscountTarget(vm) == CoverageRuleTarget.SUBCATEGORY) {
+            catalogTargetService.requireSubcategory(vm.billingItemType(), vm.subcategoryKey());
         }
         if (vm.serviceId() != null && vm.billingItemType() == BillingItemTypes.SERVICE) {
             requireService(vm.serviceId());
@@ -670,7 +754,13 @@ public class CoverageRuleService {
 
     private CoverageRuleTarget resolveDiscountTarget(CoverageDiscountVM vm) {
         if (vm.billingItemType() != null) {
-            return vm.serviceId() != null ? CoverageRuleTarget.SERVICE : CoverageRuleTarget.CATEGORY;
+            if (vm.serviceId() != null) {
+                return CoverageRuleTarget.SERVICE;
+            }
+            if (vm.subcategoryKey() != null && !vm.subcategoryKey().isBlank()) {
+                return CoverageRuleTarget.SUBCATEGORY;
+            }
+            return CoverageRuleTarget.CATEGORY;
         }
         return vm.targetType() != null ? vm.targetType() : CoverageRuleTarget.ALL;
     }
@@ -824,6 +914,15 @@ public class CoverageRuleService {
     private CoverageTerm requireTerm(Long id) {
         return termRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Coverage term was not found.", ENTITY, "notFound"));
+    }
+
+    private CoverageTermExclusion requireOwnedTermExclusion(Long id, Long termId) {
+        CoverageTermExclusion entity = termExclusionRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("Coverage limit exclusion was not found.", ENTITY, "notFound"));
+        if (!entity.getCoverageTerm().getId().equals(termId)) {
+            throw new BadRequestAlertException("Exclusion does not belong to this coverage term.", ENTITY, "termMismatch");
+        }
+        return entity;
     }
 
     private CoverageTermItem requireOwnedTermItem(Long id, Long termId) {
@@ -1031,6 +1130,30 @@ public class CoverageRuleService {
         );
     }
 
+    private CoverageTermExclusionVM toTermExclusionVm(CoverageTermExclusion entity) {
+        ServiceSetup service = entity.getBillingItemType() == BillingItemTypes.SERVICE
+                ? coverageLookupService.findService(entity.getServiceId())
+                : null;
+        String itemName = blankToNull(entity.getItemName());
+        if (itemName == null && entity.getServiceId() != null) {
+            itemName = catalogTargetService.itemLabel(entity.getBillingItemType(), entity.getServiceId());
+        }
+        return new CoverageTermExclusionVM(
+                entity.getId(),
+                entity.getCoverageTerm() == null ? null : entity.getCoverageTerm().getId(),
+                entity.getCategoryScope(),
+                entity.getBillingItemType(),
+                entity.getSubcategoryKey(),
+                catalogTargetService.subcategoryLabel(entity.getBillingItemType(), entity.getSubcategoryKey()),
+                entity.getServiceId(),
+                service == null ? null : service.getCode(),
+                itemName,
+                entity.getIsActive(),
+                entity.getCreatedDate(),
+                entity.getLastModifiedDate()
+        );
+    }
+
     private String blankToNull(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -1050,6 +1173,9 @@ public class CoverageRuleService {
         if (itemName == null && entity.getTargetType() == CoverageRuleTarget.ALL) {
             itemName = "All";
         }
+        String subcategoryLabel = entity.getTargetType() == CoverageRuleTarget.SUBCATEGORY
+                ? catalogTargetService.subcategoryLabel(entity.getBillingItemType(), entity.getSubcategoryKey())
+                : null;
         return new CoverageDiscountVM(
                 entity.getId(),
                 entity.getTargetType(),
@@ -1057,6 +1183,8 @@ public class CoverageRuleService {
                 entity.getServiceId(),
                 service == null ? null : service.getCode(),
                 itemName,
+                entity.getSubcategoryKey(),
+                subcategoryLabel,
                 entity.getEncounterType(),
                 entity.getDiscountType(),
                 entity.getDiscountValue(),

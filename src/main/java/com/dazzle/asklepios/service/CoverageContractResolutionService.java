@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.CoverageExclusion;
 import com.dazzle.asklepios.domain.CoveragePreApproval;
 import com.dazzle.asklepios.domain.CoveragePreApprovalItem;
 import com.dazzle.asklepios.domain.CoverageTerm;
+import com.dazzle.asklepios.domain.CoverageTermExclusion;
 import com.dazzle.asklepios.domain.CoverageTermItem;
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.domain.PriceListSetup;
@@ -28,6 +29,7 @@ import com.dazzle.asklepios.repository.CoverageDiscountRepository;
 import com.dazzle.asklepios.repository.CoverageExclusionRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
 import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
+import com.dazzle.asklepios.repository.CoverageTermExclusionRepository;
 import com.dazzle.asklepios.repository.CoverageTermItemRepository;
 import com.dazzle.asklepios.repository.CoverageTermRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
@@ -38,6 +40,7 @@ import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveResponse
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageCopaymentVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiagnosisRefVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExcludedItemVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalReadingVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageReadingVM;
@@ -76,6 +79,7 @@ public class CoverageContractResolutionService {
     private final CoverageContractService coverageContractService;
     private final CoverageLookupService coverageLookupService;
     private final CatalogSubcategoryLookup catalogSubcategoryLookup;
+    private final CoverageTermExclusionRepository coverageTermExclusionRepository;
 
     public CoverageContractResolutionService(
             CoverageClassRepository coverageClassRepository,
@@ -92,7 +96,8 @@ public class CoverageContractResolutionService {
             PriceListSetupRepository priceListSetupRepository,
             CoverageContractService coverageContractService,
             CoverageLookupService coverageLookupService,
-            CatalogSubcategoryLookup catalogSubcategoryLookup
+            CatalogSubcategoryLookup catalogSubcategoryLookup,
+            CoverageTermExclusionRepository coverageTermExclusionRepository
     ) {
         this.coverageClassRepository = coverageClassRepository;
         this.coverageContractRepository = coverageContractRepository;
@@ -109,6 +114,7 @@ public class CoverageContractResolutionService {
         this.coverageContractService = coverageContractService;
         this.coverageLookupService = coverageLookupService;
         this.catalogSubcategoryLookup = catalogSubcategoryLookup;
+        this.coverageTermExclusionRepository = coverageTermExclusionRepository;
     }
 
     public CoverageContractResolveResponse resolve(CoverageContractResolveRequest request) {
@@ -428,6 +434,7 @@ public class CoverageContractResolutionService {
             return null;
         }
 
+        String itemSubcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
         CoverageDiscount best = null;
         int bestScore = -1;
         for (ScoredDiscount candidate : scoredDiscounts(classId, tpaId)) {
@@ -435,6 +442,7 @@ public class CoverageContractResolutionService {
                     candidate.discount(),
                     candidate.fromContract(),
                     billingItemType,
+                    itemSubcategory,
                     request.catalogItemId(),
                     encounterType
             );
@@ -874,6 +882,7 @@ public class CoverageContractResolutionService {
             CoverageDiscount discount,
             boolean fromContract,
             BillingItemTypes billingItemType,
+            String itemSubcategory,
             Long catalogItemId,
             EncounterType encounterType
     ) {
@@ -883,7 +892,7 @@ public class CoverageContractResolutionService {
                 return -1;
             }
         }
-        int targetScore = discountTargetScore(discount, billingItemType, catalogItemId);
+        int targetScore = discountTargetScore(discount, billingItemType, itemSubcategory, catalogItemId);
         if (targetScore < 0) {
             return -1;
         }
@@ -895,11 +904,22 @@ public class CoverageContractResolutionService {
     private int discountTargetScore(
             CoverageDiscount discount,
             BillingItemTypes billingItemType,
+            String itemSubcategory,
             Long catalogItemId
     ) {
         if (discount.getServiceId() != null || discount.getTargetType() == CoverageRuleTarget.SERVICE) {
             if (catalogItemId != null && catalogItemId.equals(discount.getServiceId())) {
                 return 300;
+            }
+            return -1;
+        }
+        if (discount.getTargetType() == CoverageRuleTarget.SUBCATEGORY) {
+            String key = discount.getSubcategoryKey();
+            if (discount.getBillingItemType() == billingItemType
+                    && key != null
+                    && itemSubcategory != null
+                    && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                return 250;
             }
             return -1;
         }
@@ -920,6 +940,8 @@ public class CoverageContractResolutionService {
                 discount.getServiceId(),
                 null,
                 discount.getItemName(),
+                discount.getSubcategoryKey(),
+                null,
                 discount.getEncounterType(),
                 discount.getDiscountType(),
                 discount.getDiscountValue(),
@@ -967,8 +989,10 @@ public class CoverageContractResolutionService {
         String itemSubcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
         CoverageReadingVM bestSpecific = null;
         int bestSpecificScore = -1;
+        List<CoverageTermExclusion> bestSpecificExclusions = List.of();
         CoverageReadingVM bestGeneral = null;
         int bestGeneralScore = -1;
+        List<CoverageTermExclusion> bestGeneralExclusions = List.of();
 
         for (CoverageTerm term : terms) {
             int headerScore = headerMatchScore(
@@ -981,11 +1005,17 @@ public class CoverageContractResolutionService {
             if (headerScore < 0) {
                 continue;
             }
+            List<CoverageTermExclusion> termExclusions =
+                    coverageTermExclusionRepository.findByCoverageTerm_IdAndIsActiveTrue(term.getId());
+            if (isExcludedFromTerm(termExclusions, billingItemType, itemSubcategory, request.catalogItemId())) {
+                continue;
+            }
             List<CoverageTermItem> items = coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(term.getId());
             if (items.isEmpty()) {
                 if (headerScore > bestGeneralScore) {
                     bestGeneralScore = headerScore;
                     bestGeneral = toReading(term, null);
+                    bestGeneralExclusions = termExclusions;
                 }
                 continue;
             }
@@ -1000,21 +1030,93 @@ public class CoverageContractResolutionService {
                 if (score > bestSpecificScore) {
                     bestSpecificScore = score;
                     bestSpecific = toReading(term, item);
+                    bestSpecificExclusions = termExclusions;
                 }
             }
             if (!matchedItem && headerScore > bestGeneralScore) {
                 bestGeneralScore = headerScore;
                 bestGeneral = toReading(term, null);
+                bestGeneralExclusions = termExclusions;
             }
         }
 
         if (bestSpecific != null) {
-            return CoverageMatch.covered(bestSpecific);
+            return CoverageMatch.covered(withExcludedItems(bestSpecific, bestSpecificExclusions));
         }
         if (bestGeneral != null) {
-            return CoverageMatch.covered(bestGeneral);
+            return CoverageMatch.covered(withExcludedItems(bestGeneral, bestGeneralExclusions));
         }
         return missIsUncovered ? CoverageMatch.uncoveredItem() : CoverageMatch.notConfigured();
+    }
+
+    /**
+     * A rule excludes the item when an active exclusion matches its category,
+     * its subcategory, or the item itself. The rule is then skipped for the item.
+     */
+    private boolean isExcludedFromTerm(
+            List<CoverageTermExclusion> exclusions,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId
+    ) {
+        for (CoverageTermExclusion exclusion : exclusions) {
+            if (exclusion.getBillingItemType() != billingItemType) {
+                continue;
+            }
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SERVICE) {
+                if (catalogItemId != null && catalogItemId.equals(exclusion.getServiceId())) {
+                    return true;
+                }
+                continue;
+            }
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+                String key = exclusion.getSubcategoryKey();
+                if (key != null && itemSubcategory != null && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                    return true;
+                }
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Carries the rule exclusions on the reading so billed items that are
+     * excluded do not consume the period limit.
+     */
+    private CoverageReadingVM withExcludedItems(
+            CoverageReadingVM reading,
+            List<CoverageTermExclusion> exclusions
+    ) {
+        if (reading == null || exclusions == null || exclusions.isEmpty()) {
+            return reading;
+        }
+        List<CoverageExcludedItemVM> excludedItems = new ArrayList<>();
+        for (CoverageTermExclusion exclusion : exclusions) {
+            BillingItemTypes type = exclusion.getBillingItemType();
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SERVICE) {
+                excludedItems.add(new CoverageExcludedItemVM(type, exclusion.getServiceId()));
+            } else if (exclusion.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+                for (Long catalogItemId : catalogSubcategoryLookup.catalogItemIdsOf(type, exclusion.getSubcategoryKey())) {
+                    excludedItems.add(new CoverageExcludedItemVM(type, catalogItemId));
+                }
+            } else {
+                excludedItems.add(new CoverageExcludedItemVM(type, null));
+            }
+        }
+        return new CoverageReadingVM(
+                reading.termId(),
+                reading.itemId(),
+                reading.categoryScope(),
+                reading.billingItemType(),
+                reading.serviceId(),
+                reading.valueType(),
+                reading.limitValue(),
+                reading.periodBasis(),
+                reading.coverageBasis(),
+                excludedItems
+        );
     }
 
     private CoverageReadingVM toReading(CoverageTerm term, CoverageTermItem item) {

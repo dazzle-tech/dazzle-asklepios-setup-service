@@ -40,8 +40,7 @@ public class InsuranceCompanyPolicy extends AbstractAuditingEntity<Long> {
     @Column(name = "policy_name", nullable = false, length = 255)
     private String policyName;
 
-    @NotNull
-    @Column(name = "policy_number", nullable = false, length = 100)
+    @Column(name = "policy_number", length = 100)
     private String policyNumber;
 
     @NotNull
@@ -52,7 +51,11 @@ public class InsuranceCompanyPolicy extends AbstractAuditingEntity<Long> {
     @Column(name = "valid_from", nullable = false)
     private LocalDate validFrom;
 
-    @NotNull
-    @Column(name = "valid_to", nullable = false)
+    @Column(name = "valid_to")
     private LocalDate validTo;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
 }

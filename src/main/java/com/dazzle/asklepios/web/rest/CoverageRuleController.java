@@ -8,6 +8,7 @@ import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalItemVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermExclusionVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermItemVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageTermVM;
 import jakarta.validation.Valid;
@@ -142,6 +143,51 @@ public class CoverageRuleController {
             @ParameterObject Pageable pageable
     ) {
         return paged(coverageRuleService.listTermItems(termId, isActive, pageable));
+    }
+
+    @PostMapping({
+            "/coverage-classes/terms/{termId:\\d+}/exclusions",
+            "/coverage-contracts/terms/{termId:\\d+}/exclusions"
+    })
+    public ResponseEntity<CoverageTermExclusionVM> createTermExclusion(
+            @PathVariable Long termId,
+            @Valid @RequestBody CoverageTermExclusionVM vm
+    ) {
+        LOG.debug("REST create coverage limit exclusion termId={} payload={}", termId, vm);
+        CoverageTermExclusionVM body = coverageRuleService.saveTermExclusion(termId, vm);
+        return ResponseEntity.created(URI.create("/api/setup/coverage-classes/terms/" + termId + "/exclusions/" + body.id())).body(body);
+    }
+
+    @PutMapping({
+            "/coverage-classes/terms/{termId:\\d+}/exclusions",
+            "/coverage-contracts/terms/{termId:\\d+}/exclusions"
+    })
+    public ResponseEntity<CoverageTermExclusionVM> updateTermExclusion(
+            @PathVariable Long termId,
+            @Valid @RequestBody CoverageTermExclusionVM vm
+    ) {
+        LOG.debug("REST update coverage limit exclusion termId={} payload={}", termId, vm);
+        return ResponseEntity.ok(coverageRuleService.saveTermExclusion(termId, vm));
+    }
+
+    @GetMapping({
+            "/coverage-classes/terms/{termId:\\d+}/exclusions",
+            "/coverage-contracts/terms/{termId:\\d+}/exclusions"
+    })
+    public ResponseEntity<List<CoverageTermExclusionVM>> listTermExclusions(
+            @PathVariable Long termId,
+            @RequestParam(required = false) Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        return paged(coverageRuleService.listTermExclusions(termId, isActive, pageable));
+    }
+
+    @PatchMapping({
+            "/coverage-classes/terms/exclusions/{id:\\d+}/toggle-active",
+            "/coverage-contracts/terms/exclusions/{id:\\d+}/toggle-active"
+    })
+    public ResponseEntity<CoverageTermExclusionVM> toggleTermExclusionActive(@PathVariable Long id) {
+        return ResponseEntity.ok(coverageRuleService.toggleTermExclusionActive(id));
     }
 
     @PostMapping("/coverage-classes/{classId:\\d+}/discounts")

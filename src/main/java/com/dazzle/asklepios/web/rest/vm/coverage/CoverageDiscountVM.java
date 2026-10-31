@@ -15,6 +15,8 @@ public record CoverageDiscountVM(
         Long serviceId,
         String serviceCode,
         String serviceName,
+        String subcategoryKey,
+        String subcategoryLabel,
         EncounterType encounterType,
         DiscountType discountType,
         BigDecimal discountValue,

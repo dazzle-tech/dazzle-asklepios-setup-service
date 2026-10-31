@@ -15,6 +15,8 @@ import java.util.Optional;
 @Repository
 public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
 
+    List<ServiceSetup> findByCategory(ServiceCategory category);
+
     Page<ServiceSetup> findByCategory(ServiceCategory category, Pageable pageable);
 
     Page<ServiceSetup> findByNameContainingIgnoreCase(String name, Pageable pageable);

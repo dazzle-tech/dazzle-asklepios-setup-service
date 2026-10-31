@@ -11,8 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -47,6 +49,27 @@ public class InsuranceCompanyPolicyController {
         InsuranceCompanyPolicy created = insuranceCompanyPolicyService.create(insuranceCompanyId, vm);
         URI location = URI.create("/api/setup/nphies-payers/" + insuranceCompanyId + "/policies/" + created.getId());
         return ResponseEntity.created(location).body(InsuranceCompanyPolicyResponseVM.ofEntity(created));
+    }
+
+    @PutMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies/{policyId:\\d+}")
+    public ResponseEntity<InsuranceCompanyPolicyResponseVM> update(
+            @PathVariable Long insuranceCompanyId,
+            @PathVariable Long policyId,
+            @Valid @RequestBody InsuranceCompanyPolicySaveVM vm
+    ) {
+        LOG.debug("REST update insurance company policy insuranceCompanyId={} policyId={} payload={}", insuranceCompanyId, policyId, vm);
+        InsuranceCompanyPolicy updated = insuranceCompanyPolicyService.update(insuranceCompanyId, policyId, vm);
+        return ResponseEntity.ok(InsuranceCompanyPolicyResponseVM.ofEntity(updated));
+    }
+
+    @PatchMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies/{policyId:\\d+}/toggle-active")
+    public ResponseEntity<InsuranceCompanyPolicyResponseVM> toggleActive(
+            @PathVariable Long insuranceCompanyId,
+            @PathVariable Long policyId
+    ) {
+        LOG.debug("REST toggle insurance company policy insuranceCompanyId={} policyId={}", insuranceCompanyId, policyId);
+        InsuranceCompanyPolicy updated = insuranceCompanyPolicyService.toggleActive(insuranceCompanyId, policyId);
+        return ResponseEntity.ok(InsuranceCompanyPolicyResponseVM.ofEntity(updated));
     }
 
     @GetMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies")
