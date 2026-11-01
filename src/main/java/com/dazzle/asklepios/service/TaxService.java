@@ -84,6 +84,18 @@ public class TaxService {
                 .calculationType(taxDTO.calculationType())
                 .applicableOn(taxDTO.applicableOn())
                 .citizenCategory(resolveCitizenCategory(taxDTO))
+                .applyOnPatientCopayment(
+                        resolveApplyFlag(
+                                taxDTO.applyOnPatientCopayment(),
+                                true
+                        )
+                )
+                .applyOnClaimShare(
+                        resolveApplyFlag(
+                                taxDTO.applyOnClaimShare(),
+                                true
+                        )
+                )
                 .validFrom(taxDTO.validFrom())
                 .validTo(taxDTO.validTo())
                 .description(trimToNull(taxDTO.description()))
@@ -172,6 +184,18 @@ public class TaxService {
         existing.setCalculationType(taxDTO.calculationType());
         existing.setApplicableOn(taxDTO.applicableOn());
         existing.setCitizenCategory(resolveCitizenCategory(taxDTO));
+        existing.setApplyOnPatientCopayment(
+                resolveApplyFlag(
+                        taxDTO.applyOnPatientCopayment(),
+                        existing.getApplyOnPatientCopayment()
+                )
+        );
+        existing.setApplyOnClaimShare(
+                resolveApplyFlag(
+                        taxDTO.applyOnClaimShare(),
+                        existing.getApplyOnClaimShare()
+                )
+        );
         existing.setValidFrom(taxDTO.validFrom());
         existing.setValidTo(taxDTO.validTo());
         existing.setIsDefault(Boolean.TRUE.equals(taxDTO.isDefault()));
@@ -532,6 +556,21 @@ public class TaxService {
         return dto.citizenCategory() == null
                 ? TaxCitizenCategory.ALL
                 : dto.citizenCategory();
+    }
+
+    /**
+     * A missing flag keeps the current value; taxes created before the
+     * Patient Copayment / Claim Share toggles existed applied tax to both shares.
+     */
+    private Boolean resolveApplyFlag(
+            Boolean requested,
+            Boolean current
+    ) {
+        if (requested != null) {
+            return requested;
+        }
+
+        return current == null || current;
     }
 
     @Transactional(readOnly = true)

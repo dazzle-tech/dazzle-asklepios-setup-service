@@ -129,6 +129,14 @@ public class BillingPricingResolutionService {
                                 resolvedTax
                         ),
 
+                        resolvedTax == null
+                                ? null
+                                : resolvedTax.getApplyOnPatientCopayment(),
+
+                        resolvedTax == null
+                                ? null
+                                : resolvedTax.getApplyOnClaimShare(),
+
                         resolvedDiscount == null
                                 ? null
                                 : resolvedDiscount.getId(),
@@ -218,6 +226,8 @@ public class BillingPricingResolutionService {
                         : resolvedTax.getCalculationType(),
                 resolveTaxRate(resolvedTax),
                 resolveTaxFixedAmount(resolvedTax),
+                resolvedTax == null ? null : resolvedTax.getApplyOnPatientCopayment(),
+                resolvedTax == null ? null : resolvedTax.getApplyOnClaimShare(),
                 resolvedDiscount == null ? null : resolvedDiscount.getId(),
                 resolvedDiscount == null ? null : resolvedDiscount.getCode(),
                 resolvedDiscount == null ? null : resolvedDiscount.getName(),
