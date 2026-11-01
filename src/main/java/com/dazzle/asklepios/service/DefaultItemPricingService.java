@@ -163,12 +163,7 @@ public class DefaultItemPricingService {
                         sourceId
                 );
 
-        BigDecimal price =
-                procedure.getPrice() == null
-                        ? null
-                        : BigDecimal.valueOf(
-                        procedure.getPrice()
-                );
+        BigDecimal price = procedure.getPrice();
 
         return new DefaultItemPrice(
                 procedure.getId(),

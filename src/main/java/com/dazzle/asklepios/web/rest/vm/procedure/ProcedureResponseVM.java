@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 public record ProcedureResponseVM(
         Long id,
@@ -20,7 +21,7 @@ public record ProcedureResponseVM(
         Boolean isActive,
         Long facilityId,
        Currency currency,
-       Long price,
+       BigDecimal price,
        Long billingRuleId
 ) implements Serializable {
 
