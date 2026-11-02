@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * View Model for updating a Procedure via REST.
@@ -24,7 +25,7 @@ public record ProcedureUpdateVM(
         String preparationInstructions,
         String recoveryNotes,
         @NotNull Currency currency,
-        @NotNull Long price,
+        @NotNull BigDecimal price,
         @NotNull Boolean isActive,
         String lastModifiedBy,
         Long billingRuleId

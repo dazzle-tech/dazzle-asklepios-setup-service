@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ProcedureCreateVM(
@@ -20,7 +21,7 @@ public record ProcedureCreateVM(
         String preparationInstructions,
         String recoveryNotes,
        @NotNull Currency currency,
-        @NotNull Long price,
+        @NotNull BigDecimal price,
         @NotNull Boolean isActive,
         Long billingRuleId
 ) implements Serializable {
