@@ -4,12 +4,14 @@ import com.dazzle.asklepios.domain.LanguageTranslation;
 import com.dazzle.asklepios.service.LanguageTranslationService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -101,6 +103,60 @@ public class LanguageTranslationController {
         LOG.debug("REST request to get LanguageTranslation by pair ({}, {})", langKey, translationKey);
         return translationService.findByPair(langKey, translationKey)
                 .map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search/by-key")
+    public ResponseEntity<List<LanguageTranslation>> findByKey(
+            @RequestParam("lang") @NotNull String langKey,
+            @RequestParam("key") @NotNull String key,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find LanguageTranslations by lang={} key='{}' pageable={}", langKey, key, pageable);
+
+        Page<LanguageTranslation> page = translationService.findByLangKeyAndTranslationKey(langKey.trim(), key.trim(), pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/search/by-verified/{verified}")
+    public ResponseEntity<List<LanguageTranslation>> findByVerified(
+            @PathVariable @NotNull Boolean verified,
+            @RequestParam("lang") @NotNull String langKey,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find LanguageTranslations by lang={} verified={} pageable={}", langKey, verified, pageable);
+
+        Page<LanguageTranslation> page = translationService.findByLangKeyAndVerified(langKey.trim(), verified, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/search/by-translated/{translated}")
+    public ResponseEntity<List<LanguageTranslation>> findByTranslated(
+            @PathVariable @NotNull Boolean translated,
+            @RequestParam("lang") @NotNull String langKey,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST find LanguageTranslations by lang={} translated={} pageable={}", langKey, translated, pageable);
+
+        Page<LanguageTranslation> page = translationService.findByLangKeyAndTranslated(langKey.trim(), translated, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
     @GetMapping("/by-lang/{langKey}")
