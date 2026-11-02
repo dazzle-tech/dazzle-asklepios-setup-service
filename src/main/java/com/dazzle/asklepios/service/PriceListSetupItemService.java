@@ -115,13 +115,22 @@ public class PriceListSetupItemService {
                         .findById(priceListSetupId)
                         .orElseThrow();
 
-        if (dto.itemCode() != null
-                && !dto.itemCode().equals(entity.getItemCode())
-                && priceListSetupItemRepository.existsByPriceListSetupIdAndItemCode(
-                        priceListSetupId,
-                        dto.itemCode()
-                )) {
-            throw duplicateItemCodeException(dto.itemCode());
+        boolean willBeActive =
+                dto.isActive() != null
+                        ? dto.isActive()
+                        : Boolean.TRUE.equals(entity.getIsActive());
+
+        if (willBeActive
+                && dto.sourceId() != null
+                && dto.itemType() != null
+                && priceListSetupItemRepository
+                        .existsByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrueAndIdNot(
+                                priceListSetupId,
+                                dto.itemType(),
+                                dto.sourceId(),
+                                entity.getId()
+                        )) {
+            throw duplicateItemException();
         }
 
         entity.setWaseelItemMappingId(
@@ -252,18 +261,19 @@ public class PriceListSetupItemService {
         priceListSetupItemRepository.delete(entity);
     }
 
+    /**
+     * The same item code may appear on several items (one SBS code is shared
+     * by many services); the same catalog item may be active only once.
+     */
     private void validateUniqueWithinPriceList(
             Long priceListSetupId,
             PriceListSetupItemDTO dto
     ) {
-        if (priceListSetupItemRepository.existsByPriceListSetupIdAndItemCode(
-                priceListSetupId,
-                dto.itemCode()
-        )) {
-            throw duplicateItemCodeException(dto.itemCode());
-        }
+        boolean willBeActive =
+                dto.isActive() == null || dto.isActive();
 
-        if (dto.sourceId() != null
+        if (willBeActive
+                && dto.sourceId() != null
                 && dto.itemType() != null
                 && priceListSetupItemRepository
                         .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
@@ -272,25 +282,17 @@ public class PriceListSetupItemService {
                                 dto.sourceId()
                         )
                         .isPresent()) {
-            throw new BadRequestAlertException(
-                    "This catalog item is already on the selected price list. "
-                            + "Use a different price list header (e.g. Cash vs Insurance) "
-                            + "to price the same service separately.",
-                    ENTITY,
-                    "item.duplicateInPriceList"
-            );
+            throw duplicateItemException();
         }
     }
 
-    private BadRequestAlertException duplicateItemCodeException(
-            String itemCode
-    ) {
+    private BadRequestAlertException duplicateItemException() {
         return new BadRequestAlertException(
-                "Item code "
-                        + itemCode
-                        + " already exists on this price list.",
+                "This catalog item is already on the selected price list. "
+                        + "Use a different price list header (e.g. Cash vs Insurance) "
+                        + "to price the same service separately.",
                 ENTITY,
-                "itemCode.duplicate"
+                "item.duplicateInPriceList"
         );
     }
 
@@ -312,12 +314,8 @@ public class PriceListSetupItemService {
             );
         }
 
-        if (message != null && message.contains("uk_price_list_item_code")) {
-            return new BadRequestAlertException(
-                    "This item code already exists on the selected price list.",
-                    ENTITY,
-                    "itemCode.duplicate"
-            );
+        if (message != null && message.contains("uk_price_list_item_source_active")) {
+            return duplicateItemException();
         }
 
         return exception;
