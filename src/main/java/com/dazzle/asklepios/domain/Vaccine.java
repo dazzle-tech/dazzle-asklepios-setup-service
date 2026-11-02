@@ -45,6 +45,11 @@ public class Vaccine extends AbstractAuditingEntity<Long> implements Serializabl
     @Column(name = "atc_code", length = 50)
     private String atcCode;
 
+    /** SBS code: shared by all the vaccine's brands */
+    @NotNull
+    @Column(name = "code", nullable = false, length = 100)
+    private String code;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "number_of_doses", nullable = false, length = 20)

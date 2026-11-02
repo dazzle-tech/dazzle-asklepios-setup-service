@@ -209,14 +209,6 @@ public class VaccineBrandsService {
 
         LOG.error("Database constraint violation while saving vaccine brand: {}", message, constraintException);
 
-        if (msgLower.contains("ux_vaccine_brands_code")) {
-            throw new BadRequestAlertException(
-                    "A vaccine brand with the same code already exists.",
-                    "vaccineBrand",
-                    "unique.code"
-            );
-        }
-
         if (msgLower.contains("ux_vaccine_brands_facility_name_unit_volume")
                 || msgLower.contains("unique constraint")
                 || msgLower.contains("duplicate key")
