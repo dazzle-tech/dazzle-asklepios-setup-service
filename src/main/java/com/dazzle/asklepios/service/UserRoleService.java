@@ -40,6 +40,10 @@ public class UserRoleService {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new NotFoundAlertException("role","notfound","Role not found: " + roleId));
 
+        if (userRoleRepository.existsById(new UserRole.UserRoleId(userId, roleId))) {
+            throw new BadRequestAlertException("User already has this role", "userRole", "alreadyexists");
+        }
+
         UserRole userRole = UserRole.builder()
                 .id(new UserRole.UserRoleId())
                 .user(user)
