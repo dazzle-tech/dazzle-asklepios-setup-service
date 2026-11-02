@@ -31,5 +31,8 @@ public interface PolicyDefinitionRepository extends JpaRepository<PolicyDefiniti
     Page<PolicyDefinition> findAllByIsActiveTrue(Pageable pageable);
 
     @EntityGraph(attributePaths = "facility")
+    Page<PolicyDefinition> findByIsActive(Boolean isActive, Pageable pageable);
+
+    @EntityGraph(attributePaths = "facility")
     Page<PolicyDefinition> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
 }
