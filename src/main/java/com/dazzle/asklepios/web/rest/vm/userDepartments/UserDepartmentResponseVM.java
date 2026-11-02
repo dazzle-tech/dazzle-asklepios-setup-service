@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.userDepartments;
 
 import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import java.io.Serializable;
 
 /**
@@ -13,6 +14,7 @@ public record UserDepartmentResponseVM(
         String facilityName,
         Long departmentId,
         String departmentName,
+        DepartmentType departmentType,
         Boolean isActive,
         Boolean isDefault
 ) implements Serializable {
@@ -36,6 +38,10 @@ public record UserDepartmentResponseVM(
 
                 entity.getDepartment() != null
                         ? entity.getDepartment().getName()
+                        : null,
+
+                entity.getDepartment() != null
+                        ? entity.getDepartment().getType()
                         : null,
 
                 entity.getIsActive(),
