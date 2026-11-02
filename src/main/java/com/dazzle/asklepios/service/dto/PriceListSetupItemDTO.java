@@ -45,7 +45,10 @@ public record PriceListSetupItemDTO(
 
         Boolean isActive,
 
-        Boolean requiresPreAuthorization
+        Boolean requiresPreAuthorization,
+
+        // Read-only: the item's name in its setup definition (resolved from itemType + sourceId)
+        String setupItemName
 
 ) {
 }
