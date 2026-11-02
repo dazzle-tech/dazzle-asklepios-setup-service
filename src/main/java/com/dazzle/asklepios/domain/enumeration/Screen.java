@@ -91,6 +91,7 @@ public enum Screen {
     ER_DEPARTMENT,
     URGENT_CARE_DEPARTMENT,
     ER_DASHBOARD,
+    ER_BED_BOARD,
 
     // Purchasing
     SUPPLIER_MANAGEMENT,
@@ -204,7 +205,6 @@ public enum Screen {
     MY_TASKS,
     TEAM_TASKS,
     ALL_TASKS;
-
 
 
     @JsonCreator
