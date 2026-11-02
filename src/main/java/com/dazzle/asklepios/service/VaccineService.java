@@ -44,6 +44,7 @@ public class VaccineService {
         Vaccine entity = Vaccine.builder()
                 .name(incoming.getName())
                 .atcCode(incoming.getAtcCode())
+                .code(incoming.getCode())
                 .type(incoming.getType())
                 .roa(incoming.getRoa())
                 .siteOfAdministration(incoming.getSiteOfAdministration())
@@ -84,6 +85,7 @@ public class VaccineService {
 
         existing.setName(incoming.getName());
         existing.setAtcCode(incoming.getAtcCode());
+        existing.setCode(incoming.getCode());
         existing.setType(incoming.getType());
         existing.setRoa(incoming.getRoa());
         existing.setSiteOfAdministration(incoming.getSiteOfAdministration());
