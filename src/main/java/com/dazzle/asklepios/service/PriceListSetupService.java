@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
@@ -154,6 +155,60 @@ public class PriceListSetupService {
         return priceListSetupRepository
                 .findAll(pageable)
                 .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("[FIND BY FACILITY] facilityId={} pageable={}", facilityId, pageable);
+        return priceListSetupRepository.findAllByFacilityId(facilityId, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByName(String name, Pageable pageable) {
+        LOG.debug("[FIND BY NAME] name='{}' pageable={}", name, pageable);
+        return priceListSetupRepository.findByNameContainingIgnoreCase(name, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByType(PriceListSetupType type, Pageable pageable) {
+        LOG.debug("[FIND BY TYPE] type={} pageable={}", type, pageable);
+        return priceListSetupRepository.findByType(type, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByPayerId(Long payerId, Pageable pageable) {
+        LOG.debug("[FIND BY PAYER] payerId={} pageable={}", payerId, pageable);
+        return priceListSetupRepository.findByPayerId(payerId, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByVersionNumber(Integer versionNumber, Pageable pageable) {
+        LOG.debug("[FIND BY VERSION] versionNumber={} pageable={}", versionNumber, pageable);
+        return priceListSetupRepository.findByVersionNumber(versionNumber, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByEffectiveFrom(LocalDate effectiveFrom, Pageable pageable) {
+        LOG.debug("[FIND BY EFFECTIVE FROM] effectiveFrom={} pageable={}", effectiveFrom, pageable);
+        return priceListSetupRepository.findByEffectiveFrom(effectiveFrom, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByEffectiveTo(LocalDate effectiveTo, Pageable pageable) {
+        LOG.debug("[FIND BY EFFECTIVE TO] effectiveTo={} pageable={}", effectiveTo, pageable);
+        return priceListSetupRepository.findByEffectiveTo(effectiveTo, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByCurrency(Currency currency, Pageable pageable) {
+        LOG.debug("[FIND BY CURRENCY] currency={} pageable={}", currency, pageable);
+        return priceListSetupRepository.findByCurrency(currency, pageable).map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findByStatus(PriceListSetupStatus status, Pageable pageable) {
+        LOG.debug("[FIND BY STATUS] status={} pageable={}", status, pageable);
+        return priceListSetupRepository.findByStatus(status, pageable).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
