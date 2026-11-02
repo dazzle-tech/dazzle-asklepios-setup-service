@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 
@@ -23,6 +25,8 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
             Pageable pageable
     );
     Page<Procedure> findByFacility_IdAndIsActiveTrue(Long facilityId, Pageable pageable);
+
+    Page<Procedure> findByIdInAndIsActiveTrue(List<Long> ids, Pageable pageable);
 
     Page<Procedure> findByFacility_IdAndIsActiveTrueAndCategoryType(
             Long facilityId, ProcedureCategory categoryType, Pageable pageable);
