@@ -252,6 +252,29 @@ public class PriceListSetupItemService {
         return page.map(item -> toDTO(item, setupItemNames));
     }
 
+    /**
+     * Active items of one catalog item (item type + source id) across all price lists.
+     */
+    @Transactional(readOnly = true)
+    public List<PriceListSetupItemDTO> findActiveBySource(
+            PriceListItemType itemType,
+            Long sourceId
+    ) {
+        List<PriceListSetupItem> items =
+                priceListSetupItemRepository
+                        .findAllByItemTypeAndSourceIdAndIsActiveTrue(
+                                itemType,
+                                sourceId
+                        );
+
+        Map<PriceListItemType, Map<Long, String>> setupItemNames =
+                resolveSetupItemNames(items);
+
+        return items.stream()
+                .map(item -> toDTO(item, setupItemNames))
+                .toList();
+    }
+
     @Transactional(readOnly = true)
     public java.util.Optional<PriceListItemWaseelCodesDTO> findInsuranceWaseelCodes(
             PriceListItemType itemType,
