@@ -228,9 +228,11 @@ public class BrandMedicationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findAll(Pageable pageable) {
-        LOG.debug("Request to get BrandMedications: {}", pageable);
-        return brandMedicationRepository.findAll(pageable);
+    public Page<BrandMedication> findAll(Boolean isActive, Pageable pageable) {
+        LOG.debug("Request to get BrandMedications isActive={} {}", isActive, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findAll(pageable)
+                : brandMedicationRepository.findByIsActive(isActive, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -250,21 +252,27 @@ public class BrandMedicationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByName(String name, Pageable pageable) {
+    public Page<BrandMedication> findByName(String name, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by name like='{}' {}", name, pageable);
-        return brandMedicationRepository.findByNameContainsIgnoreCase(name, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByNameContainsIgnoreCase(name, pageable)
+                : brandMedicationRepository.findByNameContainsIgnoreCaseAndIsActive(name, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByManufacturer(String manufacturer, Pageable pageable) {
+    public Page<BrandMedication> findByManufacturer(String manufacturer, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by manufacturer like='{}' {}", manufacturer, pageable);
-        return brandMedicationRepository.findByManufacturerContainsIgnoreCase(manufacturer, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByManufacturerContainsIgnoreCase(manufacturer, pageable)
+                : brandMedicationRepository.findByManufacturerContainsIgnoreCaseAndIsActive(manufacturer, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByDosageForm(String dosageForm, Pageable pageable) {
+    public Page<BrandMedication> findByDosageForm(String dosageForm, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by dosageForm like='{}' {}", dosageForm, pageable);
-        return brandMedicationRepository.findByDosageFormContainsIgnoreCase(dosageForm, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByDosageFormContainsIgnoreCase(dosageForm, pageable)
+                : brandMedicationRepository.findByDosageFormContainsIgnoreCaseAndIsActive(dosageForm, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -274,21 +282,27 @@ public class BrandMedicationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByRoa(String roa, Pageable pageable) {
+    public Page<BrandMedication> findByRoa(String roa, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by roa like='{}' {}", roa, pageable);
-        return brandMedicationRepository.findByRoaContainsIgnoreCase(roa, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByRoaContainsIgnoreCase(roa, pageable)
+                : brandMedicationRepository.findByRoaContainsIgnoreCaseAndIsActive(roa, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByExpiresAfterOpening(Boolean expiresAfterOpening, Pageable pageable) {
+    public Page<BrandMedication> findByExpiresAfterOpening(Boolean expiresAfterOpening, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by expiresAfterOpening={} {}", expiresAfterOpening, pageable);
-        return brandMedicationRepository.findByExpiresAfterOpening(expiresAfterOpening, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByExpiresAfterOpening(expiresAfterOpening, pageable)
+                : brandMedicationRepository.findByExpiresAfterOpeningAndIsActive(expiresAfterOpening, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<BrandMedication> findByUseSinglePatient(Boolean useSinglePatient, Pageable pageable) {
+    public Page<BrandMedication> findByUseSinglePatient(Boolean useSinglePatient, Boolean isActive, Pageable pageable) {
         LOG.debug("Request to get BrandMedications by useSinglePatient={} {}", useSinglePatient, pageable);
-        return brandMedicationRepository.findByUseSinglePatient(useSinglePatient, pageable);
+        return isActive == null
+                ? brandMedicationRepository.findByUseSinglePatient(useSinglePatient, pageable)
+                : brandMedicationRepository.findByUseSinglePatientAndIsActive(useSinglePatient, isActive, pageable);
     }
 
     @Transactional(readOnly = true)

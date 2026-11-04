@@ -45,6 +45,14 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
 
     Page<DiagnosticTest> findByIsActive(Boolean isActive, Pageable pageable);
 
+    Page<DiagnosticTest> findByTypeAndIsActive(TestType type, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByNameContainingIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByInternalCodeContainingIgnoreCaseAndIsActive(String internalCode, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByShortNameContainingIgnoreCaseAndIsActive(String shortName, Boolean isActive, Pageable pageable);
+
     Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
 
     Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(
