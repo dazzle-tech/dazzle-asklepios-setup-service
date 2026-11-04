@@ -355,7 +355,7 @@ public class DepartmentService {
     }
 
     private void validateParallelCapacity(Department department) {
-        if (Boolean.TRUE.equals(department.getParallelCapacityEnabled())) {
+        if (Boolean.TRUE.equals(department.getParallelCapacityEnabled()) && Boolean.TRUE.equals(department.getAppointable())) {
             if (department.getParallelCapacityValue() == null || department.getParallelCapacityValue() < 1) {
                 throw new BadRequestAlertException(
                         "parallelCapacityValue must be at least 1 when parallelCapacityEnabled is true",

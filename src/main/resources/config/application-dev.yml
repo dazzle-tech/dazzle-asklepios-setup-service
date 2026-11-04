@@ -55,6 +55,8 @@ setup:
   #   allowed-headers: "*"
   #   allow-credentials: true
   #   max-age: 1800
+  portal:
+    secret: ${PATIENT_PORTAL_SECRET:dev-patient-portal-secret}
   security:
     authentication:
       jwt:
@@ -74,6 +76,7 @@ setup:
     bucket: asklepios
     region: sfo3
     endpoint: https://sfo3.digitaloceanspaces.com
+    cdnEndpoint: https://asklepios.sfo3.cdn.digitaloceanspaces.com
     accessKeyId: DO00TRNC7U4TLLL6ZAN2
     secretAccessKey: mNFZKBA/BPXTHVUsde8y/2MslOn7zZEiPzwfIuhLrx4
     presignExpirySeconds: 300

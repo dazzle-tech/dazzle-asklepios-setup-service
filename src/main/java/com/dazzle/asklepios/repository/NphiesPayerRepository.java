@@ -84,4 +84,9 @@ public interface NphiesPayerRepository extends JpaRepository<NphiesPayer, Long> 
               )
             """)
     Page<NphiesPayer> searchActive(@Param("search") String search, Pageable pageable);
+
+    Page<NphiesPayer> findByIsActive(
+            Boolean isActive,
+            Pageable pageable
+    );
 }

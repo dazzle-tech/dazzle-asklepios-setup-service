@@ -328,6 +328,26 @@ public class ProcedureController {
 
 
 
+    @GetMapping("/procedure/by-department")
+    public ResponseEntity<List<ProcedureResponseVM>> getProceduresByDepartment(
+            @RequestParam Long sourceId,
+            @RequestParam(required = false) String specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Procedures by DEPARTMENTS sourceId={} specialty={} pageable={}",
+                sourceId, specialty, pageable);
+
+        Page<Procedure> page = procedureService.findProceduresByDepartment(sourceId, specialty, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @GetMapping("/procedure/{id}")
     public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
         LOG.debug("REST get Procedure by id={}", id);

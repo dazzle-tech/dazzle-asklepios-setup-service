@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service.dto;
 
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingRulePaymentType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +22,9 @@ public record BillingRuleDTO(
 
         @NotNull
         BillingTrigger billingTrigger,
+
+        @NotNull
+        BillingRulePaymentType paymentType,
 
         Boolean isDefault
 

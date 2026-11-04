@@ -257,6 +257,7 @@ public class PriceListSetupItemExcelService {
                         null,
                         null,
                         null,
+                        null,
                         null
                 );
 
@@ -355,6 +356,8 @@ public class PriceListSetupItemExcelService {
                     )
                     .map(test -> toCatalog(test, row))
                     .orElseThrow(() -> catalogNotFound(row));
+            // Vaccine brands have no item code to look up; a vaccine row needs its source id.
+            case VACCINE -> throw catalogNotFound(row);
         };
     }
 

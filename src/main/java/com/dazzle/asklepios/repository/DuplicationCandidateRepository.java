@@ -16,6 +16,8 @@ public interface DuplicationCandidateRepository extends JpaRepository<Duplicatio
 
     boolean existsById(Long id);
 
-    List<DuplicationCandidate> findByRuleContaining(String text);
+    List<DuplicationCandidate> findByRuleContainingIgnoreCase(String rule);
+
+    List<DuplicationCandidate> findByIsActive(Boolean isActive);
 
 }

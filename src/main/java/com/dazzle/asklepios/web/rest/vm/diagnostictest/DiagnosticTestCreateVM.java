@@ -41,5 +41,6 @@ public record DiagnosticTestCreateVM(
         String defaultProfileResultUnit,
         String listOfValueId,
         String modality,
-        Long billingRuleId
+        Long billingRuleId,
+        Long loincCodeId
 ) implements Serializable {}

@@ -29,15 +29,18 @@ public class ProcedureService {
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureService.class);
 
     private final ProcedureRepository procedureRepository;
+    private final ProcedureItemsService procedureItemsService;
     private final EntityManager em;
     private final PriceListCatalogSyncService priceListCatalogSyncService;
 
     public ProcedureService(
             ProcedureRepository procedureRepository,
+            ProcedureItemsService procedureItemsService,
             EntityManager em,
             PriceListCatalogSyncService priceListCatalogSyncService
     ) {
         this.procedureRepository = procedureRepository;
+        this.procedureItemsService = procedureItemsService;
         this.em = em;
         this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
@@ -331,6 +334,23 @@ public class ProcedureService {
     }
 
 
+
+    /**
+     * Active procedures linked to a department (and specialty when given).
+     * These are the default procedures of a visit opened in that department.
+     */
+    @Transactional(readOnly = true)
+    public Page<Procedure> findProceduresByDepartment(Long departmentId, String specialty, Pageable pageable) {
+        LOG.debug("[GET PROCEDURES BY DEPARTMENT] departmentId={} specialty={} pageable={}",
+                departmentId, specialty, pageable);
+
+        List<Long> procedureIds = procedureItemsService.findLinkedProcedureIds(departmentId, specialty);
+        if (procedureIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return procedureRepository.findByIdInAndIsActiveTrue(procedureIds, pageable);
+    }
 
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);

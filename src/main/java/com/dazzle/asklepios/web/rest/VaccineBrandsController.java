@@ -50,14 +50,16 @@ public class VaccineBrandsController {
 
         VaccineBrands toCreate = VaccineBrands.builder()
                 .name(vm.name())
+                .code(vm.code())
                 .manufacture(vm.manufacture())
                 .volume(vm.volume())
                 .unit(vm.unit())
                 .marketingAuthorizationHolder(vm.marketingAuthorizationHolder())
+                .price(vm.price())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
-        VaccineBrands created = vaccineBrandsService.create(vaccineId, toCreate);
+        VaccineBrands created = vaccineBrandsService.create(vaccineId, vm.facilityId(), toCreate);
         VaccineBrandResponseVM body = VaccineBrandResponseVM.ofEntity(created);
 
         return ResponseEntity
@@ -75,13 +77,15 @@ public class VaccineBrandsController {
 
         VaccineBrands patch = new VaccineBrands();
         patch.setName(vm.name());
+        patch.setCode(vm.code());
         patch.setManufacture(vm.manufacture());
         patch.setVolume(vm.volume());
         patch.setUnit(vm.unit());
         patch.setMarketingAuthorizationHolder(vm.marketingAuthorizationHolder());
+        patch.setPrice(vm.price());
         patch.setIsActive(vm.isActive());
 
-        return vaccineBrandsService.update(id, vaccineId, patch)
+        return vaccineBrandsService.update(id, vaccineId, vm.facilityId(), patch)
                 .map(VaccineBrandResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -110,6 +114,24 @@ public class VaccineBrandsController {
     ) {
         LOG.debug("REST list VaccineBrands pageable={}", pageable);
         Page<VaccineBrands> page = vaccineBrandsService.findAll( pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(VaccineBrandResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    /** Active vaccine brands of all vaccines, optionally filtered by name or code (price lists, SBS mapping) */
+    @GetMapping("/vaccine-brands/search")
+    public ResponseEntity<List<VaccineBrandResponseVM>> searchActive(
+            @RequestParam(name = "name", required = false) String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST search active VaccineBrands name={} pageable={}", name, pageable);
+        Page<VaccineBrands> page = vaccineBrandsService.searchActive(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

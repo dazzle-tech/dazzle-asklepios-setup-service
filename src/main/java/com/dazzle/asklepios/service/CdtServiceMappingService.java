@@ -45,6 +45,15 @@ public class CdtServiceMappingService {
     }
 
     @Transactional(readOnly = true)
+    public List<CdtServiceMapping> findByCdtCode(Long cdtId) {
+        if (cdtId == null) {
+            throw new BadRequestAlertException("cdtId is required", "cdtService", "cdt.required");
+        }
+
+        return mappingRepository.findByCdtCode_Id(cdtId);
+    }
+
+    @Transactional(readOnly = true)
     public Page<ServiceSetup> getLinkedServicesPaged(Long cdtId, Pageable pageable) {
         if (cdtId == null) {
             throw new BadRequestAlertException("cdtId is required", "cdtService", "cdt.required");

@@ -44,6 +44,7 @@ public class VaccineService {
         Vaccine entity = Vaccine.builder()
                 .name(incoming.getName())
                 .atcCode(incoming.getAtcCode())
+                .code(incoming.getCode())
                 .type(incoming.getType())
                 .roa(incoming.getRoa())
                 .siteOfAdministration(incoming.getSiteOfAdministration())
@@ -54,8 +55,6 @@ public class VaccineService {
                 .possibleReactions(incoming.getPossibleReactions())
                 .contraindicationsAndPrecautions(incoming.getContraindicationsAndPrecautions())
                 .storageAndHandling(incoming.getStorageAndHandling())
-                .facilityId(incoming.getFacilityId())
-                .price(incoming.getPrice())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .build();
 
@@ -86,6 +85,7 @@ public class VaccineService {
 
         existing.setName(incoming.getName());
         existing.setAtcCode(incoming.getAtcCode());
+        existing.setCode(incoming.getCode());
         existing.setType(incoming.getType());
         existing.setRoa(incoming.getRoa());
         existing.setSiteOfAdministration(incoming.getSiteOfAdministration());
@@ -96,8 +96,6 @@ public class VaccineService {
         existing.setPossibleReactions(incoming.getPossibleReactions());
         existing.setContraindicationsAndPrecautions(incoming.getContraindicationsAndPrecautions());
         existing.setStorageAndHandling(incoming.getStorageAndHandling());
-        existing.setFacilityId(incoming.getFacilityId());
-        existing.setPrice(incoming.getPrice());
         existing.setIsActive(incoming.getIsActive());
 
         try {

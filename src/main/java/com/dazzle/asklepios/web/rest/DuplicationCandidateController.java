@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DuplicationCandidate;
+import com.dazzle.asklepios.domain.enumeration.DuplicationField;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.DuplicationCandidateService;
 import com.dazzle.asklepios.service.FacilityService;
@@ -87,6 +88,42 @@ public class DuplicationCandidateController {
                 .toList();
 
         return ResponseEntity.ok(result);
+    }
+
+    /** Filter by rule */
+    @GetMapping("/by-rule/{rule}")
+    public ResponseEntity<List<DuplicationCandidateResponseVM>> getByRule(@PathVariable String rule) {
+        LOG.debug("REST get DuplicationCandidates by rule='{}'", rule);
+        return ResponseEntity.ok(
+                service.findByRule(rule.trim()).stream()
+                        .map(DuplicationCandidateResponseVM::ofEntity)
+                        .toList()
+        );
+    }
+
+    /** Filter by status */
+    @GetMapping("/by-status")
+    public ResponseEntity<List<DuplicationCandidateResponseVM>> getByStatus(@RequestParam boolean isActive) {
+        LOG.debug("REST get DuplicationCandidates by status isActive={}", isActive);
+        return ResponseEntity.ok(
+                service.findByStatus(isActive).stream()
+                        .map(DuplicationCandidateResponseVM::ofEntity)
+                        .toList()
+        );
+    }
+
+    /** Filter by one duplication field value (e.g. field=FIRST_NAME&value=true) */
+    @GetMapping("/by-field")
+    public ResponseEntity<List<DuplicationCandidateResponseVM>> getByField(
+            @RequestParam DuplicationField field,
+            @RequestParam boolean value
+    ) {
+        LOG.debug("REST get DuplicationCandidates by field={} value={}", field, value);
+        return ResponseEntity.ok(
+                service.findByField(field, value).stream()
+                        .map(DuplicationCandidateResponseVM::ofEntity)
+                        .toList()
+        );
     }
 
     /** Get one by id */

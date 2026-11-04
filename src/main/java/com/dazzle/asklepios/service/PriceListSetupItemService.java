@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.PriceListSetup;
 import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.VaccineBrands;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
@@ -15,6 +16,7 @@ import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.repository.VaccineBrandsRepository;
 import com.dazzle.asklepios.service.dto.PriceListItemWaseelCodesDTO;
 import com.dazzle.asklepios.service.dto.PriceListSetupItemDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -28,6 +30,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Objects;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +57,9 @@ public class PriceListSetupItemService {
 
     private final DiagnosticTestRepository diagnosticTestRepository;
 
+    private final VaccineBrandsRepository
+            vaccineBrandsRepository;
+
     public PriceListSetupItemDTO create(
             Long priceListSetupId,
             PriceListSetupItemDTO dto
@@ -55,7 +67,7 @@ public class PriceListSetupItemService {
         PriceListSetup priceListSetup = requirePriceList(priceListSetupId);
 
         validateActiveCatalogItem(dto);
-        validateUniqueWithinPriceList(priceListSetupId, dto, null);
+        validateUniqueWithinPriceList(priceListSetupId, dto);
 
         PriceListSetupItem entity = new PriceListSetupItem();
         entity.setId(null);
@@ -103,11 +115,22 @@ public class PriceListSetupItemService {
                                 )
                         );
 
-        boolean catalogChanged =
-                dto.itemType() != entity.getItemType()
-                        || !Objects.equals(dto.sourceId(), entity.getSourceId());
-        if (catalogChanged) {
-            validateUniqueWithinPriceList(priceListSetupId, dto, itemId);
+        boolean willBeActive =
+                dto.isActive() != null
+                        ? dto.isActive()
+                        : Boolean.TRUE.equals(entity.getIsActive());
+
+        if (willBeActive
+                && dto.sourceId() != null
+                && dto.itemType() != null
+                && priceListSetupItemRepository
+                        .existsByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrueAndIdNot(
+                                priceListSetupId,
+                                dto.itemType(),
+                                dto.sourceId(),
+                                entity.getId()
+                        )) {
+            throw duplicateItemException();
         }
 
         entity.setCategory(blankToNull(dto.category()));
@@ -156,14 +179,42 @@ public class PriceListSetupItemService {
         String normalizedSearch =
                 search == null || search.isBlank() ? null : search.trim();
 
-        return priceListSetupItemRepository
-                .findAllByPriceListSetupIdAndItemNameContaining(
-                        priceListSetupId,
-                        normalizedSearch,
-                        itemType,
-                        pageable
-                )
-                .map(this::toDTO);
+        Page<PriceListSetupItem> page =
+                priceListSetupItemRepository
+                        .findAllByPriceListSetupIdAndItemNameContaining(
+                                priceListSetupId,
+                                normalizedSearch,
+                                itemType,
+                                pageable
+                        );
+
+        Map<PriceListItemType, Map<Long, String>> setupItemNames =
+                resolveSetupItemNames(page.getContent());
+
+        return page.map(item -> toDTO(item, setupItemNames));
+    }
+
+    /**
+     * Active items of one catalog item (item type + source id) across all price lists.
+     */
+    @Transactional(readOnly = true)
+    public List<PriceListSetupItemDTO> findActiveBySource(
+            PriceListItemType itemType,
+            Long sourceId
+    ) {
+        List<PriceListSetupItem> items =
+                priceListSetupItemRepository
+                        .findAllByItemTypeAndSourceIdAndIsActiveTrue(
+                                itemType,
+                                sourceId
+                        );
+
+        Map<PriceListItemType, Map<Long, String>> setupItemNames =
+                resolveSetupItemNames(items);
+
+        return items.stream()
+                .map(item -> toDTO(item, setupItemNames))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -224,6 +275,9 @@ public class PriceListSetupItemService {
                     diagnosticTestRepository.findById(dto.sourceId())
                             .map(DiagnosticTest::getIsActive)
                             .orElse(false);
+            case VACCINE -> vaccineBrandsRepository.findById(dto.sourceId())
+                    .map(VaccineBrands::getIsActive)
+                    .orElse(false);
         };
 
         if (!Boolean.TRUE.equals(active)) {
@@ -235,33 +289,39 @@ public class PriceListSetupItemService {
         }
     }
 
+    /**
+     * The same item code may appear on several items (one SBS code is shared
+     * by many services); the same catalog item may be active only once.
+     */
     private void validateUniqueWithinPriceList(
             Long priceListSetupId,
-            PriceListSetupItemDTO dto,
-            Long excludeItemId
+            PriceListSetupItemDTO dto
     ) {
-        if (dto.sourceId() == null || dto.itemType() == null) {
-            return;
-        }
+        boolean willBeActive =
+                dto.isActive() == null || dto.isActive();
 
-        boolean duplicate = priceListSetupItemRepository
-                .findAllByPriceListSetupIdAndItemTypeAndSourceId(
-                        priceListSetupId,
-                        dto.itemType(),
-                        dto.sourceId()
-                )
-                .stream()
-                .anyMatch(item ->
-                        excludeItemId == null || !excludeItemId.equals(item.getId())
-                );
-
-        if (duplicate) {
-            throw new BadRequestAlertException(
-                    "This service is already configured on this price list.",
-                    ENTITY,
-                    "item.duplicate"
-            );
+        if (willBeActive
+                && dto.sourceId() != null
+                && dto.itemType() != null
+                && priceListSetupItemRepository
+                        .findFirstByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrue(
+                                priceListSetupId,
+                                dto.itemType(),
+                                dto.sourceId()
+                        )
+                        .isPresent()) {
+            throw duplicateItemException();
         }
+    }
+
+    private BadRequestAlertException duplicateItemException() {
+        return new BadRequestAlertException(
+                "This catalog item is already on the selected price list. "
+                        + "Use a different price list header (e.g. Cash vs Insurance) "
+                        + "to price the same service separately.",
+                ENTITY,
+                "item.duplicateInPriceList"
+        );
     }
 
     private BadRequestAlertException mapIntegrityViolation(
@@ -282,6 +342,9 @@ public class PriceListSetupItemService {
             );
         }
 
+        if (message != null && message.contains("uk_price_list_item_source_active")) {
+            return duplicateItemException();
+        }
         if (message != null
                 && (message.contains("uk_price_list_item_code_visit")
                 || message.contains("uk_price_list_item_code"))) {
@@ -309,7 +372,27 @@ public class PriceListSetupItemService {
                 );
     }
 
-    private PriceListSetupItemDTO toDTO(PriceListSetupItem entity) {
+    private PriceListSetupItemDTO toDTO(
+            PriceListSetupItem entity
+    ) {
+        return toDTO(
+                entity,
+                resolveSetupItemNames(List.of(entity))
+        );
+    }
+
+    private PriceListSetupItemDTO toDTO(
+            PriceListSetupItem entity,
+            Map<PriceListItemType, Map<Long, String>> setupItemNames
+    ) {
+
+        String setupItemName =
+                entity.getItemType() == null || entity.getSourceId() == null
+                        ? null
+                        : setupItemNames
+                                .getOrDefault(entity.getItemType(), Collections.emptyMap())
+                                .get(entity.getSourceId());
+
         return new PriceListSetupItemDTO(
                 entity.getId(),
                 entity.getPriceListSetupId(),
@@ -328,8 +411,89 @@ public class PriceListSetupItemService {
                 entity.getCreatedDate(),
                 entity.getLastModifiedDate(),
                 entity.getCreatedBy(),
-                entity.getLastModifiedBy()
+                entity.getLastModifiedBy(),
+                setupItemName
         );
+    }
+
+    /**
+     * Resolves the setup-definition name of each item (by item type + source id),
+     * one query per item type present in the given items.
+     */
+    private Map<PriceListItemType, Map<Long, String>> resolveSetupItemNames(
+            List<PriceListSetupItem> items
+    ) {
+        Map<PriceListItemType, Set<Long>> sourceIdsByType =
+                items.stream()
+                        .filter(item -> item.getItemType() != null
+                                && item.getSourceId() != null)
+                        .collect(Collectors.groupingBy(
+                                PriceListSetupItem::getItemType,
+                                () -> new EnumMap<>(PriceListItemType.class),
+                                Collectors.mapping(
+                                        PriceListSetupItem::getSourceId,
+                                        Collectors.toSet()
+                                )
+                        ));
+
+        Map<PriceListItemType, Map<Long, String>> namesByType =
+                new EnumMap<>(PriceListItemType.class);
+
+        sourceIdsByType.forEach((itemType, sourceIds) ->
+                namesByType.put(
+                        itemType,
+                        findSetupItemNames(itemType, sourceIds)
+                )
+        );
+
+        return namesByType;
+    }
+
+    private Map<Long, String> findSetupItemNames(
+            PriceListItemType itemType,
+            Set<Long> sourceIds
+    ) {
+        return switch (itemType) {
+            case MEDICATION -> toNameMap(
+                    brandMedicationRepository.findAllById(sourceIds),
+                    BrandMedication::getId,
+                    BrandMedication::getName
+            );
+            case LABORATORY, RADIOLOGY, PATHOLOGY -> toNameMap(
+                    diagnosticTestRepository.findAllById(sourceIds),
+                    DiagnosticTest::getId,
+                    DiagnosticTest::getName
+            );
+            case SERVICE -> toNameMap(
+                    serviceRepository.findAllById(sourceIds),
+                    ServiceSetup::getId,
+                    ServiceSetup::getName
+            );
+            case PROCEDURE -> toNameMap(
+                    procedureRepository.findAllById(sourceIds),
+                    Procedure::getId,
+                    Procedure::getName
+            );
+            case VACCINE -> toNameMap(
+                    vaccineBrandsRepository.findAllById(sourceIds),
+                    VaccineBrands::getId,
+                    VaccineBrands::getName
+            );
+        };
+    }
+
+    private <T> Map<Long, String> toNameMap(
+            List<T> entities,
+            Function<T, Long> idGetter,
+            Function<T, String> nameGetter
+    ) {
+        return entities.stream()
+                .filter(entity -> nameGetter.apply(entity) != null)
+                .collect(Collectors.toMap(
+                        idGetter,
+                        nameGetter,
+                        (first, second) -> first
+                ));
     }
 
     private String blankToNull(String value) {

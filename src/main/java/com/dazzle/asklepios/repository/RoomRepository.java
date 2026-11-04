@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.repository;
 
+import com.dazzle.asklepios.domain.enumeration.RoomType;
 import com.dazzle.asklepios.domain.Room;
 import com.dazzle.asklepios.domain.enumeration.Gender;
 import org.springframework.data.domain.Page;
@@ -15,6 +16,20 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     Page<Room> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
     Page<Room> findByDepartment_Id(Long departmentId, Pageable pageable);
+
+    Page<Room> findByFacility_Id(Long facilityId, Pageable pageable);
+
+    Page<Room> findByFloorContainingIgnoreCase(String floor, Pageable pageable);
+
+    Page<Room> findByType(RoomType type, Pageable pageable);
+
+    Page<Room> findByIsSpecificGenderFalse(Pageable pageable);
+
+    Page<Room> findByIsSpecificGenderTrueAndGender(Gender gender, Pageable pageable);
+
+    Page<Room> findByIsActive(Boolean isActive, Pageable pageable);
+
+    Page<Room> findByParallelCapacityValue(Integer parallelCapacityValue, Pageable pageable);
 
     Page<Room> findByDepartment_IdAndIsActiveTrueAndGenderIsNullOrDepartment_IdAndIsActiveTrueAndGender(
             Long departmentId1,

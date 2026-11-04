@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingRulePaymentType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,6 +53,12 @@ public class BillingRule extends AbstractAuditingEntity<Long>
     @Enumerated(EnumType.STRING)
     @Column(name = "billing_trigger", nullable = false, length = 50)
     private BillingTrigger billingTrigger;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "payment_type", nullable = false, length = 30)
+    private BillingRulePaymentType paymentType = BillingRulePaymentType.BOTH;
 
     @NotNull
     @Builder.Default

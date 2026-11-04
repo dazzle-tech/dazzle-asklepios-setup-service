@@ -180,6 +180,16 @@ public class PriceListSetupItemController {
         );
     }
 
+    @GetMapping("/price-list-setup-items/by-source")
+    public ResponseEntity<List<PriceListSetupItemDTO>> getPriceListSetupItemsBySource(
+            @RequestParam PriceListItemType itemType,
+            @RequestParam Long sourceId
+    ) {
+        return ResponseEntity.ok(
+                priceListSetupItemService.findActiveBySource(itemType, sourceId)
+        );
+    }
+
     @GetMapping("/price-list-setup-items/waseel-codes")
     public ResponseEntity<PriceListItemWaseelCodesDTO> getInsuranceWaseelCodes(
             @RequestParam PriceListItemType itemType,

@@ -16,6 +16,8 @@ public interface FormTemplateRepository extends JpaRepository<FormTemplate, Long
 
     Page<FormTemplate> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
+    Page<FormTemplate> findByDescriptionContainingIgnoreCase(String description, Pageable pageable);
+
     Page<FormTemplate> findByFacility_IdAndNameContainingIgnoreCase(Long facilityId, String name, Pageable pageable);
 
     Page<FormTemplate> findByDepartment_IdAndNameContainingIgnoreCase(Long departmentId, String name, Pageable pageable);

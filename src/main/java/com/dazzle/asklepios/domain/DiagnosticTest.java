@@ -125,6 +125,10 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @JoinColumn(name = "billing_rule_id")
     private BillingRule billingRule;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loinc_code_id")
+    private LoincCode loincCode;
+
     @PostLoad
     private void fillListsFromRaw() {
         if (ageGroup != null && !ageGroup.isBlank()) {

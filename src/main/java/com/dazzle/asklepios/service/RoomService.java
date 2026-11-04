@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.enumeration.RoomType;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Room;
@@ -237,6 +238,45 @@ public class RoomService {
         );
 
         return roomsPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findByFacilityId(Long facilityId, Pageable pageable) {
+        LOG.debug("[FIND BY FACILITY] facilityId={} pageable={}", facilityId, pageable);
+        return roomRepository.findByFacility_Id(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findByFloor(String floor, Pageable pageable) {
+        LOG.debug("[FIND BY FLOOR] floor='{}' pageable={}", floor, pageable);
+        return roomRepository.findByFloorContainingIgnoreCase(floor, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findByType(RoomType type, Pageable pageable) {
+        LOG.debug("[FIND BY TYPE] type={} pageable={}", type, pageable);
+        return roomRepository.findByType(type, pageable);
+    }
+
+    /** gender == null: rooms that are not gender specific; otherwise gender-specific rooms for that gender */
+    @Transactional(readOnly = true)
+    public Page<Room> findByGenderSpecific(Gender gender, Pageable pageable) {
+        LOG.debug("[FIND BY GENDER] gender={} pageable={}", gender, pageable);
+        return gender == null
+                ? roomRepository.findByIsSpecificGenderFalse(pageable)
+                : roomRepository.findByIsSpecificGenderTrueAndGender(gender, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findByStatus(Boolean isActive, Pageable pageable) {
+        LOG.debug("[FIND BY STATUS] isActive={} pageable={}", isActive, pageable);
+        return roomRepository.findByIsActive(isActive, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Room> findByParallelCapacity(Integer parallelCapacityValue, Pageable pageable) {
+        LOG.debug("[FIND BY PARALLEL CAPACITY] value={} pageable={}", parallelCapacityValue, pageable);
+        return roomRepository.findByParallelCapacityValue(parallelCapacityValue, pageable);
     }
 
     @Transactional(readOnly = true)

@@ -131,6 +131,12 @@ public class PolicyDefinitionService {
         return policyDefinitionRepository.findByNameContainingIgnoreCase(name, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findByStatus(Boolean isActive, Pageable pageable) {
+        LOG.debug("Request to get PolicyDefinition by isActive={} pageable={}", isActive, pageable);
+        return policyDefinitionRepository.findByIsActive(isActive, pageable);
+    }
+
     public Optional<PolicyDefinition> toggleActive(Long id) {
         LOG.debug("Request to toggle active PolicyDefinition : {}", id);
 

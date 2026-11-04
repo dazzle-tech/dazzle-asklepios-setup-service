@@ -82,6 +82,14 @@ public class CatalogController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/catalog/internalJob/{id}")
+    public ResponseEntity<CatalogResponseVM> getInternal(@PathVariable Long id) {
+        return catalogService.findOne(id)
+                .map(CatalogResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 
     /** FILTERS / SEARCH (pageable) */
     @GetMapping("/catalog/by-department")

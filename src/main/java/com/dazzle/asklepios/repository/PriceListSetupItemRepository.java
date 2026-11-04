@@ -59,9 +59,16 @@ public interface PriceListSetupItemRepository
             Long sourceId
     );
 
-    boolean existsByPriceListSetupIdAndItemCode(
+    List<PriceListSetupItem> findAllByItemTypeAndSourceIdAndIsActiveTrue(
+            PriceListItemType type,
+            Long sourceId
+    );
+
+    boolean existsByPriceListSetupIdAndItemTypeAndSourceIdAndIsActiveTrueAndIdNot(
             Long priceListSetupId,
-            String itemCode
+            PriceListItemType type,
+            Long sourceId,
+            Long id
     );
 
     Optional<PriceListSetupItem>

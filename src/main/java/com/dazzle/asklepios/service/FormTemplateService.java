@@ -140,6 +140,12 @@ public class FormTemplateService {
         return page.map(this::toVM);
     }
 
+    @Transactional(readOnly = true)
+    public Page<FormTemplateResponseVM> listByDescription(String description, Pageable pageable) {
+        LOG.debug("List branch: description='{}'", description);
+        return formTemplateRepository.findByDescriptionContainingIgnoreCase(description.trim(), pageable).map(this::toVM);
+    }
+
     public void delete(Long id) {
         formTemplateRepository.deleteById(id);
     }

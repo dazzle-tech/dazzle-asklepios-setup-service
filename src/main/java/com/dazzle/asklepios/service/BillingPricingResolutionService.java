@@ -81,7 +81,8 @@ public class BillingPricingResolutionService {
                         request.facilityId(),
                         request.currency(),
                         request.taxApplicableOn(),
-                        pricingDate
+                        pricingDate,
+                        request.patientCitizen()
                 );
 
         Discount resolvedDiscount =
@@ -127,6 +128,14 @@ public class BillingPricingResolutionService {
                         resolveTaxFixedAmount(
                                 resolvedTax
                         ),
+
+                        resolvedTax == null
+                                ? null
+                                : resolvedTax.getApplyOnPatientCopayment(),
+
+                        resolvedTax == null
+                                ? null
+                                : resolvedTax.getApplyOnClaimShare(),
 
                         resolvedDiscount == null
                                 ? null
@@ -180,7 +189,8 @@ public class BillingPricingResolutionService {
                             request.facilityId(),
                             request.currency(),
                             request.taxApplicableOn(),
-                            pricingDate
+                            pricingDate,
+                            request.patientCitizen()
                     );
         }
 
@@ -216,6 +226,8 @@ public class BillingPricingResolutionService {
                         : resolvedTax.getCalculationType(),
                 resolveTaxRate(resolvedTax),
                 resolveTaxFixedAmount(resolvedTax),
+                resolvedTax == null ? null : resolvedTax.getApplyOnPatientCopayment(),
+                resolvedTax == null ? null : resolvedTax.getApplyOnClaimShare(),
                 resolvedDiscount == null ? null : resolvedDiscount.getId(),
                 resolvedDiscount == null ? null : resolvedDiscount.getCode(),
                 resolvedDiscount == null ? null : resolvedDiscount.getName(),

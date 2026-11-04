@@ -208,4 +208,18 @@ public class NphiesPayerController {
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/nphies-payers/by-status/{isActive}")
+    public ResponseEntity<List<NphiesPayerResponseVM>> getByStatus(
+            @PathVariable Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST list NPHIES Payers by isActive={} pageable={}",
+                isActive,
+                pageable
+        );
+
+        return pagedResponse(nphiesPayerService.findByStatus(isActive, pageable));
+    }
 }

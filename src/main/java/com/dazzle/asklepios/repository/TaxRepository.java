@@ -2,6 +2,7 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Tax;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
+import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -60,8 +61,9 @@ public interface TaxRepository
             Long facilityId
     );
 
-    List<Tax> findAllByFacilityIdAndIsDefaultTrue(
-            Long facilityId
+    List<Tax> findAllByFacilityIdAndIsDefaultTrueAndCitizenCategory(
+            Long facilityId,
+            TaxCitizenCategory citizenCategory
     );
 
     List<Tax>

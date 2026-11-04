@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest.vm.diagnostictest;
 
 import com.dazzle.asklepios.domain.DiagnosticTest;
+import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
@@ -40,11 +41,19 @@ public record DiagnosticTestResponseVM(
         Integer defaultBufferBeforeMinutes,
         Integer defaultBufferAfterMinutes,
         String modality,
-        Long billingRuleId
+        Long billingRuleId,
+        Long loincCodeId,
+        String loincCode,
+        String loincDescription
 
 ) implements Serializable {
 
+    /**
+     * Maps a DiagnosticTest whose loincCode association has already been initialized
+     * (e.g. via {@code findWithLoincByIdIn} inside a service transaction).
+     */
     public static DiagnosticTestResponseVM ofEntity(DiagnosticTest test) {
+        LoincCode loinc = test.getLoincCode();
         return new DiagnosticTestResponseVM(
                 test.getId(),
                 test.getType(),
@@ -67,25 +76,36 @@ public record DiagnosticTestResponseVM(
                 test.getLastModifiedDate(),
 
                 null, null, null, null,
-                test.getParallelCapacityValue(),test.getDefaultDurationMinutes(),test.getDefaultBufferBeforeMinutes(), test.getDefaultBufferAfterMinutes(),
+                test.getParallelCapacityValue(),
+                test.getDefaultDurationMinutes(),
+                test.getDefaultBufferBeforeMinutes(),
+                test.getDefaultBufferAfterMinutes(),
                 test.getModality(),
                 test.getBillingRule() != null
                         ? test.getBillingRule().getId()
-                        : null
+                        : null,
+                loinc != null ? loinc.getId() : null,
+                loinc != null ? loinc.getCode() : null,
+                loinc != null ? loinc.getDescription() : null
         );
     }
 
     public DiagnosticTestResponseVM withDefaultProfile(Long id, String unit, TestResultType type, String listOfValueId) {
         return new DiagnosticTestResponseVM(
-                this.id, this.type, this.name ,this.shortName,this.internalCode,
+                this.id, this.type, this.name, this.shortName, this.internalCode,
                 this.hl7IntegrationCode,
                 this.ageSpecific, this.ageGroupList, this.genderSpecific, this.gender,
                 this.specialPopulation, this.specialPopulationValues, this.price, this.currency,
                 this.specialNotes, this.isActive, this.appointable,
                 this.createdDate, this.lastModifiedDate,
-                id, unit, type, listOfValueId,this.parallelCapacityValue,this.defaultDurationMinutes,this.defaultBufferBeforeMinutes,this.defaultBufferAfterMinutes,this.modality,
-                this.billingRuleId
+                id, unit, type, listOfValueId,
+                this.parallelCapacityValue, this.defaultDurationMinutes,
+                this.defaultBufferBeforeMinutes, this.defaultBufferAfterMinutes,
+                this.modality,
+                this.billingRuleId,
+                this.loincCodeId,
+                this.loincCode,
+                this.loincDescription
         );
     }
 }
-
