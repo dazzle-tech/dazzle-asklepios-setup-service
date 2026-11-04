@@ -13,4 +13,11 @@ public interface DistrictCommunityRepository extends JpaRepository<DistrictCommu
 
     Page<DistrictCommunity> findByDistrict_IdAndNameContainingIgnoreCase(Long districtId, String name, Pageable pageable);
 
+    Page<DistrictCommunity> findByDistrict_IdAndIsActiveTrue(Long districtId, Pageable pageable);
+
+    Page<DistrictCommunity> findByDistrict_IdAndIsActiveTrueAndNameStartingWithIgnoreCase(
+            Long districtId,
+            String name,
+            Pageable pageable
+    );
 }

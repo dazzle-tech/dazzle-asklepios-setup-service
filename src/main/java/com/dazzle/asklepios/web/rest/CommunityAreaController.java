@@ -84,6 +84,29 @@ public class CommunityAreaController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/community-area/active")
+    public ResponseEntity<List<CommunityAreaResponseVM>> getActiveAreas(
+            @RequestParam("communityId") Long communityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active CommunityAreas for communityId={} pageable={}", communityId, pageable);
+
+        Page<CommunityArea> page = areaService.findActive(communityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<CommunityAreaResponseVM> body = page.getContent()
+                .stream()
+                .map(CommunityAreaResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
+
     @GetMapping("/district/{districtId}/community-area")
     public ResponseEntity<List<CommunityAreaResponseVM>> getByDistrict(@PathVariable Long districtId, @ParameterObject Pageable pageable) {
         Page<CommunityArea> page = areaService.findByCommunity(districtId, pageable);
@@ -101,6 +124,36 @@ public class CommunityAreaController {
         Page<CommunityArea> page = areaService.findByName(districtId, name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         List<CommunityAreaResponseVM> body = page.getContent().stream().map(CommunityAreaResponseVM::ofEntity).toList();
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+
+    @GetMapping("/community/{communityId}/community-area/names/{name}")
+    public ResponseEntity<List<CommunityAreaResponseVM>> searchAreasByName(
+            @PathVariable Long communityId,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search areas by name prefix='{}' for communityId={} pageable={}",
+                name,
+                communityId,
+                pageable
+        );
+
+        Page<CommunityArea> page =
+                areaService.searchByName(communityId, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<CommunityAreaResponseVM> body = page.getContent()
+                .stream()
+                .map(CommunityAreaResponseVM::ofEntity)
+                .toList();
+
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 

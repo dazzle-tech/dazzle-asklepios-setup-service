@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Country;
+import com.dazzle.asklepios.domain.enumeration.CountryName;
 import com.dazzle.asklepios.service.CountryService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.country.CountryCreateVM;
@@ -60,6 +61,9 @@ public class CountryController {
                 .body(body);
     }
 
+
+
+
     @PutMapping("/country/{id}")
     public ResponseEntity<CountryResponseVM> updateCountry(
             @PathVariable Long id,
@@ -95,15 +99,84 @@ public class CountryController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/country/active")
+    public ResponseEntity<List<CountryResponseVM>> getActiveCountries(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Countries pageable={}", pageable);
+
+        Page<Country> page = countryService.findActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Active countries for a system caller. Authentication is the {@code X-Portal-Secret} header
+     * ({@code PATIENT_PORTAL_SECRET}), checked by {@link com.dazzle.asklepios.security.CountryListSecretFilter},
+     * not a bearer token.
+     */
+    @GetMapping("/country/external/active")
+    public ResponseEntity<List<CountryResponseVM>> getActiveCountriesForExternal(
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Countries for external caller pageable={}", pageable);
+
+        Page<Country> page = countryService.findActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
     @GetMapping("/country/by-name/{name}")
     public ResponseEntity<List<CountryResponseVM>> getByName(
-            @PathVariable String name,
+            @PathVariable CountryName name,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Countries by name='{}' pageable={}", name, pageable);
         Page<Country> page = countryService.findByName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        List<CountryResponseVM> body = page.getContent()
+                .stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/country/names/{name}")
+    public ResponseEntity<List<CountryResponseVM>> getCountriesByNameSearch(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search Countries by name prefix='{}' pageable={}",
+                name,
+                pageable
+        );
+
+        Page<Country> page = countryService.searchByName(name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
 
         List<CountryResponseVM> body = page.getContent()
                 .stream()
@@ -138,5 +211,32 @@ public class CountryController {
                 .map(CountryResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/country/bulk")
+    public ResponseEntity<List<CountryResponseVM>> getCountriesBulk(@RequestBody List<Long> ids) {
+        List<Country> countries = countryService.findByIds(ids);
+
+        List<CountryResponseVM> body = countries.stream()
+                .map(CountryResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+
+    /**
+     * {@code GET /country/{id}} : Get a single country by id.
+     */
+    @GetMapping("/country/{id}")
+    public ResponseEntity<Country> getOne(@PathVariable Long id) {
+        LOG.debug("REST get country id={}", id);
+        Country country = countryService.findById(id);
+        return ResponseEntity.ok(country);
+    }
+
+    @GetMapping("/country/internalJob/{id}")
+    public ResponseEntity<CountryResponseVM> getCountryInternal(@PathVariable Long id) {
+        LOG.debug("REST get country internal id={}", id);
+        return ResponseEntity.ok(CountryResponseVM.ofEntity(countryService.findById(id)));
     }
 }

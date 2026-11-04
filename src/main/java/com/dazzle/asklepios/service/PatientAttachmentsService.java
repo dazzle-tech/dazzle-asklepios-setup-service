@@ -1,9 +1,15 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.attachments.AttachmentProperties;
+import com.dazzle.asklepios.domain.ApLovValue;
 import com.dazzle.asklepios.domain.EncounterAttachments;
 import com.dazzle.asklepios.domain.PatientAttachments;
+import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
+import com.dazzle.asklepios.repository.ApLovValueRepository;
 import com.dazzle.asklepios.repository.PatientAttachmentsRepository;
+import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.DepartmentController;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -24,6 +30,8 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -33,11 +41,14 @@ public class PatientAttachmentsService {
     private final PatientAttachmentsRepository repo;
     private final AttachmentProperties props;
     private final AttachmentStorageService storage;
+    private final UserRepository userRepository;
+    private final ApLovValueRepository apLovValueRepository;
 
     private static final String ENTITY_NAME = "PatientAttachments";
 
     private static final DateTimeFormatter YYYY = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC);
     private static final DateTimeFormatter MM = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC);
+
 
     private static final Logger LOG = LoggerFactory.getLogger(DepartmentController.class);
 
@@ -96,15 +107,57 @@ public class PatientAttachmentsService {
 
     public DownloadPatientAttachmentVM downloadUrl(Long id) {
         LOG.debug("download patient attachments {}", id);
-        PatientAttachments pa = repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
-        PresignedGetObjectRequest getURL = storage.presignGet(pa.getSpaceKey(), pa.getFilename());
-        return new DownloadPatientAttachmentVM(getURL.url().toString(), props.getPresignExpirySeconds());
+
+        PatientAttachments pa =
+                repo.findByIdAndDeletedAtIsNull(id).orElseThrow();
+
+        if (pa.getType() != null && !pa.getType().isEmpty()) {
+            String username = SecurityUtils.getCurrentUserLogin().orElse("system");
+
+            User user = userRepository.findByLogin(username)
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "not_found",
+                            ENTITY_NAME,
+                            "User not found"
+                    ));
+
+            JobRole role = user.getJobRole();
+
+            ApLovValue lovValue = apLovValueRepository.findByKey(pa.getType())
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "not_found",
+                            ENTITY_NAME,
+                            "Attachment type not found"
+                    ));
+
+            if ("ATAC_TYP_MED".equals(lovValue.getValueCode())
+                    && !Set.of(
+                    JobRole.HIS_ADMINISTRATOR,
+                    JobRole.PHYSICIAN,
+                    JobRole.NURSE
+            ).contains(role)) {
+
+                throw new BadRequestAlertException(
+                        "not_allowed",
+                        ENTITY_NAME,
+                        "You do not have permission to download this attachment"
+                );
+            }
+        }
+
+        PresignedGetObjectRequest getURL =
+                storage.presignGet(pa.getSpaceKey(), pa.getFilename());
+
+        return new DownloadPatientAttachmentVM(
+                getURL.url().toString(),
+                props.getPresignExpirySeconds()
+        );
     }
 
     @Transactional
     public void softDelete(Long id) {
         LOG.debug("delete patient attachments {}", id);
-        PatientAttachments a = repo.findById(id).orElseThrow(()-> new NotFoundAlertException(" Patient attachment not found  id: "+id, ENTITY_NAME,"notfound"));
+        PatientAttachments a = repo.findById(id).orElseThrow(() -> new NotFoundAlertException(" Patient attachment not found  id: " + id, ENTITY_NAME, "notfound"));
         if (a.getDeletedAt() == null) {
             a.setDeletedAt(Instant.now());
             repo.save(a);

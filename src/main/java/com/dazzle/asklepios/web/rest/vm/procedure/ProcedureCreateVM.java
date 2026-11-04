@@ -1,24 +1,29 @@
 package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ProcedureCreateVM(
         @NotEmpty String name,
         @NotEmpty String code,
-        @NotNull ProcedureCategoryType categoryType,
+        @NotNull ProcedureCategory categoryType,
         @NotNull Boolean isAppointable,
         String indications,
         String contraindications,
         String preparationInstructions,
         String recoveryNotes,
-        @NotNull Boolean isActive
+       @NotNull Currency currency,
+        @NotNull BigDecimal price,
+        @NotNull Boolean isActive,
+        Long billingRuleId
 ) implements Serializable {
 
     public static ProcedureCreateVM ofEntity(Procedure procedure) {
@@ -31,7 +36,12 @@ public record ProcedureCreateVM(
                 procedure.getContraindications(),
                 procedure.getPreparationInstructions(),
                 procedure.getRecoveryNotes(),
-                procedure.getIsActive()
+                procedure.getCurrency(),
+                procedure.getPrice(),
+                procedure.getIsActive(),
+                procedure.getBillingRule() != null
+                        ? procedure.getBillingRule().getId()
+                        : null
         );
     }
 }

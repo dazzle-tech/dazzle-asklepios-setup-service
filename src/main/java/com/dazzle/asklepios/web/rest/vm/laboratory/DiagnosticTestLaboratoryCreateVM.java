@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.laboratory;
 
+import com.dazzle.asklepios.domain.Analyzer;
 import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.DiagnosticTestLaboratory;
 import com.dazzle.asklepios.domain.enumeration.Method;
@@ -7,11 +8,13 @@ import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
 import com.dazzle.asklepios.domain.enumeration.Timing;
 import com.dazzle.asklepios.domain.enumeration.System;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import org.wildfly.common.annotation.NotNull;
 
 import java.io.Serializable;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record DiagnosticTestLaboratoryCreateVM(
         @NotNull Long testId,
         Property property,
@@ -21,8 +24,6 @@ public record DiagnosticTestLaboratoryCreateVM(
         Method method,
         Double testDurationTime,
         String timeUnit,
-        @NotBlank String resultUnit,
-        Boolean isProfile,
         String sampleContainer,
         Double sampleVolume,
         String sampleVolumeUnit,
@@ -37,7 +38,8 @@ public record DiagnosticTestLaboratoryCreateVM(
         String testInstructions,
         @NotBlank String category,
         String tubeType,
-        Timing timing
+        Timing timing,
+        Long analyzerId
 ) implements Serializable {
 
     public DiagnosticTestLaboratory toEntity() {
@@ -50,8 +52,6 @@ public record DiagnosticTestLaboratoryCreateVM(
                 .method(method)
                 .testDurationTime(testDurationTime)
                 .timeUnit(timeUnit)
-                .resultUnit(resultUnit)
-                .isProfile(isProfile != null ? isProfile : false)
                 .sampleContainer(sampleContainer)
                 .sampleVolume(sampleVolume)
                 .sampleVolumeUnit(sampleVolumeUnit)
@@ -67,6 +67,7 @@ public record DiagnosticTestLaboratoryCreateVM(
                 .category(category)
                 .tubeType(tubeType)
                 .timing(timing)
+                .analyzer(analyzerId != null ? Analyzer.builder().id(analyzerId).build() : null)
                 .build();
     }
 }

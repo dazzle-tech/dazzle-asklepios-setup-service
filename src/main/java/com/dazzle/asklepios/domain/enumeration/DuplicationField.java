@@ -7,7 +7,6 @@ public enum DuplicationField {
     DOB,
     FIRST_NAME,
     LAST_NAME,
-    DOCUMENT_NO,
     MOBILE_NUMBER,
     GENDER
 }

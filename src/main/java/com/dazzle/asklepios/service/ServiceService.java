@@ -1,21 +1,32 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
+import com.dazzle.asklepios.domain.ServiceItems;
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
+import com.dazzle.asklepios.repository.ServiceItemsRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -25,12 +36,19 @@ import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 public class ServiceService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceService.class);
+
     private final ServiceRepository serviceRepository;
     private final EntityManager entityManager;
+    private final ServiceItemsRepository serviceItemsRepository;
 
-    public ServiceService(ServiceRepository serviceRepository, EntityManager entityManager) {
+    public ServiceService(
+            ServiceRepository serviceRepository,
+            EntityManager entityManager,
+            ServiceItemsRepository serviceItemsRepository
+    ) {
         this.serviceRepository = serviceRepository;
         this.entityManager = entityManager;
+        this.serviceItemsRepository = serviceItemsRepository;
     }
 
 
@@ -51,9 +69,23 @@ public class ServiceService {
                 .category(incoming.getCategory())
                 .price(incoming.getPrice())
                 .currency(incoming.getCurrency())
-                .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
+                .isActive(incoming.getIsActive() != null ? incoming.getIsActive() : true)
                 .facility(refFacility(facilityId))
+                .appointable(incoming.getAppointable())
+                .parallelCapacityValue(
+                        incoming.getParallelCapacityValue() != null ? incoming.getParallelCapacityValue() : 1
+                )
+                .defaultDurationMinutes(incoming.getDefaultDurationMinutes())
+                .defaultBufferBeforeMinutes(
+                        incoming.getDefaultBufferBeforeMinutes() != null ? incoming.getDefaultBufferBeforeMinutes() : 0
+                )
+                .defaultBufferAfterMinutes(
+                        incoming.getDefaultBufferAfterMinutes() != null ? incoming.getDefaultBufferAfterMinutes() : 0
+                )
                 .build();
+
+        validateAppointableRequirements(entity);
+
         try {
             ServiceSetup saved = serviceRepository.saveAndFlush(entity);
             LOG.info("Successfully created service id={} name='{}' for facilityId={}", saved.getId(), saved.getName(), facilityId);
@@ -92,6 +124,11 @@ public class ServiceService {
 
         ServiceSetup existing = serviceRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Service not found with id " + id, "service", "notfound"));
+
+        if (facilityId != null) {
+            existing.setFacility(refFacility(facilityId));
+        }
+
         existing.setName(incoming.getName());
         existing.setCode(incoming.getCode());
         existing.setAbbreviation(incoming.getAbbreviation());
@@ -99,16 +136,33 @@ public class ServiceService {
         existing.setPrice(incoming.getPrice());
         existing.setCurrency(incoming.getCurrency());
         existing.setIsActive(incoming.getIsActive());
+        existing.setAppointable(incoming.getAppointable());
+
+        if (incoming.getParallelCapacityValue() != null) {
+            existing.setParallelCapacityValue(incoming.getParallelCapacityValue());
+        }
+        if (incoming.getDefaultDurationMinutes() != null) {
+            existing.setDefaultDurationMinutes(incoming.getDefaultDurationMinutes());
+        }
+        if (incoming.getDefaultBufferBeforeMinutes() != null) {
+            existing.setDefaultBufferBeforeMinutes(incoming.getDefaultBufferBeforeMinutes());
+        }
+        if (incoming.getDefaultBufferAfterMinutes() != null) {
+            existing.setDefaultBufferAfterMinutes(incoming.getDefaultBufferAfterMinutes());
+        }
+        existing.setBillingRule(incoming.getBillingRule());
+
+        validateAppointableRequirements(existing);
 
         try {
             ServiceSetup updated = serviceRepository.saveAndFlush(existing);
             LOG.info("Successfully updated service id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
-        }catch (DataIntegrityViolationException | JpaSystemException constraintException) {
+        } catch (DataIntegrityViolationException | JpaSystemException constraintException) {
             Throwable root = getRootCause(constraintException);
             String message = (root != null ? root.getMessage() : constraintException.getMessage()).toLowerCase();
 
-            LOG.error("Database constraint violation while creating service: {}", message, constraintException);
+            LOG.error("Database constraint violation while updating service: {}", message, constraintException);
 
             if (message.contains("uk_service_facility_name") ||
                     message.contains("unique constraint") ||
@@ -121,12 +175,39 @@ public class ServiceService {
                 );
             }
             throw new BadRequestAlertException(
-                    "Database constraint violated while creating service (check facility, unique name, or required fields).",
+                    "Database constraint violated while updating service (check facility, unique name, or required fields).",
                     "service",
                     "db.constraint"
             );
         }
+    }
 
+    private void validateAppointableRequirements(ServiceSetup service) {
+        if (Boolean.TRUE.equals(service.getAppointable())) {
+            if (service.getDefaultDurationMinutes() == null || service.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "service",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (service.getDefaultBufferBeforeMinutes() == null || service.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "service",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (service.getDefaultBufferAfterMinutes() == null || service.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "service",
+                        "bufferafterinvalid"
+                );
+            }
+        }
     }
 
     @Transactional(readOnly = true)
@@ -169,6 +250,32 @@ public class ServiceService {
         return serviceRepository.findByCodeContainingIgnoreCase(code, pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByAbbreviationContainingIgnoreCase(String abbreviation, Pageable pageable) {
+        LOG.debug("Fetching Services by abbreviation='{}' (no facility filter)", abbreviation);
+        return serviceRepository.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByPrice(BigDecimal price, Pageable pageable) {
+        LOG.debug("Fetching Services by price={} (no facility filter)", price);
+        return serviceRepository.findByPrice(price, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByCurrency(Currency currency, Pageable pageable) {
+        LOG.debug("Fetching Services by currency={} (no facility filter)", currency);
+        return serviceRepository.findByCurrency(currency, pageable);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findByIsActive(Boolean isActive, Pageable pageable) {
+        LOG.debug("Fetching Services by isActive={} (no facility filter)", isActive);
+        return serviceRepository.findByIsActive(isActive, pageable);
+    }
+
+
     public Optional<ServiceSetup> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for Service id={}", id);
         return serviceRepository.findById(id)
@@ -181,8 +288,101 @@ public class ServiceService {
                 });
     }
 
+    // ServiceService.java
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findServicesByDepartmentSource(Long sourceId, Pageable pageable) {
+        LOG.debug("Fetching paged active Services by department sourceId={} pageable={}", sourceId, pageable);
+
+        List<ServiceItems> items =
+                serviceItemsRepository.findByTypeAndSourceIdAndIsActiveTrue(
+                        ServiceItemsType.DEPARTMENTS,
+                        sourceId
+                );
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> serviceIds = items.stream()
+                .map(serviceItems -> serviceItems.getService().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (serviceIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return serviceRepository.findByIdInAndIsActiveTrue(serviceIds, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findServicesByDepartmentAndSpecialty(
+            Long sourceId,
+            String specialty,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching paged active Services by department sourceId={} specialty={} pageable={}",
+                sourceId,
+                specialty,
+                pageable
+        );
+
+        if (sourceId == null) {
+            throw new BadRequestAlertException("Department sourceId is required", "service", "sourceid.required");
+        }
+        if (specialty == null || specialty.isBlank()) {
+            throw new BadRequestAlertException("Specialty is required", "service", "specialty.required");
+        }
+
+        List<ServiceItems> items =
+                serviceItemsRepository.findByTypeAndSourceIdAndSpecialtyAndIsActiveTrue(
+                        ServiceItemsType.DEPARTMENTS,
+                        sourceId,
+                        specialty.trim()
+                );
+
+        if (items == null || items.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> serviceIds = items.stream()
+                .map(item -> item.getService().getId())
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        if (serviceIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return serviceRepository.findByIdInAndIsActiveTrue(serviceIds, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findActiveByFacility(Long facilityId, Pageable pageable) {
+        LOG.debug("Fetching active Services by facilityId={} pageable={}", facilityId, pageable);
+        return serviceRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
+    }
+
+    public List<ServiceSetup> findAllByIds(List<Long> ids) {
+        return serviceRepository.findAllById(ids);
+    }
+    public Page<ServiceSetup> findActiveAppointableBasedOnLoggedInFacility(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable  Service pageable={} is", pageable);
+        Long facilityId = getFacility();
+        return serviceRepository.findByIsActiveTrueAndAppointableTrueAndFacility_Id(facilityId, pageable);
+    }
 
     private Facility refFacility(Long facilityId) {
         return entityManager.getReference(Facility.class, facilityId);
+    }
+
+    private Long getFacility(){
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
     }
 }

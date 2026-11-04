@@ -176,11 +176,22 @@ public class AgeGroupController {
 
         if (deleted) {
             LOG.info("Successfully deleted AgeGroup id={}", id);
-            return ResponseEntity.noContent().build(); 
+            return ResponseEntity.noContent().build();
         } else {
             LOG.warn("Failed to delete AgeGroup id={}, not found or constraint violation", id);
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/age-group/is-new-born")
+    public ResponseEntity<Boolean> isNewBornByBirthDate(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthDate
+    ) {
+        LOG.debug("REST check isNewBorn by birthDate={}", birthDate);
+
+        return ResponseEntity.ok(
+                ageGroupService.isNewBornByBirthDate(birthDate)
+        );
     }
     @GetMapping("/age-group/by-birthdate")
     public ResponseEntity<AgeGroupResponseVM> getAgeGroupByBirthDate(
@@ -192,10 +203,10 @@ public class AgeGroupController {
 
         if (result == null) {
             LOG.warn("No matching AgeGroup found for birthDate={}", birthDate);
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.noContent().build();
         }
 
         return ResponseEntity.ok(AgeGroupResponseVM.ofEntity(result));
-}
+    }
 
 }

@@ -3,12 +3,15 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.ActiveIngredients;
 import com.dazzle.asklepios.domain.BrandMedication;
 import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.domain.UomGroup;
 import com.dazzle.asklepios.domain.UomGroupUnit;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
 import com.dazzle.asklepios.repository.BrandMedicationActiveIngredientRepository;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
+import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.UomGroupRepository;
 import com.dazzle.asklepios.repository.UomGroupUnitRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -42,14 +45,26 @@ public class BrandMedicationService {
     private final UomGroupUnitRepository uomGroupUnitRepository;
     private final ActiveIngredientsRepository activeRepository;
     private final BrandMedicationActiveIngredientRepository relRepository;
+    private final BillingRuleReferenceService billingRuleReferenceService;
+    private final FacilityRepository facilityRepository;
 
 
-    public BrandMedicationService(BrandMedicationRepository brandMedicationRepository, UomGroupRepository uomGroupRepository, UomGroupUnitRepository uomGroupUnitRepository, ActiveIngredientsRepository activeRepository, BrandMedicationActiveIngredientRepository relRepository) {
+    public BrandMedicationService(
+            BrandMedicationRepository brandMedicationRepository,
+            UomGroupRepository uomGroupRepository,
+            UomGroupUnitRepository uomGroupUnitRepository,
+            ActiveIngredientsRepository activeRepository,
+            BrandMedicationActiveIngredientRepository relRepository,
+            BillingRuleReferenceService billingRuleReferenceService,
+            FacilityRepository facilityRepository
+    ) {
         this.brandMedicationRepository = brandMedicationRepository;
         this.uomGroupRepository = uomGroupRepository;
         this.uomGroupUnitRepository = uomGroupUnitRepository;
         this.activeRepository = activeRepository;
         this.relRepository = relRepository;
+        this.billingRuleReferenceService = billingRuleReferenceService;
+        this.facilityRepository = facilityRepository;
     }
 
     public BrandMedication create(BrandMedicationCreateVM vm) {
@@ -68,12 +83,21 @@ public class BrandMedicationService {
         if (vm.uomGroupUnitId() == null) {
             throw new BadRequestAlertException("uomGroupUnit is required", "brandMedication", "uomGroupUnitrequired");
         }
+        if (vm.facilityId() == null) {
+            throw new BadRequestAlertException("facility is required", "brandMedication", "facilityrequired");
+        }
+        if (vm.priceBaseUomId() == null) {
+            throw new BadRequestAlertException("priceBaseUom is required", "brandMedication", "priceBaseUomrequired");
+        }
         UomGroup uomGroup = getUOMGroup(vm.uomGroupId());
         UomGroupUnit uomGroupUnit=getUOMGroupUnit(vm.uomGroupUnitId());
+        UomGroupUnit priceBaseUom = getPriceBaseUom(vm.priceBaseUomId(), uomGroup);
+        Facility facility = getFacility(vm.facilityId());
 
         BrandMedication entity = BrandMedication.builder()
                 .name(vm.name())
                 .manufacturer(vm.manufacturer())
+                .code(vm.code())
                 .dosageForm(vm.dosageForm())
                 .usageInstructions(vm.usageInstructions())
                 .storageRequirements(vm.storageRequirements())
@@ -87,6 +111,22 @@ public class BrandMedicationService {
                 .isActive(vm.isActive())
                 .uomGroup(uomGroup)
                 .uomGroupUnit(uomGroupUnit)
+                .priceBaseUom(priceBaseUom)
+                .price(vm.price())
+                .facility(facility)
+                .currency(currencyOf(facility))
+                .registrationNumber(blankToNull(vm.registrationNumber()))
+                .integrationCode(blankToNull(vm.integrationCode()))
+                .gtinCode(blankToNull(vm.gtinCode()))
+                .descriptionCode(blankToNull(vm.descriptionCode()))
+                .medDistributeArea(vm.medDistributeArea())
+                .localMarket(Boolean.TRUE.equals(vm.localMarket()))
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.MEDICATION
+                        )
+                )
                 .build();
 
         BrandMedication saved = brandMedicationRepository.save(entity);
@@ -102,6 +142,33 @@ public class BrandMedicationService {
         LOG.debug("getUOMGroupUnit for active ingredients: id={}", id);
         return uomGroupUnitRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("UOM group unit not found: " + id, "UomGroupUnit", "notfound"));
+    }
+
+    /** The Price Base Unit must be one of the units of the selected UOM group */
+    private UomGroupUnit getPriceBaseUom(Long id, UomGroup uomGroup) {
+        UomGroupUnit unit = getUOMGroupUnit(id);
+        if (unit.getGroup() == null || !Objects.equals(unit.getGroup().getId(), uomGroup.getId())) {
+            throw new BadRequestAlertException(
+                    "Price Base Unit must belong to the selected UOM group",
+                    "brandMedication",
+                    "priceBaseUomNotInGroup"
+            );
+        }
+        return unit;
+    }
+
+    private Facility getFacility(Long id) {
+        return facilityRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException("Facility not found: " + id, "facility", "notfound"));
+    }
+
+    /** The brand medication currency always follows the facility's default currency */
+    private static String currencyOf(Facility facility) {
+        return facility.getDefaultCurrency() != null ? facility.getDefaultCurrency().name() : null;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     public Optional<BrandMedication> update(Long id, BrandMedicationUpdateVM vm) {
@@ -129,6 +196,31 @@ public class BrandMedicationService {
         if (vm.isActive() != null) entity.setIsActive(vm.isActive());
         if(vm.uomGroupId() != null) entity.setUomGroup(getUOMGroup(vm.uomGroupId()));
         if(vm.uomGroupUnitId()!=null) entity.setUomGroupUnit(getUOMGroupUnit(vm.uomGroupUnitId()));
+        // Re-validated even when not sent: the UOM group may have changed
+        Long priceBaseUomId = vm.priceBaseUomId() != null
+                ? vm.priceBaseUomId()
+                : (entity.getPriceBaseUom() != null ? entity.getPriceBaseUom().getId() : null);
+        if (priceBaseUomId == null) {
+            throw new BadRequestAlertException("priceBaseUom is required", "brandMedication", "priceBaseUomrequired");
+        }
+        entity.setPriceBaseUom(getPriceBaseUom(priceBaseUomId, entity.getUomGroup()));
+        if (vm.price() != null) entity.setPrice(vm.price());
+        if (vm.facilityId() != null) entity.setFacility(getFacility(vm.facilityId()));
+        // Currency always comes from the facility (the value sent by the client is ignored)
+        entity.setCurrency(currencyOf(entity.getFacility()));
+        // Optional fields are set as sent, so clearing them in the form clears them here
+        entity.setRegistrationNumber(blankToNull(vm.registrationNumber()));
+        entity.setIntegrationCode(blankToNull(vm.integrationCode()));
+        entity.setGtinCode(blankToNull(vm.gtinCode()));
+        entity.setDescriptionCode(blankToNull(vm.descriptionCode()));
+        entity.setMedDistributeArea(vm.medDistributeArea());
+        if (vm.localMarket() != null) entity.setLocalMarket(vm.localMarket());
+        entity.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.MEDICATION
+                )
+        );
 
         BrandMedication updated = brandMedicationRepository.save(entity);
         LOG.debug("Updated BrandMedication: {}", updated);
@@ -206,6 +298,12 @@ public class BrandMedicationService {
     }
 
     @Transactional(readOnly = true)
+    public List<BrandMedication> findByIds(List<Long> ids) {
+        LOG.debug("Request to get BrandMedications by ids={}", ids);
+        return brandMedicationRepository.findAllById(ids);
+    }
+
+    @Transactional(readOnly = true)
     public List<BrandWithActivesVM> searchBrandsByNameOrActive(String keyword) {
 
         String kw = keyword == null ? "" : keyword.trim();
@@ -214,7 +312,7 @@ public class BrandMedicationService {
         // 1) brands matching by name/code
         List<Long> brandIdsFromName =
                 brandMedicationRepository
-                        .findByNameContainsIgnoreCaseOrCodeContainsIgnoreCase(kw, kw)
+                        .findByNameContainsIgnoreCaseAndIsActiveTrueOrCodeContainsIgnoreCaseAndIsActiveTrue(kw, kw)
                         .stream()
                         .map(BrandMedication::getId)
                         .toList();
@@ -259,6 +357,7 @@ public class BrandMedicationService {
         List<BrandMedication> orderedBrands = allBrandIds.stream()
                 .map(brandById::get)
                 .filter(Objects::nonNull)
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
                 .toList();
 
         // 9) map to VM using grouped relations
@@ -277,6 +376,26 @@ public class BrandMedicationService {
 
                     return BrandWithActivesVM.ofEntity(brand, activesVM);
                 })
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<BrandMedication> findByActiveIds(List<Long> activeIds) {
+        LOG.debug("Request to get BrandMedications by activeIds={}", activeIds);
+
+        if (activeIds == null || activeIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> brandIds = relRepository.findDistinctBrandIdsByActiveIngredientIds(activeIds);
+
+        if (brandIds.isEmpty()) {
+            return List.of();
+        }
+
+        return brandMedicationRepository.findAllById(brandIds)
+                .stream()
+                .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
                 .toList();
     }
 

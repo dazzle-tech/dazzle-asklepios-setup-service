@@ -167,4 +167,10 @@ public class AllergensService {
         LOG.debug("Request to delete Allergen : {}", id);
         allergenRepository.deleteById(id);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Allergens> findActive(Pageable pageable) {
+        LOG.debug("Fetching active Allergens pageable={}", pageable);
+        return allergenRepository.findByIsActiveTrue(pageable);
+    }
 }

@@ -15,4 +15,11 @@ public interface ServiceItemsRepository extends JpaRepository<ServiceItems, Long
     Page<ServiceItems> findByServiceId(Long serviceId, Pageable pageable);
     List<ServiceItems> findByServiceId(Long serviceId);
 
+    List<ServiceItems> findByTypeAndSourceIdAndIsActiveTrue(ServiceItemsType type, Long sourceId);
+
+    List<ServiceItems> findByTypeAndSourceIdAndSpecialtyAndIsActiveTrue(
+            ServiceItemsType type,
+            Long sourceId,
+            String specialty
+    );
 }

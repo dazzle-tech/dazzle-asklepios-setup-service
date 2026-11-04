@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.RouteOfAdministration;
 import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.service.VaccineService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.vaccine.VaccineCreateVM;
 import com.dazzle.asklepios.web.rest.vm.vaccine.VaccineResponseVM;
 import com.dazzle.asklepios.web.rest.vm.vaccine.VaccineUpdateVM;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -53,6 +55,7 @@ public class VaccineController {
                 .type(vm.type())
                 .roa(vm.roa())
                 .atcCode(vm.atcCode())
+                .code(vm.code())
                 .siteOfAdministration(vm.siteOfAdministration())
                 .postOpeningDuration(vm.postOpeningDuration())
                 .durationUnit(vm.durationUnit())
@@ -84,6 +87,7 @@ public class VaccineController {
         patch.setType(vm.type());
         patch.setRoa(vm.roa());
         patch.setAtcCode(vm.atcCode());
+        patch.setCode(vm.code());
         patch.setSiteOfAdministration(vm.siteOfAdministration());
         patch.setPostOpeningDuration(vm.postOpeningDuration());
         patch.setDurationUnit(vm.durationUnit());
@@ -175,6 +179,54 @@ public class VaccineController {
                 .map(VaccineResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/vaccine/{id}")
+    public ResponseEntity<VaccineResponseVM> getOneVaccine(@PathVariable Long id) {
+        LOG.debug("REST get Vaccine by id={}", id);
+        if (id == null) {
+            throw new BadRequestAlertException(
+                    "Vaccine id is required",
+                    "vaccine",
+                    "id.required"
+            );
+        }
+        Vaccine result = vaccineService.findOne(id);
+        return ResponseEntity.ok(VaccineResponseVM.ofEntity(result));
+    }
+
+    @GetMapping("/vaccine/by-ids")
+    public ResponseEntity<List<VaccineResponseVM>> getVaccinesByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST get Vaccines by ids={}", ids);
+
+        List<Vaccine> vaccines = vaccineService.findVaccinesByIds(ids);
+
+        LOG.debug("REST get Vaccines by ids responseCount={}", vaccines.size());
+
+        return ResponseEntity.ok(
+                vaccines.stream()
+                        .map(VaccineResponseVM::ofEntity)
+                        .toList()
+        );
+    }
+
+    @GetMapping("/vaccine/active/by-name/{name}")
+    public ResponseEntity<List<VaccineResponseVM>> getActiveByName(
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active Vaccines by name='{}' pageable={}", name, pageable);
+        Page<Vaccine> page = vaccineService.findActiveByName(name, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(VaccineResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
 }

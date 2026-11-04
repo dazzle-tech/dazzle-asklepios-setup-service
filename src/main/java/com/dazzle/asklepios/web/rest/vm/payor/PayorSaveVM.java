@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.payor;
 
-
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +22,6 @@ public record PayorSaveVM(
         @NotNull(message = "category cannot be null")
         PayorCategory category,
 
-        // Contact
         @Size(max = 500)
         String address,
 
@@ -37,12 +35,10 @@ public record PayorSaveVM(
         @Size(max = 255)
         String contractManagerContact,
 
-        // Contract
         LocalDate startDate,
         LocalDate expiryDate,
         Boolean renewable,
 
-        // Rules
         Boolean allowPartialCoverage,
         Boolean acceptCopay,
         Boolean acceptDeductibles,
@@ -50,7 +46,17 @@ public record PayorSaveVM(
         Boolean allowDrgBilling,
         Boolean forcePreApproval,
 
+        @Size(max = 100)
+        String nphiesId,
+
+        @Size(max = 100)
+        String waseelPayerId,
+
+        @Size(max = 100)
+        String tpaNphiesId,
+
+        Boolean isWaseelEnabled,
+
         Boolean isActive
 
 ) implements Serializable {}
-

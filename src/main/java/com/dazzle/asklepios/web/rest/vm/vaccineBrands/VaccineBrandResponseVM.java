@@ -8,10 +8,14 @@ import java.math.BigDecimal;
 public record VaccineBrandResponseVM(
         Long id,
         String name,
+        String code,
         String manufacture,
         BigDecimal volume,
-        MeasurementUnit unit,
+        String unit,
         String marketingAuthorizationHolder,
+        Long facilityId,
+        BigDecimal price,
+        String currency,
         Boolean isActive
 ) implements Serializable {
 
@@ -19,10 +23,14 @@ public record VaccineBrandResponseVM(
         return new VaccineBrandResponseVM(
                 brand.getId(),
                 brand.getName(),
+                brand.getCode(),
                 brand.getManufacture(),
                 brand.getVolume(),
                 brand.getUnit(),
                 brand.getMarketingAuthorizationHolder(),
+                brand.getFacility() != null ? brand.getFacility().getId() : null,
+                brand.getPrice(),
+                brand.getCurrency(),
                 brand.getIsActive()
         );
     }

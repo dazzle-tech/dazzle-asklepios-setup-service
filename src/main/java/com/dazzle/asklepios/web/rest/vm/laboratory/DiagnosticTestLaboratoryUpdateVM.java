@@ -6,11 +6,13 @@ import com.dazzle.asklepios.domain.enumeration.Property;
 import com.dazzle.asklepios.domain.enumeration.Scale;
 import com.dazzle.asklepios.domain.enumeration.System;
 import com.dazzle.asklepios.domain.enumeration.Timing;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record DiagnosticTestLaboratoryUpdateVM(
         @NotNull Long id,
         Long testId,
@@ -21,8 +23,6 @@ public record DiagnosticTestLaboratoryUpdateVM(
         Method method,
         Double testDurationTime,
         String timeUnit,
-        @NotBlank  String resultUnit,
-        Boolean isProfile,
         String sampleContainer,
         Double sampleVolume,
         String sampleVolumeUnit,
@@ -37,16 +37,17 @@ public record DiagnosticTestLaboratoryUpdateVM(
         String testInstructions,
         @NotBlank String category,
         String tubeType,
-        Timing timing
+        Timing timing,
+        Long analyzerId
 ) implements Serializable {
     public DiagnosticTestLaboratory toEntity() {
         DiagnosticTestLaboratory entity = new DiagnosticTestLaboratoryCreateVM(
                 testId, property, system, scale, reagents, method,
-                testDurationTime, timeUnit, resultUnit, isProfile,
+                testDurationTime, timeUnit,
                 sampleContainer, sampleVolume, sampleVolumeUnit, tubeColor,
                 testDescription, sampleHandling, turnaroundTime, turnaroundTimeUnit,
                 preparationRequirements, medicalIndications, associatedRisks,
-                testInstructions, category, tubeType, timing
+                testInstructions, category, tubeType, timing, analyzerId
         ).toEntity();
         entity.setId(id);
         return entity;

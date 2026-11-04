@@ -82,6 +82,14 @@ public class CatalogController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/catalog/internalJob/{id}")
+    public ResponseEntity<CatalogResponseVM> getInternal(@PathVariable Long id) {
+        return catalogService.findOne(id)
+                .map(CatalogResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
 
     /** FILTERS / SEARCH (pageable) */
     @GetMapping("/catalog/by-department")
@@ -91,6 +99,26 @@ public class CatalogController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
+    @GetMapping("/catalog/by-department-or-unassigned")
+    public ResponseEntity<List<CatalogResponseVM>> getByDepartmentOrUnassigned(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get Catalog  By DepartmentId{}  with unassigned department");
+
+                Page<Catalog> page = catalogService.findByDepartmentOrUnassigned(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<CatalogResponseVM> body = page.getContent()
+                .stream()
+                .map(CatalogResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
     @GetMapping("/catalog/by-type")
@@ -146,6 +174,23 @@ public class CatalogController {
                 .toList();
 
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/catalog/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<CatalogResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable catalog pageable={}", pageable);
+
+        Page<Catalog> page = catalogService.findAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
     }
 
 }

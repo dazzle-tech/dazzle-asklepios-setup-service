@@ -12,4 +12,6 @@ public interface AllergensRepository extends JpaRepository<Allergens, Long> {
     Page<Allergens> findByType(AllergenType type, Pageable pageable);
 
     Page<Allergens> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<Allergens> findByIsActiveTrue(Pageable pageable);
 }

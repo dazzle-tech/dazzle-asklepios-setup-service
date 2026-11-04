@@ -1,14 +1,23 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.Practitioner;
 import com.dazzle.asklepios.domain.PractitionerDepartment;
 import com.dazzle.asklepios.service.PractitionerDepartmentService;
+import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitionerDepartment.PractitionerDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitionerDepartment.PractitionerDepartmentResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -51,6 +60,26 @@ public class PractitionerDepartmentController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/department/{id}/practitioners")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionersByDepartment(
+            @PathVariable Long id,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Practitioners by Department={} pageable={}", id, pageable);
+
+        Page<Practitioner> page = service.findPractitionersByDepartmentId(id, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     /**
      * {@code DELETE /practitioner/{pId}/departments/{dId}} : Remove a Practitioner–Department link.
      */
@@ -59,5 +88,12 @@ public class PractitionerDepartmentController {
         LOG.debug("REST delete Practitioner–Department link pId={} dId={}", pId, dId);
         service.delete(pId, dId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/practitioner/{practitionerId}/departments/{departmentId}/access")
+    public ResponseEntity<Boolean> hasDepartmentAccess(@PathVariable Long practitionerId, @PathVariable Long departmentId) {
+        boolean hasAccess = service.hasDepartmentAccess(practitionerId, departmentId);
+
+        return ResponseEntity.ok(hasAccess);
     }
 }

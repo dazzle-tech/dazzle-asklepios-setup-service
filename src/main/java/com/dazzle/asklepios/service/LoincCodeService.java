@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /** Service for importing and managing LOINC codes */
@@ -122,6 +123,50 @@ public class LoincCodeService {
 
         LOG.info("LOINC import done. Inserted={}, Updated={}, Conflicts={}", inserted, updated, conflicts.size());
         return new LoincImportResultDTO(totalRows, inserted, updated, overwrite ? List.of() : conflicts);
+    }
+
+    /** Create a single LOINC code; the code must not already exist */
+    @Transactional
+    public LoincCode create(String code, LoincCategory category, String description) {
+        String trimmedCode = code.trim();
+        if (repository.findByCode(trimmedCode).isPresent()) {
+            throw new BadRequestAlertException(
+                    "LOINC code already exists: " + trimmedCode,
+                    "loincode",
+                    "duplicate"
+            );
+        }
+        LoincCode created = repository.save(LoincCode.builder()
+                .code(trimmedCode)
+                .description(description.trim())
+                .category(category)
+                .lastUpdated(Instant.now())
+                .build());
+        LOG.info("LOINC code created: {}", trimmedCode);
+        return created;
+    }
+
+    /** Update a LOINC code; a changed code must not belong to another record */
+    @Transactional
+    public Optional<LoincCode> update(Long id, String code, LoincCategory category, String description) {
+        String trimmedCode = code.trim();
+        return repository.findById(id).map(existing -> {
+            repository.findByCode(trimmedCode)
+                    .filter(other -> !other.getId().equals(id))
+                    .ifPresent(other -> {
+                        throw new BadRequestAlertException(
+                                "LOINC code already exists: " + trimmedCode,
+                                "loincode",
+                                "duplicate"
+                        );
+                    });
+            existing.setCode(trimmedCode);
+            existing.setCategory(category);
+            existing.setDescription(description.trim());
+            existing.setLastUpdated(Instant.now());
+            LOG.info("LOINC code updated: id={}, code={}", id, trimmedCode);
+            return repository.save(existing);
+        });
     }
 
     // ====================== READ / FILTER ======================

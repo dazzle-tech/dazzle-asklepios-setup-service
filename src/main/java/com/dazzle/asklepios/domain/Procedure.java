@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.domain;
 
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -21,6 +22,7 @@ import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -48,12 +50,22 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Currency currency;
+
+    @NotNull
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(name = "category_type", nullable = false, length = 255)
-    private ProcedureCategoryType categoryType;
+    private ProcedureCategory categoryType;
 
     @NotNull
     @Column(name = "is_appointable", nullable = false)
     private Boolean isAppointable;
+
 
 
     @Column(name = "indications", columnDefinition = "text")
@@ -77,4 +89,8 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "facility_id", nullable = false)
     private Facility facility;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
 }

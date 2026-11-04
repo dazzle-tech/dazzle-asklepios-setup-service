@@ -2,7 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -29,10 +29,16 @@ public class ProcedureService {
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureService.class);
 
     private final ProcedureRepository procedureRepository;
+    private final ProcedureItemsService procedureItemsService;
     private final EntityManager em;
 
-    public ProcedureService(ProcedureRepository procedureRepository, EntityManager em) {
+    public ProcedureService(
+            ProcedureRepository procedureRepository,
+            ProcedureItemsService procedureItemsService,
+            EntityManager em
+    ) {
         this.procedureRepository = procedureRepository;
+        this.procedureItemsService = procedureItemsService;
         this.em = em;
     }
 
@@ -57,6 +63,8 @@ public class ProcedureService {
                 .recoveryNotes(incoming.getRecoveryNotes())
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .facility(refFacility(facilityId))
+                .currency(incoming.getCurrency())
+                .price(incoming.getPrice())
                 .build();
 
         try {
@@ -112,6 +120,9 @@ public class ProcedureService {
         existing.setRecoveryNotes(incoming.getRecoveryNotes());
         existing.setIsActive(incoming.getIsActive());
         existing.setFacility(refFacility(facilityId));
+        existing.setCurrency(incoming.getCurrency());
+        existing.setPrice(incoming.getPrice());
+        existing.setBillingRule(incoming.getBillingRule());
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);
@@ -155,7 +166,7 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(ProcedureCategoryType categoryType, Pageable pageable) {
+    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Pageable pageable) {
         LOG.debug("Fetching Procedures by categoryType={}", categoryType);
         return procedureRepository.findByCategoryType(categoryType, pageable);
     }
@@ -170,12 +181,6 @@ public class ProcedureService {
     public Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable) {
         LOG.debug("Fetching Procedures by name='{}'", name);
         return procedureRepository.findByNameContainingIgnoreCase(name, pageable);
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Procedure> findOne(Long id) {
-        LOG.debug("Fetching single Procedure by id={}", id);
-        return procedureRepository.findById(id);
     }
 
     public Optional<Procedure> toggleIsActive(Long id) {
@@ -197,11 +202,141 @@ public class ProcedureService {
         }
         return procedureRepository.findByFacility_Id(facilityId, pageable);
     }
-    public Page<Procedure> findActiveAppointable( Pageable pageable) {
-        LOG.debug("Fetching Active Appointable  Procedures  pageable={} is",  pageable);
-        return procedureRepository
-                .findByIsActiveTrueAndIsAppointableTrue( pageable);
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> findActiveByFacility(Long facilityId, Pageable pageable) {
+
+        LOG.debug("Fetching ACTIVE Procedures by facilityId={} pageable={}", facilityId, pageable);
+
+        return procedureRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
     }
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
+        }
+
+        if (category != null) {
+            return procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable);
+        }
+
+        return procedureRepository.findByFacility_Id(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Procedure> findOne(Long id) {
+        LOG.debug("Fetching single Procedure by id={}", id);
+        return procedureRepository.findById(id);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> findActiveByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
+        LOG.debug("Fetching ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
+        }
+
+        if (category != null) {
+            return procedureRepository.findByFacility_IdAndIsActiveTrueAndCategoryType(facilityId, category, pageable);
+        }
+
+        return procedureRepository.findByFacility_IdAndIsActiveTrue(facilityId, pageable);
+    }
+
+    public Page<Procedure> findActiveAppointable(Pageable pageable) {
+        LOG.debug("Fetching Active Appointable Procedures pageable={}", pageable);
+        return procedureRepository.findByIsActiveTrueAndIsAppointableTrue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Procedure> searchActiveByFacilityAndCategory(
+            Long facilityId,
+            ProcedureCategory category,
+            String name,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Searching ACTIVE Procedures by facilityId={} category={} name={} pageable={}",
+                facilityId,
+                category,
+                name,
+                pageable
+        );
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility id is required",
+                    "procedure",
+                    "facility.required"
+            );
+        }
+
+        if (category == null) {
+            throw new BadRequestAlertException(
+                    "Procedure category is required",
+                    "procedure",
+                    "category.required"
+            );
+        }
+
+        if (name == null || name.trim().isEmpty()) {
+            return procedureRepository
+                    .findByFacility_IdAndIsActiveTrueAndCategoryType(
+                            facilityId,
+                            category,
+                            pageable
+                    );
+        }
+
+        return procedureRepository
+                .findByFacility_IdAndIsActiveTrueAndCategoryTypeAndNameContainingIgnoreCase(
+                        facilityId,
+                        category,
+                        name.trim(),
+                        pageable
+                );
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<Procedure> findByIds(List<Long> ids) {
+        LOG.debug("[GET PROCEDURES BY IDS] ids={}", ids);
+
+        List<Procedure> results = procedureRepository.findAllById(ids);
+
+        if (results.isEmpty()) {
+            throw new NotFoundAlertException(
+                    "No procedures found for given ids",
+                    "procedure",
+                    "notfound"
+            );
+        }
+
+        return results;
+    }
+
+
+
+    /**
+     * Active procedures linked to a department (and specialty when given).
+     * These are the default procedures of a visit opened in that department.
+     */
+    @Transactional(readOnly = true)
+    public Page<Procedure> findProceduresByDepartment(Long departmentId, String specialty, Pageable pageable) {
+        LOG.debug("[GET PROCEDURES BY DEPARTMENT] departmentId={} specialty={} pageable={}",
+                departmentId, specialty, pageable);
+
+        List<Long> procedureIds = procedureItemsService.findLinkedProcedureIds(departmentId, specialty);
+        if (procedureIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return procedureRepository.findByIdInAndIsActiveTrue(procedureIds, pageable);
+    }
+
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);
     }

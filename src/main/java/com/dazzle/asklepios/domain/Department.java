@@ -1,8 +1,9 @@
 package com.dazzle.asklepios.domain;
 
-
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,9 +21,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -31,7 +36,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(callSuper = false)
-public class Department  extends  AbstractAuditingEntity<Long> implements Serializable {
+public class Department extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -75,10 +80,57 @@ public class Department  extends  AbstractAuditingEntity<Long> implements Serial
     private Boolean isActive;
 
     @Column(name = "has_medical_sheets")
-    private  Boolean hasMedicalSheets=false;
+    private Boolean hasMedicalSheets = false;
 
     @Column(name = "has_nurse_medical_sheets")
-    private  Boolean hasNurseMedicalSheets=false;
+    private Boolean hasNurseMedicalSheets = false;
 
+    @NotNull
+    @Column(name = "parallel_capacity_enabled", nullable = false)
+    private Boolean parallelCapacityEnabled = false;
 
+    @Column(name = "parallel_capacity_value")
+    private Integer parallelCapacityValue = 1;
+
+    @Column(name = "default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name = "default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes = 0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes = 0;
+
+    @Column(name = "require_practitioner")
+    private Boolean requirePractitioner = true;
+
+    @Column(name = "require_billing")
+    private Boolean requireBilling = false;
+
+    @Column(name = "require_pre_assessment")
+    private Boolean requirePreAssessment = false;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "age_specific", nullable = false)
+    private Boolean ageSpecific = false;
+
+    @Column(name = "from_age")
+    private Integer fromAge;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "from_age_unit", length = 20)
+    private AgeUnit fromAgeUnit;
+
+    @Column(name = "to_age")
+    private Integer toAge;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "to_age_unit", length = 20)
+    private AgeUnit toAgeUnit;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "working_days", columnDefinition = "json", nullable = false)
+    @Builder.Default
+    private List<WorkingDayJson> workingDays = new ArrayList<>();
 }

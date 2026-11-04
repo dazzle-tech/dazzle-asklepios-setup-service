@@ -11,6 +11,8 @@ import com.dazzle.asklepios.web.rest.vm.vaccineDosesInterval.VaccineDosesInterva
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -124,4 +126,38 @@ public class VaccineDosesIntervalController {
         List<VaccineDoses> result = vaccineDosesIntervalService.findDosesByVaccineExcludingFirst(vaccineId, fromDoseId);
         return ResponseEntity.ok(result.stream().map(VaccineDosesResponseVM::ofEntity).toList());
     }
+    @GetMapping("/vaccine-doses-interval/from-dose/{fromDoseId}/one")
+    public ResponseEntity<VaccineDosesIntervalResponseVM> getOneByFromDoseId(
+            @PathVariable Long fromDoseId
+    ) {
+
+        LOG.debug("REST request to get VaccineDosesInterval by fromDoseId: {}", fromDoseId);
+
+        Optional<VaccineDosesInterval> result =
+                vaccineDosesIntervalService.findOneByFromDoseId(fromDoseId);
+
+        if (result.isEmpty()) {
+            LOG.warn("No VaccineDosesInterval found for fromDoseId: {}", fromDoseId);
+            return ResponseEntity.notFound().build();
+        }
+
+        LOG.debug("VaccineDosesInterval found for fromDoseId: {}", fromDoseId);
+
+        return ResponseEntity.ok(
+                VaccineDosesIntervalResponseVM.ofEntity(result.get())
+        );
+    }
+
+    @GetMapping("/vaccine-doses-interval/{id}")
+    public ResponseEntity<VaccineDosesIntervalResponseVM> getOneById(@PathVariable Long id) {
+        LOG.debug("REST get VaccineDosesInterval id={}", id);
+
+        return vaccineDosesIntervalService.findOne(id)
+                .map(VaccineDosesIntervalResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+
 }

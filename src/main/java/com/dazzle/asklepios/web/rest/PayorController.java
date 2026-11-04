@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.service.PayorService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorResponseVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
@@ -12,11 +13,13 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -61,12 +64,19 @@ public class PayorController {
             @RequestParam(required = false) PayorCategory category,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate expiryDate,
+            @RequestParam(required = false) String nphiesId,
+            @RequestParam(required = false) Boolean isWaseelEnabled,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST search Payors category={}, name={}, code={}, page={}",
-                category, name, code, pageable);
+        LOG.debug("REST search Payors category={}, name={}, code={}, startDate={}, expiryDate={}, nphiesId={}, isWaseelEnabled={}, isActive={}, page={}",
+                category, name, code, startDate, expiryDate, nphiesId, isWaseelEnabled, isActive, pageable);
 
-        Page<Payor> page = service.search(category, name, code, pageable);
+        Page<Payor> page = service.search(
+                category, name, code, startDate, expiryDate, nphiesId, isWaseelEnabled, isActive, pageable
+        );
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -95,6 +105,28 @@ public class PayorController {
         LOG.debug("REST toggle Payor isActive id={}", id);
 
         return service.toggleIsActive(id)
+                .map(PayorResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/payor/active")
+    public ResponseEntity<List<PayorResponseVM>> getAllActive(@ParameterObject Pageable pageable) {
+        Page<Payor> page = service.getAllActive(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PayorResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/payor/cchi/by-nphies/{nphiesId}")
+    public ResponseEntity<PayorResponseVM> getByNphiesId(@PathVariable String nphiesId) {
+        return service.findByNphiesId(nphiesId)
                 .map(PayorResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

@@ -14,4 +14,8 @@ public interface VaccineDosesRepository extends JpaRepository<VaccineDoses, Long
 
     Page<VaccineDoses> findByVaccine_Id(Long vaccineId, Pageable pageable);
     List<VaccineDoses> findByVaccine_Id(Long vaccineId);
+    List<VaccineDoses> findByVaccine_IdAndIsActiveTrue(Long vaccineId);
+
+    List<VaccineDoses> findByIdIn(List<Long> ids);
+
 }

@@ -6,9 +6,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -27,6 +30,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -45,16 +49,22 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
 
     @NotNull(message = "Type cannot be null")
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", length = 255)
+    @Column(name = "type", length = 255, nullable = false)
     private TestType type;
 
     @NotNull(message = "Name cannot be null")
-    @Column(name = "name", length = 255)
+    @Column(name = "name", length = 255, nullable = false)
     private String name;
 
+    @Column(name = "short_name", length = 255)
+    private String shortName;
+
     @NotNull(message = "Code cannot be null")
-    @Column(name = "internal_code", length = 255)
+    @Column(name = "internal_code", length = 255, nullable = false, unique = true)
     private String internalCode;
+
+    @Column(name = "hl7_integration_code", length = 255, unique = true)
+    private String hl7IntegrationCode;
 
     @Column(name = "age_specific")
     private Boolean ageSpecific;
@@ -65,24 +75,23 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Transient
     private List<String> ageGroupList;
 
-
     @Column(name = "gender_specific")
     private Boolean genderSpecific;
-
-
 
     @Column(name = "gender", length = 50)
     private String gender;
 
     @Column(name = "special_population")
-    private Boolean specialPopulation;
+    private Boolean specialPopulation = false;
+
     @Column(name = "special_population_values", columnDefinition = "text")
     private String specialPopulationValuesRaw;
 
     @Transient
     private List<String> specialPopulationValues;
 
-    @Column(name = "price", precision = 7, scale = 2)
+    @NotNull(message = "Price cannot be null")
+    @Column(name = "price", precision = 7, scale = 2, nullable = false)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
@@ -95,12 +104,30 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
     @Column(name = "is_active")
     private Boolean isActive = true;
 
-    @Column(name = "is_profile")
-    private Boolean isProfile;
+    @Column(name = "appointable", nullable = false)
+    private Boolean appointable = false;
 
-    @Column(name = "appointable")
-    private Boolean appointable;
+    @Column(name = "parallel_capacity_value", nullable = false)
+    private Integer parallelCapacityValue = 1;
 
+    @Column(name = "default_duration_minutes")
+    private Integer defaultDurationMinutes;
+
+    @Column(name = "default_buffer_before_minutes")
+    private Integer defaultBufferBeforeMinutes = 0;
+
+    @Column(name = "default_buffer_after_minutes")
+    private Integer defaultBufferAfterMinutes = 0;
+    @Column(name = "modality", length = 100)
+    private String modality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "billing_rule_id")
+    private BillingRule billingRule;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "loinc_code_id")
+    private LoincCode loincCode;
 
     @PostLoad
     private void fillListsFromRaw() {
@@ -138,6 +165,4 @@ public class DiagnosticTest extends AbstractAuditingEntity<Long> implements Seri
             this.ageGroup = null;
         }
     }
-
-
 }

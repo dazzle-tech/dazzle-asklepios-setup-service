@@ -48,6 +48,11 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     @Column(nullable = false, length = 255)
     private String name;
 
+    /** Item code used in price lists and Waseel SBS mapping */
+    @NotNull
+    @Column(name = "code", nullable = false, length = 100)
+    private String code;
+
     @NotNull
     @Column(name = "manufacture", nullable = false, length = 255)
     private String manufacture;
@@ -57,12 +62,26 @@ public class VaccineBrands extends AbstractAuditingEntity<Long> implements Seria
     private BigDecimal volume;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
-    private MeasurementUnit unit;
+    @Column(nullable = false, length = 30)
+    private String unit;
 
     @Column(name = "marketing_authorization_holder", length = 255)
     private String marketingAuthorizationHolder;
+
+    /** The currency is taken from this facility */
+    @NotNull
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "facility_id", nullable = false)
+    private Facility facility;
+
+    @NotNull
+    @Column(name = "price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal price;
+
+    /** Always the facility's default currency */
+    @NotNull
+    @Column(name = "currency", length = 10, nullable = false)
+    private String currency;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

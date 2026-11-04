@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.CatalogDiagnosticTest;
+import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.service.CatalogService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.catalog.CatalogAddTestsVM;
@@ -47,6 +48,13 @@ public class CatalogDiagnosticTestController {
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+
+    @GetMapping("/catalog/diagnostic-test/{catalogId}")
+    public ResponseEntity<List<DiagnosticTest>> listAllTestByCatalog(@PathVariable Long catalogId) {
+        List<DiagnosticTest> tests = catalogService.getTestsForCatalog(catalogId);
+        return new ResponseEntity<>(tests, HttpStatus.OK);
     }
 
 

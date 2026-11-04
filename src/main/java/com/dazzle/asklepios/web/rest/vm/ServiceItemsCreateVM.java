@@ -13,6 +13,7 @@ public record ServiceItemsCreateVM(
         @NotNull ServiceItemsType type,
         @NotNull Long sourceId,
         @NotNull Long serviceId,
+        String specialty,
         String createdBy,
         Boolean isActive
         ) implements Serializable {
@@ -25,6 +26,7 @@ public record ServiceItemsCreateVM(
                 serviceItems.getType(),
                 serviceItems.getSourceId(),
                 serviceItems.getService() != null ? serviceItems.getService().getId() : null,
+                serviceItems.getSpecialty(),
                 serviceItems.getCreatedBy(),
                 serviceItems.getIsActive()
                 );

@@ -1,7 +1,10 @@
     package com.dazzle.asklepios.domain;
 
+    import com.dazzle.asklepios.domain.enumeration.CountryName;
     import jakarta.persistence.Column;
     import jakarta.persistence.Entity;
+    import jakarta.persistence.EnumType;
+    import jakarta.persistence.Enumerated;
     import jakarta.persistence.GeneratedValue;
     import jakarta.persistence.GenerationType;
     import jakarta.persistence.Id;
@@ -35,11 +38,12 @@
         private Long id;
 
         @NotNull
+        @Enumerated(EnumType.STRING)
         @Column(name = "name", nullable = false, length = 150)
-        private String name;
+        private CountryName name;
 
         @NotNull
-        @Column(name = "code", nullable = false, length = 10)
+        @Column(name = "code", nullable = false, length = 50)
         private String code;
 
         @NotNull

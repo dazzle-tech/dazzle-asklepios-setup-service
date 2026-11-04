@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -120,5 +121,39 @@ public class DiagnosticTestLaboratoryService {
                             "notfound"
                     );
                 });
+    }
+
+    /**
+     * Retrieve multiple DiagnosticTestLaboratory records by their IDs.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<DiagnosticTestLaboratory> bulkByIds(java.util.List<Long> ids) {
+        LOG.debug("Request to get DiagnosticTestLaboratories by ids={}", ids);
+        
+        if (ids == null || ids.isEmpty()) {
+            LOG.warn("Empty or null ids list provided");
+            return java.util.Collections.emptyList();
+        }
+        
+        java.util.List<DiagnosticTestLaboratory> result = repository.findAllById(ids);
+        LOG.debug("Retrieved {} DiagnosticTestLaboratories from {} requested ids", result.size(), ids.size());
+        return result;
+    }
+
+    /**
+     * Retrieve multiple DiagnosticTestLaboratory records by their associated test IDs.
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<DiagnosticTestLaboratory> bulkByTestIds(java.util.List<Long> testIds) {
+        LOG.debug("Request to get DiagnosticTestLaboratories by testIds={}", testIds);
+        
+        if (testIds == null || testIds.isEmpty()) {
+            LOG.warn("Empty or null testIds list provided");
+            return java.util.Collections.emptyList();
+        }
+        
+        java.util.List<DiagnosticTestLaboratory> result = repository.findByTestIdIn(testIds);
+        LOG.debug("Retrieved {} DiagnosticTestLaboratories from {} requested testIds", result.size(), testIds.size());
+        return result;
     }
 }

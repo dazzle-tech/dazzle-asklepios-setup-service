@@ -1,12 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.enumeration.Currency;
-import com.dazzle.asklepios.domain.enumeration.FacilityType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.FacilityService;
-import com.dazzle.asklepios.web.rest.vm.FacilityCreateVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityResponseVM;
-import com.dazzle.asklepios.web.rest.vm.FacilityUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityCreateVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityResponseVM;
+import com.dazzle.asklepios.web.rest.vm.facility.FacilityUpdateVM;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.Arrays;
@@ -77,7 +75,6 @@ public class FacilityController {
         LOG.debug("REST request to update Facility : {}, {}", id, facilityVM);
 
         return facilityService.update(id, facilityVM)
-                .map(FacilityResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -126,4 +123,18 @@ public class FacilityController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<FacilityResponseVM>> getActiveFacilities() {
+        return ResponseEntity.ok(facilityService.findActiveFacilities());
+    }
+    @PostMapping("/bulk/by-ids")
+    public ResponseEntity<List<FacilityResponseVM>> getFacilitiesByIds(@RequestBody List<Long> ids) {
+        LOG.debug("REST request to get Facilities by ids : {}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+
+        return ResponseEntity.ok(facilityService.findAllByIds(ids));
+    }
 }

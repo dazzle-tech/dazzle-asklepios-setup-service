@@ -1,16 +1,13 @@
 package com.dazzle.asklepios.web.rest;
 
-import com.dazzle.asklepios.domain.DiagnosticTest;
 import com.dazzle.asklepios.domain.Practitioner;
-import com.dazzle.asklepios.domain.Procedure;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.service.PractitionerService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerCreateVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.practitioner.PractitionerUpdateVM;
-import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -52,8 +50,8 @@ public class PractitionerController {
      *
      * @param practitionerVM the creation payload.
      * @return the {@link ResponseEntity} with status {@code 201 (Created)} and body of the created practitioner,
-     *         with a {@code Location} header pointing to the new resource;
-     *         or {@code 400 (Bad Request)} if the payload is invalid.
+     * with a {@code Location} header pointing to the new resource;
+     * or {@code 400 (Bad Request)} if the payload is invalid.
      */
     @PostMapping("/practitioner")
     public ResponseEntity<PractitionerResponseVM> createPractitioner(@Valid @RequestBody PractitionerCreateVM practitionerVM) {
@@ -72,13 +70,13 @@ public class PractitionerController {
      *
      * <p>Updates mutable fields of the practitioner identified by {@code id}.</p>
      *
-     * @param id the identifier of the practitioner to update.
+     * @param id                   the identifier of the practitioner to update.
      * @param practitionerUpdateVM the update payload.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated practitioner in the body,
-     *         or {@code 404 (Not Found)} if no practitioner exists with the given {@code id}.
+     * or {@code 404 (Not Found)} if no practitioner exists with the given {@code id}.
      */
     @PutMapping("/practitioner/{id}")
-    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@Valid@PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
+    public ResponseEntity<PractitionerResponseVM> updatePractitioner(@Valid @PathVariable Long id, @Valid @RequestBody PractitionerUpdateVM practitionerUpdateVM) {
         LOG.debug("REST update Practitioner id={} payload={}", id, practitionerUpdateVM);
         return practitionerService.update(id, practitionerUpdateVM)
                 .map(p -> ResponseEntity.ok(PractitionerResponseVM.ofEntity(p)))
@@ -95,7 +93,7 @@ public class PractitionerController {
      *
      * @param pageable the pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)}, a list of practitioner view models in the body,
-     *         and pagination headers.
+     * and pagination headers.
      */
     @GetMapping("/practitioner")
     public ResponseEntity<List<PractitionerResponseVM>> getAllPractitioners(@ParameterObject Pageable pageable) {
@@ -114,9 +112,9 @@ public class PractitionerController {
      * <p>Includes pagination headers {@code X-Total-Count} and {@code Link}.</p>
      *
      * @param facilityId the facility identifier.
-     * @param pageable pagination and sorting information.
+     * @param pageable   pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models,
-     *         plus pagination headers.
+     * plus pagination headers.
      */
     @GetMapping("/practitioner/by-facility/{facilityId:\\d+}")
     public ResponseEntity<List<PractitionerResponseVM>> getByFacility(
@@ -133,7 +131,7 @@ public class PractitionerController {
      * {@code GET /practitioner/by-specialty/{specialty}} : Get practitioners by specialty (paginated).
      *
      * @param specialty the specialty to filter by.
-     * @param pageable pagination and sorting information.
+     * @param pageable  pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models.
      */
     @GetMapping("/practitioner/by-specialty/{specialty}")
@@ -152,11 +150,20 @@ public class PractitionerController {
      *
      * @param id the identifier of the practitioner to retrieve.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the practitioner view model,
-     *         or {@code 404 (Not Found)} if the practitioner does not exist.
+     * or {@code 404 (Not Found)} if the practitioner does not exist.
      */
     @GetMapping("/practitioner/{id}")
     public ResponseEntity<PractitionerResponseVM> getPractitioner(@PathVariable Long id) {
         LOG.debug("REST get Practitioner id={}", id);
+        return practitionerService.findOne(id)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/practitioner/internalJob/{id}")
+    public ResponseEntity<PractitionerResponseVM> getPractitionerInternal(@PathVariable Long id) {
+        LOG.debug("REST get Practitioner internal id={}", id);
         return practitionerService.findOne(id)
                 .map(PractitionerResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
@@ -170,7 +177,7 @@ public class PractitionerController {
     @GetMapping("/practitioner/by-name/{name}")
     public ResponseEntity<List<PractitionerResponseVM>> findByName(@PathVariable String name, @ParameterObject Pageable pageable) {
         LOG.debug("REST request to search Practitioner by name='{}' page={}", name, pageable);
-        Page<Practitioner> page = practitionerService.findByFirstNameOrLastName(name,pageable);
+        Page<Practitioner> page = practitionerService.findByFirstNameOrLastName(name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         LOG.debug("REST found {} Practitioner matching name='{}'", page.getTotalElements(), name);
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
@@ -183,7 +190,7 @@ public class PractitionerController {
      *
      * @param id the identifier of the practitioner to toggle.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated practitioner view model,
-     *         or {@code 404 (Not Found)} if the practitioner does not exist.
+     * or {@code 404 (Not Found)} if the practitioner does not exist.
      */
     @PatchMapping("/practitioner/{id}/toggle-active")
     public ResponseEntity<PractitionerResponseVM> togglePractitionerActiveStatus(@PathVariable Long id) {
@@ -193,11 +200,12 @@ public class PractitionerController {
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
     /**
      * {@code GET /practitioner/active/by-specialty/{specialty}} : Get practitioners by specialty (paginated).
      *
      * @param specialty the sub specialty to filter by.
-     * @param pageable pagination and sorting information.
+     * @param pageable  pagination and sorting information.
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and a list of practitioner view models.
      */
     @GetMapping("/practitioner/active/by-sub-specialty/{specialty}")
@@ -211,6 +219,13 @@ public class PractitionerController {
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
     }
 
+    @PostMapping("/practitioner/bulk")
+    public ResponseEntity<List<Practitioner>> getBulk(@RequestBody List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(practitionerService.findByIds(ids));
+    }
     @GetMapping("/practitioner/active-appointable")
     public ResponseEntity<List<PractitionerResponseVM>> getActiveAppointable(
 
@@ -218,7 +233,7 @@ public class PractitionerController {
     ) {
         LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
 
-        Page<Practitioner> page = practitionerService.findActiveAppointable( pageable);
+        Page<Practitioner> page = practitionerService.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -230,4 +245,256 @@ public class PractitionerController {
                 HttpStatus.OK
         );
     }
+
+    @GetMapping("/practitioner/by-user/{userId}")
+    public ResponseEntity<PractitionerResponseVM> getPractitionerByUserId(@PathVariable Long userId) {
+        LOG.debug("REST get Practitioner by userId={}", userId);
+
+        return practitionerService.findByUser(userId)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
+    @GetMapping("/specialists")
+    public ResponseEntity<Page<Practitioner>> getSpecialists(
+            @RequestParam Long facilityId,
+            @RequestParam String subSpecialty,
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                practitionerService
+                        .findSpecialistPractitionersByFacilityAndSubSpecialty(
+                                facilityId,
+                                subSpecialty,
+                                pageable
+                        )
+        );
+    }
+
+    @GetMapping("/practitioner/active")
+    public ResponseEntity<List<PractitionerResponseVM>> getAllActivePractitioners(@ParameterObject Pageable pageable) {
+        Page<Practitioner> page = practitionerService.findAllActive(pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<PractitionerResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable Practitioner pageable={}", pageable);
+
+        Page<Practitioner> page = practitionerService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionerByDepartment(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list practitioner by DEPARTMENTS departmentId={} pageable={}", departmentId, pageable);
+
+        Page<Practitioner> page = practitionerService.findPractitionerByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/specialists/by-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getSpecialistPractitionersByDepartment(
+            @RequestParam Long departmentId,
+            @RequestParam(required = false) Specialty specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST list practitioners by departmentId={} specialty={} pageable={}",
+                departmentId,
+                specialty,
+                pageable
+        );
+
+        Page<Practitioner> page = specialty != null
+                ? practitionerService.findPractitionersByDepartmentAndSpecialty(departmentId, specialty, pageable)
+                : practitionerService.findPractitionersByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/specialties/by-department")
+    public ResponseEntity<List<String>> getSpecialtiesByDepartment(
+            @RequestParam Long departmentId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list specialties by departmentId={} pageable={}", departmentId, pageable);
+
+        Page<String> page = practitionerService.findDistinctSpecialtiesByDepartment(departmentId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/practitioners/by-login/{login}")
+    public ResponseEntity<Practitioner> getByLogin(@PathVariable String login) {
+        return practitionerService.findByUserLogin(login)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/practitioner/active/by-facility/{facilityId:\\d+}")
+    public ResponseEntity<List<PractitionerResponseVM>> getActiveByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list ACTIVE Practitioners by facilityId={} page={}", facilityId, pageable);
+        Page<Practitioner> page = practitionerService.findActiveByFacilityId(facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/resolve")
+    public ResponseEntity<PractitionerResponseVM> resolvePractitioner(
+            @RequestParam(value = "practitionerId", required = false) Long practitionerId,
+            @RequestParam(value = "login", required = false) String login
+    ) {
+        LOG.debug("REST resolve Practitioner practitionerId={} login={}", practitionerId, login);
+
+        return practitionerService.resolvePractitioner(practitionerId, login)
+                .map(PractitionerResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/practitioner/list-by-speciality-and-department")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionerListBySpecialityAndDepartment(
+            @RequestParam Long departmentId,
+            @RequestParam Specialty specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by departmentId={} specialty={} pageable={}",
+                departmentId,
+                specialty,
+                pageable
+        );
+
+        Page<Practitioner> page =
+                practitionerService.findPractitionersByDepartmentAndSpecialty(
+                        departmentId,
+                        specialty,
+                        pageable
+                );
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-linked-user")
+    public ResponseEntity<List<PractitionerResponseVM>> getByLinkedUser(
+            @RequestParam boolean linked,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by linked user linked={} pageable={}",
+                linked,
+                pageable
+        );
+        Page<Practitioner> page = linked
+                ? practitionerService.findLinkedToUser(pageable)
+                : practitionerService.findNotLinkedToUser(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-status")
+    public ResponseEntity<List<PractitionerResponseVM>> getPractitionersByStatus(
+            @RequestParam boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST get practitioners by status isActive={} pageable={}",
+                isActive,
+                pageable
+        );
+        Page<Practitioner> page = practitionerService.findByStatus(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream()
+                        .map(PractitionerResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/practitioner/by-jobRole/{jobRole}")
+    public ResponseEntity<List<PractitionerResponseVM>> getByJobRole(
+            @PathVariable JobRole jobRole,
+            @ParameterObject Pageable pageable) {
+
+        LOG.debug("REST list Practitioners by jobRole={} page={}", jobRole, pageable);
+        Page<Practitioner> page = practitionerService.findByJobRole(jobRole, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);
+    }
+
 }

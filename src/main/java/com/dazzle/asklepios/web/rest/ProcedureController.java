@@ -1,13 +1,17 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.service.BillingRuleReferenceService;
 import com.dazzle.asklepios.service.ProcedureService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureCreateVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureResponseVM;
 import com.dazzle.asklepios.web.rest.vm.procedure.ProcedureUpdateVM;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
@@ -37,9 +41,14 @@ public class ProcedureController {
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureController.class);
 
     private final ProcedureService procedureService;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
-    public ProcedureController(ProcedureService procedureService) {
+    public ProcedureController(
+            ProcedureService procedureService,
+            BillingRuleReferenceService billingRuleReferenceService
+    ) {
         this.procedureService = procedureService;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     @PostMapping("/procedure")
@@ -58,7 +67,15 @@ public class ProcedureController {
                 .contraindications(vm.contraindications())
                 .preparationInstructions(vm.preparationInstructions())
                 .recoveryNotes(vm.recoveryNotes())
+                .price(vm.price())
+                .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.PROCEDURE
+                        )
+                )
                 .build();
 
         Procedure created = procedureService.create(facilityId, toCreate);
@@ -88,6 +105,14 @@ public class ProcedureController {
         patch.setRecoveryNotes(vm.recoveryNotes());
         patch.setIsActive(vm.isActive());
         patch.setLastModifiedBy(vm.lastModifiedBy());
+        patch.setPrice(vm.price());
+        patch.setCurrency(vm.currency());
+        patch.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.PROCEDURE
+                )
+        );
 
         return procedureService.update(id, facilityId, patch)
                 .map(ProcedureResponseVM::ofEntity)
@@ -113,7 +138,7 @@ public class ProcedureController {
 
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
-            @PathVariable ProcedureCategoryType categoryType,
+            @PathVariable ProcedureCategory categoryType,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by categoryType={} pageable={}", categoryType, pageable);
@@ -176,10 +201,11 @@ public class ProcedureController {
     @GetMapping("/procedure/by-facility/{facilityId}")
     public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
             @PathVariable Long facilityId,
+            @RequestParam(required = false) ProcedureCategory category,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list Procedures by facilityId={} pageable={}", facilityId, pageable);
-        Page<Procedure> page = procedureService.findByFacility(facilityId, pageable);
+        LOG.debug("REST list Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
+        Page<Procedure> page = procedureService.findByFacilityAndOptionalCategory(facilityId, category, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -192,14 +218,15 @@ public class ProcedureController {
         );
     }
 
+
     @GetMapping("/procedure/active-appointable")
     public ResponseEntity<List<ProcedureResponseVM>> getActiveAppointable(
 
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list active appointable Procedures  pageable={}",  pageable);
+        LOG.debug("REST list active appointable Procedures  pageable={}", pageable);
 
-        Page<Procedure> page = procedureService.findActiveAppointable( pageable);
+        Page<Procedure> page = procedureService.findActiveAppointable(pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -210,6 +237,147 @@ public class ProcedureController {
                 headers,
                 HttpStatus.OK
         );
+    }
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}")
+    public ResponseEntity<List<ProcedureResponseVM>> getActiveByFacility(
+            @PathVariable @NotNull Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get ACTIVE Procedures by facilityId={} pageable={}", facilityId, pageable);
+
+        if (facilityId == null) {
+            throw new BadRequestAlertException(
+                    "Facility id is required",
+                    "procedure",
+                    "facility.required"
+            );
+        }
+
+        Page<Procedure> page = procedureService.findActiveByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}/by-category")
+    public ResponseEntity<List<ProcedureResponseVM>> getActiveByFacilityAndCategory(
+            @PathVariable @NotNull Long facilityId,
+            @RequestParam ProcedureCategory category,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST get ACTIVE Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
+
+        Page<Procedure> page = procedureService.findActiveByFacilityAndOptionalCategory(facilityId, category, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
+    @GetMapping("/procedure/active/by-facility/{facilityId}/by-category/search")
+    public ResponseEntity<List<ProcedureResponseVM>> searchActiveByFacilityAndCategory(
+            @PathVariable @NotNull Long facilityId,
+            @RequestParam ProcedureCategory category,
+            @RequestParam String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search ACTIVE Procedures by facilityId={} category={} name={} pageable={}",
+                facilityId,
+                category,
+                name,
+                pageable
+        );
+
+        Page<Procedure> page =
+                procedureService.searchActiveByFacilityAndCategory(
+                        facilityId,
+                        category,
+                        name,
+                        pageable
+                );
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent()
+                        .stream()
+                        .map(ProcedureResponseVM::ofEntity)
+                        .toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+
+
+    @GetMapping("/procedure/by-department")
+    public ResponseEntity<List<ProcedureResponseVM>> getProceduresByDepartment(
+            @RequestParam Long sourceId,
+            @RequestParam(required = false) String specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Procedures by DEPARTMENTS sourceId={} specialty={} pageable={}",
+                sourceId, specialty, pageable);
+
+        Page<Procedure> page = procedureService.findProceduresByDepartment(sourceId, specialty, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ProcedureResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/procedure/{id}")
+    public ResponseEntity<ProcedureResponseVM> getProcedureById(@PathVariable Long id) {
+        LOG.debug("REST get Procedure by id={}", id);
+        return procedureService.findOne(id)
+                .map(ProcedureResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/procedure/by-ids")
+    public ResponseEntity<List<ProcedureResponseVM>> getProceduresByIds(
+            @RequestParam List<Long> ids
+    ) {
+        LOG.debug("REST getProceduresByIds ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            throw new BadRequestAlertException(
+                    "Procedure ids list must not be empty",
+                    "procedure",
+                    "ids.empty"
+            );
+        }
+
+        List<ProcedureResponseVM> list =
+                procedureService.findByIds(ids)
+                        .stream()
+                        .map(ProcedureResponseVM::ofEntity)
+                        .toList();
+
+        return ResponseEntity.ok(list);
     }
 
 

@@ -51,6 +51,14 @@ public class ServiceItemsService {
         if (input == null) {
             throw new BadRequestAlertException("ServiceItems payload is required", "serviceItems", "payload.required");
         }
+        if (input.getType() == ServiceItemsType.DEPARTMENTS
+                && (input.getSpecialty() == null || input.getSpecialty().isBlank())) {
+            throw new BadRequestAlertException(
+                    "Specialty is required when linking a department",
+                    "serviceItems",
+                    "specialty.required"
+            );
+        }
 
         ServiceSetup service = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new NotFoundAlertException(
@@ -59,6 +67,7 @@ public class ServiceItemsService {
         ServiceItems entity = ServiceItems.builder()
                 .type(input.getType())
                 .sourceId(input.getSourceId())
+                .specialty(input.getSpecialty())
                 .isActive(input.getIsActive() != null ? input.getIsActive() : Boolean.TRUE)
                 .build();
         entity.setService(service);
@@ -75,6 +84,7 @@ public class ServiceItemsService {
                     serviceId, input.getType(), input.getSourceId(), msg, ex);
 
             if (msg.contains("uk_service_items_service_type_source")
+                    || msg.contains("uk_service_items_with_specialty")
                     || msg.contains("unique constraint")
                     || msg.contains("duplicate key")
                     || msg.contains("duplicate entry")) {
@@ -99,11 +109,32 @@ public class ServiceItemsService {
                 .orElseThrow(() -> new NotFoundAlertException(
                         "ServiceItems not found with id " + id, "serviceItems", "notfound"));
 
+        ServiceItemsType effectiveType = patch.getType() != null ? patch.getType() : existing.getType();
+        if (effectiveType == ServiceItemsType.DEPARTMENTS
+                && (patch.getSpecialty() == null || patch.getSpecialty().isBlank())) {
+            throw new BadRequestAlertException(
+                    "Specialty is required when linking a department",
+                    "serviceItems",
+                    "specialty.required"
+            );
+        }
+
         if (serviceId != null) {
             ServiceSetup service = serviceRepository.findById(serviceId)
                     .orElseThrow(() -> new NotFoundAlertException(
                             "Service not found with id " + serviceId, "service", "notfound"));
             existing.setService(service);
+        }
+
+        if (patch.getType() != null) {
+            existing.setType(patch.getType());
+        }
+        if (patch.getSourceId() != null) {
+            existing.setSourceId(patch.getSourceId());
+        }
+        existing.setSpecialty(patch.getSpecialty());
+        if (patch.getIsActive() != null) {
+            existing.setIsActive(patch.getIsActive());
         }
 
         try {
@@ -124,6 +155,7 @@ public class ServiceItemsService {
             );
 
             if (msg.contains("uk_service_items_service_type_source")
+                    || msg.contains("uk_service_items_with_specialty")
                     || msg.contains("unique constraint")
                     || msg.contains("duplicate key")
                     || msg.contains("duplicate entry")) {

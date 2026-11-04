@@ -15,6 +15,7 @@ public record ServiceItemsUpdateVM(
         @NotNull ServiceItemsType type,
         @NotNull Long sourceId,
         @NotNull Long serviceId,
+        String specialty,
         @NotNull Boolean isActive,
         String lastModifiedBy,
         Instant lastModifiedDate
@@ -29,6 +30,7 @@ public record ServiceItemsUpdateVM(
                 serviceItems.getType(),
                 serviceItems.getSourceId(),
                 serviceItems.getService() != null ? serviceItems.getService().getId() : null,
+                serviceItems.getSpecialty(),
                 serviceItems.getIsActive(),
                 serviceItems.getLastModifiedBy(),
                 serviceItems.getLastModifiedDate()

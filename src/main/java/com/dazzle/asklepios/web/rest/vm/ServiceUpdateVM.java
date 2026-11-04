@@ -21,7 +21,13 @@ public record ServiceUpdateVM(
         BigDecimal price,
         @NotNull Currency currency,
         @NotNull Boolean isActive,
-        String lastModifiedBy
+        Boolean appointable,
+        Integer parallelCapacityValue,
+        Integer defaultDurationMinutes,
+        Integer defaultBufferBeforeMinutes,
+        Integer defaultBufferAfterMinutes,
+        Long billingRuleId
+
 ) implements Serializable {
 
     public static ServiceUpdateVM ofEntity(ServiceSetup service) {
@@ -34,6 +40,14 @@ public record ServiceUpdateVM(
                 service.getPrice(),
                 service.getCurrency(),
                 service.getIsActive(),
-                service.getLastModifiedBy());
+                service.getAppointable(),
+                service.getParallelCapacityValue(),
+                service.getDefaultDurationMinutes(),
+                service.getDefaultBufferBeforeMinutes(),
+                service.getDefaultBufferAfterMinutes(),
+                service.getBillingRule() != null
+                        ? service.getBillingRule().getId()
+                        : null
+        );
     }
 }

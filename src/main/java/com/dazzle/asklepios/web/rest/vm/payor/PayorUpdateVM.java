@@ -14,18 +14,28 @@ public record PayorUpdateVM(
         @NotNull(message = "id cannot be null")
         Long id,
 
-        @NotBlank @Size(max=50)
+        @NotBlank
+        @Size(max = 50)
         String code,
 
-        @NotBlank @Size(max=255)
+        @NotBlank
+        @Size(max = 255)
         String name,
 
         @NotNull
         PayorCategory category,
 
+        @Size(max = 500)
         String address,
+
+        @Size(max = 50)
         String phone,
-        @Email String email,
+
+        @Email
+        @Size(max = 255)
+        String email,
+
+        @Size(max = 255)
         String contractManagerContact,
 
         LocalDate startDate,
@@ -38,6 +48,17 @@ public record PayorUpdateVM(
         Boolean allowPackagePricing,
         Boolean allowDrgBilling,
         Boolean forcePreApproval,
+
+        @Size(max = 100)
+        String nphiesId,
+
+        @Size(max = 100)
+        String waseelPayerId,
+
+        @Size(max = 100)
+        String tpaNphiesId,
+
+        Boolean isWaseelEnabled,
 
         Boolean isActive
 

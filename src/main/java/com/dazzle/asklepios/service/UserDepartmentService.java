@@ -3,20 +3,22 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.UserDepartment;
+import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentResponseVM;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
-
-import java.util.List;
-import java.util.Optional;
-
+import com.dazzle.asklepios.web.rest.vm.userDepartments.UserDepartmentTogglesVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -46,13 +48,13 @@ public class UserDepartmentService {
         boolean wantDefault = Boolean.TRUE.equals(vm.isDefault());
 
         if (userDepartmentRepository.existsByUserIdAndDepartmentId(userId, departmentId)) {
-            throw new BadRequestAlertException("User already has this department", ENTITY_NAME, "departmentexists");
+            throw new BadRequestAlertException("departmentexists", ENTITY_NAME, "User already has this department");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestAlertException("User not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
         Department department = departmentRepository.findById(departmentId)
-                .orElseThrow(() -> new BadRequestAlertException("Department not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "Department not found"));
 
         Long facilityId = department.getFacility().getId(); // or department.getFacilityId()
 
@@ -60,7 +62,7 @@ public class UserDepartmentService {
             boolean defaultInFacility =
                     userDepartmentRepository.existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(userId, facilityId);
             if (defaultInFacility) {
-                throw new BadRequestAlertException("User already has a default for this facility", ENTITY_NAME, "defaultexists");
+                throw new BadRequestAlertException("defaultexists", ENTITY_NAME, "User already has a default for this facility");
             }
         }
 
@@ -93,7 +95,7 @@ public class UserDepartmentService {
     @Transactional
     public void hardDelete(Long id) {
         UserDepartment target = userDepartmentRepository.findById(id)
-                .orElseThrow(() -> new BadRequestAlertException("Mapping not found", ENTITY_NAME, "notfound"));
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "Mapping not found"));
 
         Long userId = target.getUser().getId();
         Long facilityId = target.getDepartment().getFacility().getId();
@@ -126,4 +128,101 @@ public class UserDepartmentService {
         return userDepartmentRepository.findFirstByUserIdAndDepartment_Facility_IdAndIsDefaultTrue(userId, facilityId);
     }
 
+    @Transactional(readOnly = true)
+    public String getFullNameByLogin(String login) {
+        LOG.debug("Request to get full name by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
+        String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
+        String fullName = (firstName + " " + lastName).trim();
+
+        LOG.debug("Resolved full name for login={} -> {}", login, fullName.isEmpty() ? user.getLogin() : fullName);
+        return fullName.isEmpty() ? user.getLogin() : fullName;
+    }
+
+    @Transactional(readOnly = true)
+    public Long getIdByLogin(String login) {
+        LOG.debug("Request to get id by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user.getId();
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserByLogin(String login) {
+        LOG.debug("Request to get user by login={}", login);
+        User user = userRepository.findByLogin(login)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user;
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserById(Long id) {
+        LOG.debug("Request to get user by id={}", id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "User not found"));
+
+        return user;
+    }
+
+    @Transactional
+    public UserDepartment updateToggles(Long id, UserDepartmentTogglesVM userDepartmentTogglesVM) {
+        LOG.debug("Update User Department request userDepartmentTogglesVM={}", userDepartmentTogglesVM);
+        UserDepartment userDepartment = userDepartmentRepository.findById(id)
+                .orElseThrow(() -> new BadRequestAlertException("notfound", ENTITY_NAME, "UserDepartment not found"));
+
+        Long userId = userDepartment.getUser().getId();
+        Long facilityId = userDepartment.getDepartment().getFacility().getId();
+        boolean wantDefault = Boolean.TRUE.equals(userDepartmentTogglesVM.isDefault());
+
+        // If setting as default, make sure no other default exists in same facility
+        if (wantDefault && !Boolean.TRUE.equals(userDepartment.getIsDefault())) {
+            boolean defaultInFacility =
+                    userDepartmentRepository.existsByUserIdAndIsDefaultTrueAndDepartment_Facility_Id(userId, facilityId);
+            if (defaultInFacility) {
+                throw new BadRequestAlertException("defaultexists", ENTITY_NAME, "User already has a default for this facility");
+            }
+        }
+
+        userDepartment.setIsDefault(wantDefault);
+
+        return userDepartmentRepository.save(userDepartment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrue(departmentId)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getPhysicianUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get physician Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(departmentId, JobRole.PHYSICIAN)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getNurseUserDepartmentsForDepartment(Long departmentId) {
+        LOG.debug("Request to get nurse Users linked to Department id={}", departmentId);
+        return userDepartmentRepository
+                .findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(departmentId, JobRole.NURSE)
+                .stream()
+                .map(UserDepartment::getUser)
+                .filter(Objects::nonNull)
+                .toList();
+    }
 }

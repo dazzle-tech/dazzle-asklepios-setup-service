@@ -98,6 +98,27 @@ public class DistrictCommunityController {
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
 
+    @GetMapping("/community/active")
+    public ResponseEntity<List<DistrictCommunityResponseVM>> getActiveCommunities(
+            @RequestParam("districtId") Long districtId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list active DistrictCommunities for districtId={} pageable={}", districtId, pageable);
+
+        Page<DistrictCommunity> page = communityService.findActive(districtId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        List<DistrictCommunityResponseVM> body = page.getContent()
+                .stream()
+                .map(DistrictCommunityResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
     @GetMapping("/district/{districtId}/community")
     public ResponseEntity<List<DistrictCommunityResponseVM>> getByDistrict(
             @PathVariable Long districtId,
@@ -138,6 +159,37 @@ public class DistrictCommunityController {
 
         return new ResponseEntity<>(body, headers, HttpStatus.OK);
     }
+
+
+    @GetMapping("/district/{districtId}/community/names/{name}")
+    public ResponseEntity<List<DistrictCommunityResponseVM>> searchCommunitiesByName(
+            @PathVariable Long districtId,
+            @PathVariable String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST search communities by name prefix='{}' for districtId={} pageable={}",
+                name,
+                districtId,
+                pageable
+        );
+
+        Page<DistrictCommunity> page =
+                communityService.searchByName(districtId, name, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        List<DistrictCommunityResponseVM> body = page.getContent()
+                .stream()
+                .map(DistrictCommunityResponseVM::ofEntity)
+                .toList();
+
+        return new ResponseEntity<>(body, headers, HttpStatus.OK);
+    }
+
 
     @PatchMapping("/community/{id}/toggle-active")
     public ResponseEntity<DistrictCommunityResponseVM> toggleActive(@PathVariable Long id) {

@@ -4,14 +4,21 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
+import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 @Service
 @Transactional
@@ -52,7 +59,10 @@ public class PayorService {
                 .startDate(vm.startDate())
                 .expiryDate(vm.expiryDate())
                 .renewable(vm.renewable() != null ? vm.renewable() : false)
-
+                .nphiesId(vm.nphiesId())
+                .waseelPayerId(vm.waseelPayerId())
+                .tpaNphiesId(vm.tpaNphiesId())
+                .isWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : false)
                 .allowPartialCoverage(bool(vm.allowPartialCoverage()))
                 .acceptCopay(bool(vm.acceptCopay()))
                 .acceptDeductibles(bool(vm.acceptDeductibles()))
@@ -76,8 +86,6 @@ public class PayorService {
                         "payor",
                         "Payor not found."
                 ));
-
-        // إذا غيّر الكود وتكرر
         if (!existing.getCode().equalsIgnoreCase(vm.code())
                 && repo.existsByCodeIgnoreCase(vm.code())) {
             throw new BadRequestAlertException(
@@ -101,7 +109,10 @@ public class PayorService {
         existing.setStartDate(vm.startDate());
         existing.setExpiryDate(vm.expiryDate());
         existing.setRenewable(vm.renewable() != null ? vm.renewable() : existing.getRenewable());
-
+        existing.setNphiesId(vm.nphiesId());
+        existing.setWaseelPayerId(vm.waseelPayerId());
+        existing.setTpaNphiesId(vm.tpaNphiesId());
+        existing.setIsWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : existing.getIsWaseelEnabled());
         existing.setAllowPartialCoverage(vm.allowPartialCoverage() != null ? vm.allowPartialCoverage() : existing.getAllowPartialCoverage());
         existing.setAcceptCopay(vm.acceptCopay() != null ? vm.acceptCopay() : existing.getAcceptCopay());
         existing.setAcceptDeductibles(vm.acceptDeductibles() != null ? vm.acceptDeductibles() : existing.getAcceptDeductibles());
@@ -130,31 +141,63 @@ public class PayorService {
 
     // ------------ READ / SEARCH ------------
     @Transactional(readOnly = true)
-    public Page<Payor> search(PayorCategory category, String name, String code, Pageable pageable) {
-
-        String safeName = name == null ? "" : name;
-        String safeCode = code == null ? "" : code;
+    public Page<Payor> search(
+            PayorCategory category,
+            String name,
+            String code,
+            LocalDate startDate,
+            LocalDate expiryDate,
+            String nphiesId,
+            Boolean isWaseelEnabled,
+            Boolean isActive,
+            Pageable pageable
+    ) {
+        Specification<Payor> payorSpecification = Specification.where(null);
 
         if (category != null) {
-            // 3 filters
-            if ((name != null && !name.isBlank()) || (code != null && !code.isBlank())) {
-                return repo.findByCategoryAndNameContainingIgnoreCaseAndCodeContainingIgnoreCase(
-                        category, safeName, safeCode, pageable
-                );
-            }
-            // فقط category
-            return repo.findByCategory(category, pageable);
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("category"), category));
         }
 
         if (name != null && !name.isBlank()) {
-            return repo.findByNameContainingIgnoreCase(safeName, pageable);
+            String value = name.trim().toLowerCase();
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("name")), "%" + value + "%"));
         }
 
         if (code != null && !code.isBlank()) {
-            return repo.findByCodeContainingIgnoreCase(safeCode, pageable);
+            String value = code.trim().toLowerCase();
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("code")), "%" + value + "%"));
         }
 
-        return repo.findAll(pageable);
+        if (startDate != null) {
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("startDate"), startDate));
+        }
+
+        if (expiryDate != null) {
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("expiryDate"), expiryDate));
+        }
+
+        if (nphiesId != null && !nphiesId.isBlank()) {
+            String value = nphiesId.trim();
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("nphiesId"), value));
+        }
+
+        if (isWaseelEnabled != null) {
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("isWaseelEnabled"), isWaseelEnabled));
+        }
+
+        if (isActive != null) {
+            payorSpecification = payorSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("isActive"), isActive));
+        }
+
+        return repo.findAll(payorSpecification, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -169,5 +212,20 @@ public class PayorService {
                     return repo.save(p);
                 });
     }
+
+    @Transactional(readOnly = true)
+    public Page<Payor> getAllActive(Pageable pageable) {
+        return repo.findByIsActiveTrue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Payor> findByNphiesId(String nphiesId) {
+        if (nphiesId == null || nphiesId.trim().isEmpty()) {
+            return Optional.empty();
+        }
+
+        return repo.findFirstByNphiesId(nphiesId.trim());
+    }
+
 }
 

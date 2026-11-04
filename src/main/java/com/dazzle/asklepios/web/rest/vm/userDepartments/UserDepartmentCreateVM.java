@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest.vm.userDepartments;
 
 import com.dazzle.asklepios.domain.UserDepartment;
 import jakarta.validation.constraints.NotNull;
+
 import java.io.Serializable;
 
 /**

@@ -96,6 +96,17 @@ public class MedicationCategoriesClassController {
         );
     }
 
+    @GetMapping("/class/{id}")
+    public ResponseEntity<MedicationCategoriesClassResponseVM> getByClassId(@PathVariable Long id) {
+        LOG.debug("REST request to get Medication Category class by id={}", id);
+
+        return medicationCategoriesClassService.findOne(id)
+                .map(MedicationCategoriesClassResponseVM::mapEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+
     @GetMapping("/by-category")
     public ResponseEntity<List<MedicationCategoriesClass>> findAllByCategoryIdAndName(@RequestParam Long id, @RequestParam(required = false) String name) {
         LOG.debug("REST request to get MedicationCategoryClasses id={}", id);

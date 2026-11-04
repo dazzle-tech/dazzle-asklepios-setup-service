@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.VaccineBrands;
 import com.dazzle.asklepios.service.VaccineBrandsService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandCreateVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandResponseVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineBrands.VaccineBrandUpdateVM;
@@ -49,14 +50,16 @@ public class VaccineBrandsController {
 
         VaccineBrands toCreate = VaccineBrands.builder()
                 .name(vm.name())
+                .code(vm.code())
                 .manufacture(vm.manufacture())
                 .volume(vm.volume())
                 .unit(vm.unit())
                 .marketingAuthorizationHolder(vm.marketingAuthorizationHolder())
+                .price(vm.price())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
-        VaccineBrands created = vaccineBrandsService.create(vaccineId, toCreate);
+        VaccineBrands created = vaccineBrandsService.create(vaccineId, vm.facilityId(), toCreate);
         VaccineBrandResponseVM body = VaccineBrandResponseVM.ofEntity(created);
 
         return ResponseEntity
@@ -74,13 +77,15 @@ public class VaccineBrandsController {
 
         VaccineBrands patch = new VaccineBrands();
         patch.setName(vm.name());
+        patch.setCode(vm.code());
         patch.setManufacture(vm.manufacture());
         patch.setVolume(vm.volume());
         patch.setUnit(vm.unit());
         patch.setMarketingAuthorizationHolder(vm.marketingAuthorizationHolder());
+        patch.setPrice(vm.price());
         patch.setIsActive(vm.isActive());
 
-        return vaccineBrandsService.update(id, vaccineId, patch)
+        return vaccineBrandsService.update(id, vaccineId, vm.facilityId(), patch)
                 .map(VaccineBrandResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -119,6 +124,36 @@ public class VaccineBrandsController {
         );
     }
 
+    /** Active vaccine brands of all vaccines, optionally filtered by name or code (price lists, SBS mapping) */
+    @GetMapping("/vaccine-brands/search")
+    public ResponseEntity<List<VaccineBrandResponseVM>> searchActive(
+            @RequestParam(name = "name", required = false) String name,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST search active VaccineBrands name={} pageable={}", name, pageable);
+        Page<VaccineBrands> page = vaccineBrandsService.searchActive(name, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+        return new ResponseEntity<>(
+                page.getContent().stream().map(VaccineBrandResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/vaccine-brands/{id}")
+    public ResponseEntity<VaccineBrandResponseVM> getOne(@PathVariable Long id) {
+        if (id == null) {
+            throw new BadRequestAlertException("Vaccine brand id is required", "vaccineBrand", "id.required");
+        }
+        LOG.debug("REST get VaccineBrand id={}", id);
+        return vaccineBrandsService.findOne(id)
+                .map(VaccineBrandResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PatchMapping("/vaccine-brands/{id}/toggle-active")
     public ResponseEntity<VaccineBrandResponseVM> toggleVaccineBrandActiveStatus(@PathVariable Long id) {
         LOG.debug("REST toggle VaccineBrand isActive id={}", id);
@@ -126,5 +161,22 @@ public class VaccineBrandsController {
                 .map(VaccineBrandResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/vaccine-brands/by-ids")
+    public ResponseEntity<List<VaccineBrandResponseVM>> getVaccineBrandsByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST get VaccineBrands by ids={}", ids);
+
+        List<VaccineBrands> brands = vaccineBrandsService.findVaccineBrandsByIds(ids);
+
+        LOG.debug("REST get VaccineBrands by ids responseCount={}", brands.size());
+
+        return ResponseEntity.ok(
+                brands.stream()
+                        .map(VaccineBrandResponseVM::ofEntity)
+                        .toList()
+        );
     }
 }

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +32,11 @@ class DepartmentTest {
                 .isActive(true)
                 .hasMedicalSheets(true)
                 .hasNurseMedicalSheets(true)
+                .ageSpecific(true)
+                .fromAge(1)
+                .fromAgeUnit(AgeUnit.DAYS)
+                .toAge(12)
+                .toAgeUnit(AgeUnit.YEARS)
                 .build();
 
         assertThat(dept.getId()).isEqualTo(5004L);
@@ -39,6 +45,11 @@ class DepartmentTest {
         assertThat(dept.getEncounterType()).isEqualTo(EncounterType.INPATIENT);
         assertThat(dept.getIsActive()).isTrue();
         assertThat(dept.getFacility().getId()).isEqualTo(1L);
+        assertThat(dept.getAgeSpecific()).isTrue();
+        assertThat(dept.getFromAge()).isEqualTo(1);
+        assertThat(dept.getFromAgeUnit()).isEqualTo(AgeUnit.DAYS);
+        assertThat(dept.getToAge()).isEqualTo(12);
+        assertThat(dept.getToAgeUnit()).isEqualTo(AgeUnit.YEARS);
     }
 
     @Test
@@ -73,6 +84,11 @@ class DepartmentTest {
                 .name("Radiology")
                 .type(DepartmentType.OUTPATIENT_CLINIC)
                 .code("RAD01")
+                .ageSpecific(true)
+                .fromAge(3)
+                .fromAgeUnit(AgeUnit.MONTHS)
+                .toAge(5)
+                .toAgeUnit(AgeUnit.YEARS)
                 .build();
 
         // Serialize
@@ -87,6 +103,11 @@ class DepartmentTest {
 
         assertThat(deserialized.getName()).isEqualTo("Radiology");
         assertThat(deserialized.getCode()).isEqualTo("RAD01");
+        assertThat(deserialized.getAgeSpecific()).isTrue();
+        assertThat(deserialized.getFromAge()).isEqualTo(3);
+        assertThat(deserialized.getFromAgeUnit()).isEqualTo(AgeUnit.MONTHS);
+        assertThat(deserialized.getToAge()).isEqualTo(5);
+        assertThat(deserialized.getToAgeUnit()).isEqualTo(AgeUnit.YEARS);
     }
 
 }

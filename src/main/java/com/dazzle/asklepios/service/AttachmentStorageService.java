@@ -9,6 +9,7 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
@@ -67,5 +68,28 @@ public class AttachmentStorageService {
     public void delete(String key) {
         s3.deleteObject(DeleteObjectRequest.builder()
                 .bucket(props.getBucket()).key(key).build());
+    }
+    public PresignedGetObjectRequest presignView(String key) {
+        GetObjectRequest get = GetObjectRequest.builder()
+                .bucket(props.getBucket())
+                .key(key)
+                .build();
+
+        return presigner.presignGetObject(GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofSeconds(props.getPresignExpirySeconds()))
+                .getObjectRequest(get)
+                .build());
+    }
+    public void putPublic(String key, String mime, long size, InputStream in) {
+        s3.putObject(
+                PutObjectRequest.builder()
+                        .bucket(props.getBucket())
+                        .key(key)
+                        .contentType(mime)
+                        .contentLength(size)
+                        .acl(ObjectCannedACL.PUBLIC_READ)
+                        .build(),
+                RequestBody.fromInputStream(in, size)
+        );
     }
 }

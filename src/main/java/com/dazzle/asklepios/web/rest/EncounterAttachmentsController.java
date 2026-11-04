@@ -141,9 +141,7 @@ public class EncounterAttachmentsController {
         if (updateEncounterAttachmentVM.type() != null) {
             encounterAttachments.setType(updateEncounterAttachmentVM.type());
         }
-        if (updateEncounterAttachmentVM.details() != null) {
             encounterAttachments.setDetails(updateEncounterAttachmentVM.details());
-        }
 
         EncounterAttachments saved = repo.save(encounterAttachments);
         return ResponseEntity.ok(saved);

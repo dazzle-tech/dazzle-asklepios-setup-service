@@ -27,4 +27,6 @@ public interface BrandMedicationActiveIngredientRepository extends JpaRepository
     where rel.brandMedication.id in ?1
 """)
     List<BrandMedicationActiveIngredient> findAllByBrandMedicationIdInWithActive(Collection<Long> brandIds);
+
+    List<BrandMedicationActiveIngredient> findAllByBrandMedicationIdIn(List<Long> brandIds);
 }

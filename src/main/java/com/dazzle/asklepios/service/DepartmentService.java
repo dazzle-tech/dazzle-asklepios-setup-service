@@ -1,14 +1,22 @@
-// src/main/java/com/dazzle/asklepios/service/DepartmentService.java
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Resource;
+import com.dazzle.asklepios.domain.User;
+import com.dazzle.asklepios.domain.UserBookableDepartment;
+import com.dazzle.asklepios.domain.enumeration.AgeUnit;
+import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
+import com.dazzle.asklepios.repository.UserBookableDepartmentRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
+import com.dazzle.asklepios.repository.UserRepository;
+import com.dazzle.asklepios.security.SecurityUtils;
+import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentCreateVM;
 import com.dazzle.asklepios.web.rest.vm.department.DepartmentUpdateVM;
@@ -16,12 +24,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -33,17 +47,21 @@ public class DepartmentService {
     private final FacilityRepository facilityRepository;
     private final UserDepartmentRepository userDepartmentRepository;
     private final ResourceRepository resourceRepository;
+    private final UserRepository userRepository;
+    private final UserBookableDepartmentRepository userBookableDepartmentRepository;
 
     public DepartmentService(
             DepartmentsRepository departmentRepository,
             FacilityRepository facilityRepository,
             UserDepartmentRepository userDepartmentRepository,
-            ResourceRepository resourceRepository
-    ) {
+            ResourceRepository resourceRepository,
+            UserRepository userRepository, UserBookableDepartmentRepository userBookableDepartmentRepository) {
         this.departmentRepository = departmentRepository;
         this.facilityRepository = facilityRepository;
         this.userDepartmentRepository = userDepartmentRepository;
         this.resourceRepository = resourceRepository;
+        this.userRepository = userRepository;
+        this.userBookableDepartmentRepository = userBookableDepartmentRepository;
     }
 
     public Department create(DepartmentCreateVM departmentVM) {
@@ -68,22 +86,30 @@ public class DepartmentService {
                 .isActive(departmentVM.isActive())
                 .hasMedicalSheets(departmentVM.hasMedicalSheets())
                 .hasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets())
+                .parallelCapacityEnabled(departmentVM.parallelCapacityEnabled())
+                .parallelCapacityValue(departmentVM.parallelCapacityValue())
+                .defaultDurationMinutes(departmentVM.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(departmentVM.defaultBufferBeforeMinutes())
+                .defaultBufferAfterMinutes(departmentVM.defaultBufferAfterMinutes())
+                .requirePractitioner(true)
+                .requireBilling(departmentVM.requireBilling())
+                .requirePreAssessment(departmentVM.requirePreAssessment())
+                .ageSpecific(Boolean.TRUE.equals(departmentVM.ageSpecific()))
+                .fromAge(departmentVM.fromAge())
+                .fromAgeUnit(departmentVM.fromAgeUnit())
+                .toAge(departmentVM.toAge())
+                .toAgeUnit(departmentVM.toAgeUnit())
+                .workingDays(normalizeWorkingDays(departmentVM.workingDays()))
                 .build();
 
-        LOG.debug("Created department: {}", department);
+        validateDepartment(department);
 
+        LOG.debug("Created department: {}", department);
         return departmentRepository.save(department);
     }
 
     public Optional<Department> update(Long id, DepartmentUpdateVM departmentVM) {
         LOG.debug("Request to update Department id={} with {}", id, departmentVM);
-
-        Facility facility = facilityRepository.findById(departmentVM.facilityId())
-                .orElseThrow(() -> new BadRequestAlertException(
-                        "Facility not found with id " + departmentVM.facilityId(),
-                        "facility",
-                        "notfound"
-                ));
 
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException(
@@ -92,8 +118,17 @@ public class DepartmentService {
                         "notfound"
                 ));
 
+        if (departmentVM.facilityId() != null) {
+            Facility facility = facilityRepository.findById(departmentVM.facilityId())
+                    .orElseThrow(() -> new BadRequestAlertException(
+                            "Facility not found with id " + departmentVM.facilityId(),
+                            "facility",
+                            "notfound"
+                    ));
+            department.setFacility(facility);
+        }
+
         if (departmentVM.name() != null) department.setName(departmentVM.name());
-        if (facility != null) department.setFacility(facility);
         if (departmentVM.departmentType() != null) department.setType(departmentVM.departmentType());
         if (departmentVM.appointable() != null) department.setAppointable(departmentVM.appointable());
         if (departmentVM.departmentCode() != null) department.setCode(departmentVM.departmentCode());
@@ -101,13 +136,317 @@ public class DepartmentService {
         if (departmentVM.email() != null) department.setEmail(departmentVM.email());
         if (departmentVM.encounterType() != null) department.setEncounterType(departmentVM.encounterType());
         if (departmentVM.isActive() != null) department.setIsActive(departmentVM.isActive());
-        department.setHasMedicalSheets(departmentVM.hasMedicalSheets());
-        department.setHasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets());
+
+        if (departmentVM.hasMedicalSheets() != null) {
+            department.setHasMedicalSheets(departmentVM.hasMedicalSheets());
+        }
+        if (departmentVM.hasNurseMedicalSheets() != null) {
+            department.setHasNurseMedicalSheets(departmentVM.hasNurseMedicalSheets());
+        }
+
+        if (departmentVM.parallelCapacityEnabled() != null) {
+            department.setParallelCapacityEnabled(departmentVM.parallelCapacityEnabled());
+        }
+        if (departmentVM.parallelCapacityValue() != null) {
+            department.setParallelCapacityValue(departmentVM.parallelCapacityValue());
+        }
+        if (departmentVM.defaultDurationMinutes() != null) {
+            department.setDefaultDurationMinutes(departmentVM.defaultDurationMinutes());
+        }
+        if (departmentVM.defaultBufferBeforeMinutes() != null) {
+            department.setDefaultBufferBeforeMinutes(departmentVM.defaultBufferBeforeMinutes());
+        }
+        if (departmentVM.defaultBufferAfterMinutes() != null) {
+            department.setDefaultBufferAfterMinutes(departmentVM.defaultBufferAfterMinutes());
+        }
+
+        if (departmentVM.requireBilling() != null) {
+            department.setRequireBilling(departmentVM.requireBilling());
+        }
+        if (departmentVM.requirePreAssessment() != null) {
+            department.setRequirePreAssessment(departmentVM.requirePreAssessment());
+        }
+        if (departmentVM.ageSpecific() != null) {
+            department.setAgeSpecific(departmentVM.ageSpecific());
+        }
+            department.setFromAge(departmentVM.fromAge());
+            department.setFromAgeUnit(departmentVM.fromAgeUnit());
+            department.setToAge(departmentVM.toAge());
+            department.setToAgeUnit(departmentVM.toAgeUnit());
+
+        if (departmentVM.workingDays() != null) {
+            department.setWorkingDays(normalizeWorkingDays(departmentVM.workingDays()));
+        }
+
+        validateDepartment(department);
 
         Department updated = departmentRepository.save(department);
         LOG.debug("Updated department: {}", updated);
 
         return Optional.of(updated);
+    }
+
+    private void validateDepartment(Department department) {
+        validateParallelCapacity(department);
+        validateAppointableRequirements(department);
+        validateEncounterType(department);
+        validateAgeSpecificRange(department);
+    }
+
+    private void validateAgeSpecificRange(Department department) {
+        if (!Boolean.TRUE.equals(department.getAgeSpecific())) {
+            clearAgeSpecificRange(department);
+            return;
+        }
+
+        boolean hasFromValue = department.getFromAge() != null;
+        boolean hasFromUnit = department.getFromAgeUnit() != null;
+        boolean hasToValue = department.getToAge() != null;
+        boolean hasToUnit = department.getToAgeUnit() != null;
+
+        if (hasFromValue != hasFromUnit || hasToValue != hasToUnit) {
+            throw new BadRequestAlertException(
+                    "Each provided age bound must include both value and unit",
+                    "department",
+                    "agerangeincomplete"
+            );
+        }
+
+        if (!hasFromValue && !hasToValue) {
+            throw new BadRequestAlertException(
+                    "Provide at least one bound: fromAge/fromAgeUnit or toAge/toAgeUnit when ageSpecific is true",
+                    "department",
+                    "agerangerequired"
+            );
+        }
+
+        if ((hasFromValue && department.getFromAge() < 0) || (hasToValue && department.getToAge() < 0)) {
+            throw new BadRequestAlertException(
+                    "fromAge and toAge must be 0 or greater when ageSpecific is true",
+                    "department",
+                    "agerangeinvalid"
+            );
+        }
+
+        if (!hasFromValue || !hasToValue) {
+            return;
+        }
+
+        LocalDateTime basePoint = LocalDateTime.of(2000, 1, 1, 0, 0);
+        LocalDateTime fromBoundary = addAge(basePoint, department.getFromAge(), department.getFromAgeUnit());
+        LocalDateTime toBoundary = addAge(basePoint, department.getToAge(), department.getToAgeUnit());
+
+        if (fromBoundary.isAfter(toBoundary)) {
+            throw new BadRequestAlertException(
+                    "fromAge must be less than or equal to toAge when ageSpecific is true",
+                    "department",
+                    "agerangeorderinvalid"
+            );
+        }
+    }
+
+    private void clearAgeSpecificRange(Department department) {
+        department.setAgeSpecific(false);
+        department.setFromAge(null);
+        department.setFromAgeUnit(null);
+        department.setToAge(null);
+        department.setToAgeUnit(null);
+    }
+
+    private LocalDateTime addAge(LocalDateTime basePoint, Integer value, AgeUnit unit) {
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case HOURS -> basePoint.plusHours(amount);
+            case DAYS -> basePoint.plusDays(amount);
+            case WEEKS -> basePoint.plusWeeks(amount);
+            case MONTHS -> basePoint.plusMonths(amount);
+            case YEARS -> basePoint.plusYears(amount);
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isPatientAgeAllowed(Long departmentId, LocalDate dateOfBirth) {
+        LOG.debug("Request to check patient age eligibility for departmentId={} dateOfBirth={}", departmentId, dateOfBirth);
+
+        Department department = departmentRepository.findById(departmentId)
+                .orElseThrow(() -> new BadRequestAlertException(
+                        "Department not found with id " + departmentId,
+                        "department",
+                        "notfound"
+                ));
+
+        if (dateOfBirth == null) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth is required",
+                    "department",
+                    "dateofbirthrequired"
+            );
+        }
+
+        LocalDate today = LocalDate.now();
+        if (dateOfBirth.isAfter(today)) {
+            throw new BadRequestAlertException(
+                    "dateOfBirth cannot be in the future",
+                    "department",
+                    "dateofbirthinvalid"
+            );
+        }
+
+        if (!Boolean.TRUE.equals(department.getAgeSpecific())) {
+            return true;
+        }
+
+        boolean hasFromValue = department.getFromAge() != null;
+        boolean hasFromUnit = department.getFromAgeUnit() != null;
+        boolean hasToValue = department.getToAge() != null;
+        boolean hasToUnit = department.getToAgeUnit() != null;
+
+        if (hasFromValue != hasFromUnit || hasToValue != hasToUnit) {
+            throw new BadRequestAlertException(
+                    "Department age range is misconfigured",
+                    "department",
+                    "agerangeincomplete"
+            );
+        }
+
+        boolean fromAllowed = true;
+        if (hasFromValue) {
+            LocalDate minBirthDate = subtractFromDate(today, department.getFromAge(), department.getFromAgeUnit());
+            fromAllowed = !dateOfBirth.isAfter(minBirthDate);
+        }
+
+        boolean toAllowed = true;
+        if (hasToValue) {
+            LocalDate maxBirthDate = subtractFromDate(today, department.getToAge(), department.getToAgeUnit());
+            toAllowed = !dateOfBirth.isBefore(maxBirthDate);
+        }
+
+        return fromAllowed && toAllowed;
+    }
+
+    private LocalDate subtractFromDate(LocalDate baseDate, Integer value, AgeUnit unit) {
+        long amount = value.longValue();
+
+        return switch (unit) {
+            case YEARS -> baseDate.minusYears(amount);
+            case MONTHS -> baseDate.minusMonths(amount);
+            case WEEKS -> baseDate.minusWeeks(amount);
+            case DAYS -> baseDate.minusDays(amount);
+            case HOURS -> throw new BadRequestAlertException(
+                    "HOURS not supported with dateOfBirth (date only)",
+                    "department",
+                    "invalidageunit"
+            );
+        };
+    }
+
+    private void validateEncounterType(Department department) {
+        if (Boolean.TRUE.equals(department.getAppointable())) {
+            if (department.getEncounterType() == null) {
+                throw new BadRequestAlertException(
+                        "encounterType",
+                        "department",
+                        "Encounter Type is required for appointable department"
+                );
+            }
+        }
+        validateWorkingDays(department.getWorkingDays());
+    }
+
+    private void validateParallelCapacity(Department department) {
+        if (Boolean.TRUE.equals(department.getParallelCapacityEnabled()) && Boolean.TRUE.equals(department.getAppointable())) {
+            if (department.getParallelCapacityValue() == null || department.getParallelCapacityValue() < 1) {
+                throw new BadRequestAlertException(
+                        "parallelCapacityValue must be at least 1 when parallelCapacityEnabled is true",
+                        "department",
+                        "parallelcapacityinvalid"
+                );
+            }
+        }
+    }
+
+    private void validateAppointableRequirements(Department department) {
+        if (Boolean.TRUE.equals(department.getAppointable())) {
+            if (department.getDefaultDurationMinutes() == null || department.getDefaultDurationMinutes() <= 0) {
+                throw new BadRequestAlertException(
+                        "defaultDurationMinutes must be greater than 0 when appointable is true",
+                        "department",
+                        "defaultdurationinvalid"
+                );
+            }
+
+            if (department.getDefaultBufferBeforeMinutes() == null || department.getDefaultBufferBeforeMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferBeforeMinutes must be 0 or greater when appointable is true",
+                        "department",
+                        "bufferbeforeinvalid"
+                );
+            }
+
+            if (department.getDefaultBufferAfterMinutes() == null || department.getDefaultBufferAfterMinutes() < 0) {
+                throw new BadRequestAlertException(
+                        "defaultBufferAfterMinutes must be 0 or greater when appointable is true",
+                        "department",
+                        "bufferafterinvalid"
+                );
+            }
+
+            if (department.getRequirePractitioner() == null) {
+                throw new BadRequestAlertException(
+                        "requirePractitioner must not be null when appointable is true",
+                        "department",
+                        "requirepractitionerinvalid"
+                );
+            }
+
+            if (department.getRequireBilling() == null) {
+                throw new BadRequestAlertException(
+                        "requireBilling must not be null when appointable is true",
+                        "department",
+                        "requirebillinginvalid"
+                );
+            }
+
+            if (department.getRequirePreAssessment() == null) {
+                throw new BadRequestAlertException(
+                        "requirePreAssessment must not be null when appointable is true",
+                        "department",
+                        "requirepreassessmentinvalid"
+                );
+            }
+        }
+    }
+
+    private List<WorkingDayJson> normalizeWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return List.of();
+        }
+
+        return workingDays.stream()
+                .map(item -> WorkingDayJson.builder()
+                        .dayOfWeek(item.getDayOfWeek())
+                        .isWorking(item.getIsWorking())
+                        .build())
+                .toList();
+    }
+
+    private void validateWorkingDays(List<WorkingDayJson> workingDays) {
+        if (workingDays == null || workingDays.isEmpty()) {
+            return;
+        }
+
+        Set<DayOfWeek> uniqueDays = workingDays.stream()
+                .map(WorkingDayJson::getDayOfWeek)
+                .collect(Collectors.toSet());
+
+        if (uniqueDays.size() != workingDays.size()) {
+            throw new BadRequestAlertException(
+                    "Duplicate working day entries",
+                    "departmentWorkingDay",
+                    "duplicateworkingday"
+            );
+        }
     }
 
     @Transactional(readOnly = true)
@@ -133,16 +472,32 @@ public class DepartmentService {
         LOG.debug("Request to get Departments by Type with pagination type={} pageable={}", type, pageable);
         return departmentRepository.findByType(type, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Department> findActiveAppointableByDepartmentType(DepartmentType type, Pageable pageable) {
         LOG.debug("Request to get Active Appointable Departments by Type with pagination type={} pageable={}", type, pageable);
         return departmentRepository.findByAppointableTrueAndIsActiveTrueAndType(type, pageable);
     }
+
     @Transactional(readOnly = true)
     public Page<Department> findByTypeAndFacilityId(DepartmentType type, Long facilityId, Pageable pageable) {
         LOG.debug("Request to get Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
                 type, facilityId, pageable);
         return departmentRepository.findByTypeAndFacilityId(type, facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Department> findByTypeAndFacilityIdAndIsActive(DepartmentType type, Long facilityId, Pageable pageable) {
+        LOG.debug("Request to get Active Departments by Type and Facility with pagination type={} facilityId={} pageable={}",
+                type, facilityId, pageable);
+        return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> findActiveByTypeAndFacility(DepartmentType type, Long facilityId) {
+        LOG.debug("Request to get Active Departments by Type and Facility type={} facilityId={}",
+                type, facilityId);
+        return departmentRepository.findByTypeAndFacilityIdAndIsActiveTrue(type, facilityId);
     }
 
     @Transactional(readOnly = true)
@@ -188,6 +543,30 @@ public class DepartmentService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Department> findAppointableDepartmentByLoggedInFacility(Pageable pageable) {
+        LOG.debug("Request to get appoitable Departments  with pagination  pageable={}", pageable);
+        Long facilityId = getFacility();
+        return departmentRepository.findByAppointableTrueAndIsActiveTrueAndFacilityId(facilityId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Department> findAppointableActiveByFacilityAndEncounterType(
+            Long facilityId,
+            EncounterType encounterType,
+            Pageable pageable) {
+
+        LOG.debug("Request to get appointable & active Departments by facilityId={} encounterType={} pageable={}",
+                facilityId, encounterType, pageable);
+
+        return departmentRepository
+                .findByAppointableTrueAndIsActiveTrueAndFacilityIdAndEncounterType(
+                        facilityId,
+                        encounterType,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
     public List<Department> findDepartmentsLinkedToResourceType(String resourceType) {
         LOG.debug("Request to get Departments linked to resources of type={}", resourceType);
 
@@ -210,5 +589,41 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public List<Department> findDepartmentsLinkedToEmergencyResource() {
         return findDepartmentsLinkedToResourceType("EMERGENCY");
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> findByIds(List<Long> ids) {
+        return departmentRepository.findAllById(ids);
+    }
+
+    private Long getFacility() {
+
+        return SecurityUtils.getCurrentUserFacility()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing mandatory claim 'tenant' in JWT."));
+
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Department> findActive(Pageable pageable) {
+        LOG.debug("Request to get Active Departments pageable={}", pageable);
+        return departmentRepository.findByIsActiveTrue(pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Department> getBookableDepartmentsForLoggedInUser() {
+        String login = SecurityUtils.getCurrentUserLogin()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated."));
+
+        Long userId = userRepository.findByLogin(login)
+                .map(User::getId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found: " + login));
+
+
+        return userBookableDepartmentRepository
+                .findAllByUser_Id(userId)
+                .stream()
+                .map(UserBookableDepartment::getDepartment)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }

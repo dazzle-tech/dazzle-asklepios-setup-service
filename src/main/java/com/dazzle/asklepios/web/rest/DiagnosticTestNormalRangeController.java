@@ -52,8 +52,11 @@ public class DiagnosticTestNormalRangeController {
         LOG.debug("REST request to create DiagnosticTestNormalRange payload={}", vm);
         DiagnosticTestNormalRange saved = service.create(vm.toEntity());
 
-        LOG.info("Created DiagnosticTestNormalRange id={} for testId={}",
-                saved.getId(), saved.getTest() != null ? saved.getTest().getId() : null);
+        LOG.info("Created DiagnosticTestNormalRange id={} for profileTestId={} testId={}",
+                saved.getId(),
+                saved.getProfileTest() != null ? saved.getProfileTest().getId() : null,
+                saved.getTest() != null ? saved.getTest().getId() : null);
+
 
         return ResponseEntity
                 .created(URI.create("/api/setup/diagnostic-test-normal-ranges/" + saved.getId()))
@@ -181,17 +184,20 @@ public class DiagnosticTestNormalRangeController {
         );
     }
     /**
-     * {@code DELETE /diagnostic-test-normal-ranges/:id} :
-     * Delete a DiagnosticTestNormalRange by id.
+     * {@code PATCH /diagnostic-test-normal-ranges/:id/toggle-active} :
+     * Toggle isActive for a DiagnosticTestNormalRange by id.
      *
-     * @param id the identifier of the range to delete.
-     * @return the {@link ResponseEntity} with status {@code 204 (NO_CONTENT)}.
+     * @param id the identifier of the range.
+     * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the updated range,
+     *         or {@code 404 (Not Found)} if not found.
      */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        LOG.debug("REST request to delete DiagnosticTestNormalRange id={}", id);
-        service.delete(id);
-        return ResponseEntity.noContent().build();
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<DiagnosticTestNormalRangeResponseVM> toggleActive(@PathVariable Long id) {
+        LOG.debug("REST request to toggle DiagnosticTestNormalRange active id={}", id);
+        return service.toggleActive(id)
+                .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**
@@ -215,4 +221,31 @@ public class DiagnosticTestNormalRangeController {
 
         return ResponseEntity.ok(lovs);
     }
+
+    /**
+     * Returns all normal ranges configured for the given profileTestId (non-paginated).
+     *
+     * <p>This endpoint is intended for internal service-to-service calls (e.g., patient-service),
+     * to resolve the best matching normal range for a patient. It returns all configured ranges;
+     * the matching logic is performed by the caller.</p>
+     *
+     * @param profileTestId profile test id
+     * @return list of normal ranges for the profile test (may be empty)
+     */
+    @GetMapping("/internal/by-profile-test")
+    public ResponseEntity<List<DiagnosticTestNormalRangeResponseVM>> findAllByProfileTestIdInternal(
+            @RequestParam("profileTestId") Long profileTestId
+    ) {
+        LOG.debug("[NormalRange] INTERNAL_LIST_BY_PROFILE_TEST - request received. profileTestId={}", profileTestId);
+
+        List<DiagnosticTestNormalRangeResponseVM> body = service.findListByProfileTestId(profileTestId).stream()
+                .map(DiagnosticTestNormalRangeResponseVM::fromEntity)
+                .toList();
+
+        LOG.debug("[NormalRange] INTERNAL_LIST_BY_PROFILE_TEST - response ready. profileTestId={} returned={}",
+                profileTestId, body.size());
+
+        return ResponseEntity.ok(body);
+    }
+
 }

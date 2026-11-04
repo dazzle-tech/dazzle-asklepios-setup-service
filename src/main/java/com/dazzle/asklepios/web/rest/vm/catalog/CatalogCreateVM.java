@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.catalog;
 
-import com.dazzle.asklepios.domain.Catalog;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,4 +27,9 @@ public class CatalogCreateVM {
 
     private Long facilityId;
 
+    private Boolean appointable;
+    private Integer parallelCapacityValue;
+    private Integer defaultDurationMinutes;
+    private Integer defaultBufferBeforeMinutes;
+    private Integer defaultBufferAfterMinutes;
 }

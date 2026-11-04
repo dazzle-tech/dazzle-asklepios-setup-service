@@ -3,7 +3,11 @@ package com.dazzle.asklepios.service.dto;
 public record CptConflictDTO(
         String code,
         String incomingDescription,
-        String incomingCategory,
+        String incomingCodeCategory,
+        String incomingServiceCategory,
+        String incomingMainCategory,
         String existingDescription,
-        String existingCategory
+        String existingCodeCategory,
+        String existingServiceCategory,
+        String existingMainCategory
 ) {}

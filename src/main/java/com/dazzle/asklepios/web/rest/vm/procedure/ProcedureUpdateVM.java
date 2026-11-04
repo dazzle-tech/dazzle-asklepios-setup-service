@@ -1,12 +1,14 @@
 package com.dazzle.asklepios.web.rest.vm.procedure;
 
 import com.dazzle.asklepios.domain.Procedure;
-import com.dazzle.asklepios.domain.enumeration.ProcedureCategoryType;
+import com.dazzle.asklepios.domain.enumeration.Currency;
+import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * View Model for updating a Procedure via REST.
@@ -16,14 +18,17 @@ public record ProcedureUpdateVM(
         @NotNull Long id,
         @NotEmpty String name,
         @NotEmpty String code,
-        @NotNull ProcedureCategoryType categoryType,
+        @NotNull ProcedureCategory categoryType,
         @NotNull Boolean isAppointable,
         String indications,
         String contraindications,
         String preparationInstructions,
         String recoveryNotes,
+        @NotNull Currency currency,
+        @NotNull BigDecimal price,
         @NotNull Boolean isActive,
-        String lastModifiedBy
+        String lastModifiedBy,
+        Long billingRuleId
 ) implements Serializable {
 
     public static ProcedureUpdateVM ofEntity(Procedure procedure) {
@@ -37,7 +42,13 @@ public record ProcedureUpdateVM(
                 procedure.getContraindications(),
                 procedure.getPreparationInstructions(),
                 procedure.getRecoveryNotes(),
+                procedure.getCurrency(),
+                procedure.getPrice(),
                 procedure.getIsActive(),
-                procedure.getLastModifiedBy());
+                procedure.getLastModifiedBy(),
+                procedure.getBillingRule() != null
+                        ? procedure.getBillingRule().getId()
+                        : null
+        );
     }
 }

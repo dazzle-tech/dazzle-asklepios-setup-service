@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.ServiceSetup;
+import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.service.BillingRuleReferenceService;
 import com.dazzle.asklepios.service.ServiceService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.ServiceCreateVM;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 
@@ -36,9 +40,14 @@ public class ServiceController {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceController.class);
     private final ServiceService serviceService;
+    private final BillingRuleReferenceService billingRuleReferenceService;
 
-    public ServiceController(ServiceService serviceService) {
+    public ServiceController(
+            ServiceService serviceService,
+            BillingRuleReferenceService billingRuleReferenceService
+    ) {
         this.serviceService = serviceService;
+        this.billingRuleReferenceService = billingRuleReferenceService;
     }
 
     @PostMapping("/service")
@@ -56,6 +65,17 @@ public class ServiceController {
                 .price(vm.price())
                 .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
+                .appointable(vm.appointable())
+                .parallelCapacityValue(vm.parallelCapacityValue())
+                .defaultDurationMinutes(vm.defaultDurationMinutes())
+                .defaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes())
+                .defaultBufferAfterMinutes(vm.defaultBufferAfterMinutes())
+                .billingRule(
+                        billingRuleReferenceService.resolveOptional(
+                                vm.billingRuleId(),
+                                BillingItemTypes.SERVICE
+                        )
+                )
                 .build();
 
         ServiceSetup created = serviceService.create(facilityId, toCreate);
@@ -82,7 +102,17 @@ public class ServiceController {
         patch.setPrice(vm.price());
         patch.setCurrency(vm.currency());
         patch.setIsActive(vm.isActive());
-        patch.setLastModifiedBy(vm.lastModifiedBy());
+        patch.setAppointable(vm.appointable());
+        patch.setParallelCapacityValue(vm.parallelCapacityValue());
+        patch.setDefaultDurationMinutes(vm.defaultDurationMinutes());
+        patch.setDefaultBufferBeforeMinutes(vm.defaultBufferBeforeMinutes());
+        patch.setDefaultBufferAfterMinutes(vm.defaultBufferAfterMinutes());
+        patch.setBillingRule(
+                billingRuleReferenceService.resolveOptional(
+                        vm.billingRuleId(),
+                        BillingItemTypes.SERVICE
+                )
+        );
 
         return serviceService.update(id, facilityId, patch)
                 .map(ServiceResponseVM::ofEntity)
@@ -169,6 +199,74 @@ public class ServiceController {
         );
     }
 
+
+    @GetMapping("/service/by-abbreviation/{abbreviation}")
+    public ResponseEntity<List<ServiceResponseVM>> getByAbbreviation(
+            @PathVariable String abbreviation,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by abbreviation={} pageable={}", abbreviation, pageable);
+        Page<ServiceSetup> page = serviceService.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/by-price/{price}")
+    public ResponseEntity<List<ServiceResponseVM>> getByPrice(
+            @PathVariable BigDecimal price,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by price={} pageable={}", price, pageable);
+        Page<ServiceSetup> page = serviceService.findByPrice(price, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/by-currency/{currency}")
+    public ResponseEntity<List<ServiceResponseVM>> getByCurrency(
+            @PathVariable Currency currency,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by currency={} pageable={}", currency, pageable);
+        Page<ServiceSetup> page = serviceService.findByCurrency(currency, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/by-status/{isActive}")
+    public ResponseEntity<List<ServiceResponseVM>> getByStatus(
+            @PathVariable Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by isActive={} pageable={}", isActive, pageable);
+
+        Page<ServiceSetup> page = serviceService.findByIsActive(isActive, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
     @PatchMapping("/service/{id}/toggle-active")
     public ResponseEntity<ServiceResponseVM> toggleServiceActiveStatus(
             @PathVariable Long id
@@ -178,5 +276,94 @@ public class ServiceController {
                 .map(ServiceResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/service/by-department")
+    public ResponseEntity<List<ServiceResponseVM>> getServicesByDepartment(
+            @RequestParam Long sourceId,
+            @RequestParam(required = false) String specialty,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST list Services by DEPARTMENTS sourceId={} specialty={} pageable={}",
+                sourceId, specialty, pageable);
+
+        Page<ServiceSetup> page = specialty != null && !specialty.isBlank()
+                ? serviceService.findServicesByDepartmentAndSpecialty(sourceId, specialty, pageable)
+                : serviceService.findServicesByDepartmentSource(sourceId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page);
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+    @GetMapping("/service/{id}")
+    public ResponseEntity<ServiceResponseVM> getById(@PathVariable Long id) {
+        LOG.debug("REST get Service by id={}", id);
+
+        return serviceService.findOne(id)
+                .map(ServiceResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/service/internalJob/{id}")
+    public ResponseEntity<ServiceResponseVM> getByIdInternal(@PathVariable Long id) {
+        LOG.debug("REST get Service internal by id={}", id);
+
+        return serviceService.findOne(id)
+                .map(ServiceResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/service/bulk")
+    public ResponseEntity<List<ServiceResponseVM>> getBulkByIds(
+            @RequestParam List<Long> ids
+    ) {
+        LOG.debug("REST get Services by ids={}", ids);
+
+        List<ServiceResponseVM> body = serviceService.findAllByIds(ids)
+                .stream()
+                .map(ServiceResponseVM::ofEntity)
+                .toList();
+
+        return ResponseEntity.ok(body);
+    }
+    @GetMapping("/service/appointable/by-loggedIn-facility")
+    public ResponseEntity<List<ServiceResponseVM>> getAppointableBasedOnLoggedInFacility(@ParameterObject Pageable pageable) {
+        LOG.debug("REST list active appointable service pageable={}", pageable);
+
+        Page<ServiceSetup> page = serviceService.findActiveAppointableBasedOnLoggedInFacility(pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(), page
+        );
+
+        return new ResponseEntity<>(
+                page.getContent().stream().map(ServiceResponseVM::ofEntity).toList(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/service/active/by-facility/{facilityId}")
+    public ResponseEntity<List<ServiceSetup>> findActiveByFacility(
+            @PathVariable Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug("REST request to get active Services by facilityId={} pageable={}", facilityId, pageable);
+
+        Page<ServiceSetup> page = serviceService.findActiveByFacility(facilityId, pageable);
+
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 }

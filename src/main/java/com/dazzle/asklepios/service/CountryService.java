@@ -1,6 +1,7 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Country;
+import com.dazzle.asklepios.domain.enumeration.CountryName;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -38,8 +40,8 @@ public class CountryService {
         }
 
         Country entity = Country.builder()
-                .name(countryRequest.getName().trim())
-                .code(countryRequest.getCode().trim())
+                .name(countryRequest.getName())
+                .code(countryRequest.getCode() != null ? countryRequest.getCode().trim() : null)
                 .isActive(countryRequest.getIsActive() != null ? countryRequest.getIsActive() : Boolean.TRUE)
                 .build();
 
@@ -66,8 +68,8 @@ public class CountryService {
         Country existing = countryRepository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException("Country not found with id " + id, "country", "notfound"));
 
-        existing.setName(countryRequest.getName().trim());
-        existing.setCode(countryRequest.getCode().trim());
+        existing.setName(countryRequest.getName());
+        existing.setCode(countryRequest.getCode() != null ? countryRequest.getCode().trim() : null);
         existing.setIsActive(countryRequest.getIsActive());
 
         try {
@@ -87,12 +89,19 @@ public class CountryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Country> findByName(String name, Pageable pageable) {
-        LOG.debug("Fetching Countries by name like='{}' pageable={}", name, pageable);
-        if (name == null || name.trim().isEmpty()) {
+    public Page<Country> findActive(Pageable pageable) {
+        LOG.debug("Fetching active Countries pageable={}", pageable);
+        return countryRepository.findByIsActiveTrue(pageable);
+    }
+
+
+    @Transactional(readOnly = true)
+    public Page<Country> findByName(CountryName name, Pageable pageable) {
+        LOG.debug("Fetching Countries by name='{}' pageable={}", name, pageable);
+        if (name == null) {
             return countryRepository.findAll(pageable);
         }
-        return countryRepository.findByName(name.trim(), pageable);
+        return countryRepository.findByName(name, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -101,7 +110,7 @@ public class CountryService {
         if (code == null || code.trim().isEmpty()) {
             return countryRepository.findAll(pageable);
         }
-        return countryRepository.findByCodeContainingIgnoreCase(code.trim(), pageable);
+        return countryRepository.findByCode(code.trim(), pageable);
     }
 
     @Transactional
@@ -118,6 +127,38 @@ public class CountryService {
                 });
     }
 
+    @Transactional(readOnly = true)
+    public Page<Country> searchByName(String name, Pageable pageable) {
+        LOG.debug(
+                "Searching Countries by name prefix='{}' pageable={}",
+                name,
+                pageable
+        );
+
+        if (name == null || name.trim().isEmpty()) {
+            return countryRepository.findByIsActiveTrue(pageable);
+        }
+
+        return countryRepository.searchActiveByNamePrefix(
+                name.trim(),
+                pageable
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public Country findById(Long id) {
+        LOG.debug("[GET country BY ID] id={}", id);
+
+        return countryRepository.findById(id)
+                .orElseThrow(() -> {
+                    LOG.warn("[GET country BY ID] country not found id={}", id);
+                    return new NotFoundAlertException(
+                            "country not found with id " + id,
+                            "country",
+                            "country.notfound"
+                    );
+                });
+    }
     private BadRequestAlertException handleConstraintViolationOnCreateOrUpdate(Exception ex, String operation) {
         Throwable root = getRootCause(ex);
         String message = (root != null ? root.getMessage() : ex.getMessage());
@@ -144,4 +185,20 @@ public class CountryService {
                 "db.constraint"
         );
     }
+    @Transactional(readOnly = true)
+    public List<Country> findByIds(List<Long> ids) {
+        LOG.debug("[COUNTRY][FIND BY IDS] Request to find countries by ids={}", ids);
+
+        if (ids == null || ids.isEmpty()) {
+            LOG.warn("[COUNTRY][FIND BY IDS] Empty or null ids list received, returning empty list");
+            return java.util.Collections.emptyList();
+        }
+
+        List<Country> result = countryRepository.findAllById(ids);
+        LOG.info("[COUNTRY][FIND BY IDS] Found {} countries for {} requested ids",
+                result.size(), ids.size());
+
+        return result;
+    }
+
 }

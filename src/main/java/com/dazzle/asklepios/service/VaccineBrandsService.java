@@ -1,7 +1,9 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Vaccine;
 import com.dazzle.asklepios.domain.VaccineBrands;
+import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.VaccineBrandsRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -27,30 +31,44 @@ public class VaccineBrandsService {
     private static final Logger LOG = LoggerFactory.getLogger(VaccineBrandsService.class);
 
     private final VaccineBrandsRepository vaccineBrandsRepository;
+    private final FacilityRepository facilityRepository;
     private final EntityManager entityManager;
 
-    public VaccineBrandsService(VaccineBrandsRepository vaccineBrandsRepository, EntityManager entityManager) {
+    public VaccineBrandsService(
+            VaccineBrandsRepository vaccineBrandsRepository,
+            FacilityRepository facilityRepository,
+            EntityManager entityManager
+    ) {
         this.vaccineBrandsRepository = vaccineBrandsRepository;
+        this.facilityRepository = facilityRepository;
         this.entityManager = entityManager;
     }
 
-    public VaccineBrands create(Long vaccineId, VaccineBrands incoming) {
-        LOG.info("[CREATE] Request to create VaccineBrand for vaccineId={} payload={}", vaccineId, incoming);
+    public VaccineBrands create(Long vaccineId, Long facilityId, VaccineBrands incoming) {
+        LOG.info("[CREATE] Request to create VaccineBrand for vaccineId={} facilityId={} payload={}", vaccineId, facilityId, incoming);
 
         if (vaccineId == null) {
+            LOG.debug("Create VaccineBrand rejected: vaccineId is null");
             throw new BadRequestAlertException("Vaccine id is required", "vaccineBrand", "vaccine.required");
         }
         if (incoming == null) {
+            LOG.debug("Create VaccineBrand rejected: payload is null for vaccineId={}", vaccineId);
             throw new BadRequestAlertException("Vaccine brand payload is required", "vaccineBrand", "payload.required");
         }
+
+        Facility facility = getFacility(facilityId);
 
         VaccineBrands entity = VaccineBrands.builder()
                 .vaccine(refVaccine(vaccineId))
                 .name(incoming.getName())
+                .code(normalizeCode(incoming.getCode()))
                 .manufacture(incoming.getManufacture())
                 .volume(incoming.getVolume())
                 .unit(incoming.getUnit())
                 .marketingAuthorizationHolder(incoming.getMarketingAuthorizationHolder())
+                .facility(facility)
+                .price(incoming.getPrice())
+                .currency(currencyOf(facility))
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .build();
 
@@ -68,10 +86,11 @@ public class VaccineBrandsService {
         }
     }
 
-    public Optional<VaccineBrands> update(Long id, Long vaccineId, VaccineBrands incoming) {
-        LOG.info("[UPDATE] Request to update VaccineBrand id={} vaccineId={} payload={}", id, vaccineId, incoming);
+    public Optional<VaccineBrands> update(Long id, Long vaccineId, Long facilityId, VaccineBrands incoming) {
+        LOG.info("[UPDATE] Request to update VaccineBrand id={} vaccineId={} facilityId={} payload={}", id, vaccineId, facilityId, incoming);
 
         if (incoming == null) {
+            LOG.debug("Update VaccineBrand rejected: payload is null for id={} vaccineId={}", id, vaccineId);
             throw new BadRequestAlertException("Vaccine brand payload is required", "vaccineBrand", "payload.required");
         }
 
@@ -79,10 +98,15 @@ public class VaccineBrandsService {
                 .orElseThrow(() -> new NotFoundAlertException("Vaccine brand not found with id " + id, "vaccineBrand", "notfound"));
 
         existing.setName(incoming.getName());
+        existing.setCode(normalizeCode(incoming.getCode()));
         existing.setManufacture(incoming.getManufacture());
         existing.setVolume(incoming.getVolume());
         existing.setUnit(incoming.getUnit());
         existing.setMarketingAuthorizationHolder(incoming.getMarketingAuthorizationHolder());
+        existing.setFacility(getFacility(facilityId));
+        existing.setPrice(incoming.getPrice());
+        // Currency always comes from the facility (the value sent by the client is ignored)
+        existing.setCurrency(currencyOf(existing.getFacility()));
         existing.setIsActive(incoming.getIsActive());
 
         try {
@@ -107,14 +131,30 @@ public class VaccineBrandsService {
     }
 
     @Transactional(readOnly = true)
+    public Page<VaccineBrands> searchActive(String search, Pageable pageable) {
+        LOG.debug("Searching active VaccineBrands search='{}' pageable={}", search, pageable);
+        // An empty search matches every brand; a null parameter cannot be typed by Postgres
+        String normalized = search == null ? "" : search.trim();
+        return vaccineBrandsRepository.searchActive(normalized, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<VaccineBrands> findAll(Pageable pageable) {
         LOG.debug("Fetching VaccineBrands pageable={}", pageable);
         return vaccineBrandsRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<VaccineBrands> findOne(Long id) {
+        LOG.debug("Fetching VaccineBrand by id={}", id);
+        Optional<VaccineBrands> result = vaccineBrandsRepository.findById(id);
+        LOG.debug("Fetch VaccineBrand by id={} found={}", id, result.isPresent());
+        return result;
+    }
+
     public Optional<VaccineBrands> toggleIsActive(Long id) {
         LOG.info("Toggling isActive for VaccineBrand id={}", id);
-        return vaccineBrandsRepository.findById(id)
+        Optional<VaccineBrands> updated = vaccineBrandsRepository.findById(id)
                 .map(entity -> {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
@@ -122,10 +162,44 @@ public class VaccineBrandsService {
                     LOG.info("VaccineBrand id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
+        if (updated.isEmpty()) {
+            LOG.debug("Toggle isActive skipped: VaccineBrand not found for id={}", id);
+        }
+        return updated;
+    }
+
+    @Transactional(readOnly = true)
+    public List<VaccineBrands> findVaccineBrandsByIds(List<Long> ids) {
+        LOG.debug("Fetching VaccineBrands by ids={}", ids);
+        if (ids == null || ids.isEmpty()) {
+            LOG.debug("No ids provided for VaccineBrands lookup, returning empty list");
+            return List.of();
+        }
+        List<Long> cleaned = ids.stream().filter(Objects::nonNull).distinct().toList();
+        List<VaccineBrands> result = vaccineBrandsRepository.findByIdIn(cleaned);
+        LOG.debug("Fetched {} VaccineBrands for {} distinct ids", result.size(), cleaned.size());
+        return result;
+    }
+
+    private static String normalizeCode(String code) {
+        return code == null ? null : code.trim();
     }
 
     private Vaccine refVaccine(Long vaccineId) {
         return entityManager.getReference(Vaccine.class, vaccineId);
+    }
+
+    private Facility getFacility(Long facilityId) {
+        if (facilityId == null) {
+            throw new BadRequestAlertException("Facility is required", "vaccineBrand", "facility.required");
+        }
+        return facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new NotFoundAlertException("Facility not found: " + facilityId, "facility", "notfound"));
+    }
+
+    /** The vaccine brand currency always follows the facility's default currency */
+    private static String currencyOf(Facility facility) {
+        return facility.getDefaultCurrency() != null ? facility.getDefaultCurrency().name() : null;
     }
 
     private void handleConstraintViolation(RuntimeException constraintException) {
@@ -135,12 +209,12 @@ public class VaccineBrandsService {
 
         LOG.error("Database constraint violation while saving vaccine brand: {}", message, constraintException);
 
-        if (msgLower.contains("ux_vaccine_brands_name_unit_volume")
+        if (msgLower.contains("ux_vaccine_brands_facility_name_unit_volume")
                 || msgLower.contains("unique constraint")
                 || msgLower.contains("duplicate key")
                 || msgLower.contains("duplicate entry")) {
             throw new BadRequestAlertException(
-                    "A vaccine brand with the same (name, unit, volume) already exists.",
+                    "A vaccine brand with the same (name, unit, volume) already exists in this facility.",
                     "vaccineBrand",
                     "unique.name.unit.volume"
             );

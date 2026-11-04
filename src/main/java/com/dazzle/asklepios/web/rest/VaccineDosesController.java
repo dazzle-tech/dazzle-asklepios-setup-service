@@ -6,6 +6,7 @@ import com.dazzle.asklepios.domain.enumeration.NumberOfDoses;
 import com.dazzle.asklepios.service.VaccineDosesService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 
+import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.vaccineDoses.VaccineDosesCreateVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineDoses.VaccineDosesResponseVM;
 import com.dazzle.asklepios.web.rest.vm.vaccineDoses.VaccineDosesUpdateVM;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -139,4 +141,42 @@ public class VaccineDosesController {
         List<DoseNumber> result = vaccineDosesService.getDoseNumbersUpTo(numberOfDoses);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/vaccine-doses/{id}")
+    public ResponseEntity<VaccineDosesResponseVM> getOne(@PathVariable Long id) {
+        if (id == null) {
+            throw new BadRequestAlertException("Vaccine dose id is required", "vaccineDose", "id.required");
+        }
+        LOG.debug("REST get VaccineDose id={}", id);
+        return vaccineDosesService.findOne(id)
+                .map(VaccineDosesResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/vaccine-doses/{id}/next")
+    public ResponseEntity<VaccineDosesResponseVM> getNextDose(@PathVariable Long id) {
+        return vaccineDosesService.getNextDose(id)
+                .map(VaccineDosesResponseVM::ofEntity)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/vaccine-doses/by-ids")
+    public ResponseEntity<List<VaccineDosesResponseVM>> getVaccineDosesByIds(
+            @RequestParam(name = "ids") List<Long> ids
+    ) {
+        LOG.debug("REST get VaccineDoses by ids={}", ids);
+
+        List<VaccineDoses> doses = vaccineDosesService.findVaccineDosesByIds(ids);
+
+        LOG.debug("REST get VaccineDoses by ids responseCount={}", doses.size());
+
+        return ResponseEntity.ok(
+                doses.stream()
+                        .map(VaccineDosesResponseVM::ofEntity)
+                        .toList()
+        );
+    }
+
 }
