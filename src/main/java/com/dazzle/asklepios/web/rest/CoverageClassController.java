@@ -1,7 +1,10 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.service.CoverageClassCloneService;
 import com.dazzle.asklepios.service.CoverageClassService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.ToggleActiveVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassCloneVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassPolicyLinkVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassResponseVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassSaveVM;
@@ -36,15 +39,30 @@ public class CoverageClassController {
     private static final Logger LOG = LoggerFactory.getLogger(CoverageClassController.class);
 
     private final CoverageClassService coverageClassService;
+    private final CoverageClassCloneService coverageClassCloneService;
 
-    public CoverageClassController(CoverageClassService coverageClassService) {
+    public CoverageClassController(
+            CoverageClassService coverageClassService,
+            CoverageClassCloneService coverageClassCloneService
+    ) {
         this.coverageClassService = coverageClassService;
+        this.coverageClassCloneService = coverageClassCloneService;
     }
 
     @PostMapping("/coverage-classes")
     public ResponseEntity<CoverageClassResponseVM> create(@Valid @RequestBody CoverageClassSaveVM vm) {
         LOG.debug("REST create coverage class payload={}", vm);
         CoverageClassResponseVM body = coverageClassService.create(vm);
+        return ResponseEntity.created(URI.create("/api/setup/coverage-classes/" + body.id())).body(body);
+    }
+
+    @PostMapping("/coverage-classes/{id:\\d+}/clone")
+    public ResponseEntity<CoverageClassResponseVM> cloneClass(
+            @PathVariable Long id,
+            @Valid @RequestBody CoverageClassCloneVM vm
+    ) {
+        LOG.debug("REST clone coverage class id={} payload={}", id, vm);
+        CoverageClassResponseVM body = coverageClassCloneService.cloneClass(id, vm);
         return ResponseEntity.created(URI.create("/api/setup/coverage-classes/" + body.id())).body(body);
     }
 
@@ -60,8 +78,11 @@ public class CoverageClassController {
     }
 
     @PatchMapping("/coverage-classes/{id:\\d+}/toggle-active")
-    public ResponseEntity<CoverageClassResponseVM> toggleActive(@PathVariable Long id) {
-        return ResponseEntity.ok(coverageClassService.toggleActive(id));
+    public ResponseEntity<CoverageClassResponseVM> toggleActive(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) ToggleActiveVM vm
+    ) {
+        return ResponseEntity.ok(coverageClassService.toggleActive(id, ToggleActiveVM.reasonOf(vm)));
     }
 
     @PutMapping("/coverage-classes/{id:\\d+}/policy")
@@ -77,9 +98,11 @@ public class CoverageClassController {
     public ResponseEntity<List<CoverageClassResponseVM>> list(
             @PathVariable Long contractId,
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String policy,
             @ParameterObject Pageable pageable
     ) {
-        return paged(coverageClassService.list(contractId, isActive, pageable));
+        return paged(coverageClassService.list(contractId, isActive, name, policy, pageable));
     }
 
     private <T> ResponseEntity<List<T>> paged(Page<T> page) {

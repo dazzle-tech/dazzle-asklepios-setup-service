@@ -19,6 +19,7 @@ import com.dazzle.asklepios.domain.enumeration.CoveragePreApprovalLevel;
 import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
 import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
 import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
+import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import com.dazzle.asklepios.domain.enumeration.biling.InsuranceCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
@@ -58,6 +59,7 @@ public class CoverageRuleService {
     private static final String ENTITY = "coverageContract";
 
     private static final String TPA_ENTITY = "tpaDefinition";
+    private static final BigDecimal MAX_PERCENTAGE = BigDecimal.valueOf(100);
 
     private final CoverageClassService coverageClassService;
     private final CoverageLookupService coverageLookupService;
@@ -102,19 +104,16 @@ public class CoverageRuleService {
 
     public CoverageCopaymentVM saveCopayment(Long classId, CoverageCopaymentVM vm) {
         CoverageClass coverageClass = coverageClassService.getEntity(classId);
-        requirePositive(vm.valueAmount(), "Co-payment value");
         CoverageCopayment entity = vm.id() == null
                 ? CoverageCopayment.builder().coverageClass(coverageClass).isActive(true).build()
                 : requireOwnedCopayment(vm.id(), classId);
-        entity.setEncounterType(vm.encounterType());
-        entity.setValueType(vm.valueType());
-        entity.setValueAmount(vm.valueAmount());
+        applyCopayment(entity, vm);
         if (vm.id() == null) {
             entity.setIsActive(true);
         } else if (vm.isActive() != null) {
             entity.setIsActive(vm.isActive());
         }
-        return CoverageCopaymentVM.ofEntity(copaymentRepository.save(entity));
+        return toCopaymentVm(copaymentRepository.save(entity));
     }
 
     @Transactional(readOnly = true)
@@ -123,14 +122,14 @@ public class CoverageRuleService {
         Page<CoverageCopayment> page = isActive == null
                 ? copaymentRepository.findByCoverageClass_Id(classId, pageable)
                 : copaymentRepository.findByCoverageClass_IdAndIsActive(classId, isActive, pageable);
-        return page.map(CoverageCopaymentVM::ofEntity);
+        return page.map(this::toCopaymentVm);
     }
 
     public CoverageCopaymentVM toggleCopaymentActive(Long id) {
         CoverageCopayment entity = copaymentRepository.findById(id)
                 .orElseThrow(() -> new BadRequestAlertException("Co-payment was not found.", ENTITY, "notFound"));
         entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
-        return CoverageCopaymentVM.ofEntity(copaymentRepository.save(entity));
+        return toCopaymentVm(copaymentRepository.save(entity));
     }
 
     public CoverageTermVM saveTerm(Long classId, CoverageTermVM vm) {
@@ -438,6 +437,19 @@ public class CoverageRuleService {
         return page.map(this::toPreApprovalItemVm);
     }
 
+    private void applyCopayment(CoverageCopayment entity, CoverageCopaymentVM vm) {
+        Facility facility = requireFacility(vm.facilityId());
+        boolean allDepartments = Boolean.TRUE.equals(vm.allDepartments()) || vm.departmentId() == null;
+        Department department = allDepartments ? null : requireDepartment(vm.departmentId(), facility.getId());
+        requireValue(vm.valueAmount(), vm.valueType() == InsuranceCoverageType.PERCENTAGE, "Co-payment value");
+        entity.setFacilityId(facility.getId());
+        entity.setAllDepartments(allDepartments);
+        entity.setDepartmentId(department == null ? null : department.getId());
+        entity.setEncounterType(requireEncounterType(vm.encounterType()));
+        entity.setValueType(vm.valueType());
+        entity.setValueAmount(vm.valueAmount());
+    }
+
     private void applyTerm(CoverageTerm entity, CoverageTermVM vm) {
         Facility facility = requireFacility(vm.facilityId());
         boolean allDepartments = Boolean.TRUE.equals(vm.allDepartments()) || vm.departmentId() == null;
@@ -469,7 +481,7 @@ public class CoverageRuleService {
         if (vm.termType() != CoverageTermType.COVERAGE && vm.coverageBasis() == null) {
             throw new BadRequestAlertException("Gross/Net basis is required.", ENTITY, "coverageBasisRequired");
         }
-        requirePositive(vm.limitValue(), "Limit value");
+        requireValue(vm.limitValue(), vm.valueType() == InsuranceCoverageType.PERCENTAGE, "Limit value");
     }
 
     private void applyTermItem(CoverageTermItem entity, CoverageTermItemVM vm) {
@@ -481,7 +493,7 @@ public class CoverageRuleService {
         entity.setItemName(scope == CoverageRuleTarget.SERVICE ? blankToNull(vm.serviceName()) : null);
         entity.setValueType(vm.valueType());
         entity.setLimitValue(vm.limitValue());
-        requirePositive(vm.limitValue(), "Limit value");
+        requireValue(vm.limitValue(), vm.valueType() == InsuranceCoverageType.PERCENTAGE, "Limit value");
     }
 
     private void validateTerm(CoverageTermVM vm) {
@@ -506,7 +518,7 @@ public class CoverageRuleService {
         if (vm.serviceId() != null && vm.billingItemType() == BillingItemTypes.SERVICE) {
             requireService(vm.serviceId());
         }
-        requirePositive(vm.limitValue(), "Limit value");
+        requireValue(vm.limitValue(), vm.valueType() == InsuranceCoverageType.PERCENTAGE, "Limit value");
     }
 
     private CoverageRuleTarget resolveTermItemScope(CoverageTermItemVM vm) {
@@ -639,7 +651,7 @@ public class CoverageRuleService {
     }
 
     private void validateDiscount(CoverageDiscountVM vm) {
-        requirePositive(vm.discountValue(), "Discount value");
+        requireValue(vm.discountValue(), vm.discountType() == DiscountType.PERCENTAGE, "Discount value");
         if (vm.targetType() == CoverageRuleTarget.DIAGNOSIS) {
             throw new BadRequestAlertException("Discount can apply to all items, a category, a subcategory, or a service.", ENTITY, "invalidTarget");
         }
@@ -724,10 +736,7 @@ public class CoverageRuleService {
         if (vm.valueType() == null) {
             throw new BadRequestAlertException("Value type is required.", ENTITY, "valueTypeRequired");
         }
-        requirePositive(vm.limitValue(), "Limit value");
-        if (vm.valueType() == InsuranceCoverageType.PERCENTAGE && vm.limitValue().compareTo(new BigDecimal("100")) > 0) {
-            throw new BadRequestAlertException("Percentage limit cannot be greater than 100.", ENTITY, "invalidValue");
-        }
+        requireValue(vm.limitValue(), vm.valueType() == InsuranceCoverageType.PERCENTAGE, "Limit value");
     }
 
     private void validatePreApprovalItem(CoveragePreApprovalItemVM vm) {
@@ -1062,10 +1071,23 @@ public class CoverageRuleService {
         return encounterType;
     }
 
-    private void requirePositive(BigDecimal value, String field) {
+    private void requireValue(BigDecimal value, boolean percentage, String field) {
         if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestAlertException(field + " must be greater than zero.", ENTITY, "invalidValue");
         }
+        if (percentage && value.compareTo(MAX_PERCENTAGE) > 0) {
+            throw new BadRequestAlertException(field + " cannot be greater than 100%.", ENTITY, "invalidPercentage");
+        }
+    }
+
+    private CoverageCopaymentVM toCopaymentVm(CoverageCopayment entity) {
+        Facility facility = coverageLookupService.findFacility(entity.getFacilityId());
+        Department department = coverageLookupService.findDepartment(entity.getDepartmentId());
+        return CoverageCopaymentVM.ofEntity(
+                entity,
+                facility == null ? null : facility.getName(),
+                department == null ? null : department.getName()
+        );
     }
 
     private CoverageTermVM toTermVm(CoverageTerm entity) {

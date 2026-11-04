@@ -58,4 +58,7 @@ public class InsuranceCompanyPolicy extends AbstractAuditingEntity<Long> {
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "inactive_reason", length = 1000)
+    private String inactiveReason;
 }

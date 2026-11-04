@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.nphiespayer;
 
+import java.time.LocalDate;
 import com.dazzle.asklepios.domain.enumeration.ApprovalCoverageCompany;
 import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleApprovalCoverageCompanyDeserializer;
 import com.dazzle.asklepios.web.rest.vm.jackson.FlexibleLongDeserializer;
@@ -85,6 +86,10 @@ public record NphiesPayerUpdateVM(
 
         @JsonDeserialize(using = FlexibleApprovalCoverageCompanyDeserializer.class)
         ApprovalCoverageCompany approvalCoverageCompany,
+
+        LocalDate validFrom,
+
+        LocalDate validTo,
 
         @JsonDeserialize(contentUsing = FlexibleLongDeserializer.class)
         List<Long> tpaIds

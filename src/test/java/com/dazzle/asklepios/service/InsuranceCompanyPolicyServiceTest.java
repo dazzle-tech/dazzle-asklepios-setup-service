@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -97,7 +99,7 @@ class InsuranceCompanyPolicyServiceTest {
     }
 
     @Test
-    void findByInsuranceCompanyId_returnsPolicies() {
+    void search_returnsPolicies() {
         InsuranceCompanyPolicy policy = InsuranceCompanyPolicy.builder()
                 .id(21L)
                 .insuranceCompany(company(8L))
@@ -108,10 +110,10 @@ class InsuranceCompanyPolicyServiceTest {
                 .validTo(LocalDate.of(2026, 12, 31))
                 .build();
         when(nphiesPayerRepository.findById(8L)).thenReturn(Optional.of(company(8L)));
-        when(insuranceCompanyPolicyRepository.findByInsuranceCompany_IdOrderByValidFromDescIdDesc(8L))
+        when(insuranceCompanyPolicyRepository.findAll(any(Specification.class), any(Sort.class)))
                 .thenReturn(List.of(policy));
 
-        List<InsuranceCompanyPolicy> policies = insuranceCompanyPolicyService.findByInsuranceCompanyId(8L);
+        List<InsuranceCompanyPolicy> policies = insuranceCompanyPolicyService.search(8L, "gold", null, null);
 
         assertThat(policies).extracting(InsuranceCompanyPolicy::getPolicyCode).containsExactly("POL-01");
     }

@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.InsuranceCompanyPolicy;
 import com.dazzle.asklepios.service.CoverageClassService;
 import com.dazzle.asklepios.service.InsuranceCompanyPolicyService;
+import com.dazzle.asklepios.web.rest.vm.ToggleActiveVM;
 import com.dazzle.asklepios.web.rest.vm.coverage.PolicyCoverageClassResponseVM;
 import com.dazzle.asklepios.web.rest.vm.insurancecompanypolicy.InsuranceCompanyPolicyResponseVM;
 import com.dazzle.asklepios.web.rest.vm.insurancecompanypolicy.InsuranceCompanyPolicySaveVM;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -65,19 +67,29 @@ public class InsuranceCompanyPolicyController {
     @PatchMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies/{policyId:\\d+}/toggle-active")
     public ResponseEntity<InsuranceCompanyPolicyResponseVM> toggleActive(
             @PathVariable Long insuranceCompanyId,
-            @PathVariable Long policyId
+            @PathVariable Long policyId,
+            @Valid @RequestBody(required = false) ToggleActiveVM vm
     ) {
         LOG.debug("REST toggle insurance company policy insuranceCompanyId={} policyId={}", insuranceCompanyId, policyId);
-        InsuranceCompanyPolicy updated = insuranceCompanyPolicyService.toggleActive(insuranceCompanyId, policyId);
+        InsuranceCompanyPolicy updated = insuranceCompanyPolicyService.toggleActive(
+                insuranceCompanyId,
+                policyId,
+                ToggleActiveVM.reasonOf(vm)
+        );
         return ResponseEntity.ok(InsuranceCompanyPolicyResponseVM.ofEntity(updated));
     }
 
     @GetMapping("/nphies-payers/{insuranceCompanyId:\\d+}/policies")
-    public ResponseEntity<List<InsuranceCompanyPolicyResponseVM>> list(@PathVariable Long insuranceCompanyId) {
+    public ResponseEntity<List<InsuranceCompanyPolicyResponseVM>> list(
+            @PathVariable Long insuranceCompanyId,
+            @RequestParam(required = false) String policyName,
+            @RequestParam(required = false) String policyNumber,
+            @RequestParam(required = false) String policyCode
+    ) {
         LOG.debug("REST list insurance company policies insuranceCompanyId={}", insuranceCompanyId);
 
         List<InsuranceCompanyPolicyResponseVM> policies = insuranceCompanyPolicyService
-                .findByInsuranceCompanyId(insuranceCompanyId)
+                .search(insuranceCompanyId, policyName, policyNumber, policyCode)
                 .stream()
                 .map(InsuranceCompanyPolicyResponseVM::ofEntity)
                 .toList();

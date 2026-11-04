@@ -175,7 +175,7 @@ public class CoverageContractResolutionService {
         Long classId = selectedClass == null ? null : selectedClass.getId();
 
         EncounterType encounterType = parseEncounterType(request.encounterType());
-        CoverageCopayment copayment = selectCopayment(classId, encounterType);
+        CoverageCopayment copayment = selectCopayment(classId, request, encounterType);
         CoverageMatch coverageMatch = selectCoverage(classId, request, encounterType);
         CoverageMatch limitMatch = selectLimit(classId, request, encounterType);
         CoverageMatch cashLimitMatch = selectCashLimit(classId, request, encounterType);
@@ -354,28 +354,62 @@ public class CoverageContractResolutionService {
         return score;
     }
 
-    private CoverageCopayment selectCopayment(Long classId, EncounterType encounterType) {
+    /**
+     * Picks the most specific active co-payment for the visit: a department rule beats an
+     * all-departments rule of the same facility, which beats a rule without a facility;
+     * within the same scope an exact encounter type beats ALL. Rows come newest first,
+     * so the latest edit wins a tie.
+     */
+    private CoverageCopayment selectCopayment(
+            Long classId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
         if (classId == null) {
             return null;
         }
-        List<CoverageCopayment> rows =
-                coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(classId);
-        if (rows.isEmpty()) {
-            return null;
-        }
-        if (encounterType != null && encounterType != EncounterType.ALL) {
-            CoverageCopayment exact = rows.stream()
-                    .filter(row -> row.getEncounterType() == encounterType)
-                    .findFirst()
-                    .orElse(null);
-            if (exact != null) {
-                return exact;
+        CoverageCopayment best = null;
+        int bestScore = -1;
+        for (CoverageCopayment row
+                : coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(classId)) {
+            int score = copaymentMatchScore(row, request.facilityId(), request.departmentId(), encounterType);
+            if (score > bestScore) {
+                best = row;
+                bestScore = score;
             }
         }
-        return rows.stream()
-                .filter(row -> row.getEncounterType() == EncounterType.ALL)
-                .findFirst()
-                .orElse(null);
+        return best;
+    }
+
+    private int copaymentMatchScore(
+            CoverageCopayment copayment,
+            Long facilityId,
+            Long departmentId,
+            EncounterType encounterType
+    ) {
+        boolean anyFacility = copayment.getFacilityId() == null;
+        boolean anyDepartment = Boolean.TRUE.equals(copayment.getAllDepartments()) || copayment.getDepartmentId() == null;
+        boolean anyEncounter = copayment.getEncounterType() == null || copayment.getEncounterType() == EncounterType.ALL;
+        if (!anyFacility && !copayment.getFacilityId().equals(facilityId)) {
+            return -1;
+        }
+        if (!anyDepartment && !copayment.getDepartmentId().equals(departmentId)) {
+            return -1;
+        }
+        if (!anyEncounter && copayment.getEncounterType() != encounterType) {
+            return -1;
+        }
+        int score = 0;
+        if (!anyDepartment) {
+            score += 100;
+        }
+        if (!anyFacility) {
+            score += 10;
+        }
+        if (!anyEncounter) {
+            score += 1;
+        }
+        return score;
     }
 
     private CoverageMatch selectCoverage(
@@ -1304,6 +1338,7 @@ public class CoverageContractResolutionService {
         }
         reason.append(". Co-payment applied from ")
                 .append(copayment.getEncounterType())
+                .append(copayment.getDepartmentId() == null ? "" : " department")
                 .append(" rule.");
         return reason.toString();
     }

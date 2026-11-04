@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.InsuranceCompanyPolicy;
 import com.dazzle.asklepios.domain.NphiesPayer;
 import com.dazzle.asklepios.repository.InsuranceCompanyPolicyRepository;
+import com.dazzle.asklepios.repository.InsuranceCompanyPolicySpecifications;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -10,6 +11,7 @@ import com.dazzle.asklepios.web.rest.vm.insurancecompanypolicy.InsuranceCompanyP
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,18 +67,34 @@ public class InsuranceCompanyPolicyService {
         return save(policy);
     }
 
-    public InsuranceCompanyPolicy toggleActive(Long insuranceCompanyId, Long policyId) {
+    public InsuranceCompanyPolicy toggleActive(Long insuranceCompanyId, Long policyId, String reason) {
         LOG.debug("Toggle insurance company policy active insuranceCompanyId={} policyId={}", insuranceCompanyId, policyId);
         InsuranceCompanyPolicy policy = requirePolicy(insuranceCompanyId, policyId);
-        policy.setIsActive(!Boolean.TRUE.equals(policy.getIsActive()));
+        boolean deactivating = Boolean.TRUE.equals(policy.getIsActive());
+        policy.setInactiveReason(InactiveReason.forToggle(deactivating, reason, ENTITY_NAME, "policy"));
+        policy.setIsActive(!deactivating);
         return insuranceCompanyPolicyRepository.save(policy);
     }
 
     @Transactional(readOnly = true)
-    public List<InsuranceCompanyPolicy> findByInsuranceCompanyId(Long insuranceCompanyId) {
-        LOG.debug("List insurance company policies insuranceCompanyId={}", insuranceCompanyId);
+    public List<InsuranceCompanyPolicy> search(
+            Long insuranceCompanyId,
+            String policyName,
+            String policyNumber,
+            String policyCode
+    ) {
+        LOG.debug(
+                "Search insurance company policies insuranceCompanyId={} policyName={} policyNumber={} policyCode={}",
+                insuranceCompanyId,
+                policyName,
+                policyNumber,
+                policyCode
+        );
         requireInsuranceCompany(insuranceCompanyId);
-        return insuranceCompanyPolicyRepository.findByInsuranceCompany_IdOrderByValidFromDescIdDesc(insuranceCompanyId);
+        return insuranceCompanyPolicyRepository.findAll(
+                InsuranceCompanyPolicySpecifications.search(insuranceCompanyId, policyName, policyNumber, policyCode),
+                Sort.by(Sort.Order.desc("validFrom"), Sort.Order.desc("id"))
+        );
     }
 
     private void applyPolicy(

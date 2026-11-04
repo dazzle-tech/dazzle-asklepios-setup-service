@@ -9,6 +9,11 @@ import java.time.Instant;
 
 public record CoverageCopaymentVM(
         Long id,
+        Long facilityId,
+        String facilityName,
+        Boolean allDepartments,
+        Long departmentId,
+        String departmentName,
         EncounterType encounterType,
         InsuranceCoverageType valueType,
         BigDecimal valueAmount,
@@ -17,8 +22,17 @@ public record CoverageCopaymentVM(
         Instant lastModifiedDate
 ) {
     public static CoverageCopaymentVM ofEntity(CoverageCopayment entity) {
+        return ofEntity(entity, null, null);
+    }
+
+    public static CoverageCopaymentVM ofEntity(CoverageCopayment entity, String facilityName, String departmentName) {
         return new CoverageCopaymentVM(
                 entity.getId(),
+                entity.getFacilityId(),
+                facilityName,
+                entity.getAllDepartments(),
+                entity.getDepartmentId(),
+                departmentName,
                 entity.getEncounterType(),
                 entity.getValueType(),
                 entity.getValueAmount(),

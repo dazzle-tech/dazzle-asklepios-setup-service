@@ -7,6 +7,7 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerResponseVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerTpasUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.ToggleActiveVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.PayerRelationshipDashboardVM;
 import jakarta.validation.Valid;
@@ -102,10 +103,13 @@ public class NphiesPayerController {
     }
 
     @PatchMapping("/nphies-payers/{id:\\d+}/toggle-active")
-    public ResponseEntity<NphiesPayerResponseVM> toggleActive(@PathVariable Long id) {
+    public ResponseEntity<NphiesPayerResponseVM> toggleActive(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) ToggleActiveVM vm
+    ) {
         LOG.debug("REST toggle NPHIES Payer isActive id={}", id);
 
-        return nphiesPayerService.toggleIsActive(id)
+        return nphiesPayerService.toggleIsActive(id, ToggleActiveVM.reasonOf(vm))
                 .map(NphiesPayerResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

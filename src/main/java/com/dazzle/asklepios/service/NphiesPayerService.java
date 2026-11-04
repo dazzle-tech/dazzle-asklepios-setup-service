@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.service;
 
+import java.time.LocalDate;
 import com.dazzle.asklepios.domain.Country;
 import com.dazzle.asklepios.domain.CountryDistrict;
 import com.dazzle.asklepios.domain.Facility;
@@ -75,6 +76,7 @@ public class NphiesPayerService {
 
         validateWebsite(vm.website());
         validateCityRequiresCountry(vm.countryId(), vm.cityId());
+        validateValidity(vm.validFrom(), vm.validTo());
 
         Facility facility = requireActiveFacility(vm.facilityId());
         Country country = resolveCountry(vm.countryId());
@@ -101,6 +103,8 @@ public class NphiesPayerService {
                 .website(blankToNull(vm.website()))
                 .isActive(vm.isActive() != null ? vm.isActive() : Boolean.TRUE)
                 .approvalCoverageCompany(vm.approvalCoverageCompany())
+                .validFrom(vm.validFrom())
+                .validTo(vm.validTo())
                 .build();
 
         NphiesPayer saved = nphiesPayerRepository.save(payer);
@@ -131,6 +135,7 @@ public class NphiesPayerService {
 
         validateWebsite(vm.website());
         validateCityRequiresCountry(vm.countryId(), vm.cityId());
+        validateValidity(vm.validFrom(), vm.validTo());
 
         String previousNphiesId = existing.getNphiesId();
         Long currentFacilityId = existing.getFacility() != null ? existing.getFacility().getId() : null;
@@ -158,6 +163,8 @@ public class NphiesPayerService {
         existing.setWebsite(blankToNull(vm.website()));
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
         existing.setApprovalCoverageCompany(vm.approvalCoverageCompany());
+        existing.setValidFrom(vm.validFrom());
+        existing.setValidTo(vm.validTo());
 
         NphiesPayer saved = nphiesPayerRepository.save(existing);
         syncTpas(saved, vm.tpaIds());
@@ -178,10 +185,12 @@ public class NphiesPayerService {
         return reloadWithLinks(existing.getId(), existing);
     }
 
-    public Optional<NphiesPayer> toggleIsActive(Long id) {
+    public Optional<NphiesPayer> toggleIsActive(Long id, String reason) {
         LOG.debug("Toggle NPHIES Payer isActive id={}", id);
         return nphiesPayerRepository.findById(id).map(payer -> {
-            payer.setIsActive(!Boolean.TRUE.equals(payer.getIsActive()));
+            boolean deactivating = Boolean.TRUE.equals(payer.getIsActive());
+            payer.setInactiveReason(InactiveReason.forToggle(deactivating, reason, ENTITY_NAME, "insurance company"));
+            payer.setIsActive(!deactivating);
             NphiesPayer saved = nphiesPayerRepository.save(payer);
             payorService.syncFromInsuranceCompany(saved);
             return saved;
@@ -453,6 +462,16 @@ public class NphiesPayerService {
                     "countryRequiredForCity",
                     ENTITY_NAME,
                     "Country is required when city is selected."
+            );
+        }
+    }
+
+    private void validateValidity(LocalDate validFrom, LocalDate validTo) {
+        if (validFrom != null && validTo != null && validTo.isBefore(validFrom)) {
+            throw new BadRequestAlertException(
+                    "invalidValidity",
+                    ENTITY_NAME,
+                    "Valid to must be on or after valid from."
             );
         }
     }

@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.CoverageClass;
 import com.dazzle.asklepios.domain.CoverageContract;
 import com.dazzle.asklepios.domain.InsuranceCompanyPolicy;
 import com.dazzle.asklepios.repository.CoverageClassRepository;
+import com.dazzle.asklepios.repository.CoverageClassSpecifications;
 import com.dazzle.asklepios.repository.InsuranceCompanyPolicyRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.coverage.CoverageClassResponseVM;
@@ -71,9 +72,11 @@ public class CoverageClassService {
         return CoverageClassResponseVM.of(coverageClassRepository.save(existing));
     }
 
-    public CoverageClassResponseVM toggleActive(Long id) {
+    public CoverageClassResponseVM toggleActive(Long id, String reason) {
         CoverageClass existing = getEntity(id);
-        existing.setIsActive(!Boolean.TRUE.equals(existing.getIsActive()));
+        boolean deactivating = Boolean.TRUE.equals(existing.getIsActive());
+        existing.setInactiveReason(InactiveReason.forToggle(deactivating, reason, ENTITY, "class"));
+        existing.setIsActive(!deactivating);
         return CoverageClassResponseVM.of(coverageClassRepository.save(existing));
     }
 
@@ -134,12 +137,11 @@ public class CoverageClassService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CoverageClassResponseVM> list(Long contractId, Boolean isActive, Pageable pageable) {
+    public Page<CoverageClassResponseVM> list(Long contractId, Boolean isActive, String name, String policy, Pageable pageable) {
         coverageContractService.getEntity(contractId);
-        Page<CoverageClass> page = isActive == null
-                ? coverageClassRepository.findByCoverageContract_Id(contractId, pageable)
-                : coverageClassRepository.findByCoverageContract_IdAndIsActive(contractId, isActive, pageable);
-        return page.map(CoverageClassResponseVM::of);
+        return coverageClassRepository
+                .findAll(CoverageClassSpecifications.search(contractId, isActive, name, policy), pageable)
+                .map(CoverageClassResponseVM::of);
     }
 
     private PolicyCoverageClassResponseVM toPolicyClass(CoverageClass coverageClass, Map<Long, String> coverageNames) {

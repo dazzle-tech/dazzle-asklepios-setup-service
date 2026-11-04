@@ -40,6 +40,18 @@ public class CoverageCopayment extends AbstractAuditingEntity<Long> {
     @JoinColumn(name = "coverage_class_id", nullable = false)
     private CoverageClass coverageClass;
 
+    /** Null on legacy rows: the co-payment applies to every facility. */
+    @Column(name = "facility_id")
+    private Long facilityId;
+
+    @NotNull
+    @Builder.Default
+    @Column(name = "all_departments", nullable = false)
+    private Boolean allDepartments = true;
+
+    @Column(name = "department_id")
+    private Long departmentId;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "encounter_type", nullable = false, length = 30)
