@@ -29,6 +29,18 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
 
     Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable);
 
+    Page<BrandMedication> findByNameContainsIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByManufacturerContainsIgnoreCaseAndIsActive(String manufacturer, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByDosageFormContainsIgnoreCaseAndIsActive(String dosageForm, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByRoaContainsIgnoreCaseAndIsActive(String roa, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByExpiresAfterOpeningAndIsActive(Boolean expiresAfterOpening, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByUseSinglePatientAndIsActive(Boolean useSinglePatient, Boolean isActive, Pageable pageable);
+
     @Query("""
               SELECT DISTINCT bai.brandMedication
             FROM BrandMedicationActiveIngredient bai

@@ -211,31 +211,39 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByFacility(Long facilityId, Pageable pageable) {
+    public Page<ServiceSetup> findByFacility(Long facilityId, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching paged Services by facilityId={} pageable={}", facilityId, pageable);
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "service", "facility.required");
         }
-        return serviceRepository.findByFacility_Id(facilityId, pageable);
+        return isActive == null
+                ? serviceRepository.findByFacility_Id(facilityId, pageable)
+                : serviceRepository.findByFacility_IdAndIsActive(facilityId, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findAll(Pageable pageable) {
+    public Page<ServiceSetup> findAll(Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching paged Services (no facility filter) pageable={}", pageable);
-        return serviceRepository.findAll(pageable);
+        return isActive == null
+                ? serviceRepository.findAll(pageable)
+                : serviceRepository.findByIsActive(isActive, pageable);
     }
 
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByCategory(ServiceCategory category, Pageable pageable) {
+    public Page<ServiceSetup> findByCategory(ServiceCategory category, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by category={} (no facility filter)", category);
-        return serviceRepository.findByCategory(category, pageable);
+        return isActive == null
+                ? serviceRepository.findByCategory(category, pageable)
+                : serviceRepository.findByCategoryAndIsActive(category, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByNameContainingIgnoreCase(String name, Pageable pageable) {
+    public Page<ServiceSetup> findByNameContainingIgnoreCase(String name, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by name='{}' (no facility filter)", name);
-        return serviceRepository.findByNameContainingIgnoreCase(name, pageable);
+        return isActive == null
+                ? serviceRepository.findByNameContainingIgnoreCase(name, pageable)
+                : serviceRepository.findByNameContainingIgnoreCaseAndIsActive(name, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -245,27 +253,35 @@ public class ServiceService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
+    public Page<ServiceSetup> findByCodeContainingIgnoreCase(String code, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by code='{}' (no facility filter)", code);
-        return serviceRepository.findByCodeContainingIgnoreCase(code, pageable);
+        return isActive == null
+                ? serviceRepository.findByCodeContainingIgnoreCase(code, pageable)
+                : serviceRepository.findByCodeContainingIgnoreCaseAndIsActive(code, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByAbbreviationContainingIgnoreCase(String abbreviation, Pageable pageable) {
+    public Page<ServiceSetup> findByAbbreviationContainingIgnoreCase(String abbreviation, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by abbreviation='{}' (no facility filter)", abbreviation);
-        return serviceRepository.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+        return isActive == null
+                ? serviceRepository.findByAbbreviationContainingIgnoreCase(abbreviation, pageable)
+                : serviceRepository.findByAbbreviationContainingIgnoreCaseAndIsActive(abbreviation, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByPrice(BigDecimal price, Pageable pageable) {
+    public Page<ServiceSetup> findByPrice(BigDecimal price, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by price={} (no facility filter)", price);
-        return serviceRepository.findByPrice(price, pageable);
+        return isActive == null
+                ? serviceRepository.findByPrice(price, pageable)
+                : serviceRepository.findByPriceAndIsActive(price, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<ServiceSetup> findByCurrency(Currency currency, Pageable pageable) {
+    public Page<ServiceSetup> findByCurrency(Currency currency, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Services by currency={} (no facility filter)", currency);
-        return serviceRepository.findByCurrency(currency, pageable);
+        return isActive == null
+                ? serviceRepository.findByCurrency(currency, pageable)
+                : serviceRepository.findByCurrencyAndIsActive(currency, isActive, pageable);
     }
 
 
