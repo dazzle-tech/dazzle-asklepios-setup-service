@@ -102,11 +102,7 @@ public class ConfigurationService {
 
         configuration.setScopeType(scope);
         configuration.setFacility(facility);
-        if (configuration.getUsers() == null) {
-            configuration.setUsers(new HashSet<>());
-        }
-        configuration.getUsers().clear();
-        configuration.getUsers().addAll(users);
+        replaceUsers(configuration, users);
 
         if (vm.key() != null) configuration.setKey(vm.key());
         if (vm.value() != null) configuration.setValue(vm.value());
@@ -362,7 +358,7 @@ public class ConfigurationService {
             boolean duplicate = configurationRepository
                     .findByKeyAndScopeTypeAndFacilityIsNull(key, ConfigurationScope.ORGANIZATION)
                     .stream()
-                    .anyMatch(row -> !Objects.equals(row.getId(), excludeId));
+                    .anyMatch(row -> !isSameRow(row, excludeId));
             if (duplicate) {
                 throw duplicateKeyException(key, "organization");
             }
@@ -373,7 +369,7 @@ public class ConfigurationService {
             boolean duplicate = configurationRepository
                     .findByKeyAndScopeTypeAndFacility_Id(key, ConfigurationScope.FACILITY, facility.getId())
                     .stream()
-                    .anyMatch(row -> !Objects.equals(row.getId(), excludeId));
+                    .anyMatch(row -> !isSameRow(row, excludeId));
             if (duplicate) {
                 throw duplicateKeyException(key, "facility " + facility.getId());
             }
@@ -390,6 +386,7 @@ public class ConfigurationService {
                         userIds
                 )
                 .stream()
+                .filter(row -> !isSameRow(row, excludeId))
                 .filter(row -> row.getUsers() != null)
                 .flatMap(row -> row.getUsers().stream())
                 .map(User::getId)
@@ -398,6 +395,36 @@ public class ConfigurationService {
         if (!clashes.isEmpty()) {
             throw duplicateKeyException(key, "user " + clashes + " at facility " + facility.getId());
         }
+    }
+
+    /**
+     * The row being edited may move between organization, facility, and user scope.
+     * That row is not a second copy of the key.
+     */
+    private boolean isSameRow(Configuration row, Long excludeId) {
+        return row != null
+                && row.getId() != null
+                && excludeId != null
+                && row.getId().longValue() == excludeId.longValue();
+    }
+
+    /**
+     * Add and remove only the users that changed.
+     * Clearing the whole set and adding the same user again inserts a join row
+     * before the old one is deleted, which the database reports as a duplicate key.
+     */
+    private void replaceUsers(Configuration configuration, Set<User> users) {
+        if (configuration.getUsers() == null) {
+            configuration.setUsers(new HashSet<>(users));
+            return;
+        }
+
+        Set<Long> wantedIds = users.stream().map(User::getId).collect(Collectors.toSet());
+        configuration.getUsers().removeIf(existing -> existing.getId() == null || !wantedIds.contains(existing.getId()));
+        Set<Long> presentIds = configuration.getUsers().stream().map(User::getId).collect(Collectors.toSet());
+        users.stream()
+                .filter(user -> user.getId() != null && !presentIds.contains(user.getId()))
+                .forEach(configuration.getUsers()::add);
     }
 
     private BadRequestAlertException duplicateKeyException(ConfigurationKeys key, String scope) {

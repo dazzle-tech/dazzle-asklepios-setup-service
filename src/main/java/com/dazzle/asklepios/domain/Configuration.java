@@ -61,6 +61,11 @@ public class Configuration extends AbstractAuditingEntity<Long> implements Seria
     )
     private Facility facility;
 
+    /**
+     * Join rows also store config_key and facility_id. Those columns are filled by
+     * trg_configuration_user_fill_scope from gateway changelog 2026110801, because
+     * this mapping only writes the two ids.
+     */
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "configuration_user",

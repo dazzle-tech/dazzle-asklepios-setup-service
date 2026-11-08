@@ -13,6 +13,7 @@ import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.configuration.ConfigurationCreateVM;
+import com.dazzle.asklepios.web.rest.vm.configuration.ConfigurationUpdateVM;
 import com.dazzle.asklepios.web.rest.vm.configuration.ResolvedConfigurationVM;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -191,6 +193,97 @@ class ConfigurationServiceTest {
     }
 
     @Test
+    void updateChangesFacilityLevelRowToUserLevel() {
+        Configuration existing = row(9L, ConfigurationScope.FACILITY, "false");
+        existing.setFacility(facility);
+        existing.setUsers(new HashSet<>());
+        existing.getUsers().add(user);
+
+        when(configurationRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(facilityRepository.findById(10L)).thenReturn(Optional.of(facility));
+        when(userRepository.findAllById(Set.of(20L))).thenReturn(List.of(user));
+        when(configurationRepository.findByKeyAndScopeTypeAndFacility_IdAndIdNotAndUsers_IdIn(
+                eq(KEY), eq(ConfigurationScope.USER), eq(10L), eq(9L), eq(Set.of(20L))
+        )).thenReturn(List.of(existing));
+        when(configurationRepository.save(any(Configuration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ConfigurationUpdateVM update = new ConfigurationUpdateVM(
+                9L,
+                10L,
+                Set.of(20L),
+                KEY,
+                "false",
+                ConfigurationValueType.BOOLEAN,
+                ConfigurationReferenceType.UI_ACTION,
+                "show appointment recurring",
+                true
+        );
+
+        Configuration updated = configurationService.update(9L, update).orElseThrow();
+
+        assertThat(updated.getScopeType()).isEqualTo(ConfigurationScope.USER);
+        assertThat(updated.getFacility()).isEqualTo(facility);
+        assertThat(updated.getUsers()).containsExactly(user);
+    }
+
+    @Test
+    void updateChangesUserLevelRowToFacilityLevel() {
+        Configuration existing = row(9L, ConfigurationScope.USER, "false");
+        existing.setFacility(facility);
+        existing.setUsers(new HashSet<>(Set.of(user)));
+
+        when(configurationRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(facilityRepository.findById(10L)).thenReturn(Optional.of(facility));
+        when(configurationRepository.findByKeyAndScopeTypeAndFacility_Id(KEY, ConfigurationScope.FACILITY, 10L))
+                .thenReturn(List.of(existing));
+        when(configurationRepository.save(any(Configuration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Configuration updated = configurationService.update(9L, updateVm(10L, Set.of(), "false")).orElseThrow();
+
+        assertThat(updated.getScopeType()).isEqualTo(ConfigurationScope.FACILITY);
+        assertThat(updated.getFacility()).isEqualTo(facility);
+        assertThat(updated.getUsers()).isEmpty();
+    }
+
+    @Test
+    void updateChangesFacilityLevelRowToOrganizationLevel() {
+        Configuration existing = row(9L, ConfigurationScope.FACILITY, "false");
+        existing.setFacility(facility);
+        existing.setUsers(new HashSet<>());
+
+        when(configurationRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(configurationRepository.findByKeyAndScopeTypeAndFacilityIsNull(KEY, ConfigurationScope.ORGANIZATION))
+                .thenReturn(List.of(existing));
+        when(configurationRepository.save(any(Configuration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Configuration updated = configurationService.update(9L, updateVm(null, null, "false")).orElseThrow();
+
+        assertThat(updated.getScopeType()).isEqualTo(ConfigurationScope.ORGANIZATION);
+        assertThat(updated.getFacility()).isNull();
+        assertThat(updated.getUsers()).isEmpty();
+    }
+
+    @Test
+    void updateChangesOrganizationLevelRowToUserLevel() {
+        Configuration existing = row(9L, ConfigurationScope.ORGANIZATION, "true");
+        existing.setUsers(new HashSet<>());
+
+        when(configurationRepository.findById(9L)).thenReturn(Optional.of(existing));
+        when(facilityRepository.findById(10L)).thenReturn(Optional.of(facility));
+        when(userRepository.findAllById(Set.of(20L))).thenReturn(List.of(user));
+        when(configurationRepository.findByKeyAndScopeTypeAndFacility_IdAndIdNotAndUsers_IdIn(
+                eq(KEY), eq(ConfigurationScope.USER), eq(10L), eq(9L), eq(Set.of(20L))
+        )).thenReturn(List.of(existing));
+        when(configurationRepository.save(any(Configuration.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Configuration updated = configurationService.update(9L, updateVm(10L, Set.of(20L), "true")).orElseThrow();
+
+        assertThat(updated.getScopeType()).isEqualTo(ConfigurationScope.USER);
+        assertThat(updated.getUsers()).containsExactly(user);
+        assertThat(updated.getFacility()).isEqualTo(facility);
+    }
+
+    @Test
     void createPersistsDerivedScope() {
         when(facilityRepository.findById(10L)).thenReturn(Optional.of(facility));
         when(userRepository.findAllById(Set.of(20L))).thenReturn(List.of(user));
@@ -203,6 +296,20 @@ class ConfigurationServiceTest {
         ArgumentCaptor<Configuration> captor = ArgumentCaptor.forClass(Configuration.class);
         verify(configurationRepository).save(captor.capture());
         assertThat(captor.getValue().getScopeType()).isEqualTo(ConfigurationScope.USER);
+    }
+
+    private ConfigurationUpdateVM updateVm(Long facilityId, Set<Long> userIds, String value) {
+        return new ConfigurationUpdateVM(
+                9L,
+                facilityId,
+                userIds,
+                KEY,
+                value,
+                ConfigurationValueType.BOOLEAN,
+                ConfigurationReferenceType.UI_ACTION,
+                "show appointment recurring",
+                true
+        );
     }
 
     private ConfigurationCreateVM createVm(Long facilityId, Set<Long> userIds, String value) {
