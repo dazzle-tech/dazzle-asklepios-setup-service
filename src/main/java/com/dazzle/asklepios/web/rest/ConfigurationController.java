@@ -2,6 +2,7 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Configuration;
+import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationKeys;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
@@ -11,6 +12,8 @@ import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.configuration.ConfigurationCreateVM;
 import com.dazzle.asklepios.web.rest.vm.configuration.ConfigurationUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.configuration.ConfigurationUserOptionVM;
+import com.dazzle.asklepios.web.rest.vm.configuration.ResolvedConfigurationVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/setup")
@@ -53,11 +57,13 @@ public class ConfigurationController {
      * <p>
      * Validations:
      * - Prevent duplicates:
-     * - Org level: only one row per key where facility is null.
-     * - Facility level: only one row per (facility, key).
+     * - Organization: one row per key, facility empty and users empty.
+     * - Facility: one row per (facility, key), users empty.
+     * - User: one row per (facility, key, user). The same key may still exist at facility and organization level.
+     * - A user selection requires a facility.
      * - Override rule:
-     * - If key exists at org level and you create it for a facility, that is allowed.
-     * It is an override for that facility only. Org-level row remains for other facilities.
+     * - A facility row overrides the organization row for that facility only.
+     * - A user row overrides the facility row for that user at that facility only.
      * <p>
      * Enforcement:
      * - Primary enforcement is DB unique indexes.
@@ -73,7 +79,7 @@ public class ConfigurationController {
                     .created(URI.create("/api/setup/configuration/" + created.getId()))
                     .body(created);
         } catch (DataIntegrityViolationException ex) {
-            throw duplicateKeyException(vm.key(), vm.facilityId());
+            throw duplicateKeyException(vm.key(), vm.facilityId(), vm.userIds());
         }
     }
 
@@ -94,7 +100,7 @@ public class ConfigurationController {
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (DataIntegrityViolationException ex) {
-            throw duplicateKeyException(vm.key(), vm.facilityId());
+            throw duplicateKeyException(vm.key(), vm.facilityId(), vm.userIds());
         }
     }
 
@@ -113,24 +119,81 @@ public class ConfigurationController {
 
 
     /**
-     * Optional helper endpoint: resolve effective configuration for a facility.
-     * If facility override exists, return it. Else return org-level if present.
+     * Stored row that wins for this user and facility.
+     * Order: user → facility → organization. 404 when none of those rows exist.
      */
     @GetMapping("/configuration/effective/{key}")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<Configuration> getEffective(
             @PathVariable ConfigurationKeys key,
-            @RequestParam(value = "facilityId", required = false) Long facilityId
+            @RequestParam(value = "facilityId", required = false) Long facilityId,
+            @RequestParam(value = "userId", required = false) Long userId
     ) {
-        return configurationService.findByKeyAndFacility(key, facilityId)
+        return configurationService.findEffective(key, userId, facilityId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private BadRequestAlertException duplicateKeyException(ConfigurationKeys key, Long facilityId) {
-        String scope = (facilityId == null)
-                ? "organization"
-                : "facility " + facilityId;
+    /**
+     * Feature check. Most specific active row wins:
+     * user → facility → organization. 404 when none of those rows exist.
+     */
+    @GetMapping("/configuration/resolve/{key}")
+    public ResponseEntity<ResolvedConfigurationVM> resolve(
+            @PathVariable ConfigurationKeys key,
+            @RequestParam(value = "facilityId", required = false) Long facilityId,
+            @RequestParam(value = "userId", required = false) Long userId
+    ) {
+        return configurationService.getConfig(key, userId, facilityId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Same resolution as {@link #resolve} for service-to-service calls.
+     */
+    @GetMapping("/configuration/internalJob/{key}")
+    public ResponseEntity<ResolvedConfigurationVM> resolveInternal(
+            @PathVariable ConfigurationKeys key,
+            @RequestParam(value = "facilityId", required = false) Long facilityId,
+            @RequestParam(value = "userId", required = false) Long userId
+    ) {
+        return configurationService.getConfig(key, userId, facilityId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Searchable user field for the configuration form.
+     * Pass facilityId after a facility is selected to limit the list to that clinic.
+     */
+    @GetMapping("/configuration/users/search")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<List<ConfigurationUserOptionVM>> searchUsers(
+            @RequestParam(value = "searchText", required = false) String searchText,
+            @RequestParam(value = "facilityId", required = false) Long facilityId,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<User> page = configurationService.searchUsers(searchText, facilityId, pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
+                ServletUriComponentsBuilder.fromCurrentRequest(),
+                page
+        );
+        List<ConfigurationUserOptionVM> body = page.getContent().stream()
+                .map(ConfigurationUserOptionVM::ofEntity)
+                .toList();
+        return ResponseEntity.ok().headers(headers).body(body);
+    }
+
+    private BadRequestAlertException duplicateKeyException(ConfigurationKeys key, Long facilityId, Set<Long> userIds) {
+        String scope;
+        if (userIds != null && !userIds.isEmpty() && facilityId != null) {
+            scope = "user at facility " + facilityId;
+        } else if (facilityId != null) {
+            scope = "facility " + facilityId;
+        } else {
+            scope = "organization";
+        }
 
         return new BadRequestAlertException(
                 "Duplicate configuration key '" + key + "' at " + scope + " level",
