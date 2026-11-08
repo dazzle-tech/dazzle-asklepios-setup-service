@@ -62,11 +62,21 @@ public class TpaDefinitionService {
             );
         }
 
+        String nphiesId = blankToNull(vm.nphiesId());
+        if (nphiesId != null && tpaDefinitionRepository.existsByNphiesIdIgnoreCase(nphiesId)) {
+            throw new BadRequestAlertException(
+                    "tpaNphiesIdExists",
+                    ENTITY_NAME,
+                    "TPA NPHIES ID already exists."
+            );
+        }
+
         validateCityRequiresCountry(vm.countryId(), vm.cityId());
         Country country = resolveCountry(vm.countryId());
 
         TpaDefinition tpa = TpaDefinition.builder()
                 .tpaCode(trim(vm.tpaCode()))
+                .nphiesId(nphiesId)
                 .name(trim(vm.name()))
                 .guarantorType(vm.guarantorType() != null ? vm.guarantorType() : GuarantorType.TPA)
                 .activationDate(vm.activationDate())
@@ -104,12 +114,22 @@ public class TpaDefinitionService {
             );
         }
 
+        String nphiesId = blankToNull(vm.nphiesId());
+        if (nphiesId != null && tpaDefinitionRepository.existsByNphiesIdIgnoreCaseAndIdNot(nphiesId, vm.id())) {
+            throw new BadRequestAlertException(
+                    "tpaNphiesIdExists",
+                    ENTITY_NAME,
+                    "TPA NPHIES ID already exists."
+            );
+        }
+
         Boolean nextActive = vm.isActive() != null ? vm.isActive() : existing.getIsActive();
         validateDeactivation(existing, nextActive);
         validateCityRequiresCountry(vm.countryId(), vm.cityId());
 
         Country country = resolveCountry(vm.countryId());
         existing.setTpaCode(trim(vm.tpaCode()));
+        existing.setNphiesId(nphiesId);
         existing.setName(trim(vm.name()));
         existing.setGuarantorType(vm.guarantorType() != null ? vm.guarantorType() : GuarantorType.TPA);
         existing.setActivationDate(vm.activationDate());

@@ -53,6 +53,12 @@ public interface TpaDefinitionRepository extends JpaRepository<TpaDefinition, Lo
 
     List<TpaDefinition> findByIsActiveTrueAndNameIgnoreCase(String name);
 
+    Optional<TpaDefinition> findFirstByNphiesIdIgnoreCase(String nphiesId);
+
+    boolean existsByNphiesIdIgnoreCase(String nphiesId);
+
+    boolean existsByNphiesIdIgnoreCaseAndIdNot(String nphiesId, Long id);
+
     boolean existsByTpaCodeIgnoreCase(String tpaCode);
 
     boolean existsByTpaCodeIgnoreCaseAndIdNot(String tpaCode, Long id);

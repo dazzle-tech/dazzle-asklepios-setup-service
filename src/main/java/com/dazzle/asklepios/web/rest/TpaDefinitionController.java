@@ -2,10 +2,12 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.service.TpaDefinitionService;
+import com.dazzle.asklepios.service.TpaResolutionService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaDefinitionResponseVM;
 import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaDefinitionSaveVM;
 import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaDefinitionUpdateVM;
+import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaResolutionVM;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -35,9 +38,25 @@ public class TpaDefinitionController {
     private static final Logger LOG = LoggerFactory.getLogger(TpaDefinitionController.class);
 
     private final TpaDefinitionService tpaDefinitionService;
+    private final TpaResolutionService tpaResolutionService;
 
-    public TpaDefinitionController(TpaDefinitionService tpaDefinitionService) {
+    public TpaDefinitionController(
+            TpaDefinitionService tpaDefinitionService,
+            TpaResolutionService tpaResolutionService
+    ) {
         this.tpaDefinitionService = tpaDefinitionService;
+        this.tpaResolutionService = tpaResolutionService;
+    }
+
+    @GetMapping("/tpa-definitions/resolve")
+    public ResponseEntity<TpaResolutionVM> resolve(
+            @RequestParam(required = false) String payerNphiesId,
+            @RequestParam(required = false) String policyNumber,
+            @RequestParam(required = false) String preferredTpaNphiesId
+    ) {
+        LOG.debug("REST resolve TPA payerNphiesId={} policyNumber={}", payerNphiesId, policyNumber);
+
+        return ResponseEntity.ok(tpaResolutionService.resolve(payerNphiesId, policyNumber, preferredTpaNphiesId));
     }
 
     @PostMapping("/tpa-definitions")

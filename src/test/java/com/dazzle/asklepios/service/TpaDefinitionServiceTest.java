@@ -83,6 +83,7 @@ class TpaDefinitionServiceTest {
     void create_inactiveTpaCannotLinkInsurance_throws() {
         TpaDefinitionSaveVM vm = new TpaDefinitionSaveVM(
                 "TPA-001",
+                null,
                 "MedGulf TPA",
                 GuarantorType.TPA,
                 LocalDate.of(2026, 1, 1),
@@ -141,6 +142,7 @@ class TpaDefinitionServiceTest {
         TpaDefinitionUpdateVM vm = new TpaDefinitionUpdateVM(
                 3L,
                 "TPA-001",
+                null,
                 "MedGulf TPA",
                 GuarantorType.TPA,
                 LocalDate.of(2026, 1, 1),
@@ -168,6 +170,7 @@ class TpaDefinitionServiceTest {
     private TpaDefinitionSaveVM saveVm(List<Long> insuranceCompanyIds) {
         return new TpaDefinitionSaveVM(
                 "TPA-001",
+                null,
                 "MedGulf TPA",
                 GuarantorType.TPA,
                 LocalDate.of(2026, 1, 1),

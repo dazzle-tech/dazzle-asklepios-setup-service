@@ -13,6 +13,7 @@ import java.util.List;
 public record TpaDefinitionResponseVM(
         Long id,
         String tpaCode,
+        String nphiesId,
         String name,
         GuarantorType guarantorType,
         LocalDate activationDate,
@@ -51,6 +52,7 @@ public record TpaDefinitionResponseVM(
         return new TpaDefinitionResponseVM(
                 tpa.getId(),
                 tpa.getTpaCode(),
+                tpa.getNphiesId(),
                 tpa.getName(),
                 tpa.getGuarantorType(),
                 tpa.getActivationDate(),

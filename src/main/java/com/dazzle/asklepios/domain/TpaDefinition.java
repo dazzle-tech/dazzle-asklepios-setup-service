@@ -43,6 +43,9 @@ public class TpaDefinition extends AbstractAuditingEntity<Long> {
     @Column(name = "tpa_code", nullable = false, unique = true, length = 100)
     private String tpaCode;
 
+    @Column(name = "nphies_id", unique = true, length = 100)
+    private String nphiesId;
+
     @NotNull
     @Column(name = "name", nullable = false, length = 255)
     private String name;

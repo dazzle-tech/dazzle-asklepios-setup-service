@@ -23,6 +23,9 @@ public record TpaDefinitionUpdateVM(
         @Size(max = 100)
         String tpaCode,
 
+        @Size(max = 100)
+        String nphiesId,
+
         @NotBlank(message = "name cannot be blank")
         @Size(max = 255)
         String name,
