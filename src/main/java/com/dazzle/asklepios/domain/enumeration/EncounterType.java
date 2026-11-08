@@ -3,5 +3,6 @@ public enum EncounterType {
     EMERGENCY,
     CLINIC,
     INPATIENT,
-    DAYCASE;
+    DAYCASE,
+    ALL
 }

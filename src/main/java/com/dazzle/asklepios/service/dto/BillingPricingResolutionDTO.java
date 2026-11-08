@@ -40,7 +40,11 @@ public record BillingPricingResolutionDTO(
 
         Integer roundingScale,
 
-        Boolean requiresPreAuthorization
+        Boolean requiresPreAuthorization,
+
+        String priceListType,
+
+        Boolean cashFallback
 
 ) {
 }

@@ -1,0 +1,1401 @@
+package com.dazzle.asklepios.service;
+
+import com.dazzle.asklepios.domain.CoverageClass;
+import com.dazzle.asklepios.domain.CoverageContract;
+import com.dazzle.asklepios.domain.CoverageCopayment;
+import com.dazzle.asklepios.domain.CoverageDiscount;
+import com.dazzle.asklepios.domain.CoverageExclusion;
+import com.dazzle.asklepios.domain.CoveragePreApproval;
+import com.dazzle.asklepios.domain.CoveragePreApprovalItem;
+import com.dazzle.asklepios.domain.CoverageTerm;
+import com.dazzle.asklepios.domain.CoverageTermExclusion;
+import com.dazzle.asklepios.domain.CoverageTermItem;
+import com.dazzle.asklepios.domain.NphiesPayer;
+import com.dazzle.asklepios.domain.PriceListSetup;
+import com.dazzle.asklepios.domain.TpaDefinition;
+import com.dazzle.asklepios.domain.enumeration.CoverageApprovalScope;
+import com.dazzle.asklepios.domain.enumeration.CoverageDiagnosisScope;
+import com.dazzle.asklepios.domain.enumeration.CoveragePreApprovalLevel;
+import com.dazzle.asklepios.domain.enumeration.CoverageRuleTarget;
+import com.dazzle.asklepios.domain.enumeration.CoverageTermType;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.domain.enumeration.GuarantorType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.patient.YesNoQuestion;
+import com.dazzle.asklepios.repository.CoverageClassRepository;
+import com.dazzle.asklepios.repository.CoverageContractRepository;
+import com.dazzle.asklepios.repository.CoverageCopaymentRepository;
+import com.dazzle.asklepios.repository.CoverageDiscountRepository;
+import com.dazzle.asklepios.repository.CoverageExclusionRepository;
+import com.dazzle.asklepios.repository.CoveragePreApprovalItemRepository;
+import com.dazzle.asklepios.repository.CoveragePreApprovalRepository;
+import com.dazzle.asklepios.repository.CoverageTermExclusionRepository;
+import com.dazzle.asklepios.repository.CoverageTermItemRepository;
+import com.dazzle.asklepios.repository.CoverageTermRepository;
+import com.dazzle.asklepios.repository.NphiesPayerRepository;
+import com.dazzle.asklepios.repository.PriceListSetupRepository;
+import com.dazzle.asklepios.repository.TpaDefinitionRepository;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveRequest;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageContractResolveResponse;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageCopaymentVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiagnosisRefVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageDiscountVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExcludedItemVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageExclusionVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoveragePreApprovalReadingVM;
+import com.dazzle.asklepios.web.rest.vm.coverage.CoverageReadingVM;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional(readOnly = true)
+public class CoverageContractResolutionService {
+
+    private final CoverageClassRepository coverageClassRepository;
+    private final CoverageContractRepository coverageContractRepository;
+    private final CoverageCopaymentRepository coverageCopaymentRepository;
+    private final CoverageTermRepository coverageTermRepository;
+    private final CoverageTermItemRepository coverageTermItemRepository;
+    private final CoverageDiscountRepository coverageDiscountRepository;
+    private final CoverageExclusionRepository coverageExclusionRepository;
+    private final CoveragePreApprovalRepository coveragePreApprovalRepository;
+    private final CoveragePreApprovalItemRepository coveragePreApprovalItemRepository;
+    private final NphiesPayerRepository nphiesPayerRepository;
+    private final TpaDefinitionRepository tpaDefinitionRepository;
+    private final PriceListSetupRepository priceListSetupRepository;
+    private final CoverageContractService coverageContractService;
+    private final CoverageLookupService coverageLookupService;
+    private final CatalogSubcategoryLookup catalogSubcategoryLookup;
+    private final CoverageTermExclusionRepository coverageTermExclusionRepository;
+
+    public CoverageContractResolutionService(
+            CoverageClassRepository coverageClassRepository,
+            CoverageContractRepository coverageContractRepository,
+            CoverageCopaymentRepository coverageCopaymentRepository,
+            CoverageTermRepository coverageTermRepository,
+            CoverageTermItemRepository coverageTermItemRepository,
+            CoverageDiscountRepository coverageDiscountRepository,
+            CoverageExclusionRepository coverageExclusionRepository,
+            CoveragePreApprovalRepository coveragePreApprovalRepository,
+            CoveragePreApprovalItemRepository coveragePreApprovalItemRepository,
+            NphiesPayerRepository nphiesPayerRepository,
+            TpaDefinitionRepository tpaDefinitionRepository,
+            PriceListSetupRepository priceListSetupRepository,
+            CoverageContractService coverageContractService,
+            CoverageLookupService coverageLookupService,
+            CatalogSubcategoryLookup catalogSubcategoryLookup,
+            CoverageTermExclusionRepository coverageTermExclusionRepository
+    ) {
+        this.coverageClassRepository = coverageClassRepository;
+        this.coverageContractRepository = coverageContractRepository;
+        this.coverageCopaymentRepository = coverageCopaymentRepository;
+        this.coverageTermRepository = coverageTermRepository;
+        this.coverageTermItemRepository = coverageTermItemRepository;
+        this.coverageDiscountRepository = coverageDiscountRepository;
+        this.coverageExclusionRepository = coverageExclusionRepository;
+        this.coveragePreApprovalRepository = coveragePreApprovalRepository;
+        this.coveragePreApprovalItemRepository = coveragePreApprovalItemRepository;
+        this.nphiesPayerRepository = nphiesPayerRepository;
+        this.tpaDefinitionRepository = tpaDefinitionRepository;
+        this.priceListSetupRepository = priceListSetupRepository;
+        this.coverageContractService = coverageContractService;
+        this.coverageLookupService = coverageLookupService;
+        this.catalogSubcategoryLookup = catalogSubcategoryLookup;
+        this.coverageTermExclusionRepository = coverageTermExclusionRepository;
+    }
+
+    public CoverageContractResolveResponse resolve(CoverageContractResolveRequest request) {
+        if (request == null) {
+            return CoverageContractResolveResponse.unmatched("Coverage details are required.");
+        }
+
+        String policyNumber = normalize(request.policyNumber());
+        if (policyNumber == null) {
+            return CoverageContractResolveResponse.unmatched("Policy number is required to match a coverage contract.");
+        }
+
+        NphiesPayer insurancePayer = resolveInsurancePayer(request);
+        if (insurancePayer == null) {
+            return CoverageContractResolveResponse.unmatched("Insurance company was not found for this coverage.");
+        }
+
+        List<CoverageClass> linkedClasses = coverageClassRepository
+                .findByIsActiveTrueAndCoverageContract_IsActiveTrueAndCoverageContract_InsurancePayerIdAndInsuranceCompanyPolicy_PolicyNumberIgnoreCase(
+                        insurancePayer.getId(),
+                        policyNumber
+                );
+        if (linkedClasses == null) {
+            linkedClasses = List.of();
+        }
+        List<CoverageContract> candidates = linkedClasses.stream()
+                .map(CoverageClass::getCoverageContract)
+                .filter(contract -> contract != null && contract.getId() != null)
+                .collect(Collectors.toMap(
+                        CoverageContract::getId,
+                        contract -> contract,
+                        (left, right) -> left,
+                        LinkedHashMap::new
+                ))
+                .values()
+                .stream()
+                .toList();
+        if (candidates.isEmpty()) {
+            return CoverageContractResolveResponse.unmatched(
+                    "No active coverage contract matches this insurance policy."
+            );
+        }
+
+        LocalDate asOfDate = request.asOfDate() == null ? LocalDate.now() : request.asOfDate();
+        List<CoverageContract> inForce = candidates.stream()
+                .filter(contract -> isInForce(contract, asOfDate))
+                .toList();
+        if (inForce.isEmpty()) {
+            return CoverageContractResolveResponse.unmatched(
+                    "Matched coverage contracts are outside the price list effective dates."
+            );
+        }
+
+        Long tpaId = resolveTpaId(request, insurancePayer);
+        MatchedCoverage matched = selectMatchedCoverage(inForce, request.className(), tpaId);
+        CoverageContract selected = matched.contract();
+        CoverageClass selectedClass = matched.coverageClass();
+        Long classId = selectedClass == null ? null : selectedClass.getId();
+
+        EncounterType encounterType = parseEncounterType(request.encounterType());
+        CoverageCopayment copayment = selectCopayment(classId, request, encounterType);
+        CoverageMatch coverageMatch = selectCoverage(classId, request, encounterType);
+        CoverageMatch limitMatch = selectLimit(classId, request, encounterType);
+        CoverageMatch cashLimitMatch = selectCashLimit(classId, request, encounterType);
+        CoverageDiscountVM discount = selectDiscount(classId, tpaId, request, encounterType);
+        CoverageExclusionVM exclusion = selectExclusion(classId, tpaId, request, encounterType);
+        List<CoveragePreApprovalReadingVM> preApprovals = selectPreApprovals(classId, tpaId, request, encounterType);
+        CoveragePreApprovalReadingVM preApproval = preApprovals.isEmpty() ? null : preApprovals.get(0);
+
+        return new CoverageContractResolveResponse(
+                true,
+                buildMatchReason(
+                        selected,
+                        selectedClass,
+                        tpaId,
+                        copayment,
+                        encounterType,
+                        coverageMatch,
+                        limitMatch,
+                        cashLimitMatch,
+                        discount,
+                        exclusion,
+                        preApproval
+                ),
+                coverageContractService.toResponse(selected, selectedClass),
+                copayment == null ? null : CoverageCopaymentVM.ofEntity(copayment),
+                coverageMatch.configured(),
+                coverageMatch.uncovered(),
+                coverageMatch.reading(),
+                limitMatch.reading(),
+                cashLimitMatch.reading(),
+                discount,
+                exclusion,
+                preApproval,
+                preApprovals
+        );
+    }
+
+    private NphiesPayer resolveInsurancePayer(CoverageContractResolveRequest request) {
+        if (request.insurancePayerId() != null) {
+            return nphiesPayerRepository.findById(request.insurancePayerId()).orElse(null);
+        }
+        String nphiesId = normalize(request.payerNphiesId());
+        if (nphiesId == null) {
+            return null;
+        }
+        return nphiesPayerRepository.findFirstByNphiesIdIgnoreCase(nphiesId).orElse(null);
+    }
+
+    private Long resolveTpaId(CoverageContractResolveRequest request, NphiesPayer insurancePayer) {
+        if (request.tpaId() != null) {
+            return tpaDefinitionRepository.findById(request.tpaId())
+                    .filter(tpa -> Boolean.TRUE.equals(tpa.getIsActive()))
+                    .map(TpaDefinition::getId)
+                    .orElse(null);
+        }
+
+        String tpaName = normalize(request.tpaName());
+        if (tpaName != null) {
+            List<TpaDefinition> named = tpaDefinitionRepository.findByIsActiveTrueAndNameIgnoreCase(tpaName);
+            if (named.size() == 1) {
+                return named.get(0).getId();
+            }
+            if (!named.isEmpty() && insurancePayer.getId() != null) {
+                return named.stream()
+                        .filter(tpa -> isLinkedToPayer(tpa, insurancePayer.getId()))
+                        .map(TpaDefinition::getId)
+                        .findFirst()
+                        .orElse(named.get(0).getId());
+            }
+        }
+
+        List<TpaDefinition> linked = tpaDefinitionRepository.findByInsuranceCompanies_Id(insurancePayer.getId())
+                .stream()
+                .filter(tpa -> Boolean.TRUE.equals(tpa.getIsActive()))
+                .toList();
+        if (linked.size() == 1) {
+            return linked.get(0).getId();
+        }
+        return null;
+    }
+
+    private boolean isLinkedToPayer(TpaDefinition tpa, Long nphiesPayerId) {
+        if (tpa.getInsuranceCompanies() == null) {
+            return false;
+        }
+        return tpa.getInsuranceCompanies().stream()
+                .anyMatch(payer -> Objects.equals(payer.getId(), nphiesPayerId));
+    }
+
+    private boolean isInForce(CoverageContract contract, LocalDate asOfDate) {
+        if (contract.getPriceListSetupId() == null) {
+            return true;
+        }
+        PriceListSetup priceList = priceListSetupRepository.findById(contract.getPriceListSetupId()).orElse(null);
+        if (priceList == null) {
+            return true;
+        }
+        if (priceList.getEffectiveFrom() != null && asOfDate.isBefore(priceList.getEffectiveFrom())) {
+            return false;
+        }
+        return priceList.getEffectiveTo() == null || !asOfDate.isAfter(priceList.getEffectiveTo());
+    }
+
+    private MatchedCoverage selectMatchedCoverage(
+            List<CoverageContract> inForce,
+            String requestedClassName,
+            Long tpaId
+    ) {
+        Map<Long, CoverageContract> contractsById = new HashMap<>();
+        for (CoverageContract contract : inForce) {
+            contractsById.put(contract.getId(), contract);
+        }
+        List<CoverageClass> classes = coverageClassRepository.findByCoverageContract_IdInAndIsActiveTrue(contractsById.keySet());
+        Map<Long, List<CoverageClass>> classesByContractId = new HashMap<>();
+        for (CoverageClass coverageClass : classes) {
+            Long contractId = coverageClass.getCoverageContract() == null ? null : coverageClass.getCoverageContract().getId();
+            if (contractId != null && contractsById.containsKey(contractId)) {
+                classesByContractId.computeIfAbsent(contractId, ignored -> new ArrayList<>()).add(coverageClass);
+            }
+        }
+
+        CoverageContract selectedContract = inForce.stream()
+                .max(Comparator.comparingInt(contract -> score(contract, hasMatchingClass(classesByContractId.get(contract.getId()), requestedClassName), tpaId)))
+                .orElse(inForce.get(0));
+        CoverageClass selectedClass = pickClass(classesByContractId.getOrDefault(selectedContract.getId(), List.of()), requestedClassName);
+        return new MatchedCoverage(selectedContract, selectedClass);
+    }
+
+    private boolean hasMatchingClass(List<CoverageClass> classes, String requestedClassName) {
+        if (classes == null || classes.isEmpty()) {
+            return false;
+        }
+        return pickClass(classes, requestedClassName) != null && matchesClassName(pickClass(classes, requestedClassName).getName(), requestedClassName);
+    }
+
+    private CoverageClass pickClass(List<CoverageClass> classes, String requestedClassName) {
+        if (classes == null || classes.isEmpty()) {
+            return null;
+        }
+        if (requestedClassName != null && !requestedClassName.isBlank()) {
+            return classes.stream()
+                    .filter(coverageClass -> matchesClassName(coverageClass.getName(), requestedClassName))
+                    .findFirst()
+                    .orElse(null);
+        }
+        return classes.size() == 1 ? classes.get(0) : null;
+    }
+
+    private boolean matchesClassName(String className, String requestedClassName) {
+        String requested = compactClassName(requestedClassName);
+        String actual = compactClassName(className);
+        if (requested == null || actual == null) {
+            return false;
+        }
+        return actual.equals(requested) || actual.equals(requested.replace("class", ""));
+    }
+
+    private String compactClassName(String raw) {
+        String normalized = normalize(raw);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.replace("class", "").replace("-", "").replace("_", "").replace(" ", "");
+    }
+
+    private int score(CoverageContract contract, boolean classMatched, Long tpaId) {
+        int score = 100;
+        if (classMatched) {
+            score += 40;
+        }
+        if (tpaId != null && contract.getGuarantorType() == GuarantorType.TPA && tpaId.equals(contract.getCompanyId())) {
+            score += 30;
+        } else if (tpaId == null && contract.getGuarantorType() == GuarantorType.INSURANCE) {
+            score += 10;
+        }
+        return score;
+    }
+
+    /**
+     * Picks the most specific active co-payment for the visit: a department rule beats an
+     * all-departments rule of the same facility, which beats a rule without a facility;
+     * within the same scope an exact encounter type beats ALL. Rows come newest first,
+     * so the latest edit wins a tie.
+     */
+    private CoverageCopayment selectCopayment(
+            Long classId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (classId == null) {
+            return null;
+        }
+        CoverageCopayment best = null;
+        int bestScore = -1;
+        for (CoverageCopayment row
+                : coverageCopaymentRepository.findByCoverageClass_IdAndIsActiveTrueOrderByLastModifiedDateDesc(classId)) {
+            int score = copaymentMatchScore(row, request.facilityId(), request.departmentId(), encounterType);
+            if (score > bestScore) {
+                best = row;
+                bestScore = score;
+            }
+        }
+        return best;
+    }
+
+    private int copaymentMatchScore(
+            CoverageCopayment copayment,
+            Long facilityId,
+            Long departmentId,
+            EncounterType encounterType
+    ) {
+        boolean anyFacility = copayment.getFacilityId() == null;
+        boolean anyDepartment = Boolean.TRUE.equals(copayment.getAllDepartments()) || copayment.getDepartmentId() == null;
+        boolean anyEncounter = copayment.getEncounterType() == null || copayment.getEncounterType() == EncounterType.ALL;
+        if (!anyFacility && !copayment.getFacilityId().equals(facilityId)) {
+            return -1;
+        }
+        if (!anyDepartment && !copayment.getDepartmentId().equals(departmentId)) {
+            return -1;
+        }
+        if (!anyEncounter && copayment.getEncounterType() != encounterType) {
+            return -1;
+        }
+        int score = 0;
+        if (!anyDepartment) {
+            score += 100;
+        }
+        if (!anyFacility) {
+            score += 10;
+        }
+        if (!anyEncounter) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private CoverageMatch selectCoverage(
+            Long classId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.COVERAGE,
+                request,
+                encounterType,
+                true
+        );
+    }
+
+    private CoverageMatch selectLimit(
+            Long classId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.LIMIT,
+                request,
+                encounterType,
+                false
+        );
+    }
+
+    private CoverageMatch selectCashLimit(
+            Long classId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        return selectReadingWithHeaderFallback(
+                classId,
+                CoverageTermType.CASH_LIMIT,
+                request,
+                encounterType,
+                false
+        );
+    }
+
+    private CoverageDiscountVM selectDiscount(
+            Long classId,
+            Long tpaId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (request.billingItemType() == null || request.billingItemType().isBlank()) {
+            return null;
+        }
+        BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
+        if (billingItemType == null) {
+            return null;
+        }
+
+        String itemSubcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
+        CoverageDiscount best = null;
+        int bestScore = -1;
+        for (ScoredDiscount candidate : scoredDiscounts(classId, tpaId)) {
+            int score = discountMatchScore(
+                    candidate.discount(),
+                    candidate.fromContract(),
+                    billingItemType,
+                    itemSubcategory,
+                    request.catalogItemId(),
+                    encounterType
+            );
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate.discount();
+            }
+        }
+        return best == null ? null : toDiscountVm(best);
+    }
+
+    private CoverageExclusionVM selectExclusion(
+            Long classId,
+            Long tpaId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (request.billingItemType() == null || request.billingItemType().isBlank()) {
+            return null;
+        }
+        BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
+        if (billingItemType == null) {
+            return null;
+        }
+
+        Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
+        CoverageExclusion best = null;
+        int bestScore = -1;
+        for (ScoredExclusion candidate : scoredExclusions(classId, tpaId)) {
+            int score = exclusionMatchScore(
+                    candidate.exclusion(),
+                    candidate.fromContract(),
+                    billingItemType,
+                    request.catalogItemId(),
+                    encounterType,
+                    diagnosisIds
+            );
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate.exclusion();
+            }
+        }
+        return best == null ? null : toExclusionVm(best);
+    }
+
+    private List<CoveragePreApprovalReadingVM> selectPreApprovals(
+            Long classId,
+            Long tpaId,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (request.billingItemType() == null || request.billingItemType().isBlank()) {
+            return List.of();
+        }
+        BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
+        if (billingItemType == null) {
+            return List.of();
+        }
+
+        String subcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
+        Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
+        List<MatchedPreApprovalReading> matched = new ArrayList<>();
+        for (ScoredPreApproval header : scoredPreApprovals(classId, tpaId)) {
+            CoveragePreApproval rule = header.preApproval();
+            if (rule.getTargetLevel() != null) {
+                if (!contextMatches(rule, request, encounterType) || !targetMatches(rule, billingItemType, subcategory, request.catalogItemId())) {
+                    continue;
+                }
+                matched.add(new MatchedPreApprovalReading(
+                        toHeaderReading(rule),
+                        lineScore(rule, header.fromContract())
+                ));
+                continue;
+            }
+
+            int headerScore = preApprovalHeaderScore(rule, header.fromContract(), request, encounterType);
+            if (headerScore < 0) {
+                continue;
+            }
+            List<CoveragePreApprovalItem> items =
+                    coveragePreApprovalItemRepository.findByPreApproval_IdAndIsActiveTrue(rule.getId());
+            CoveragePreApprovalReadingVM bestLegacy = null;
+            int bestLegacyScore = -1;
+            for (CoveragePreApprovalItem item : items) {
+                int itemScore = preApprovalItemScore(
+                        item,
+                        billingItemType,
+                        request.catalogItemId(),
+                        diagnosisIds
+                );
+                if (itemScore < 0) {
+                    continue;
+                }
+                int score = headerScore * 1000 + itemScore;
+                if (score > bestLegacyScore) {
+                    bestLegacyScore = score;
+                    bestLegacy = toPreApprovalReading(rule, item);
+                }
+            }
+            if (bestLegacy != null) {
+                matched.add(new MatchedPreApprovalReading(bestLegacy, bestLegacyScore));
+            }
+        }
+        matched.sort(Comparator.comparingInt(MatchedPreApprovalReading::score).reversed());
+        return matched.stream().map(MatchedPreApprovalReading::reading).toList();
+    }
+
+    private boolean contextMatches(
+            CoveragePreApproval rule,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        if (rule.getFacilityId() != null
+                && (request.facilityId() == null || !rule.getFacilityId().equals(request.facilityId()))) {
+            return false;
+        }
+        if (rule.getDepartmentId() != null
+                && (request.departmentId() == null || !rule.getDepartmentId().equals(request.departmentId()))) {
+            return false;
+        }
+        EncounterType requiredEncounter = rule.getEncounterType();
+        return requiredEncounter == null
+                || requiredEncounter == EncounterType.ALL
+                || encounterType == requiredEncounter;
+    }
+
+    private boolean targetMatches(
+            CoveragePreApproval rule,
+            BillingItemTypes billingItemType,
+            String subcategory,
+            Long catalogItemId
+    ) {
+        CoveragePreApprovalLevel level = rule.getTargetLevel();
+        if (level == CoveragePreApprovalLevel.FACILITY) {
+            return true;
+        }
+        if (level == CoveragePreApprovalLevel.DEPARTMENT) {
+            return rule.getDepartmentId() != null;
+        }
+        if (level == CoveragePreApprovalLevel.CATEGORY) {
+            return billingItemType != null && billingItemType == rule.getSource();
+        }
+        if (level == CoveragePreApprovalLevel.SUBCATEGORY) {
+            return billingItemType != null
+                    && billingItemType == rule.getSource()
+                    && subcategory != null
+                    && rule.getSubcategoryKey() != null
+                    && subcategory.equalsIgnoreCase(rule.getSubcategoryKey().trim());
+        }
+        if (level == CoveragePreApprovalLevel.ITEM) {
+            return billingItemType != null
+                    && billingItemType == rule.getSource()
+                    && catalogItemId != null
+                    && catalogItemId.equals(rule.getSourceId());
+        }
+        return false;
+    }
+
+    private int lineScore(CoveragePreApproval rule, boolean fromContract) {
+        int targetScore = switch (rule.getTargetLevel()) {
+            case ITEM -> 400;
+            case SUBCATEGORY -> 300;
+            case CATEGORY -> 200;
+            case FACILITY -> 50;
+            case DEPARTMENT -> 100;
+        };
+        if (rule.getDepartmentId() != null) {
+            targetScore += 20;
+        }
+        if (rule.getEncounterType() != null && rule.getEncounterType() != EncounterType.ALL) {
+            targetScore += 5;
+        }
+        return targetScore + (fromContract ? 10 : 0);
+    }
+
+    private CoveragePreApprovalReadingVM toHeaderReading(CoveragePreApproval preApproval) {
+        CoverageRuleTarget itemType = preApproval.getTargetLevel() == CoveragePreApprovalLevel.ITEM
+                ? CoverageRuleTarget.SERVICE
+                : preApproval.getTargetLevel() == CoveragePreApprovalLevel.DEPARTMENT
+                        || preApproval.getTargetLevel() == CoveragePreApprovalLevel.FACILITY
+                        ? null
+                        : CoverageRuleTarget.CATEGORY;
+        return new CoveragePreApprovalReadingVM(
+                preApproval.getId(),
+                null,
+                preApproval.getApprovalScope(),
+                preApproval.getFacilityId(),
+                preApproval.getDepartmentId(),
+                preApproval.getEncounterType(),
+                itemType,
+                preApproval.getSource(),
+                preApproval.getTargetLevel() == CoveragePreApprovalLevel.ITEM ? preApproval.getSourceId() : null,
+                false,
+                null,
+                List.of(),
+                preApproval.getValueType(),
+                preApproval.getLimitValue()
+        );
+    }
+
+    private List<ScoredPreApproval> scoredPreApprovals(Long classId, Long tpaId) {
+        List<ScoredPreApproval> rows = new ArrayList<>();
+        if (classId != null) {
+            for (CoveragePreApproval preApproval : coveragePreApprovalRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredPreApproval(preApproval, true));
+            }
+        }
+        if (tpaId != null) {
+            for (CoveragePreApproval preApproval : coveragePreApprovalRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
+                rows.add(new ScoredPreApproval(preApproval, false));
+            }
+        }
+        return rows;
+    }
+
+    private int preApprovalHeaderScore(
+            CoveragePreApproval preApproval,
+            boolean fromContract,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType
+    ) {
+        CoverageApprovalScope scope = preApproval.getApprovalScope();
+        int scopeScore;
+        EncounterType headerEncounter = preApproval.getEncounterType();
+        if (scope == CoverageApprovalScope.DEPARTMENT) {
+            if (preApproval.getDepartmentId() == null
+                    || request.departmentId() == null
+                    || !preApproval.getDepartmentId().equals(request.departmentId())) {
+                return -1;
+            }
+            scopeScore = 200;
+        } else if (scope == CoverageApprovalScope.FACILITY) {
+            if (preApproval.getFacilityId() == null
+                    || request.facilityId() == null
+                    || !preApproval.getFacilityId().equals(request.facilityId())) {
+                return -1;
+            }
+            if (headerEncounter != null && headerEncounter != EncounterType.ALL) {
+                if (encounterType == null || encounterType != headerEncounter) {
+                    return -1;
+                }
+            }
+            scopeScore = 100;
+        } else {
+            return -1;
+        }
+        int encounterScore = headerEncounter != null && headerEncounter != EncounterType.ALL ? 20 : 5;
+        int sourceScore = fromContract ? 10 : 0;
+        return scopeScore * 10 + encounterScore + sourceScore;
+    }
+
+    private int preApprovalItemScore(
+            CoveragePreApprovalItem item,
+            BillingItemTypes billingItemType,
+            Long catalogItemId,
+            Set<Long> diagnosisIds
+    ) {
+        CoverageRuleTarget type = item.getItemType();
+        if (type == CoverageRuleTarget.SERVICE) {
+            if (catalogItemId != null && catalogItemId.equals(item.getServiceId())) {
+                return 400;
+            }
+            return -1;
+        }
+        if (type == CoverageRuleTarget.DIAGNOSIS) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(item.getDiagnosisIds(), item.getDiagnosisId());
+            if (Boolean.TRUE.equals(item.getAllDiagnoses()) || selected.isEmpty()) {
+                return diagnosisIds.isEmpty() ? -1 : 200;
+            }
+            if (coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
+                return 350;
+            }
+            return -1;
+        }
+        if (type == CoverageRuleTarget.CATEGORY) {
+            if (billingItemType == null || billingItemType != item.getServiceCategory()) {
+                return -1;
+            }
+            if (item.getServiceId() != null) {
+                return catalogItemId != null && catalogItemId.equals(item.getServiceId()) ? 400 : -1;
+            }
+            return 300;
+        }
+        return billingItemType == null ? -1 : 100;
+    }
+
+    private CoveragePreApprovalReadingVM toPreApprovalReading(
+            CoveragePreApproval preApproval,
+            CoveragePreApprovalItem item
+    ) {
+        List<Long> selected = CoverageDiagnosisSelection.ids(item.getDiagnosisIds(), item.getDiagnosisId());
+        return new CoveragePreApprovalReadingVM(
+                preApproval.getId(),
+                item.getId(),
+                preApproval.getApprovalScope(),
+                preApproval.getFacilityId(),
+                preApproval.getDepartmentId(),
+                preApproval.getEncounterType(),
+                item.getItemType(),
+                item.getServiceCategory(),
+                item.getServiceId(),
+                item.getAllDiagnoses(),
+                CoverageDiagnosisSelection.first(selected),
+                selected,
+                preApproval.getValueType(),
+                preApproval.getLimitValue()
+        );
+    }
+
+    private List<ScoredExclusion> scoredExclusions(Long classId, Long tpaId) {
+        List<ScoredExclusion> rows = new ArrayList<>();
+        if (classId != null) {
+            for (CoverageExclusion exclusion : coverageExclusionRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredExclusion(exclusion, true));
+            }
+        }
+        if (tpaId != null) {
+            for (CoverageExclusion exclusion : coverageExclusionRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
+                rows.add(new ScoredExclusion(exclusion, false));
+            }
+        }
+        return rows;
+    }
+
+    private int exclusionMatchScore(
+            CoverageExclusion exclusion,
+            boolean fromContract,
+            BillingItemTypes billingItemType,
+            Long catalogItemId,
+            EncounterType encounterType,
+            Set<Long> diagnosisIds
+    ) {
+        if (exclusion.getExcludedResult() == null || exclusion.getExcludedResult() == YesNoQuestion.NOT_YET_DETERMINED) {
+            return -1;
+        }
+        EncounterType exclusionEncounter = exclusion.getEncounterType();
+        if (exclusionEncounter != null && exclusionEncounter != EncounterType.ALL) {
+            if (encounterType == null || encounterType != exclusionEncounter) {
+                return -1;
+            }
+        }
+        int targetScore = exclusionTargetScore(exclusion, billingItemType, catalogItemId, diagnosisIds);
+        if (targetScore < 0) {
+            return -1;
+        }
+        int encounterScore = exclusionEncounter != null && exclusionEncounter != EncounterType.ALL ? 20 : 5;
+        int sourceScore = fromContract ? 10 : 0;
+        return targetScore * 1000 + encounterScore * 10 + sourceScore;
+    }
+
+    private int exclusionTargetScore(
+            CoverageExclusion exclusion,
+            BillingItemTypes billingItemType,
+            Long catalogItemId,
+            Set<Long> diagnosisIds
+    ) {
+        CoverageRuleTarget type = exclusion.getExclusionType();
+        if (type == CoverageRuleTarget.SERVICE) {
+            if (catalogItemId != null && catalogItemId.equals(exclusion.getServiceId())) {
+                return 400;
+            }
+            return -1;
+        }
+        if (type == CoverageRuleTarget.DIAGNOSIS) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(exclusion.getDiagnosisIds(), exclusion.getDiagnosisId());
+            if (Boolean.TRUE.equals(exclusion.getAllDiagnoses()) || selected.isEmpty()) {
+                return diagnosisIds.isEmpty() ? -1 : 200;
+            }
+            if (coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
+                return 350;
+            }
+            return -1;
+        }
+        if (type == CoverageRuleTarget.CATEGORY) {
+            if (exclusion.getBillingItemType() == billingItemType) {
+                return 300;
+            }
+            return -1;
+        }
+        if (exclusion.getServiceId() != null) {
+            if (catalogItemId != null && catalogItemId.equals(exclusion.getServiceId())) {
+                return 400;
+            }
+            return -1;
+        }
+        if (exclusion.getBillingItemType() != null) {
+            if (exclusion.getBillingItemType() == billingItemType) {
+                return 300;
+            }
+            return -1;
+        }
+        return 100;
+    }
+
+    private CoverageExclusionVM toExclusionVm(CoverageExclusion exclusion) {
+        List<Long> selected = CoverageDiagnosisSelection.ids(exclusion.getDiagnosisIds(), exclusion.getDiagnosisId());
+        List<CoverageDiagnosisRefVM> diagnoses = selected.stream()
+                .map(id -> new CoverageDiagnosisRefVM(id, null, null))
+                .toList();
+        return new CoverageExclusionVM(
+                exclusion.getId(),
+                exclusion.getExclusionType(),
+                exclusion.getBillingItemType(),
+                exclusion.getServiceId(),
+                null,
+                exclusion.getItemName(),
+                exclusion.getAllDiagnoses(),
+                CoverageDiagnosisSelection.first(selected),
+                null,
+                null,
+                diagnoses,
+                selected,
+                exclusion.getEncounterType(),
+                exclusion.getExcludedResult(),
+                exclusion.getIsActive(),
+                exclusion.getCreatedDate(),
+                exclusion.getLastModifiedDate()
+        );
+    }
+
+    private List<ScoredDiscount> scoredDiscounts(Long classId, Long tpaId) {
+        List<ScoredDiscount> rows = new ArrayList<>();
+        if (classId != null) {
+            for (CoverageDiscount discount : coverageDiscountRepository.findByCoverageClass_IdAndIsActiveTrue(classId)) {
+                rows.add(new ScoredDiscount(discount, true));
+            }
+        }
+        if (tpaId != null) {
+            for (CoverageDiscount discount : coverageDiscountRepository.findByTpaDefinition_IdAndIsActiveTrue(tpaId)) {
+                rows.add(new ScoredDiscount(discount, false));
+            }
+        }
+        return rows;
+    }
+
+    private int discountMatchScore(
+            CoverageDiscount discount,
+            boolean fromContract,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId,
+            EncounterType encounterType
+    ) {
+        EncounterType discountEncounter = discount.getEncounterType();
+        if (discountEncounter != null && discountEncounter != EncounterType.ALL) {
+            if (encounterType == null || encounterType != discountEncounter) {
+                return -1;
+            }
+        }
+        int targetScore = discountTargetScore(discount, billingItemType, itemSubcategory, catalogItemId);
+        if (targetScore < 0) {
+            return -1;
+        }
+        int encounterScore = discountEncounter != null && discountEncounter != EncounterType.ALL ? 20 : 5;
+        int sourceScore = fromContract ? 10 : 0;
+        return targetScore * 1000 + encounterScore * 10 + sourceScore;
+    }
+
+    private int discountTargetScore(
+            CoverageDiscount discount,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId
+    ) {
+        if (discount.getServiceId() != null || discount.getTargetType() == CoverageRuleTarget.SERVICE) {
+            if (catalogItemId != null && catalogItemId.equals(discount.getServiceId())) {
+                return 300;
+            }
+            return -1;
+        }
+        if (discount.getTargetType() == CoverageRuleTarget.SUBCATEGORY) {
+            String key = discount.getSubcategoryKey();
+            if (discount.getBillingItemType() == billingItemType
+                    && key != null
+                    && itemSubcategory != null
+                    && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                return 250;
+            }
+            return -1;
+        }
+        if (discount.getBillingItemType() != null || discount.getTargetType() == CoverageRuleTarget.CATEGORY) {
+            if (discount.getBillingItemType() == billingItemType) {
+                return 200;
+            }
+            return -1;
+        }
+        return 100;
+    }
+
+    private CoverageDiscountVM toDiscountVm(CoverageDiscount discount) {
+        return new CoverageDiscountVM(
+                discount.getId(),
+                discount.getTargetType(),
+                discount.getBillingItemType(),
+                discount.getServiceId(),
+                null,
+                discount.getItemName(),
+                discount.getSubcategoryKey(),
+                null,
+                discount.getEncounterType(),
+                discount.getDiscountType(),
+                discount.getDiscountValue(),
+                discount.getIsActive(),
+                discount.getCreatedDate(),
+                discount.getLastModifiedDate()
+        );
+    }
+
+    /**
+     * A matching service or category reading wins. A visit that matches the rule
+     * scope but has no reading uses the rule limit. A specific reading always
+     * wins over that general limit.
+     */
+    private CoverageMatch selectReadingWithHeaderFallback(
+            Long classId,
+            CoverageTermType termType,
+            CoverageContractResolveRequest request,
+            EncounterType encounterType,
+            boolean missIsUncovered
+    ) {
+        if (classId == null) {
+            return CoverageMatch.notConfigured();
+        }
+        List<CoverageTerm> terms = coverageTermRepository.findByCoverageClass_IdAndTermTypeAndIsActiveTrue(
+                classId,
+                termType
+        );
+        if (terms.isEmpty()) {
+            return CoverageMatch.notConfigured();
+        }
+        if (request.billingItemType() == null || request.billingItemType().isBlank()) {
+            return missIsUncovered
+                    ? CoverageMatch.configuredWithoutEvaluation()
+                    : CoverageMatch.notConfigured();
+        }
+        BillingItemTypes billingItemType = parseBillingItemType(request.billingItemType());
+        if (billingItemType == null) {
+            return missIsUncovered
+                    ? CoverageMatch.configuredWithoutEvaluation()
+                    : CoverageMatch.notConfigured();
+        }
+
+        Set<Long> diagnosisIds = toIdSet(request.diagnosisIds());
+        String itemSubcategory = catalogSubcategoryLookup.subcategoryOf(billingItemType, request.catalogItemId());
+        CoverageReadingVM bestSpecific = null;
+        int bestSpecificScore = -1;
+        List<CoverageTermExclusion> bestSpecificExclusions = List.of();
+        CoverageReadingVM bestGeneral = null;
+        int bestGeneralScore = -1;
+        List<CoverageTermExclusion> bestGeneralExclusions = List.of();
+
+        for (CoverageTerm term : terms) {
+            int headerScore = headerMatchScore(
+                    term,
+                    request.facilityId(),
+                    request.departmentId(),
+                    encounterType,
+                    diagnosisIds
+            );
+            if (headerScore < 0) {
+                continue;
+            }
+            List<CoverageTermExclusion> termExclusions =
+                    coverageTermExclusionRepository.findByCoverageTerm_IdAndIsActiveTrue(term.getId());
+            if (isExcludedFromTerm(termExclusions, billingItemType, itemSubcategory, request.catalogItemId())) {
+                continue;
+            }
+            List<CoverageTermItem> items = coverageTermItemRepository.findByCoverageTerm_IdAndIsActiveTrue(term.getId());
+            if (items.isEmpty()) {
+                if (headerScore > bestGeneralScore) {
+                    bestGeneralScore = headerScore;
+                    bestGeneral = toReading(term, null);
+                    bestGeneralExclusions = termExclusions;
+                }
+                continue;
+            }
+            boolean matchedItem = false;
+            for (CoverageTermItem item : items) {
+                int itemScore = itemMatchScore(item, billingItemType, itemSubcategory, request.catalogItemId());
+                if (itemScore < 0) {
+                    continue;
+                }
+                matchedItem = true;
+                int score = headerScore * 1000 + itemScore;
+                if (score > bestSpecificScore) {
+                    bestSpecificScore = score;
+                    bestSpecific = toReading(term, item);
+                    bestSpecificExclusions = termExclusions;
+                }
+            }
+            if (!matchedItem && headerScore > bestGeneralScore) {
+                bestGeneralScore = headerScore;
+                bestGeneral = toReading(term, null);
+                bestGeneralExclusions = termExclusions;
+            }
+        }
+
+        if (bestSpecific != null) {
+            return CoverageMatch.covered(withExcludedItems(bestSpecific, bestSpecificExclusions));
+        }
+        if (bestGeneral != null) {
+            return CoverageMatch.covered(withExcludedItems(bestGeneral, bestGeneralExclusions));
+        }
+        return missIsUncovered ? CoverageMatch.uncoveredItem() : CoverageMatch.notConfigured();
+    }
+
+    /**
+     * A rule excludes the item when an active exclusion matches its category,
+     * its subcategory, or the item itself. The rule is then skipped for the item.
+     */
+    private boolean isExcludedFromTerm(
+            List<CoverageTermExclusion> exclusions,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId
+    ) {
+        for (CoverageTermExclusion exclusion : exclusions) {
+            if (exclusion.getBillingItemType() != billingItemType) {
+                continue;
+            }
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SERVICE) {
+                if (catalogItemId != null && catalogItemId.equals(exclusion.getServiceId())) {
+                    return true;
+                }
+                continue;
+            }
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+                String key = exclusion.getSubcategoryKey();
+                if (key != null && itemSubcategory != null && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                    return true;
+                }
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Carries the rule exclusions on the reading so billed items that are
+     * excluded do not consume the period limit.
+     */
+    private CoverageReadingVM withExcludedItems(
+            CoverageReadingVM reading,
+            List<CoverageTermExclusion> exclusions
+    ) {
+        if (reading == null || exclusions == null || exclusions.isEmpty()) {
+            return reading;
+        }
+        List<CoverageExcludedItemVM> excludedItems = new ArrayList<>();
+        for (CoverageTermExclusion exclusion : exclusions) {
+            BillingItemTypes type = exclusion.getBillingItemType();
+            if (exclusion.getCategoryScope() == CoverageRuleTarget.SERVICE) {
+                excludedItems.add(new CoverageExcludedItemVM(type, exclusion.getServiceId()));
+            } else if (exclusion.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+                for (Long catalogItemId : catalogSubcategoryLookup.catalogItemIdsOf(type, exclusion.getSubcategoryKey())) {
+                    excludedItems.add(new CoverageExcludedItemVM(type, catalogItemId));
+                }
+            } else {
+                excludedItems.add(new CoverageExcludedItemVM(type, null));
+            }
+        }
+        return new CoverageReadingVM(
+                reading.termId(),
+                reading.itemId(),
+                reading.categoryScope(),
+                reading.billingItemType(),
+                reading.serviceId(),
+                reading.valueType(),
+                reading.limitValue(),
+                reading.periodBasis(),
+                reading.coverageBasis(),
+                excludedItems
+        );
+    }
+
+    private CoverageReadingVM toReading(CoverageTerm term, CoverageTermItem item) {
+        if (item == null) {
+            return new CoverageReadingVM(
+                    term.getId(),
+                    null,
+                    CoverageRuleTarget.ALL,
+                    null,
+                    null,
+                    term.getValueType(),
+                    term.getLimitValue(),
+                    term.getPeriodBasis(),
+                    term.getCoverageBasis()
+            );
+        }
+        return new CoverageReadingVM(
+                term.getId(),
+                item.getId(),
+                item.getCategoryScope(),
+                item.getBillingItemType(),
+                item.getServiceId(),
+                item.getValueType(),
+                item.getLimitValue(),
+                term.getPeriodBasis(),
+                term.getCoverageBasis()
+        );
+    }
+
+    private int headerMatchScore(
+            CoverageTerm term,
+            Long facilityId,
+            Long departmentId,
+            EncounterType encounterType,
+            Set<Long> diagnosisIds
+    ) {
+        if (facilityId != null && !facilityId.equals(term.getFacilityId())) {
+            return -1;
+        }
+        if (Boolean.TRUE.equals(term.getAllDepartments()) || term.getDepartmentId() == null) {
+            // all departments
+        } else if (departmentId == null || !departmentId.equals(term.getDepartmentId())) {
+            return -1;
+        }
+        EncounterType termEncounter = term.getEncounterType();
+        if (termEncounter != null && termEncounter != EncounterType.ALL) {
+            if (encounterType == null || encounterType != termEncounter) {
+                return -1;
+            }
+        }
+        if (term.getDiagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS) {
+            List<Long> selected = CoverageDiagnosisSelection.ids(term.getDiagnosisIds(), term.getDiagnosisId());
+            if (selected.isEmpty() || !coverageLookupService.ruleCoversAnySelectedDiagnosis(selected, diagnosisIds)) {
+                return -1;
+            }
+        }
+
+        int score = 0;
+        if (term.getDiagnosisScope() == CoverageDiagnosisScope.SPECIFIC_DIAGNOSIS) {
+            score += 40;
+        } else {
+            score += 10;
+        }
+        if (!Boolean.TRUE.equals(term.getAllDepartments()) && term.getDepartmentId() != null) {
+            score += 30;
+        } else {
+            score += 10;
+        }
+        if (termEncounter != null && termEncounter != EncounterType.ALL) {
+            score += 20;
+        } else {
+            score += 5;
+        }
+        return score;
+    }
+
+    private int itemMatchScore(
+            CoverageTermItem item,
+            BillingItemTypes billingItemType,
+            String itemSubcategory,
+            Long catalogItemId
+    ) {
+        if (item.getBillingItemType() == null) {
+            return 100;
+        }
+        if (item.getBillingItemType() != billingItemType) {
+            return -1;
+        }
+        if (item.getServiceId() != null) {
+            if (catalogItemId != null && catalogItemId.equals(item.getServiceId())) {
+                return 300;
+            }
+            return -1;
+        }
+        if (item.getCategoryScope() == CoverageRuleTarget.SUBCATEGORY) {
+            String key = item.getSubcategoryKey();
+            if (key != null && itemSubcategory != null && key.trim().equalsIgnoreCase(itemSubcategory.trim())) {
+                return 250;
+            }
+            return -1;
+        }
+        return 200;
+    }
+
+    private Set<Long> toIdSet(List<Long> values) {
+        if (values == null || values.isEmpty()) {
+            return Set.of();
+        }
+        Set<Long> ids = new HashSet<>();
+        for (Long value : values) {
+            if (value != null) {
+                ids.add(value);
+            }
+        }
+        return ids;
+    }
+
+    private BillingItemTypes parseBillingItemType(String raw) {
+        String normalized = normalize(raw);
+        if (normalized == null) {
+            return null;
+        }
+        for (BillingItemTypes value : BillingItemTypes.values()) {
+            if (value.name().equalsIgnoreCase(normalized)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String buildMatchReason(
+            CoverageContract contract,
+            CoverageClass coverageClass,
+            Long tpaId,
+            CoverageCopayment copayment,
+            EncounterType encounterType,
+            CoverageMatch coverageMatch,
+            CoverageMatch limitMatch,
+            CoverageMatch cashLimitMatch,
+            CoverageDiscountVM discount,
+            CoverageExclusionVM exclusion,
+            CoveragePreApprovalReadingVM preApproval
+    ) {
+        StringBuilder reason = new StringBuilder("Matched coverage");
+        if (coverageClass != null
+                && coverageClass.getInsuranceCompanyPolicy() != null
+                && coverageClass.getInsuranceCompanyPolicy().getPolicyNumber() != null) {
+            reason.append(" policy ").append(coverageClass.getInsuranceCompanyPolicy().getPolicyNumber());
+        }
+        if (coverageClass != null && coverageClass.getName() != null && !coverageClass.getName().isBlank()) {
+            reason.append(" and class ").append(coverageClass.getName());
+        }
+        if (tpaId != null && contract.getGuarantorType() == GuarantorType.TPA) {
+            reason.append(" on the TPA contract");
+        }
+        if (coverageMatch.uncovered()) {
+            reason.append(". Item is not covered by Coverages");
+        } else if (coverageMatch.reading() != null) {
+            reason.append(". Coverage reading applied");
+        }
+        if (limitMatch.reading() != null) {
+            reason.append(". Coverage Limit reading applied");
+        }
+        if (cashLimitMatch.reading() != null) {
+            reason.append(". Cash Limit reading applied");
+        }
+        if (discount != null) {
+            reason.append(". Discount applied");
+        }
+        if (exclusion != null && exclusion.excludedResult() == YesNoQuestion.YES) {
+            reason.append(". Item is excluded from coverage");
+        } else if (exclusion != null && exclusion.excludedResult() == YesNoQuestion.NO) {
+            reason.append(". Exclusion override keeps the item covered");
+        }
+        if (preApproval != null) {
+            reason.append(". Pre-approval is required");
+        }
+        if (copayment == null) {
+            reason.append(". No co-payment rule for this encounter type");
+            if (encounterType != null) {
+                reason.append(" (").append(encounterType).append(")");
+            }
+            reason.append(".");
+            return reason.toString();
+        }
+        reason.append(". Co-payment applied from ")
+                .append(copayment.getEncounterType())
+                .append(copayment.getDepartmentId() == null ? "" : " department")
+                .append(" rule.");
+        return reason.toString();
+    }
+
+    private record CoverageMatch(
+            boolean configured,
+            boolean uncovered,
+            CoverageReadingVM reading
+    ) {
+        static CoverageMatch notConfigured() {
+            return new CoverageMatch(false, false, null);
+        }
+
+        static CoverageMatch configuredWithoutEvaluation() {
+            return new CoverageMatch(true, false, null);
+        }
+
+        static CoverageMatch uncoveredItem() {
+            return new CoverageMatch(true, true, null);
+        }
+
+        static CoverageMatch covered(CoverageReadingVM reading) {
+            return new CoverageMatch(true, false, reading);
+        }
+    }
+
+    private record ScoredDiscount(CoverageDiscount discount, boolean fromContract) {}
+
+    private record ScoredExclusion(CoverageExclusion exclusion, boolean fromContract) {}
+
+    private record ScoredPreApproval(CoveragePreApproval preApproval, boolean fromContract) {}
+
+    private record MatchedPreApprovalReading(CoveragePreApprovalReadingVM reading, int score) {}
+
+    private record MatchedCoverage(CoverageContract contract, CoverageClass coverageClass) {}
+
+    private EncounterType parseEncounterType(String raw) {
+        String normalized = normalize(raw);
+        if (normalized == null) {
+            return null;
+        }
+        for (EncounterType value : EncounterType.values()) {
+            if (value.name().equalsIgnoreCase(normalized)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
+    }
+}

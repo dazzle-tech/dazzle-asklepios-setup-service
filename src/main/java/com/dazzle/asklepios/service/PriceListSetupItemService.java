@@ -28,6 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -43,23 +45,17 @@ public class PriceListSetupItemService {
 
     private static final String ENTITY = "priceListSetupItem";
 
-    private final PriceListSetupItemRepository
-            priceListSetupItemRepository;
+    private final PriceListSetupItemRepository priceListSetupItemRepository;
 
-    private final PriceListSetupRepository
-            priceListSetupRepository;
+    private final PriceListSetupRepository priceListSetupRepository;
 
-    private final BrandMedicationRepository
-            brandMedicationRepository;
+    private final ServiceRepository serviceRepository;
 
-    private final DiagnosticTestRepository
-            diagnosticTestRepository;
+    private final ProcedureRepository procedureRepository;
 
-    private final ServiceRepository
-            serviceRepository;
+    private final BrandMedicationRepository brandMedicationRepository;
 
-    private final ProcedureRepository
-            procedureRepository;
+    private final DiagnosticTestRepository diagnosticTestRepository;
 
     private final VaccineBrandsRepository
             vaccineBrandsRepository;
@@ -68,45 +64,29 @@ public class PriceListSetupItemService {
             Long priceListSetupId,
             PriceListSetupItemDTO dto
     ) {
+        PriceListSetup priceListSetup = requirePriceList(priceListSetupId);
 
-        if (!priceListSetupRepository.existsById(priceListSetupId)) {
-            throw new EntityNotFoundException(
-                    "Price list setup not found with id: "
-                            + priceListSetupId
-            );
-        }
-
-        PriceListSetup priceListSetup =
-                priceListSetupRepository
-                        .findById(priceListSetupId)
-                        .orElseThrow();
-
+        validateActiveCatalogItem(dto);
         validateUniqueWithinPriceList(priceListSetupId, dto);
 
-        PriceListSetupItem entity =
-                new PriceListSetupItem();
-
+        PriceListSetupItem entity = new PriceListSetupItem();
         entity.setId(null);
         entity.setPriceListSetupId(priceListSetupId);
-        entity.setWaseelItemMappingId(
-                dto.waseelItemMappingId()
-        );
+        entity.setWaseelItemMappingId(dto.waseelItemMappingId());
         entity.setSbsCatalogId(dto.sbsCatalogId());
         entity.setItemType(dto.itemType());
         entity.setSourceId(dto.sourceId());
         entity.setItemCode(dto.itemCode());
         entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
+        entity.setCategory(blankToNull(dto.category()));
         entity.setUnitPrice(dto.unitPrice());
         entity.setDiscountPercentage(
-                dto.discountPercentage()
+                dto.discountPercentage() != null
+                        ? dto.discountPercentage()
+                        : BigDecimal.ZERO
         );
-
-        entity.setIsActive(
-                dto.isActive() == null
-                        ? true
-                        : dto.isActive()
-        );
+        entity.setIsActive(dto.isActive() == null ? true : dto.isActive());
         entity.setRequiresPreAuthorization(
                 resolveRequiresPreAuthorization(
                         priceListSetup,
@@ -115,10 +95,7 @@ public class PriceListSetupItemService {
         );
 
         try {
-            PriceListSetupItem savedEntity =
-                    priceListSetupItemRepository.save(entity);
-
-            return toDTO(savedEntity);
+            return toDTO(priceListSetupItemRepository.save(entity));
         } catch (DataIntegrityViolationException exception) {
             throw mapIntegrityViolation(exception);
         }
@@ -129,24 +106,14 @@ public class PriceListSetupItemService {
             Long itemId,
             PriceListSetupItemDTO dto
     ) {
-
         PriceListSetupItem entity =
                 priceListSetupItemRepository
-                        .findByIdAndPriceListSetupId(
-                                itemId,
-                                priceListSetupId
-                        )
+                        .findByIdAndPriceListSetupId(itemId, priceListSetupId)
                         .orElseThrow(() ->
                                 new EntityNotFoundException(
-                                        "Price list item not found with id: "
-                                                + itemId
+                                        "Price list item not found with id: " + itemId
                                 )
                         );
-
-        PriceListSetup priceListSetup =
-                priceListSetupRepository
-                        .findById(priceListSetupId)
-                        .orElseThrow();
 
         boolean willBeActive =
                 dto.isActive() != null
@@ -166,6 +133,7 @@ public class PriceListSetupItemService {
             throw duplicateItemException();
         }
 
+        entity.setCategory(blankToNull(dto.category()));
         entity.setWaseelItemMappingId(
                 dto.waseelItemMappingId()
         );
@@ -176,49 +144,25 @@ public class PriceListSetupItemService {
         entity.setNonStandardCode(blankToNull(dto.nonStandardCode()));
         entity.setItemName(dto.itemName());
         entity.setUnitPrice(dto.unitPrice());
-        entity.setDiscountPercentage(
-                dto.discountPercentage()
-        );
-
         if (dto.isActive() != null) {
             entity.setIsActive(dto.isActive());
         }
 
-        if (dto.requiresPreAuthorization() != null) {
-            entity.setRequiresPreAuthorization(
-                    resolveRequiresPreAuthorization(
-                            priceListSetup,
-                            dto.requiresPreAuthorization()
-                    )
-            );
-        }
-
         try {
-            PriceListSetupItem savedEntity =
-                    priceListSetupItemRepository.save(entity);
-
-            return toDTO(savedEntity);
+            return toDTO(priceListSetupItemRepository.save(entity));
         } catch (DataIntegrityViolationException exception) {
             throw mapIntegrityViolation(exception);
         }
     }
 
     @Transactional(readOnly = true)
-    public PriceListSetupItemDTO findById(
-            Long priceListSetupId,
-            Long itemId
-    ) {
-
+    public PriceListSetupItemDTO findById(Long priceListSetupId, Long itemId) {
         PriceListSetupItem entity =
                 priceListSetupItemRepository
-                        .findByIdAndPriceListSetupId(
-                                itemId,
-                                priceListSetupId
-                        )
+                        .findByIdAndPriceListSetupId(itemId, priceListSetupId)
                         .orElseThrow(() ->
                                 new EntityNotFoundException(
-                                        "Price list item not found with id: "
-                                                + itemId
+                                        "Price list item not found with id: " + itemId
                                 )
                         );
 
@@ -233,9 +177,7 @@ public class PriceListSetupItemService {
             Pageable pageable
     ) {
         String normalizedSearch =
-                search == null || search.isBlank()
-                        ? null
-                        : search.trim();
+                search == null || search.isBlank() ? null : search.trim();
 
         Page<PriceListSetupItem> page =
                 priceListSetupItemRepository
@@ -308,18 +250,43 @@ public class PriceListSetupItemService {
 
         PriceListSetupItem entity =
                 priceListSetupItemRepository
-                        .findByIdAndPriceListSetupId(
-                                itemId,
-                                priceListSetupId
-                        )
+                        .findByIdAndPriceListSetupId(itemId, priceListSetupId)
                         .orElseThrow(() ->
                                 new EntityNotFoundException(
-                                        "Price list item not found with id: "
-                                                + itemId
+                                        "Price list item not found with id: " + itemId
                                 )
                         );
 
         priceListSetupItemRepository.delete(entity);
+    }
+
+    private void validateActiveCatalogItem(PriceListSetupItemDTO dto) {
+        boolean active = switch (dto.itemType()) {
+            case SERVICE -> serviceRepository.findById(dto.sourceId())
+                    .map(ServiceSetup::getIsActive)
+                    .orElse(false);
+            case PROCEDURE -> procedureRepository.findById(dto.sourceId())
+                    .map(Procedure::getIsActive)
+                    .orElse(false);
+            case MEDICATION -> brandMedicationRepository.findById(dto.sourceId())
+                    .map(BrandMedication::getIsActive)
+                    .orElse(false);
+            case LABORATORY, RADIOLOGY, PATHOLOGY ->
+                    diagnosticTestRepository.findById(dto.sourceId())
+                            .map(DiagnosticTest::getIsActive)
+                            .orElse(false);
+            case VACCINE -> vaccineBrandsRepository.findById(dto.sourceId())
+                    .map(VaccineBrands::getIsActive)
+                    .orElse(false);
+        };
+
+        if (!Boolean.TRUE.equals(active)) {
+            throw new BadRequestAlertException(
+                    "Only active services from Service Definition can be added to a price list.",
+                    ENTITY,
+                    "catalog.inactive"
+            );
+        }
     }
 
     /**
@@ -357,7 +324,7 @@ public class PriceListSetupItemService {
         );
     }
 
-    private RuntimeException mapIntegrityViolation(
+    private BadRequestAlertException mapIntegrityViolation(
             DataIntegrityViolationException exception
     ) {
         String message = exception.getMostSpecificCause() != null
@@ -378,8 +345,31 @@ public class PriceListSetupItemService {
         if (message != null && message.contains("uk_price_list_item_source_active")) {
             return duplicateItemException();
         }
+        if (message != null
+                && (message.contains("uk_price_list_item_code_visit")
+                || message.contains("uk_price_list_item_code"))) {
+            return new BadRequestAlertException(
+                    "This service is already configured on this price list.",
+                    ENTITY,
+                    "item.duplicate"
+            );
+        }
 
-        return exception;
+        return new BadRequestAlertException(
+                "Unable to save the price-list item because of a data constraint.",
+                ENTITY,
+                "item.constraint"
+        );
+    }
+
+    private PriceListSetup requirePriceList(Long priceListSetupId) {
+        return priceListSetupRepository.findById(priceListSetupId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException(
+                                "Price list setup not found with id: "
+                                        + priceListSetupId
+                        )
+                );
     }
 
     private PriceListSetupItemDTO toDTO(
@@ -413,10 +403,15 @@ public class PriceListSetupItemService {
                 entity.getItemCode(),
                 entity.getNonStandardCode(),
                 entity.getItemName(),
+                entity.getCategory(),
                 entity.getUnitPrice(),
                 entity.getDiscountPercentage(),
                 entity.getIsActive(),
                 entity.getRequiresPreAuthorization(),
+                entity.getCreatedDate(),
+                entity.getLastModifiedDate(),
+                entity.getCreatedBy(),
+                entity.getLastModifiedBy(),
                 setupItemName
         );
     }
@@ -514,8 +509,7 @@ public class PriceListSetupItemService {
             PriceListSetup priceListSetup,
             Boolean requestedValue
     ) {
-        if (priceListSetup.getType()
-                != PriceListSetupType.INSURANCE) {
+        if (priceListSetup.getType() != PriceListSetupType.INSURANCE) {
             if (Boolean.TRUE.equals(requestedValue)) {
                 throw new BadRequestAlertException(
                         "Requires Pre-Authorization is only allowed on insurance price list items.",

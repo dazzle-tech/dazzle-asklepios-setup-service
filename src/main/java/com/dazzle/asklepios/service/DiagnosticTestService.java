@@ -36,6 +36,7 @@ public class DiagnosticTestService {
     private final DiagnosticTestProfileRepository profileRepository;
     private final DiagnosticTestNormalRangeService normalRangeService;
     private final BillingRuleReferenceService billingRuleReferenceService;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
     private final LoincCodeRepository loincCodeRepository;
 
     public DiagnosticTestService(
@@ -43,12 +44,14 @@ public class DiagnosticTestService {
             DiagnosticTestProfileRepository profileRepository,
             DiagnosticTestNormalRangeService normalRangeService,
             BillingRuleReferenceService billingRuleReferenceService,
+            PriceListCatalogSyncService priceListCatalogSyncService,
             LoincCodeRepository loincCodeRepository
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
         this.normalRangeService = normalRangeService;
         this.billingRuleReferenceService = billingRuleReferenceService;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
         this.loincCodeRepository = loincCodeRepository;
     }
     private void validateDefaultProfileFields(
@@ -184,6 +187,13 @@ public class DiagnosticTestService {
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
+
+            if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                priceListCatalogSyncService.deactivateDiagnosticTest(
+                        saved.getId(),
+                        saved.getType()
+                );
+            }
 
             if (saved.getType() == TestType.LABORATORY) {
                 DiagnosticTestProfile defaultProfile = profileRepository
@@ -435,7 +445,14 @@ public class DiagnosticTestService {
         return repository.findById(id)
                 .map(p -> {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
-                    return repository.save(p);
+                    DiagnosticTest saved = repository.save(p);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateDiagnosticTest(
+                                saved.getId(),
+                                saved.getType()
+                        );
+                    }
+                    return saved;
                 });
     }
 

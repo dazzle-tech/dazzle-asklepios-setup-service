@@ -31,15 +31,18 @@ public class ProcedureService {
     private final ProcedureRepository procedureRepository;
     private final ProcedureItemsService procedureItemsService;
     private final EntityManager em;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
 
     public ProcedureService(
             ProcedureRepository procedureRepository,
             ProcedureItemsService procedureItemsService,
-            EntityManager em
+            EntityManager em,
+            PriceListCatalogSyncService priceListCatalogSyncService
     ) {
         this.procedureRepository = procedureRepository;
         this.procedureItemsService = procedureItemsService;
         this.em = em;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
 
     public Procedure create(Long facilityId, Procedure incoming) {
@@ -126,6 +129,12 @@ public class ProcedureService {
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);
+            if (!Boolean.TRUE.equals(updated.getIsActive())) {
+                priceListCatalogSyncService.deactivateCatalogItem(
+                        com.dazzle.asklepios.domain.enumeration.PriceListItemType.PROCEDURE,
+                        updated.getId()
+                );
+            }
             LOG.info("Successfully updated procedure id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
@@ -190,6 +199,12 @@ public class ProcedureService {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
                     Procedure saved = procedureRepository.save(entity);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateCatalogItem(
+                                com.dazzle.asklepios.domain.enumeration.PriceListItemType.PROCEDURE,
+                                saved.getId()
+                        );
+                    }
                     LOG.info("Procedure id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });

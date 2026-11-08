@@ -8,9 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
+
+    List<Procedure> findByCategoryType(ProcedureCategory categoryType);
 
     Page<Procedure> findByFacility_Id(Long facilityId, Pageable pageable);
     Page<Procedure> findByFacility_IdAndCategoryType(Long facilityId, ProcedureCategory category, Pageable pageable);
@@ -30,6 +33,11 @@ public interface ProcedureRepository extends JpaRepository<Procedure, Long> {
 
     Page<Procedure> findByFacility_IdAndIsActiveTrueAndCategoryType(
             Long facilityId, ProcedureCategory categoryType, Pageable pageable);
+
+    Optional<Procedure> findFirstByFacility_IdAndCodeIgnoreCase(
+            Long facilityId,
+            String code
+    );
 
     Page<Procedure> findByFacility_IdAndIsActiveTrueAndCategoryTypeAndNameContainingIgnoreCase(
             Long facilityId,

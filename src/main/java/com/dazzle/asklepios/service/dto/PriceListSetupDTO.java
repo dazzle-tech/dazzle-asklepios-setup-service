@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 public record PriceListSetupDTO(
@@ -16,21 +17,31 @@ public record PriceListSetupDTO(
         @NotNull
         Long facilityId,
 
+        String facilityName,
+
+        Boolean appliesToAllFacilities,
+
         @NotNull
         PriceListSetupType type,
 
         Long payerId,
 
+        String payerName,
+
+        Long nphiesPayerId,
+
+        String nphiesPayerName,
+
         @NotBlank
         String name,
 
+        String shortName,
+
         String description,
 
-        @NotNull
         @Positive
         Integer versionNumber,
 
-        @NotNull
         LocalDate effectiveFrom,
 
         LocalDate effectiveTo,
@@ -38,7 +49,19 @@ public record PriceListSetupDTO(
         @NotNull
         Currency currency,
 
-        PriceListSetupStatus status
+        PriceListSetupStatus status,
+
+        Long taxId,
+
+        String taxName,
+
+        Instant createdDate,
+
+        Instant lastModifiedDate,
+
+        String createdBy,
+
+        String lastModifiedBy
 
 ) {
 }

@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service.dto;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingCoverageType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.EncounterType;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
@@ -34,7 +35,9 @@ public record BillingPricingResolutionRequest(
         Currency currency,
 
         @NotNull
-        LocalDate pricingDate
+        LocalDate pricingDate,
+
+        EncounterType visitType
 
 ) {
 }
