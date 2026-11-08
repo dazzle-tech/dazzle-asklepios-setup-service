@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface UomGroupRepository extends JpaRepository<UomGroup, Long> {
     Page<UomGroup> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+    Page<UomGroup> findByDescriptionContainingIgnoreCase(String description, Pageable pageable);
 }

@@ -59,6 +59,13 @@ public class UomGroupController {
         return new ResponseEntity<>(page.getContent().stream().toList(), headers, HttpStatus.OK);
     }
 
+    @GetMapping("/by-description/{description}")
+    public ResponseEntity<List<UomGroup>> listGroupsByDescription(@PathVariable String description, @ParameterObject Pageable pageable) {
+        Page<UomGroup> page = service.searchByDescription(description.trim(), pageable);
+        HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
+        return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
+    }
+
 
     @GetMapping("/{id}")
     public UomGroup getGroup(@PathVariable Long id) {
