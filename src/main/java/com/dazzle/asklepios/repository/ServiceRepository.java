@@ -33,6 +33,21 @@ public interface ServiceRepository extends JpaRepository<ServiceSetup, Long> {
 
     Page<ServiceSetup> findByFacility_Id(Long facilityId, Pageable pageable);
     Page<ServiceSetup> findByIsActive(Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByFacility_IdAndIsActive(Long facilityId, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByCategoryAndIsActive(ServiceCategory category, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByCodeContainingIgnoreCaseAndIsActive(String code, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByNameContainingIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByAbbreviationContainingIgnoreCaseAndIsActive(String abbreviation, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByPriceAndIsActive(BigDecimal price, Boolean isActive, Pageable pageable);
+
+    Page<ServiceSetup> findByCurrencyAndIsActive(Currency currency, Boolean isActive, Pageable pageable);
+
     Page<ServiceSetup> findByIdIn(List<Long> ids, Pageable pageable);
     Page<ServiceSetup> findByIdInAndIsActiveTrue(List<Long> ids, Pageable pageable);
 

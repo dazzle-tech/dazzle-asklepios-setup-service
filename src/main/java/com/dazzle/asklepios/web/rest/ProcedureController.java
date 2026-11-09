@@ -122,10 +122,11 @@ public class ProcedureController {
 
     @GetMapping("/procedure")
     public ResponseEntity<List<ProcedureResponseVM>> getAllProcedures(
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures pageable={}", pageable);
-        final Page<Procedure> page = procedureService.findAll(pageable);
+        final Page<Procedure> page = procedureService.findAll(isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -139,10 +140,11 @@ public class ProcedureController {
     @GetMapping("/procedure/by-category/{categoryType}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCategory(
             @PathVariable ProcedureCategory categoryType,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by categoryType={} pageable={}", categoryType, pageable);
-        Page<Procedure> page = procedureService.findByCategory(categoryType, pageable);
+        Page<Procedure> page = procedureService.findByCategory(categoryType, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -156,10 +158,11 @@ public class ProcedureController {
     @GetMapping("/procedure/by-code/{code}")
     public ResponseEntity<List<ProcedureResponseVM>> getByCode(
             @PathVariable String code,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by code='{}' pageable={}", code, pageable);
-        Page<Procedure> page = procedureService.findByCodeContainingIgnoreCase(code, pageable);
+        Page<Procedure> page = procedureService.findByCodeContainingIgnoreCase(code, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -173,10 +176,11 @@ public class ProcedureController {
     @GetMapping("/procedure/by-name/{name}")
     public ResponseEntity<List<ProcedureResponseVM>> getByName(
             @PathVariable String name,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by name='{}' pageable={}", name, pageable);
-        Page<Procedure> page = procedureService.findByNameContainingIgnoreCase(name, pageable);
+        Page<Procedure> page = procedureService.findByNameContainingIgnoreCase(name, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -202,10 +206,11 @@ public class ProcedureController {
     public ResponseEntity<List<ProcedureResponseVM>> getByFacility(
             @PathVariable Long facilityId,
             @RequestParam(required = false) ProcedureCategory category,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures by facilityId={} category={} pageable={}", facilityId, category, pageable);
-        Page<Procedure> page = procedureService.findByFacilityAndOptionalCategory(facilityId, category, pageable);
+        Page<Procedure> page = procedureService.findByFacilityAndOptionalCategory(facilityId, category, isActive, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
