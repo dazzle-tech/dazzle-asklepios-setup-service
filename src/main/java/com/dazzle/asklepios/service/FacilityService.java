@@ -81,6 +81,7 @@ public class FacilityService {
         facility.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
         facility.setStreetAddress(vm.streetAddress());
         facility.setPostalCode(vm.postalCode());
+        facility.setDefaultPhoneCountry(normalizePhoneCountry(vm.defaultPhoneCountry()));
         Facility saved = facilityRepository.save(facility);
         return FacilityResponseVM.ofEntity(saved);
 
@@ -137,6 +138,7 @@ public class FacilityService {
                 existing.setDistrict(resolveDistrict(vm.districtId(), vm.countryId()));
                 existing.setStreetAddress(vm.streetAddress());
                 existing.setPostalCode(vm.postalCode());
+                existing.setDefaultPhoneCountry(normalizePhoneCountry(vm.defaultPhoneCountry()));
 
                 Facility updated = facilityRepository.save(existing);
                 LOG.debug("Facility updated successfully: {}", updated);
@@ -251,6 +253,21 @@ public class FacilityService {
     private Department getDepartment(Long departmentId) {
         return departmentsRepository.findById(departmentId)
                 .orElseThrow(() -> new BadRequestAlertException("department.notfound", "Facility", "Department not found: " + departmentId));
+    }
+
+    private String normalizePhoneCountry(String phoneCountry) {
+        if (phoneCountry == null || phoneCountry.isBlank()) {
+            return null;
+        }
+        String normalized = phoneCountry.trim().toLowerCase();
+        if (!normalized.matches("[a-z]{2}")) {
+            throw new BadRequestAlertException(
+                    "facility.invalidPhoneCountry",
+                    "Facility",
+                    "Default phone country must be a two-letter country code"
+            );
+        }
+        return normalized;
     }
 
     private Country resolveCountry(Long countryId) {
