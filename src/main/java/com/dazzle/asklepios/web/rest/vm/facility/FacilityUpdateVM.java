@@ -37,6 +37,7 @@ public record FacilityUpdateVM(
         Long countryId,
         Long districtId,
         String streetAddress,
-        String postalCode
+        String postalCode,
+        String defaultPhoneCountry
 ) implements Serializable {
 }

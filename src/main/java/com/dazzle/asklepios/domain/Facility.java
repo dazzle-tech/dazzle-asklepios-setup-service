@@ -119,4 +119,7 @@ public class Facility extends AbstractAuditingEntity<Long> implements Serializab
 
     @Column(name = "postal_code", length = 50)
     private String postalCode;
+
+    @Column(name = "default_phone_country", length = 2)
+    private String defaultPhoneCountry;
 }
