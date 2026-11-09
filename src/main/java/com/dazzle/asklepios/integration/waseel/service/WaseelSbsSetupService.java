@@ -20,6 +20,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -370,18 +371,56 @@ public class WaseelSbsSetupService {
     public Page<WaseelSbsCatalogDTO> searchSbs(
             String search,
             Boolean activeOnly,
+            String waseelItemType,
+            String sbsCode,
+            String shortDescription,
+            String longDescription,
+            String updateType,
+            Boolean isActive,
             Pageable pageable
     ) {
-        String normalizedSearch = search == null ? "" : search.trim();
-        boolean onlyActive = Boolean.TRUE.equals(activeOnly);
+        Specification<WaseelSbsCatalog> sbsSpecification = Specification.where(null);
 
-        Page<WaseelSbsCatalog> page = sbsCatalogRepository.searchCatalog(
-                normalizedSearch,
-                onlyActive,
-                pageable
-        );
+        if (Boolean.TRUE.equals(activeOnly)) {
+            sbsSpecification = sbsSpecification.and((root, query, cb) ->
+                    cb.isTrue(root.get("isActive")));
+        }
 
-        return page.map(this::toSbsDto);
+        // The general search box looks in the code, the descriptions and the type
+        if (search != null && !search.isBlank()) {
+            String value = "%" + search.trim().toLowerCase() + "%";
+            sbsSpecification = sbsSpecification.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("sbsCode")), value),
+                    cb.like(cb.lower(root.get("shortDescription")), value),
+                    cb.like(cb.lower(root.get("longDescription")), value),
+                    cb.like(cb.lower(root.get("waseelItemType")), value)
+            ));
+        }
+
+        sbsSpecification = andContainsIgnoreCase(sbsSpecification, "waseelItemType", waseelItemType);
+        sbsSpecification = andContainsIgnoreCase(sbsSpecification, "sbsCode", sbsCode);
+        sbsSpecification = andContainsIgnoreCase(sbsSpecification, "shortDescription", shortDescription);
+        sbsSpecification = andContainsIgnoreCase(sbsSpecification, "longDescription", longDescription);
+        sbsSpecification = andContainsIgnoreCase(sbsSpecification, "updateType", updateType);
+
+        if (isActive != null) {
+            sbsSpecification = sbsSpecification.and((root, query, cb) ->
+                    cb.equal(root.get("isActive"), isActive));
+        }
+
+        return sbsCatalogRepository.findAll(sbsSpecification, pageable).map(this::toSbsDto);
+    }
+
+    private Specification<WaseelSbsCatalog> andContainsIgnoreCase(
+            Specification<WaseelSbsCatalog> specification,
+            String field,
+            String text
+    ) {
+        if (text == null || text.isBlank()) {
+            return specification;
+        }
+        String value = "%" + text.trim().toLowerCase() + "%";
+        return specification.and((root, query, cb) -> cb.like(cb.lower(root.get(field)), value));
     }
 
     @Transactional(readOnly = true)
@@ -447,6 +486,8 @@ public class WaseelSbsSetupService {
             String itemName,
             String sbsCode,
             String itemCode,
+            String sbsDescription,
+            Boolean isActive,
             Pageable pageable
     ) {
         String normalizedItemName =
@@ -464,12 +505,20 @@ public class WaseelSbsSetupService {
                         ? null
                         : itemCode.trim();
 
+        String normalizedSbsDescription =
+                sbsDescription == null || sbsDescription.isBlank()
+                        ? null
+                        : sbsDescription.trim();
+
+        // No status filter returns every mapping; callers that need active ones send isActive=true
         return itemMappingRepository
-                .searchActiveMappings(
+                .searchMappings(
                         itemType,
                         normalizedItemName,
                         normalizedSbsCode,
                         normalizedItemCode,
+                        normalizedSbsDescription,
+                        isActive,
                         pageable
                 )
                 .map(this::toMappingDto);

@@ -50,9 +50,25 @@ public class WaseelSbsSetupController {
     public ResponseEntity<Page<WaseelSbsCatalogDTO>> searchSbs(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Boolean activeOnly,
+            @RequestParam(required = false) String waseelItemType,
+            @RequestParam(required = false) String sbsCode,
+            @RequestParam(required = false) String shortDescription,
+            @RequestParam(required = false) String longDescription,
+            @RequestParam(required = false) String updateType,
+            @RequestParam(required = false) Boolean isActive,
             Pageable pageable
     ) {
-        return ResponseEntity.ok(waseelSbsSetupService.searchSbs(search, activeOnly, pageable));
+        return ResponseEntity.ok(waseelSbsSetupService.searchSbs(
+                search,
+                activeOnly,
+                waseelItemType,
+                sbsCode,
+                shortDescription,
+                longDescription,
+                updateType,
+                isActive,
+                pageable
+        ));
     }
 
     @GetMapping("/waseel/sbs/{id}")
@@ -83,6 +99,8 @@ public class WaseelSbsSetupController {
             @RequestParam(required = false) String itemName,
             @RequestParam(required = false) String sbsCode,
             @RequestParam(required = false) String itemCode,
+            @RequestParam(required = false) String sbsDescription,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         Page<WaseelItemMappingDTO> page =
@@ -91,6 +109,8 @@ public class WaseelSbsSetupController {
                         itemName,
                         sbsCode,
                         itemCode,
+                        sbsDescription,
+                        isActive,
                         pageable
                 );
 
