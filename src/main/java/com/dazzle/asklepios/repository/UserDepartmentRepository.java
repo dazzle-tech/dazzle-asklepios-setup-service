@@ -44,6 +44,19 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
             """)
     void clearDefaultForUserActiveInFacility(Long userId, Long facilityId);
 
+    List<UserDepartment> findByDepartment_Facility_IdAndUser_LoginContainingIgnoreCaseOrDepartment_Facility_IdAndUser_FirstNameContainingIgnoreCaseOrDepartment_Facility_IdAndUser_LastNameContainingIgnoreCaseOrDepartment_Facility_IdAndUser_EmailContainingIgnoreCase(
+            Long facilityId,
+            String login,
+            Long sameFacilityForFirstName,
+            String firstName,
+            Long sameFacilityForLastName,
+            String lastName,
+            Long sameFacilityForEmail,
+            String email
+    );
+
+    List<UserDepartment> findByDepartment_Facility_Id(Long facilityId);
+
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrue(Long departmentId);
 
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(Long departmentId, JobRole jobRole);
