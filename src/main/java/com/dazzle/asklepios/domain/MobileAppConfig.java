@@ -51,8 +51,7 @@ public class MobileAppConfig extends AbstractAuditingEntity<Long> implements Ser
     private MobileAppConfigType configType;
 
     @NotNull
-    @Size(max = 4000)
-    @Column(name = "config_value", nullable = false, length = 4000)
+    @Column(name = "config_value", nullable = false, columnDefinition = "text")
     private String configValue;
 
     @Size(max = 1000)

@@ -7,9 +7,12 @@ import com.dazzle.asklepios.domain.enumeration.MobileAppConfigType;
 import com.dazzle.asklepios.repository.MobileAppConfigRepository;
 import com.dazzle.asklepios.service.dto.mobileAppConfig.MobileAppConfigCreateDTO;
 import com.dazzle.asklepios.service.dto.mobileAppConfig.MobileAppConfigUpdateDTO;
-import com.dazzle.asklepios.web.rest.vm.mobileAppConfig.MobileAppConfigValueVM;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
+import com.dazzle.asklepios.web.rest.vm.mobileAppConfig.MobileAppConfigValueVM;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -35,15 +38,18 @@ public class MobileAppConfigService {
     private final MobileAppConfigRepository repository;
     private final AttachmentStorageService storage;
     private final AttachmentProperties attachmentProperties;
+    private final ObjectMapper objectMapper;
 
     public MobileAppConfigService(
             MobileAppConfigRepository repository,
             AttachmentStorageService storage,
-            AttachmentProperties attachmentProperties
+            AttachmentProperties attachmentProperties,
+            ObjectMapper objectMapper
     ) {
         this.repository = repository;
         this.storage = storage;
         this.attachmentProperties = attachmentProperties;
+        this.objectMapper = objectMapper;
     }
 
     public MobileAppConfig create(MobileAppConfigCreateDTO dto) {
@@ -82,7 +88,7 @@ public class MobileAppConfigService {
         return repository.save(entity);
     }
 
-    public MobileAppConfig createImage(MobileAppConfigKey configKey, MultipartFile file, String description) {
+    public MobileAppConfig createImage(MobileAppConfigKey configKey, MultipartFile[] files, String description) {
         LOG.debug("Request to create MobileAppConfig image key={}", configKey);
         if (configKey == null) {
             throw new BadRequestAlertException("Key is required", ENTITY_NAME, "keyrequired");
@@ -91,23 +97,35 @@ public class MobileAppConfigService {
             throw new BadRequestAlertException(
                     "A value already exists for this key", ENTITY_NAME, "keyexists");
         }
-        String storageKey = storeImage(configKey, file);
+        List<String> storageKeys = storeImages(configKey, files);
+        if (storageKeys.isEmpty()) {
+            throw new BadRequestAlertException("At least one image is required", ENTITY_NAME, "fileempty");
+        }
         MobileAppConfig entity = MobileAppConfig.builder()
                 .configKey(configKey)
                 .configType(MobileAppConfigType.IMAGE)
-                .configValue(storageKey)
+                .configValue(writeStorageKeys(storageKeys))
                 .description(normalizeDescription(description))
                 .build();
         return repository.save(entity);
     }
 
-    public MobileAppConfig updateImage(Long id, MultipartFile file, String description) {
+    public MobileAppConfig updateImage(
+            Long id,
+            MultipartFile[] files,
+            List<String> keptValues,
+            String description
+    ) {
         LOG.debug("Request to update MobileAppConfig image id={}", id);
         MobileAppConfig entity = getById(id);
         entity.setConfigType(MobileAppConfigType.IMAGE);
-        if (file != null && !file.isEmpty()) {
-            entity.setConfigValue(storeImage(entity.getConfigKey(), file));
+
+        List<String> nextKeys = new ArrayList<>(normalizeKeptValues(keptValues));
+        nextKeys.addAll(storeImages(entity.getConfigKey(), files));
+        if (nextKeys.isEmpty()) {
+            throw new BadRequestAlertException("At least one image is required", ENTITY_NAME, "fileempty");
         }
+        entity.setConfigValue(writeStorageKeys(nextKeys));
         entity.setDescription(normalizeDescription(description));
         return repository.save(entity);
     }
@@ -142,7 +160,7 @@ public class MobileAppConfigService {
                     if (config == null) {
                         return new MobileAppConfigValueVM(key, null, null, null);
                     }
-                    return MobileAppConfigValueVM.ofEntity(config, resolveValue(config));
+                    return MobileAppConfigValueVM.ofEntity(config, resolveValues(config));
                 })
                 .toList();
     }
@@ -169,31 +187,47 @@ public class MobileAppConfigService {
                         "Mobile app configuration not found: " + id, ENTITY_NAME, "notfound"));
     }
 
+    /**
+     * TEXT: first/only value as string (admin UI). IMAGE: first public URL, or null when empty.
+     */
     public String resolveValue(MobileAppConfig config) {
+        List<String> values = resolveValues(config);
+        if (values == null || values.isEmpty()) {
+            return config != null && config.getConfigType() == MobileAppConfigType.IMAGE ? null : "";
+        }
+        return values.get(0);
+    }
+
+    /**
+     * Always a list: TEXT → one-element list; IMAGE → public URLs for all stored images.
+     */
+    public List<String> resolveValues(MobileAppConfig config) {
         if (config == null || config.getConfigValue() == null) {
-            return "";
-        }
-        String value = config.getConfigValue().trim();
-        if (value.isEmpty()) {
-            return "";
-        }
-        if (value.startsWith("http://") || value.startsWith("https://")) {
-            return value;
+            return List.of();
         }
         if (config.getConfigType() == MobileAppConfigType.IMAGE) {
-            String base = publicBaseUrl();
-            if (base.isEmpty()) {
-                return value;
-            }
-            return base + "/" + value;
+            return readStorageKeys(config.getConfigValue()).stream()
+                    .map(this::toPublicUrl)
+                    .toList();
         }
-        return value;
+        String value = config.getConfigValue().trim();
+        return value.isEmpty() ? List.of() : List.of(value);
+    }
+
+    private List<String> storeImages(MobileAppConfigKey key, MultipartFile[] files) {
+        List<String> storageKeys = new ArrayList<>();
+        if (files == null) {
+            return storageKeys;
+        }
+        for (MultipartFile file : files) {
+            if (file != null && !file.isEmpty()) {
+                storageKeys.add(storeImage(key, file));
+            }
+        }
+        return storageKeys;
     }
 
     private String storeImage(MobileAppConfigKey key, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new BadRequestAlertException("Image file is required", ENTITY_NAME, "fileempty");
-        }
         String mime = file.getContentType();
         if (mime == null || !mime.startsWith("image/")) {
             throw new BadRequestAlertException("Only image files are allowed", ENTITY_NAME, "invalidmime");
@@ -203,9 +237,12 @@ public class MobileAppConfigService {
             throw new BadRequestAlertException("Image file is too large", ENTITY_NAME, "filetoolarge");
         }
 
-        String extension = extensionOf(file.getOriginalFilename());
+        String originalName = file.getOriginalFilename();
+        String extension = extensionOf(originalName);
+        int nameHash = originalName == null ? 0 : Math.abs(originalName.hashCode());
         String storageKey = "mobile-app-config/" + key.name() + "/" + key.name().toLowerCase()
-                + "-" + System.currentTimeMillis() + extension;
+                + "-" + System.currentTimeMillis() + "-" + nameHash
+                + extension;
         try {
             storage.putPublic(storageKey, mime, file.getSize(), file.getInputStream());
         } catch (Exception ex) {
@@ -214,6 +251,79 @@ public class MobileAppConfigService {
                     "Failed to upload image", ENTITY_NAME, "uploadfailed");
         }
         return storageKey;
+    }
+
+    private List<String> readStorageKeys(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        String value = raw.trim();
+        if (value.startsWith("[")) {
+            try {
+                List<String> keys = objectMapper.readValue(value, new TypeReference<>() {});
+                return keys == null ? List.of() : keys.stream()
+                        .filter(item -> item != null && !item.isBlank())
+                        .map(String::trim)
+                        .toList();
+            } catch (JsonProcessingException ex) {
+                LOG.warn("Invalid IMAGE config_value JSON, treating as single key: {}", value);
+            }
+        }
+        return List.of(value);
+    }
+
+    private String writeStorageKeys(List<String> keys) {
+        try {
+            return objectMapper.writeValueAsString(keys);
+        } catch (JsonProcessingException ex) {
+            throw new BadRequestAlertException("Failed to store image list", ENTITY_NAME, "serializefailed");
+        }
+    }
+
+    private List<String> normalizeKeptValues(List<String> keptValues) {
+        if (keptValues == null || keptValues.isEmpty()) {
+            return List.of();
+        }
+        List<String> result = new ArrayList<>();
+        for (String kept : keptValues) {
+            if (kept == null || kept.isBlank()) {
+                continue;
+            }
+            String storageKey = toStorageKey(kept.trim());
+            if (!storageKey.isBlank() && !result.contains(storageKey)) {
+                result.add(storageKey);
+            }
+        }
+        return result;
+    }
+
+    private String toStorageKey(String valueOrUrl) {
+        if (valueOrUrl.startsWith("http://") || valueOrUrl.startsWith("https://")) {
+            String base = publicBaseUrl();
+            if (!base.isEmpty() && valueOrUrl.startsWith(base + "/")) {
+                return valueOrUrl.substring(base.length() + 1);
+            }
+            int idx = valueOrUrl.indexOf("mobile-app-config/");
+            if (idx >= 0) {
+                return valueOrUrl.substring(idx);
+            }
+        }
+        return valueOrUrl;
+    }
+
+    private String toPublicUrl(String storageKey) {
+        if (storageKey == null || storageKey.isBlank()) {
+            return "";
+        }
+        String value = storageKey.trim();
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+            return value;
+        }
+        String base = publicBaseUrl();
+        if (base.isEmpty()) {
+            return value;
+        }
+        return base + "/" + value;
     }
 
     private String publicBaseUrl() {
