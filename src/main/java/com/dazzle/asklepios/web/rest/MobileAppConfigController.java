@@ -48,11 +48,11 @@ public class MobileAppConfigController {
     @PostMapping(value = "/mobile-app-config/image", consumes = "multipart/form-data")
     public ResponseEntity<MobileAppConfigResponseVM> createImage(
             @RequestParam MobileAppConfigKey configKey,
-            @RequestParam("file") MultipartFile file,
+            @RequestParam("files") MultipartFile[] files,
             @RequestParam(value = "description", required = false) String description
     ) {
         LOG.debug("REST create MobileAppConfig image key={}", configKey);
-        MobileAppConfig saved = service.createImage(configKey, file, description);
+        MobileAppConfig saved = service.createImage(configKey, files, description);
         return ResponseEntity
                 .created(URI.create("/api/setup/mobile-app-config/" + saved.getId()))
                 .body(toResponse(saved));
@@ -70,11 +70,12 @@ public class MobileAppConfigController {
     @PutMapping(value = "/mobile-app-config/{id}/image", consumes = "multipart/form-data")
     public ResponseEntity<MobileAppConfigResponseVM> updateImage(
             @PathVariable Long id,
-            @RequestParam(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "files", required = false) MultipartFile[] files,
+            @RequestParam(value = "keptValues", required = false) List<String> keptValues,
             @RequestParam(value = "description", required = false) String description
     ) {
         LOG.debug("REST update MobileAppConfig image id={}", id);
-        return ResponseEntity.ok(toResponse(service.updateImage(id, file, description)));
+        return ResponseEntity.ok(toResponse(service.updateImage(id, files, keptValues, description)));
     }
 
     @DeleteMapping("/mobile-app-config/{id}")
@@ -98,6 +99,7 @@ public class MobileAppConfigController {
      * Authentication is the {@code X-Portal-Secret} header ({@code PATIENT_PORTAL_SECRET}),
      * checked by {@link com.dazzle.asklepios.security.CountryListSecretFilter}, not a bearer token.
      * Example: {@code ?keys=SUPPORT_PHONE&keys=BANNER_IMAGE1}
+     * Always returns {@code configValues} as a list (TEXT: one item; IMAGE: image URLs).
      */
     @GetMapping("/mobile-app-config/value")
     public ResponseEntity<List<MobileAppConfigValueVM>> getValues(
@@ -108,6 +110,10 @@ public class MobileAppConfigController {
     }
 
     private MobileAppConfigResponseVM toResponse(MobileAppConfig entity) {
-        return MobileAppConfigResponseVM.ofEntity(entity, service.resolveValue(entity));
+        return MobileAppConfigResponseVM.ofEntity(
+                entity,
+                service.resolveValue(entity),
+                service.resolveValues(entity)
+        );
     }
 }
