@@ -16,5 +16,6 @@ public enum MobileAppConfigKey {
     COMPLAINT_TEXT_BANNER,
     CALL_FREE_NUMBER_TEXT_BANNER,
     WELCOME_IMAGE,
-    NEWS_IMAGE
+    NEWS_IMAGE,
+    NEWS_TEXT
 }
