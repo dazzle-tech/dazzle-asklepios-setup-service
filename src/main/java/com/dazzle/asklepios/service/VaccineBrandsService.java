@@ -124,10 +124,13 @@ public class VaccineBrandsService {
         }
     }
 
+    /** All the vaccine's brands, or only the active / inactive ones when isActive is given */
     @Transactional(readOnly = true)
-    public Page<VaccineBrands> findByVaccineId(Long vaccineId, Pageable pageable) {
-        LOG.debug("Fetching VaccineBrands by vaccineId={} pageable={}", vaccineId, pageable);
-        return vaccineBrandsRepository.findByVaccine_Id(vaccineId, pageable);
+    public Page<VaccineBrands> findByVaccineId(Long vaccineId, Boolean isActive, Pageable pageable) {
+        LOG.debug("Fetching VaccineBrands by vaccineId={} isActive={} pageable={}", vaccineId, isActive, pageable);
+        return isActive == null
+                ? vaccineBrandsRepository.findByVaccine_Id(vaccineId, pageable)
+                : vaccineBrandsRepository.findByVaccine_IdAndIsActive(vaccineId, isActive, pageable);
     }
 
     @Transactional(readOnly = true)

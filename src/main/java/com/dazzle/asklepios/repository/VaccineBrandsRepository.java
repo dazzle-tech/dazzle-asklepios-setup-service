@@ -15,6 +15,8 @@ public interface VaccineBrandsRepository extends JpaRepository<VaccineBrands, Lo
 
     Page<VaccineBrands> findByVaccine_Id(Long vaccineId, Pageable pageable);
 
+    Page<VaccineBrands> findByVaccine_IdAndIsActive(Long vaccineId, Boolean isActive, Pageable pageable);
+
     List<VaccineBrands> findByIdIn(List<Long> ids);
 
     @Query(
