@@ -636,7 +636,14 @@ public class PriceListSetupService {
                 return false;
             }
             if (requestedPayerId == null) {
-                return true;
+                /*
+                 * Without a resolved payer, a payer-specific list cannot be
+                 * trusted (it may belong to another insurance company).
+                 * Only general insurance lists are allowed; otherwise the
+                 * caller falls back to the setup item price.
+                 */
+                return priceList.getPayerId() == null
+                        && priceList.getNphiesPayerId() == null;
             }
             return requestedPayerId.equals(priceList.getPayerId())
                     || requestedPayerId.equals(priceList.getNphiesPayerId());
