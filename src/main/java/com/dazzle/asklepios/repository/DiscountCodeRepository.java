@@ -33,6 +33,9 @@ public interface DiscountCodeRepository extends JpaRepository<DiscountCode, Long
     @EntityGraph(attributePaths = "facility")
     Page<DiscountCode> findByDiscountType(DiscountType discountType, Pageable pageable);
 
+    @EntityGraph(attributePaths = "facility")
+    Optional<DiscountCode> findByFacility_IdAndCodeIgnoreCase(Long facilityId, String code);
+
     boolean existsByFacility_IdAndCodeIgnoreCase(Long facilityId, String code);
 
     boolean existsByFacility_IdAndCodeIgnoreCaseAndIdNot(Long facilityId, String code, Long id);

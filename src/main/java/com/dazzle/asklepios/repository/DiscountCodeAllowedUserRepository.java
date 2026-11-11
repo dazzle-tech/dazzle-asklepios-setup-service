@@ -12,4 +12,6 @@ public interface DiscountCodeAllowedUserRepository extends JpaRepository<Discoun
 
     @EntityGraph(attributePaths = "user")
     List<DiscountCodeAllowedUser> findByDiscountCode_IdOrderByIdAsc(Long discountCodeId);
+
+    boolean existsByDiscountCode_IdAndUser_Id(Long discountCodeId, Long userId);
 }

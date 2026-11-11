@@ -11,9 +11,7 @@ import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -58,14 +56,11 @@ public class UserRoleService {
         userRoleRepository.deleteById(new UserRole.UserRoleId(userId, roleId));
     }
     public List<User> findUsersByFacilityId(Long facilityId) {
-        Map<Long, User> users = new LinkedHashMap<>();
-        userRoleRepository.findByRole_FacilityId(facilityId).forEach(userRole -> {
-            User user = userRole.getUser();
-            if (user != null && user.getId() != null) {
-                users.putIfAbsent(user.getId(), user);
-            }
-        });
-        return List.copyOf(users.values());
+        return userRoleRepository.findDistinctUsersByFacilityId(facilityId);
+    }
+
+    public List<User> findActiveUsersByFacilityId(Long facilityId) {
+        return userRoleRepository.findDistinctActiveUsersByFacilityId(facilityId);
     }
 }
 

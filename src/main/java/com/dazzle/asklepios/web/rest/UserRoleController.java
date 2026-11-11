@@ -69,4 +69,13 @@ public class UserRoleController {
         LOG.info("REST request to get users by facilityId={} via roles", facilityId);
         return ResponseEntity.ok(userRoleService.findUsersByFacilityId(facilityId));
     }
+
+    /**
+     * Active system users (activated accounts) that belong to the facility.
+     */
+    @GetMapping("/users/active/by-facility/{facilityId}")
+    public ResponseEntity<List<User>> getActiveUsersByFacility(@PathVariable Long facilityId) {
+        LOG.info("REST request to get active users by facilityId={}", facilityId);
+        return ResponseEntity.ok(userRoleService.findActiveUsersByFacilityId(facilityId));
+    }
 }

@@ -3,13 +3,17 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.DiscountCode;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.service.DiscountCodeAllowedUserService;
+import com.dazzle.asklepios.service.DiscountCodeAuthorizationService;
 import com.dazzle.asklepios.service.DiscountCodeService;
 import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeAllowedUsersUpdateDTO;
 import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeCreateDTO;
 import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeUpdateDTO;
+import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeValidateDTO;
+import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeVerifyUserDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.vm.discountCode.DiscountCodeAllowedUserVM;
 import com.dazzle.asklepios.web.rest.vm.discountCode.DiscountCodeResponseVM;
+import com.dazzle.asklepios.web.rest.vm.discountCode.DiscountCodeVerifiedUserVM;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -43,6 +47,7 @@ public class DiscountCodeController {
 
     private final DiscountCodeService discountCodeService;
     private final DiscountCodeAllowedUserService discountCodeAllowedUserService;
+    private final DiscountCodeAuthorizationService discountCodeAuthorizationService;
 
     @PostMapping("/discount-code")
     public ResponseEntity<DiscountCodeResponseVM> create(
@@ -104,6 +109,28 @@ public class DiscountCodeController {
     ) {
         LOG.debug("REST request to get DiscountCode by discountType={}", discountType);
         return paged(discountCodeService.findByDiscountType(discountType, pageable));
+    }
+
+    @PostMapping("/discount-code/verify-user")
+    public ResponseEntity<DiscountCodeVerifiedUserVM> verifyUser(
+            @Valid @RequestBody DiscountCodeVerifyUserDTO dto
+    ) {
+        LOG.debug("REST request to verify discount-code user login={}", dto.login());
+        return ResponseEntity.ok(discountCodeAuthorizationService.verifyUser(dto));
+    }
+
+    @PostMapping("/discount-code/validate")
+    public ResponseEntity<DiscountCodeResponseVM> validate(
+            @Valid @RequestBody DiscountCodeValidateDTO dto
+    ) {
+        LOG.debug(
+                "REST request to validate discount code facilityId={} userId={}",
+                dto.facilityId(),
+                dto.userId()
+        );
+        return ResponseEntity.ok(
+                DiscountCodeResponseVM.ofEntity(discountCodeAuthorizationService.validate(dto))
+        );
     }
 
     @GetMapping("/discount-code/{id}")
