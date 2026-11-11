@@ -2,10 +2,13 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.DiscountCode;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
+import com.dazzle.asklepios.service.DiscountCodeAllowedUserService;
 import com.dazzle.asklepios.service.DiscountCodeService;
+import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeAllowedUsersUpdateDTO;
 import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeCreateDTO;
 import com.dazzle.asklepios.service.dto.discountCode.DiscountCodeUpdateDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.discountCode.DiscountCodeAllowedUserVM;
 import com.dazzle.asklepios.web.rest.vm.discountCode.DiscountCodeResponseVM;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,7 @@ public class DiscountCodeController {
     private static final Logger LOG = LoggerFactory.getLogger(DiscountCodeController.class);
 
     private final DiscountCodeService discountCodeService;
+    private final DiscountCodeAllowedUserService discountCodeAllowedUserService;
 
     @PostMapping("/discount-code")
     public ResponseEntity<DiscountCodeResponseVM> create(
@@ -106,6 +110,21 @@ public class DiscountCodeController {
     public ResponseEntity<DiscountCodeResponseVM> getOne(@PathVariable Long id) {
         LOG.debug("REST request to get DiscountCode : {}", id);
         return ResponseEntity.ok(DiscountCodeResponseVM.ofEntity(discountCodeService.findOne(id)));
+    }
+
+    @GetMapping("/discount-code/{id}/allowed-users")
+    public ResponseEntity<List<DiscountCodeAllowedUserVM>> getAllowedUsers(@PathVariable Long id) {
+        LOG.debug("REST request to get allowed users for DiscountCode : {}", id);
+        return ResponseEntity.ok(discountCodeAllowedUserService.findByDiscountCodeId(id));
+    }
+
+    @PutMapping("/discount-code/{id}/allowed-users")
+    public ResponseEntity<List<DiscountCodeAllowedUserVM>> replaceAllowedUsers(
+            @PathVariable Long id,
+            @Valid @RequestBody DiscountCodeAllowedUsersUpdateDTO dto
+    ) {
+        LOG.debug("REST request to replace allowed users for DiscountCode id={} userIds={}", id, dto.userIds());
+        return ResponseEntity.ok(discountCodeAllowedUserService.replace(id, dto.userIds()));
     }
 
     @PatchMapping("/discount-code/{id}/toggle-active")
