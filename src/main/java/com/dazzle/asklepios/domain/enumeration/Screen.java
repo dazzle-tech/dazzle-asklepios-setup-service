@@ -48,6 +48,7 @@ public enum Screen {
     METADATA,
     RESOURCES,
     DENTAL_ACTIONS,
+    DENTAL_CHART_SETUP,
     USERS,
     CATALOG_SETUP,
     DIAGNOSTICS_SETUP,
