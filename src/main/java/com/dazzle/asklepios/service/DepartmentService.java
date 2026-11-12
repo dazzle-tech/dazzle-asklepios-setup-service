@@ -94,6 +94,7 @@ public class DepartmentService {
                 .requirePractitioner(true)
                 .requireBilling(departmentVM.requireBilling())
                 .requirePreAssessment(departmentVM.requirePreAssessment())
+                .assignPractitionerOnVisitStart(Boolean.TRUE.equals(departmentVM.assignPractitionerOnVisitStart()))
                 .ageSpecific(Boolean.TRUE.equals(departmentVM.ageSpecific()))
                 .fromAge(departmentVM.fromAge())
                 .fromAgeUnit(departmentVM.fromAgeUnit())
@@ -165,6 +166,9 @@ public class DepartmentService {
         }
         if (departmentVM.requirePreAssessment() != null) {
             department.setRequirePreAssessment(departmentVM.requirePreAssessment());
+        }
+        if (departmentVM.assignPractitionerOnVisitStart() != null) {
+            department.setAssignPractitionerOnVisitStart(departmentVM.assignPractitionerOnVisitStart());
         }
         if (departmentVM.ageSpecific() != null) {
             department.setAgeSpecific(departmentVM.ageSpecific());
