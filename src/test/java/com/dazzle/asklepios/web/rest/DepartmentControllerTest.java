@@ -101,7 +101,7 @@ class DepartmentControllerTest {
         DepartmentCreateVM createVM = new DepartmentCreateVM(
                 "Neurology", 1L, DepartmentType.INPATIENT_WARD, true, "NEU01",
                 "123456789", "neuro@hospital.com", EncounterType.INPATIENT, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
@@ -164,7 +164,7 @@ class DepartmentControllerTest {
         DepartmentUpdateVM updateVM = new DepartmentUpdateVM(
                 5000L, "Oncology", 1L, DepartmentType.OUTPATIENT_CLINIC, true,
                 "ONC01", "987654321", "oncology@hospital.com", EncounterType.CLINIC, true, true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 7, AgeUnit.DAYS, 15, AgeUnit.YEARS,
                 List.of()
         );
