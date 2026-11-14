@@ -99,7 +99,7 @@ public class MobileAppConfigController {
      * Authentication is the {@code X-Portal-Secret} header ({@code PATIENT_PORTAL_SECRET}),
      * checked by {@link com.dazzle.asklepios.security.CountryListSecretFilter}, not a bearer token.
      * Example: {@code ?keys=SUPPORT_PHONE&keys=BANNER_IMAGE1}
-     * Always returns {@code configValues} as a list (TEXT: one item; IMAGE: image URLs).
+     * Always returns {@code configValues} as a list (TEXT and IMAGE both support multiple values).
      */
     @GetMapping("/mobile-app-config/value")
     public ResponseEntity<List<MobileAppConfigValueVM>> getValues(

@@ -134,6 +134,7 @@ public class PatientAttachmentsService {
                     && !Set.of(
                     JobRole.HIS_ADMINISTRATOR,
                     JobRole.PHYSICIAN,
+                    JobRole.DENTIST,
                     JobRole.NURSE
             ).contains(role)) {
 

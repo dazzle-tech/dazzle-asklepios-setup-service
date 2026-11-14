@@ -112,6 +112,11 @@ public class Department extends AbstractAuditingEntity<Long> implements Serializ
 
     @NotNull
     @Builder.Default
+    @Column(name = "assign_practitioner_on_visit_start", nullable = false)
+    private Boolean assignPractitionerOnVisitStart = false;
+
+    @NotNull
+    @Builder.Default
     @Column(name = "age_specific", nullable = false)
     private Boolean ageSpecific = false;
 

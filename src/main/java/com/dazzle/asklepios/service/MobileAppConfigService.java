@@ -58,7 +58,7 @@ public class MobileAppConfigService {
             throw new BadRequestAlertException(
                     "Upload an image for this type", ENTITY_NAME, "imagerequired");
         }
-        String value = normalizeValue(dto.configValue());
+        List<String> values = normalizeTextValues(dto.configValues());
 
         if (repository.existsByConfigKey(dto.configKey())) {
             throw new BadRequestAlertException(
@@ -68,7 +68,7 @@ public class MobileAppConfigService {
         MobileAppConfig entity = MobileAppConfig.builder()
                 .configKey(dto.configKey())
                 .configType(dto.configType())
-                .configValue(value)
+                .configValue(writeValues(values))
                 .description(normalizeDescription(dto.description()))
                 .build();
 
@@ -83,7 +83,7 @@ public class MobileAppConfigService {
         }
         MobileAppConfig entity = getById(id);
         entity.setConfigType(dto.configType());
-        entity.setConfigValue(normalizeValue(dto.configValue()));
+        entity.setConfigValue(writeValues(normalizeTextValues(dto.configValues())));
         entity.setDescription(normalizeDescription(dto.description()));
         return repository.save(entity);
     }
@@ -104,7 +104,7 @@ public class MobileAppConfigService {
         MobileAppConfig entity = MobileAppConfig.builder()
                 .configKey(configKey)
                 .configType(MobileAppConfigType.IMAGE)
-                .configValue(writeStorageKeys(storageKeys))
+                .configValue(writeValues(storageKeys))
                 .description(normalizeDescription(description))
                 .build();
         return repository.save(entity);
@@ -125,7 +125,7 @@ public class MobileAppConfigService {
         if (nextKeys.isEmpty()) {
             throw new BadRequestAlertException("At least one image is required", ENTITY_NAME, "fileempty");
         }
-        entity.setConfigValue(writeStorageKeys(nextKeys));
+        entity.setConfigValue(writeValues(nextKeys));
         entity.setDescription(normalizeDescription(description));
         return repository.save(entity);
     }
@@ -187,9 +187,7 @@ public class MobileAppConfigService {
                         "Mobile app configuration not found: " + id, ENTITY_NAME, "notfound"));
     }
 
-    /**
-     * TEXT: first/only value as string (admin UI). IMAGE: first public URL, or null when empty.
-     */
+    /** First value for admin display compatibility. */
     public String resolveValue(MobileAppConfig config) {
         List<String> values = resolveValues(config);
         if (values == null || values.isEmpty()) {
@@ -199,19 +197,18 @@ public class MobileAppConfigService {
     }
 
     /**
-     * Always a list: TEXT → one-element list; IMAGE → public URLs for all stored images.
+     * Always a list for both TEXT and IMAGE.
+     * TEXT: stored text values. IMAGE: public URLs for stored images.
      */
     public List<String> resolveValues(MobileAppConfig config) {
         if (config == null || config.getConfigValue() == null) {
             return List.of();
         }
+        List<String> stored = readValues(config.getConfigValue());
         if (config.getConfigType() == MobileAppConfigType.IMAGE) {
-            return readStorageKeys(config.getConfigValue()).stream()
-                    .map(this::toPublicUrl)
-                    .toList();
+            return stored.stream().map(this::toPublicUrl).toList();
         }
-        String value = config.getConfigValue().trim();
-        return value.isEmpty() ? List.of() : List.of(value);
+        return stored;
     }
 
     private List<String> storeImages(MobileAppConfigKey key, MultipartFile[] files) {
@@ -253,7 +250,7 @@ public class MobileAppConfigService {
         return storageKey;
     }
 
-    private List<String> readStorageKeys(String raw) {
+    private List<String> readValues(String raw) {
         if (raw == null || raw.isBlank()) {
             return List.of();
         }
@@ -266,17 +263,17 @@ public class MobileAppConfigService {
                         .map(String::trim)
                         .toList();
             } catch (JsonProcessingException ex) {
-                LOG.warn("Invalid IMAGE config_value JSON, treating as single key: {}", value);
+                LOG.warn("Invalid config_value JSON, treating as single value: {}", value);
             }
         }
         return List.of(value);
     }
 
-    private String writeStorageKeys(List<String> keys) {
+    private String writeValues(List<String> values) {
         try {
-            return objectMapper.writeValueAsString(keys);
+            return objectMapper.writeValueAsString(values);
         } catch (JsonProcessingException ex) {
-            throw new BadRequestAlertException("Failed to store image list", ENTITY_NAME, "serializefailed");
+            throw new BadRequestAlertException("Failed to store value list", ENTITY_NAME, "serializefailed");
         }
     }
 
@@ -347,18 +344,31 @@ public class MobileAppConfigService {
         return filename.substring(filename.lastIndexOf('.'));
     }
 
-    private static String normalizeValue(String configValue) {
-        String value = configValue == null ? "" : configValue.trim();
-        if (value.isEmpty()) {
-            throw new BadRequestAlertException("Value is required", ENTITY_NAME, "valuerequired");
+    private static List<String> normalizeTextValues(List<String> configValues) {
+        if (configValues == null || configValues.isEmpty()) {
+            throw new BadRequestAlertException("At least one value is required", ENTITY_NAME, "valuerequired");
         }
-        if (value.length() > MAX_VALUE_LENGTH) {
-            throw new BadRequestAlertException(
-                    "Value must be at most " + MAX_VALUE_LENGTH + " characters",
-                    ENTITY_NAME,
-                    "valuetoolong");
+        List<String> values = new ArrayList<>();
+        for (String item : configValues) {
+            if (item == null) {
+                continue;
+            }
+            String value = item.trim();
+            if (value.isEmpty()) {
+                continue;
+            }
+            if (value.length() > MAX_VALUE_LENGTH) {
+                throw new BadRequestAlertException(
+                        "Value must be at most " + MAX_VALUE_LENGTH + " characters",
+                        ENTITY_NAME,
+                        "valuetoolong");
+            }
+            values.add(value);
         }
-        return value;
+        if (values.isEmpty()) {
+            throw new BadRequestAlertException("At least one value is required", ENTITY_NAME, "valuerequired");
+        }
+        return values;
     }
 
     private static String normalizeDescription(String description) {
