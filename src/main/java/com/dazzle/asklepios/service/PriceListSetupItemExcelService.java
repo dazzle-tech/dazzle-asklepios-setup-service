@@ -426,7 +426,7 @@ public class PriceListSetupItemExcelService {
 
         if (mapping.isEmpty()) {
             mapping = waseelItemMappingRepository
-                    .findByItemTypeAndSourceIdAndIsActiveTrue(
+                    .findFirstByItemTypeAndSourceIdAndIsActiveTrueOrderByIdAsc(
                             billingItemType,
                             catalog.sourceId()
                     );

@@ -7,6 +7,8 @@ import com.dazzle.asklepios.domain.PriceListSetupItem;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.VaccineBrands;
+import com.dazzle.asklepios.domain.WaseelSbsCatalog;
+import com.dazzle.asklepios.repository.WaseelSbsCatalogRepository;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupStatus;
 import com.dazzle.asklepios.domain.enumeration.PriceListSetupType;
@@ -46,6 +48,8 @@ public class PriceListSetupItemService {
     private static final String ENTITY = "priceListSetupItem";
 
     private final PriceListSetupItemRepository priceListSetupItemRepository;
+
+    private final WaseelSbsCatalogRepository waseelSbsCatalogRepository;
 
     private final PriceListSetupRepository priceListSetupRepository;
 
@@ -237,10 +241,25 @@ public class PriceListSetupItemService {
                 )
                 .stream()
                 .findFirst()
-                .map(item -> new PriceListItemWaseelCodesDTO(
-                        item.getItemCode(),
-                        blankToNull(item.getNonStandardCode())
-                ));
+                .map(this::toWaseelCodes);
+    }
+
+    private PriceListItemWaseelCodesDTO toWaseelCodes(PriceListSetupItem item) {
+        WaseelSbsCatalog catalog = item.getSbsCatalogId() == null
+                ? null
+                : waseelSbsCatalogRepository.findById(item.getSbsCatalogId()).orElse(null);
+        return new PriceListItemWaseelCodesDTO(
+                item.getItemCode(),
+                blankToNull(item.getNonStandardCode()),
+                catalog == null ? null : blankToNull(catalog.getSbsCode()),
+                catalog == null ? null : firstNonBlank(catalog.getShortDescription(), catalog.getLongDescription()),
+                catalog == null ? null : blankToNull(catalog.getWaseelItemType())
+        );
+    }
+
+    private String firstNonBlank(String first, String second) {
+        String value = blankToNull(first);
+        return value != null ? value : blankToNull(second);
     }
 
     public void delete(
