@@ -169,27 +169,35 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findAll(Pageable pageable) {
+    public Page<Procedure> findAll(Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching paged Procedures pageable={}", pageable);
-        return procedureRepository.findAll(pageable);
+        return isActive == null
+                ? procedureRepository.findAll(pageable)
+                : procedureRepository.findByIsActive(isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Pageable pageable) {
+    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by categoryType={}", categoryType);
-        return procedureRepository.findByCategoryType(categoryType, pageable);
+        return isActive == null
+                ? procedureRepository.findByCategoryType(categoryType, pageable)
+                : procedureRepository.findByCategoryTypeAndIsActive(categoryType, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
+    public Page<Procedure> findByCodeContainingIgnoreCase(String code, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by code='{}'", code);
-        return procedureRepository.findByCodeContainingIgnoreCase(code, pageable);
+        return isActive == null
+                ? procedureRepository.findByCodeContainingIgnoreCase(code, pageable)
+                : procedureRepository.findByCodeContainingIgnoreCaseAndIsActive(code, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable) {
+    public Page<Procedure> findByNameContainingIgnoreCase(String name, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by name='{}'", name);
-        return procedureRepository.findByNameContainingIgnoreCase(name, pageable);
+        return isActive == null
+                ? procedureRepository.findByNameContainingIgnoreCase(name, pageable)
+                : procedureRepository.findByNameContainingIgnoreCaseAndIsActive(name, isActive, pageable);
     }
 
     public Optional<Procedure> toggleIsActive(Long id) {
@@ -227,16 +235,20 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
+    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Boolean isActive, Pageable pageable) {
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
         }
 
         if (category != null) {
-            return procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable);
+            return isActive == null
+                    ? procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable)
+                    : procedureRepository.findByFacility_IdAndCategoryTypeAndIsActive(facilityId, category, isActive, pageable);
         }
 
-        return procedureRepository.findByFacility_Id(facilityId, pageable);
+        return isActive == null
+                ? procedureRepository.findByFacility_Id(facilityId, pageable)
+                : procedureRepository.findByFacility_IdAndIsActive(facilityId, isActive, pageable);
     }
 
     @Transactional(readOnly = true)

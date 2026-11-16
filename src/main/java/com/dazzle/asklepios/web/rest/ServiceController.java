@@ -122,10 +122,11 @@ public class ServiceController {
 
     @GetMapping("/service")
     public ResponseEntity<List<ServiceResponseVM>> getAllServices(
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services pageable={}", pageable);
-        final Page<ServiceSetup> page = serviceService.findAll(pageable);
+        final Page<ServiceSetup> page = serviceService.findAll(isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -138,10 +139,11 @@ public class ServiceController {
     @GetMapping("/service/by-facility/{facilityId}")
     public ResponseEntity<List<ServiceResponseVM>> getByFacility(
             @PathVariable Long facilityId,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by facilityId={} pageable={}", facilityId, pageable);
-        Page<ServiceSetup> page = serviceService.findByFacility(facilityId, pageable);
+        Page<ServiceSetup> page = serviceService.findByFacility(facilityId, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -154,10 +156,11 @@ public class ServiceController {
     @GetMapping("/service/by-category/{category}")
     public ResponseEntity<List<ServiceResponseVM>> getByCategory(
             @PathVariable ServiceCategory category,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by category={} pageable={}", category, pageable);
-        Page<ServiceSetup> page = serviceService.findByCategory(category, pageable);
+        Page<ServiceSetup> page = serviceService.findByCategory(category, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -170,10 +173,11 @@ public class ServiceController {
     @GetMapping("/service/by-code/{code}")
     public ResponseEntity<List<ServiceResponseVM>> getByCode(
             @PathVariable String code,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by code='{}' pageable={}", code, pageable);
-        Page<ServiceSetup> page = serviceService.findByCodeContainingIgnoreCase(code, pageable);
+        Page<ServiceSetup> page = serviceService.findByCodeContainingIgnoreCase(code, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -186,10 +190,11 @@ public class ServiceController {
     @GetMapping("/service/by-name/{name}")
     public ResponseEntity<List<ServiceResponseVM>> getByName(
             @PathVariable String name,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by name='{}' pageable={}", name, pageable);
-        Page<ServiceSetup> page = serviceService.findByNameContainingIgnoreCase(name, pageable);
+        Page<ServiceSetup> page = serviceService.findByNameContainingIgnoreCase(name, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -203,10 +208,11 @@ public class ServiceController {
     @GetMapping("/service/by-abbreviation/{abbreviation}")
     public ResponseEntity<List<ServiceResponseVM>> getByAbbreviation(
             @PathVariable String abbreviation,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by abbreviation={} pageable={}", abbreviation, pageable);
-        Page<ServiceSetup> page = serviceService.findByAbbreviationContainingIgnoreCase(abbreviation, pageable);
+        Page<ServiceSetup> page = serviceService.findByAbbreviationContainingIgnoreCase(abbreviation, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -219,10 +225,11 @@ public class ServiceController {
     @GetMapping("/service/by-price/{price}")
     public ResponseEntity<List<ServiceResponseVM>> getByPrice(
             @PathVariable BigDecimal price,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by price={} pageable={}", price, pageable);
-        Page<ServiceSetup> page = serviceService.findByPrice(price, pageable);
+        Page<ServiceSetup> page = serviceService.findByPrice(price, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
@@ -235,10 +242,11 @@ public class ServiceController {
     @GetMapping("/service/by-currency/{currency}")
     public ResponseEntity<List<ServiceResponseVM>> getByCurrency(
             @PathVariable Currency currency,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services by currency={} pageable={}", currency, pageable);
-        Page<ServiceSetup> page = serviceService.findByCurrency(currency, pageable);
+        Page<ServiceSetup> page = serviceService.findByCurrency(currency, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(
