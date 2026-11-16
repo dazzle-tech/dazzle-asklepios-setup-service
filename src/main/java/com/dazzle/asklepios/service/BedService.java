@@ -303,6 +303,48 @@ public class BedService {
         }
     }
 
+    // Undo an occupy when the patient-service assignment rolls back
+    public Bed releaseOccupied(Long id) {
+        LOG.info("[RELEASE OCCUPIED] Request to return Bed to READY id={}", id);
+
+        Bed existingBed = bedRepository.findById(id)
+                .orElseThrow(() -> new NotFoundAlertException(
+                        "Bed not found with id " + id,
+                        "bed",
+                        "notfound"
+                ));
+
+        if (existingBed.getStatus() == BedStatus.READY) {
+            LOG.info("[RELEASE OCCUPIED] Bed id={} already READY, skipping", id);
+            return existingBed;
+        }
+
+        if (existingBed.getStatus() != BedStatus.OCCUPIED) {
+            LOG.warn("[RELEASE OCCUPIED] Failed: Bed id={} currentStatus={} is not OCCUPIED",
+                    existingBed.getId(), existingBed.getStatus());
+            throw new BadRequestAlertException(
+                    "Only an OCCUPIED bed can be released back to READY",
+                    "bed",
+                    "invalid.status.transition"
+            );
+        }
+
+        existingBed.setStatus(BedStatus.READY);
+
+        try {
+            Bed updatedBed = bedRepository.saveAndFlush(existingBed);
+            LOG.info("[RELEASE OCCUPIED] Bed id={} returned to READY", updatedBed.getId());
+            return updatedBed;
+        } catch (DataIntegrityViolationException | JpaSystemException exception) {
+            handleConstraintsOnCreateOrUpdate(exception);
+            throw new BadRequestAlertException(
+                    "Database constraint violated while updating bed status.",
+                    "bed",
+                    "db.constraint"
+            );
+        }
+    }
+
     public Bed markAsOutOfService(Long id) {
         LOG.info("[MARK AS OUT_OF_SERVICE] Request id={}", id);
 
