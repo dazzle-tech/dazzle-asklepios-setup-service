@@ -2,7 +2,9 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.dazzle.asklepios.security.SecurityUtils;
+import com.dazzle.asklepios.service.PriceListDataCheckService;
 import com.dazzle.asklepios.service.PriceListItemDashboardService;
+import com.dazzle.asklepios.web.rest.vm.pricelist.PriceListDataCheckVM;
 import com.dazzle.asklepios.web.rest.vm.pricelist.PriceListItemDashboardVM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +26,14 @@ public class PriceListItemDashboardController {
     private static final Logger LOG = LoggerFactory.getLogger(PriceListItemDashboardController.class);
 
     private final PriceListItemDashboardService priceListItemDashboardService;
+    private final PriceListDataCheckService priceListDataCheckService;
 
-    public PriceListItemDashboardController(PriceListItemDashboardService priceListItemDashboardService) {
+    public PriceListItemDashboardController(
+            PriceListItemDashboardService priceListItemDashboardService,
+            PriceListDataCheckService priceListDataCheckService
+    ) {
         this.priceListItemDashboardService = priceListItemDashboardService;
+        this.priceListDataCheckService = priceListDataCheckService;
     }
 
     @GetMapping("/price-list-setups/item-dashboard")
@@ -70,6 +77,40 @@ public class PriceListItemDashboardController {
         return priceListItemDashboardService.findItem(facilityId, itemType, sourceId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/price-list-setups/item-dashboard/checks")
+    public ResponseEntity<PriceListDataCheckVM.SummaryVM> getDataCheckSummary(
+            @RequestParam(required = false) PriceListItemType itemType
+    ) {
+        Long facilityId = requireFacility();
+        LOG.debug("REST get price list data check summary facilityId={} itemType={}", facilityId, itemType);
+        return ResponseEntity.ok(priceListDataCheckService.summary(facilityId, itemType));
+    }
+
+    @GetMapping("/price-list-setups/item-dashboard/checks/{check}")
+    public ResponseEntity<PriceListDataCheckVM.RowPageVM> getDataCheckRows(
+            @PathVariable String check,
+            @RequestParam(required = false) PriceListItemType itemType,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Long facilityId = requireFacility();
+        PriceListDataCheckService.Check selected = PriceListDataCheckService.Check.of(check)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown check: " + check));
+        LOG.debug(
+                "REST get price list data check rows facilityId={} check={} itemType={} search={} page={} size={}",
+                facilityId,
+                selected,
+                itemType,
+                search,
+                page,
+                size
+        );
+        return ResponseEntity.ok(
+                priceListDataCheckService.rows(facilityId, selected, itemType, search, page, size)
+        );
     }
 
     private Long requireFacility() {
