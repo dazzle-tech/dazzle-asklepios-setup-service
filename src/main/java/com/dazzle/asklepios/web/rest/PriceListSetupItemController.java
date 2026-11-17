@@ -183,10 +183,11 @@ public class PriceListSetupItemController {
     @GetMapping("/price-list-setup-items/by-source")
     public ResponseEntity<List<PriceListSetupItemDTO>> getPriceListSetupItemsBySource(
             @RequestParam PriceListItemType itemType,
-            @RequestParam Long sourceId
+            @RequestParam Long sourceId,
+            @RequestParam(defaultValue = "false") boolean includeInactive
     ) {
         return ResponseEntity.ok(
-                priceListSetupItemService.findActiveBySource(itemType, sourceId)
+                priceListSetupItemService.findBySource(itemType, sourceId, includeInactive)
         );
     }
 
