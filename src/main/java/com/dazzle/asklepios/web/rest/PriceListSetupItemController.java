@@ -195,11 +195,12 @@ public class PriceListSetupItemController {
     public ResponseEntity<PriceListItemWaseelCodesDTO> getInsuranceWaseelCodes(
             @RequestParam PriceListItemType itemType,
             @RequestParam Long sourceId,
-            @RequestParam(required = false) Long facilityId
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) Long payerId
     ) {
         return ResponseEntity.ok(
                 priceListSetupItemService
-                        .findInsuranceWaseelCodes(itemType, sourceId, facilityId)
+                        .findInsuranceWaseelCodes(itemType, sourceId, facilityId, payerId)
                         .orElse(PriceListItemWaseelCodesDTO.EMPTY)
         );
     }

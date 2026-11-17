@@ -224,7 +224,8 @@ public class PriceListSetupItemService {
     public java.util.Optional<PriceListItemWaseelCodesDTO> findInsuranceWaseelCodes(
             PriceListItemType itemType,
             Long sourceId,
-            Long facilityId
+            Long facilityId,
+            Long payerId
     ) {
         if (itemType == null || sourceId == null) {
             return java.util.Optional.empty();
@@ -235,6 +236,7 @@ public class PriceListSetupItemService {
                         itemType,
                         sourceId,
                         facilityId,
+                        payerId,
                         PriceListSetupStatus.ACTIVE,
                         PriceListSetupType.INSURANCE
                 )

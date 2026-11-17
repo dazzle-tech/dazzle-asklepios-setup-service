@@ -167,6 +167,9 @@ public interface PriceListSetupItemRepository
                       AND setup.status = :status
                       AND setup.type = :setupType
                       AND (:facilityId IS NULL OR setup.facilityId = :facilityId)
+                      AND (:payerId IS NULL
+                           OR setup.payerId = :payerId
+                           OR setup.nphiesPayerId = :payerId)
               )
             ORDER BY item.id DESC
             """)
@@ -174,6 +177,7 @@ public interface PriceListSetupItemRepository
             @Param("itemType") PriceListItemType itemType,
             @Param("sourceId") Long sourceId,
             @Param("facilityId") Long facilityId,
+            @Param("payerId") Long payerId,
             @Param("status") PriceListSetupStatus status,
             @Param("setupType") PriceListSetupType setupType
     );
