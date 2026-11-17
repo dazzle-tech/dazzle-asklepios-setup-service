@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
@@ -302,6 +303,90 @@ public class DiscountController {
                 discountService.findByApplicableOn(
                         facilityId,
                         applicableOn,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/discount/by-value/{value}")
+    public ResponseEntity<List<Discount>> findByValue(
+            @RequestParam
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            BigDecimal value,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                discountService.findByValue(
+                        facilityId,
+                        value,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/discount/by-requires-approval/{requiresApproval}")
+    public ResponseEntity<List<Discount>> findByRequiresApproval(
+            @RequestParam
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean requiresApproval,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                discountService.findByRequiresApproval(
+                        facilityId,
+                        requiresApproval,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/discount/by-default/{isDefault}")
+    public ResponseEntity<List<Discount>> findByIsDefault(
+            @RequestParam
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean isDefault,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                discountService.findByIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/discount/by-active/{active}")
+    public ResponseEntity<List<Discount>> findByActive(
+            @RequestParam
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean active,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                discountService.findByActive(
+                        facilityId,
+                        active,
                         pageable
                 )
         );

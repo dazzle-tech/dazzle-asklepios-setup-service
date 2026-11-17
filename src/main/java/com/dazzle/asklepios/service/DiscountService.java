@@ -548,6 +548,72 @@ public class DiscountService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Discount> findByValue(
+            Long facilityId,
+            BigDecimal value,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+                        facilityId,
+                        value,
+                        facilityId,
+                        value,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByRequiresApproval(
+            Long facilityId,
+            Boolean requiresApproval,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndRequiresApproval(
+                        facilityId,
+                        requiresApproval,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByActive(
+            Long facilityId,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndActive(
+                        facilityId,
+                        active,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
     public List<Discount> findEffectiveDiscounts(
             Long facilityId,
             LocalDate date
