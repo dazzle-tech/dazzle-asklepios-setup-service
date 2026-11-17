@@ -199,19 +199,18 @@ public class PriceListSetupItemService {
     }
 
     /**
-     * Active items of one catalog item (item type + source id) across all price lists.
+     * Items of one catalog item (item type + source id) across all price lists:
+     * active ones only, or inactive ones too when includeInactive is set.
      */
     @Transactional(readOnly = true)
-    public List<PriceListSetupItemDTO> findActiveBySource(
+    public List<PriceListSetupItemDTO> findBySource(
             PriceListItemType itemType,
-            Long sourceId
+            Long sourceId,
+            boolean includeInactive
     ) {
-        List<PriceListSetupItem> items =
-                priceListSetupItemRepository
-                        .findAllByItemTypeAndSourceIdAndIsActiveTrue(
-                                itemType,
-                                sourceId
-                        );
+        List<PriceListSetupItem> items = includeInactive
+                ? priceListSetupItemRepository.findAllByItemTypeAndSourceId(itemType, sourceId)
+                : priceListSetupItemRepository.findAllByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId);
 
         Map<PriceListItemType, Map<Long, String>> setupItemNames =
                 resolveSetupItemNames(items);
