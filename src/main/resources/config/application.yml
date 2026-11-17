@@ -83,6 +83,10 @@ spring:
 
   application:
     name: setup
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
   docker:
     compose:
       enabled: true

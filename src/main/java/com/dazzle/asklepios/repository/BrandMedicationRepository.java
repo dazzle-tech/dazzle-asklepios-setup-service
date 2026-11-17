@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BrandMedicationRepository extends JpaRepository<BrandMedication, Long> {
@@ -29,6 +30,18 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
 
     Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable);
 
+    Page<BrandMedication> findByNameContainsIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByManufacturerContainsIgnoreCaseAndIsActive(String manufacturer, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByDosageFormContainsIgnoreCaseAndIsActive(String dosageForm, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByRoaContainsIgnoreCaseAndIsActive(String roa, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByExpiresAfterOpeningAndIsActive(Boolean expiresAfterOpening, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByUseSinglePatientAndIsActive(Boolean useSinglePatient, Boolean isActive, Pageable pageable);
+
     @Query("""
               SELECT DISTINCT bai.brandMedication
             FROM BrandMedicationActiveIngredient bai
@@ -46,6 +59,8 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
     List<BrandMedication> findByNameContainsIgnoreCaseAndIsActiveTrueOrCodeContainsIgnoreCaseAndIsActiveTrue(
             String name, String code
     );
+
+    Optional<BrandMedication> findFirstByCodeIgnoreCase(String code);
 
 }
 

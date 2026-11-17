@@ -94,10 +94,11 @@ public class VaccineBrandsController {
     @GetMapping("/vaccine-brands/by-vaccine/{vaccineId}")
     public ResponseEntity<List<VaccineBrandResponseVM>> getByVaccine(
             @PathVariable Long vaccineId,
+            @RequestParam(name = "isActive", required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list VaccineBrands by vaccineId={} pageable={}", vaccineId, pageable);
-        Page<VaccineBrands> page = vaccineBrandsService.findByVaccineId(vaccineId, pageable);
+        LOG.debug("REST list VaccineBrands by vaccineId={} isActive={} pageable={}", vaccineId, isActive, pageable);
+        Page<VaccineBrands> page = vaccineBrandsService.findByVaccineId(vaccineId, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, Long> {
@@ -45,10 +46,20 @@ public interface DiagnosticTestRepository extends JpaRepository<DiagnosticTest, 
 
     Page<DiagnosticTest> findByIsActive(Boolean isActive, Pageable pageable);
 
-    Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
+    Page<DiagnosticTest> findByTypeAndIsActive(TestType type, Boolean isActive, Pageable pageable);
 
-    Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(
-            Pageable pageable
+    Page<DiagnosticTest> findByNameContainingIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByInternalCodeContainingIgnoreCaseAndIsActive(String internalCode, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByShortNameContainingIgnoreCaseAndIsActive(String shortName, Boolean isActive, Pageable pageable);
+
+    Page<DiagnosticTest> findByIsActiveTrue(Pageable pageable);
+    Page<DiagnosticTest> findByIsActiveTrueAndAppointableTrue(  Pageable pageable);
+
+    Optional<DiagnosticTest> findFirstByInternalCodeIgnoreCaseAndType(
+            String internalCode,
+            TestType type
     );
 
     Page<DiagnosticTest> findByTypeAndNameContainingIgnoreCase(

@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.BillingRule;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingRulePaymentType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import com.dazzle.asklepios.repository.BillingRuleRepository;
 import com.dazzle.asklepios.service.dto.BillingRuleDTO;
@@ -16,6 +17,7 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Locale;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -353,6 +355,113 @@ public class BillingRuleService {
         return billingRuleRepository
                 .findByBillingItemType(
                         billingItemType,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findByPaymentType(
+            BillingRulePaymentType paymentType,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND BY PAYMENT TYPE] paymentType={} pageable={}",
+                paymentType,
+                pageable
+        );
+
+        if (paymentType == null) {
+            throw new BadRequestAlertException(
+                    "Payment type is required",
+                    ENTITY_NAME,
+                    "payment.type.required"
+            );
+        }
+
+        return billingRuleRepository
+                .findByPaymentType(
+                        paymentType,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findByBillingTrigger(
+            BillingTrigger billingTrigger,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND BY TRIGGER] trigger={} pageable={}",
+                billingTrigger,
+                pageable
+        );
+
+        if (billingTrigger == null) {
+            throw new BadRequestAlertException(
+                    "Billing trigger is required",
+                    ENTITY_NAME,
+                    "trigger.required"
+            );
+        }
+
+        return billingRuleRepository
+                .findByBillingTrigger(
+                        billingTrigger,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findByIsDefault(
+            Boolean isDefault,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND BY DEFAULT] isDefault={} pageable={}",
+                isDefault,
+                pageable
+        );
+
+        if (isDefault == null) {
+            throw new BadRequestAlertException(
+                    "Default flag is required",
+                    ENTITY_NAME,
+                    "default.required"
+            );
+        }
+
+        return billingRuleRepository
+                .findByIsDefault(
+                        isDefault,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findByCreatedDate(
+            Instant from,
+            Instant to,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "[FIND BY CREATED DATE] from={} to={} pageable={}",
+                from,
+                to,
+                pageable
+        );
+
+        if (from == null || to == null) {
+            throw new BadRequestAlertException(
+                    "Created date range is required",
+                    ENTITY_NAME,
+                    "created.date.required"
+            );
+        }
+
+        return billingRuleRepository
+                .findByCreatedDateGreaterThanEqualAndCreatedDateLessThan(
+                        from,
+                        to,
                         pageable
                 );
     }

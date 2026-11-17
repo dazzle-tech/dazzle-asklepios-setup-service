@@ -286,7 +286,8 @@ public class BillingPricingResolutionService {
                                 request.payerId(),
                                 request.coverageType(),
                                 request.currency(),
-                                pricingDate
+                                pricingDate,
+                                request.visitType()
                         )
                 );
 
@@ -309,7 +310,9 @@ public class BillingPricingResolutionService {
         );
 
         PricingSource pricingSource =
-                request.payerId() == null
+                Boolean.TRUE.equals(priceListPrice.cashFallback())
+                        || "CASH".equals(priceListPrice.priceListType())
+                        || "SELF_PAY".equals(priceListPrice.priceListType())
                         ? PricingSource.CASH_PRICE_LIST
                         : PricingSource.INSURANCE_PRICE_LIST;
 

@@ -62,6 +62,10 @@ public class UomGroupService {
         return groupRepo.findByNameContainingIgnoreCase(name, pageable);
     }
 
+    public Page<UomGroup> searchByDescription(String description, Pageable pageable) {
+        return groupRepo.findByDescriptionContainingIgnoreCase(description, pageable);
+    }
+
     // Unit
     public UomGroupUnit addUnit(Long groupId, UOM uom, BigDecimal order) {
         UomGroup group = getGroup(groupId);

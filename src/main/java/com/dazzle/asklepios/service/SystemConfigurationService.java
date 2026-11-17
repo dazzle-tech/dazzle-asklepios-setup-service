@@ -65,18 +65,20 @@ public class SystemConfigurationService {
         }
 
         if (isImageKey(config.getConfigKey())) {
-            if (attachmentProperties.getCdnEndpoint() == null || attachmentProperties.getCdnEndpoint().isBlank()) {
-                LOG.warn("CDN endpoint is not configured; returning raw value for [{}]", config.getConfigKey());
+            String baseUrl = firstNonBlank(
+                    attachmentProperties.getCdnEndpoint(),
+                    attachmentProperties.getEndpoint()
+            );
+            if (baseUrl == null) {
+                LOG.warn(
+                        "CDN/endpoint is not configured. Returning raw image key for [{}]",
+                        config.getConfigKey()
+                );
                 return value;
             }
 
-            String resolvedUrl =
-                    attachmentProperties.getCdnEndpoint().replaceAll("/$", "")
-                            + "/"
-                            + value;
-
+            String resolvedUrl = baseUrl.replaceAll("/$", "") + "/" + value;
             LOG.debug("Resolved image url for [{}]: {}", config.getConfigKey(), resolvedUrl);
-
             return resolvedUrl;
         }
 
@@ -263,6 +265,18 @@ public class SystemConfigurationService {
             return "config/PRESCRIPTION_STAMP/prescription-stamp-" + timestamp + extension;
         }
         return "config/" + key.name() + "/" + key.name().toLowerCase() + "-" + timestamp + extension;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 
     private String getExtension(String filename) {

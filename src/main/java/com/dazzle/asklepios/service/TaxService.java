@@ -428,6 +428,120 @@ public class TaxService {
     }
 
     @Transactional(readOnly = true)
+    public Page<Tax> findByValue(
+            Long facilityId,
+            BigDecimal value,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+                        facilityId,
+                        value,
+                        facilityId,
+                        value,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplicableOn(
+            Long facilityId,
+            TaxApplicableOn applicableOn,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplicableOn(
+                        facilityId,
+                        applicableOn,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByCitizenCategory(
+            Long facilityId,
+            TaxCitizenCategory citizenCategory,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndCitizenCategory(
+                        facilityId,
+                        citizenCategory,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplyOnPatientCopayment(
+            Long facilityId,
+            Boolean applyOnPatientCopayment,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplyOnPatientCopayment(
+                        facilityId,
+                        applyOnPatientCopayment,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplyOnClaimShare(
+            Long facilityId,
+            Boolean applyOnClaimShare,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplyOnClaimShare(
+                        facilityId,
+                        applyOnClaimShare,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByActive(
+            Long facilityId,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndActive(
+                        facilityId,
+                        active,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
     public Tax resolveApplicableTax(
             Long facilityId,
             Currency currency,
