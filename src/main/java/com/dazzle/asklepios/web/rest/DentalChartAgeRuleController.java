@@ -105,7 +105,8 @@ public class DentalChartAgeRuleController {
         int ageYears = Period.between(birthDate, reference).getYears();
         LOG.debug("REST resolve DentalChartAgeRule birthDate={} asOfDate={} ageYears={}", birthDate, reference, ageYears);
         return service.findActiveRuleForAge(ageYears)
-                .map(DentalChartAgeRuleResponseVM::fromEntity)
+                .map(rule -> DentalChartAgeRuleResponseVM.fromEntity(rule)
+                        .withNumberingLabels(service.resolveNumberingLabels(rule).orElse(null)))
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

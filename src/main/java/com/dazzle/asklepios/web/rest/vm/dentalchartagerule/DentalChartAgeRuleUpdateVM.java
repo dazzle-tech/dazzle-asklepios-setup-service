@@ -16,6 +16,7 @@ public record DentalChartAgeRuleUpdateVM(
         @Min(0) Integer ageTo,
         @NotNull DentalChartType chartType,
         @NotNull ToothNumberingSystem numberingSystem,
+        Long numberingMethodId,
         List<String> toothNumbers,
         @NotNull Boolean isActive
 ) {
@@ -27,6 +28,7 @@ public record DentalChartAgeRuleUpdateVM(
                 .ageTo(ageTo)
                 .chartType(chartType)
                 .numberingSystem(numberingSystem)
+                .numberingMethodId(numberingMethodId)
                 .isActive(isActive)
                 .build();
         entity.setToothNumberList(toothNumbers);

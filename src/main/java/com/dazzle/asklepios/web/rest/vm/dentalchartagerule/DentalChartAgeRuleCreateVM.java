@@ -15,6 +15,7 @@ public record DentalChartAgeRuleCreateVM(
         @Min(0) Integer ageTo,
         @NotNull DentalChartType chartType,
         ToothNumberingSystem numberingSystem,
+        Long numberingMethodId,
         List<String> toothNumbers,
         Boolean isActive
 ) {
@@ -27,6 +28,7 @@ public record DentalChartAgeRuleCreateVM(
                 .numberingSystem(
                         numberingSystem != null ? numberingSystem : ToothNumberingSystem.UNIVERSAL
                 )
+                .numberingMethodId(numberingMethodId)
                 .isActive(isActive != null ? isActive : Boolean.TRUE)
                 .build();
         entity.setToothNumberList(toothNumbers);

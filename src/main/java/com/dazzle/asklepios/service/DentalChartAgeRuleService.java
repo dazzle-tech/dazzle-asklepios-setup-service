@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -36,18 +37,33 @@ public class DentalChartAgeRuleService {
             .mapToObj(c -> "Tooth" + (char) c)
             .toList();
 
+    /** Mixed charts: up to 16 teeth per arch and 32 in total (primary and permanent counted together). */
+    private static final int MAX_TEETH_PER_ARCH = 16;
+    private static final int MAX_TEETH_TOTAL = 32;
+
+    /** Upper arch: permanent Tooth1-Tooth16 and primary ToothA-ToothJ; the rest is the lower arch. */
+    private static final Set<String> UPPER_ARCH_TEETH = Stream.concat(
+                    IntStream.rangeClosed(1, 16).mapToObj(i -> "Tooth" + i),
+                    IntStream.rangeClosed('A', 'J').mapToObj(c -> "Tooth" + (char) c))
+            .collect(Collectors.toCollection(HashSet::new));
+
     private static final Set<String> ALL_TEETH = Stream.concat(PERMANENT_TEETH.stream(), PRIMARY_TEETH.stream())
             .collect(Collectors.toCollection(HashSet::new));
 
     private final DentalChartAgeRuleRepository repository;
+    private final DentalToothNumberingMethodService numberingMethodService;
 
-    public DentalChartAgeRuleService(DentalChartAgeRuleRepository repository) {
+    public DentalChartAgeRuleService(
+            DentalChartAgeRuleRepository repository,
+            DentalToothNumberingMethodService numberingMethodService
+    ) {
         this.repository = repository;
+        this.numberingMethodService = numberingMethodService;
     }
 
     public DentalChartAgeRule create(DentalChartAgeRule incoming) {
         LOG.info("[CREATE] DentalChartAgeRule payload={}", incoming);
-        validateFields(incoming);
+        validateFields(incoming, null);
         if (Boolean.TRUE.equals(incoming.getIsActive())) {
             validateNoOverlappingActiveRanges(null, incoming.getAgeFrom(), incoming.getAgeTo());
         }
@@ -61,7 +77,9 @@ public class DentalChartAgeRuleService {
         if (id == null) {
             throw new BadRequestAlertException("Id is required", ENTITY_NAME, "id.required");
         }
-        validateFields(incoming);
+        // An unchanged reference to a since-deactivated method is preserved, never replaced silently.
+        Long storedMethodId = repository.findById(id).map(DentalChartAgeRule::getNumberingMethodId).orElse(null);
+        validateFields(incoming, storedMethodId);
 
         DentalChartAgeRule existing = repository.findById(id)
                 .orElseThrow(() -> new NotFoundAlertException(
@@ -79,6 +97,7 @@ public class DentalChartAgeRuleService {
         existing.setAgeTo(incoming.getAgeTo());
         existing.setChartType(incoming.getChartType());
         existing.setNumberingSystem(incoming.getNumberingSystem());
+        existing.setNumberingMethodId(incoming.getNumberingMethodId());
         existing.setToothNumberList(incoming.getToothNumberList());
         existing.setIsActive(incoming.getIsActive());
 
@@ -131,7 +150,7 @@ public class DentalChartAgeRuleService {
         repository.deleteById(id);
     }
 
-    private void validateFields(DentalChartAgeRule rule) {
+    private void validateFields(DentalChartAgeRule rule, Long preservedMethodId) {
         if (rule == null) {
             throw new BadRequestAlertException("Payload is required", ENTITY_NAME, "payload.required");
         }
@@ -164,6 +183,18 @@ public class DentalChartAgeRuleService {
         if (rule.getNumberingSystem() == null) {
             rule.setNumberingSystem(ToothNumberingSystem.UNIVERSAL);
         }
+        // A new or changed method must be active; an unchanged stored reference may stay as it is.
+        boolean methodUnchanged = rule.getNumberingMethodId() != null
+                && rule.getNumberingMethodId().equals(preservedMethodId);
+        if (rule.getNumberingMethodId() != null
+                && !methodUnchanged
+                && !numberingMethodService.isActiveMethod(rule.getNumberingMethodId())) {
+            throw new BadRequestAlertException(
+                    "Tooth numbering method must exist and be active",
+                    ENTITY_NAME,
+                    "numberingMethod.invalid"
+            );
+        }
         List<String> toothNumbers = rule.getToothNumberList();
         if (toothNumbers.isEmpty()) {
             throw new BadRequestAlertException(
@@ -173,6 +204,42 @@ public class DentalChartAgeRuleService {
             );
         }
         Set<String> allowed = allowedTeethFor(rule.getChartType());
+        Set<String> seen = new HashSet<>();
+        for (String tooth : toothNumbers) {
+            if (!seen.add(tooth)) {
+                throw new BadRequestAlertException(
+                        "Duplicate tooth identifier: " + tooth,
+                        ENTITY_NAME,
+                        "toothNumbers.duplicate"
+                );
+            }
+        }
+        if (toothNumbers.size() > MAX_TEETH_TOTAL) {
+            throw new BadRequestAlertException(
+                    "A chart can have at most " + MAX_TEETH_TOTAL + " teeth",
+                    ENTITY_NAME,
+                    "toothNumbers.maxTotal"
+            );
+        }
+        long upperCount = toothNumbers.stream().filter(UPPER_ARCH_TEETH::contains).count();
+        long lowerCount = toothNumbers.stream().filter(t -> ALL_TEETH.contains(t) && !UPPER_ARCH_TEETH.contains(t)).count();
+        if (upperCount > MAX_TEETH_PER_ARCH || lowerCount > MAX_TEETH_PER_ARCH) {
+            throw new BadRequestAlertException(
+                    "Each arch can have at most " + MAX_TEETH_PER_ARCH + " teeth",
+                    ENTITY_NAME,
+                    "toothNumbers.maxPerArch"
+            );
+        }
+        for (String tooth : toothNumbers) {
+            String counterpart = counterpartOf(tooth);
+            if (counterpart != null && seen.contains(counterpart)) {
+                throw new BadRequestAlertException(
+                        "Primary and permanent teeth cannot both occupy one position: " + tooth + " / " + counterpart,
+                        ENTITY_NAME,
+                        "toothNumbers.positionConflict"
+                );
+            }
+        }
         for (String tooth : toothNumbers) {
             if (!ALL_TEETH.contains(tooth)) {
                 throw new BadRequestAlertException(
@@ -192,6 +259,30 @@ public class DentalChartAgeRuleService {
         if (rule.getIsActive() == null) {
             rule.setIsActive(Boolean.TRUE);
         }
+    }
+
+    /**
+     * Primary ToothA-ToothJ sit in the position of permanent Tooth4-Tooth13 (upper) and
+     * ToothK-ToothT in the position of Tooth20-Tooth29 (lower). Returns the other tooth
+     * of the same position, or null when the tooth has no counterpart.
+     */
+    private static String counterpartOf(String tooth) {
+        if (tooth == null || !ALL_TEETH.contains(tooth)) {
+            return null;
+        }
+        String id = tooth.substring("Tooth".length());
+        if (id.length() == 1 && Character.isLetter(id.charAt(0))) {
+            int index = id.charAt(0) - 'A';
+            return "Tooth" + (index < 10 ? index + 4 : index + 10);
+        }
+        int number = Integer.parseInt(id);
+        if (number >= 4 && number <= 13) {
+            return "Tooth" + (char) ('A' + (number - 4));
+        }
+        if (number >= 20 && number <= 29) {
+            return "Tooth" + (char) ('K' + (number - 20));
+        }
+        return null;
     }
 
     /**
@@ -251,5 +342,11 @@ public class DentalChartAgeRuleService {
                 .filter(rule -> rule.getAgeFrom() != null && rule.getAgeFrom() <= ageYears)
                 .filter(rule -> rule.getAgeTo() == null || ageYears < rule.getAgeTo())
                 .findFirst();
+    }
+
+    /** Labels of the rule's custom numbering method for a new chart snapshot; empty means legacy numbering. */
+    @Transactional(readOnly = true)
+    public Optional<Map<String, String>> resolveNumberingLabels(DentalChartAgeRule rule) {
+        return numberingMethodService.resolveLabels(rule.getNumberingMethodId());
     }
 }

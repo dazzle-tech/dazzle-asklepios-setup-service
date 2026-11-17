@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.DentalChartType;
 import com.dazzle.asklepios.domain.enumeration.ToothNumberingSystem;
 
 import java.util.List;
+import java.util.Map;
 
 public record DentalChartAgeRuleResponseVM(
         Long id,
@@ -13,6 +14,8 @@ public record DentalChartAgeRuleResponseVM(
         Integer ageTo,
         DentalChartType chartType,
         ToothNumberingSystem numberingSystem,
+        Long numberingMethodId,
+        Map<String, String> numberingLabels,
         List<String> toothNumbers,
         Boolean isActive
 ) {
@@ -26,8 +29,17 @@ public record DentalChartAgeRuleResponseVM(
                 entity.getNumberingSystem() != null
                         ? entity.getNumberingSystem()
                         : ToothNumberingSystem.UNIVERSAL,
+                entity.getNumberingMethodId(),
+                null,
                 entity.getToothNumberList(),
                 entity.getIsActive()
         );
+    }
+
+    /** Copy carrying the resolved method labels (set only by the resolve endpoint). */
+    public DentalChartAgeRuleResponseVM withNumberingLabels(Map<String, String> labels) {
+        return new DentalChartAgeRuleResponseVM(
+                id, name, ageFrom, ageTo, chartType, numberingSystem,
+                numberingMethodId, labels, toothNumbers, isActive);
     }
 }

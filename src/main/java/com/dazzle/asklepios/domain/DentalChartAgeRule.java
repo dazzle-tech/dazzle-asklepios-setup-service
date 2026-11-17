@@ -77,6 +77,13 @@ public class DentalChartAgeRule extends AbstractAuditingEntity<Long> implements 
     private ToothNumberingSystem numberingSystem = ToothNumberingSystem.UNIVERSAL;
 
     /**
+     * Optional custom Tooth Numbering method used for labels; null keeps the legacy
+     * {@link #numberingSystem} behavior. Display metadata only.
+     */
+    @Column(name = "numbering_method_id")
+    private Long numberingMethodId;
+
+    /**
      * Comma-separated stable tooth identifiers (e.g. Tooth1,ToothA).
      * Prefer {@link #getToothNumberList()} / {@link #setToothNumberList(List)}.
      */
@@ -107,7 +114,6 @@ public class DentalChartAgeRule extends AbstractAuditingEntity<Long> implements 
         this.toothNumbers = values.stream()
                 .filter(v -> v != null && !v.isBlank())
                 .map(String::trim)
-                .distinct()
                 .collect(Collectors.joining(","));
     }
 }
