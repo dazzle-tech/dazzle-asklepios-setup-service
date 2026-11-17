@@ -26,9 +26,7 @@ public record DentalChartAgeRuleResponseVM(
                 entity.getAgeFrom(),
                 entity.getAgeTo(),
                 entity.getChartType(),
-                entity.getNumberingSystem() != null
-                        ? entity.getNumberingSystem()
-                        : ToothNumberingSystem.UNIVERSAL,
+                entity.getNumberingSystem(),
                 entity.getNumberingMethodId(),
                 null,
                 entity.getToothNumberList(),

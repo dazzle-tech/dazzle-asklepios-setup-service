@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -77,11 +79,11 @@ public class DentalChartAgeRuleService {
         if (id == null) {
             throw new BadRequestAlertException("Id is required", ENTITY_NAME, "id.required");
         }
+        Optional<DentalChartAgeRule> stored = repository.findById(id);
         // An unchanged reference to a since-deactivated method is preserved, never replaced silently.
-        Long storedMethodId = repository.findById(id).map(DentalChartAgeRule::getNumberingMethodId).orElse(null);
-        validateFields(incoming, storedMethodId);
+        validateFields(incoming, stored.map(DentalChartAgeRule::getNumberingMethodId).orElse(null));
 
-        DentalChartAgeRule existing = repository.findById(id)
+        DentalChartAgeRule existing = stored
                 .orElseThrow(() -> new NotFoundAlertException(
                         "Dental chart age rule not found: " + id,
                         ENTITY_NAME,
@@ -285,17 +287,6 @@ public class DentalChartAgeRuleService {
         return null;
     }
 
-    /**
-     * Defaults used by resolve helpers / docs. MIXED defaults to primary A–T only;
-     * permanent teeth are added explicitly in Setup.
-     */
-    public static List<String> defaultTeethFor(DentalChartType chartType) {
-        if (chartType == DentalChartType.CHILD || chartType == DentalChartType.MIXED) {
-            return PRIMARY_TEETH;
-        }
-        return PERMANENT_TEETH;
-    }
-
     private static Set<String> allowedTeethFor(DentalChartType chartType) {
         if (chartType == DentalChartType.CHILD) {
             return new HashSet<>(PRIMARY_TEETH);
@@ -331,10 +322,13 @@ public class DentalChartAgeRuleService {
     }
 
     /**
-     * Resolve the active rule for a completed-year age using [ageFrom, ageTo).
+     * Resolve the active rule for the patient's age in completed years at the reference date
+     * (today when absent), using [ageFrom, ageTo).
      */
     @Transactional(readOnly = true)
-    public Optional<DentalChartAgeRule> findActiveRuleForAge(int ageYears) {
+    public Optional<DentalChartAgeRule> findActiveRuleForBirthDate(LocalDate birthDate, LocalDate asOfDate) {
+        LocalDate reference = asOfDate != null ? asOfDate : LocalDate.now();
+        int ageYears = Period.between(birthDate, reference).getYears();
         if (ageYears < 0) {
             return Optional.empty();
         }

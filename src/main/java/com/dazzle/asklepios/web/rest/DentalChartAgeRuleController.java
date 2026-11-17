@@ -31,7 +31,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.Period;
 import java.util.List;
 
 /**
@@ -90,7 +89,6 @@ public class DentalChartAgeRuleController {
     /**
      * Resolve the active age rule for a patient birth date as of a reference date
      * (typically the encounter date). Ages use completed years with [ageFrom, ageTo).
-     * Declared before /{id} so "resolve" is not captured as a path variable.
      */
     @GetMapping("/resolve")
     public ResponseEntity<DentalChartAgeRuleResponseVM> resolveByBirthDate(
@@ -101,10 +99,8 @@ public class DentalChartAgeRuleController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
             LocalDate asOfDate
     ) {
-        LocalDate reference = asOfDate != null ? asOfDate : LocalDate.now();
-        int ageYears = Period.between(birthDate, reference).getYears();
-        LOG.debug("REST resolve DentalChartAgeRule birthDate={} asOfDate={} ageYears={}", birthDate, reference, ageYears);
-        return service.findActiveRuleForAge(ageYears)
+        LOG.debug("REST resolve DentalChartAgeRule birthDate={} asOfDate={}", birthDate, asOfDate);
+        return service.findActiveRuleForBirthDate(birthDate, asOfDate)
                 .map(rule -> DentalChartAgeRuleResponseVM.fromEntity(rule)
                         .withNumberingLabels(service.resolveNumberingLabels(rule).orElse(null)))
                 .map(ResponseEntity::ok)

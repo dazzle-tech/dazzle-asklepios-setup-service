@@ -28,9 +28,9 @@ public class DentalToothNumberingMethodService {
     private static final String ENTITY_NAME = "dentalToothNumberingMethod";
     private static final Logger LOG = LoggerFactory.getLogger(DentalToothNumberingMethodService.class);
 
-    static final int MAX_NAME_LENGTH = 100;
-    static final int MAX_DESCRIPTION_LENGTH = 255;
-    static final int MAX_LABEL_LENGTH = 12;
+    private static final int MAX_NAME_LENGTH = 100;
+    private static final int MAX_DESCRIPTION_LENGTH = 255;
+    private static final int MAX_LABEL_LENGTH = 12;
 
     /** Permanent Tooth1-Tooth32 then primary ToothA-ToothT: the full set a method must define to be active. */
     private static final List<String> PERMANENT_TEETH = IntStream.rangeClosed(1, 32)
@@ -211,7 +211,7 @@ public class DentalToothNumberingMethodService {
      * so a repeated number in a different quadrant is a different label and stays valid.
      */
     private void validateCompleteForActivation(Map<String, String> labels) {
-        for (String toothId : ALL_TEETH) {
+        for (String toothId : ORDERED_TEETH) {
             if (!labels.containsKey(toothId)) {
                 throw new BadRequestAlertException(
                         "Every tooth needs a label before activation (missing " + toothId + ")",

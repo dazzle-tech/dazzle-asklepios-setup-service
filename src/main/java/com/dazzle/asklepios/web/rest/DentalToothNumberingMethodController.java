@@ -73,15 +73,17 @@ public class DentalToothNumberingMethodController {
         return page(service.findAll(pageable));
     }
 
-    /** Active methods for selectors (Dental Chart Setup). Declared before /{id}. */
+    /** Active methods for selectors (Dental Chart Setup). */
     @GetMapping("/active")
     public ResponseEntity<List<DentalToothNumberingMethodResponseVM>> findActive() {
+        LOG.debug("REST list active DentalToothNumberingMethod");
         return ResponseEntity.ok(
                 service.findActive().stream().map(DentalToothNumberingMethodResponseVM::fromEntity).toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DentalToothNumberingMethodResponseVM> findOne(@PathVariable Long id) {
+        LOG.debug("REST get DentalToothNumberingMethod id={}", id);
         return service.findOne(id)
                 .map(DentalToothNumberingMethodResponseVM::fromEntity)
                 .map(ResponseEntity::ok)
@@ -93,6 +95,7 @@ public class DentalToothNumberingMethodController {
             @PathVariable String name,
             @ParameterObject Pageable pageable
     ) {
+        LOG.debug("REST list DentalToothNumberingMethod by name='{}' page={}", name, pageable);
         return page(service.findByName(name, pageable));
     }
 
