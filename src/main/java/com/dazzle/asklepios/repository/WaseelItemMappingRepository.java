@@ -35,7 +35,8 @@ public interface WaseelItemMappingRepository extends JpaRepository<WaseelItemMap
             Pageable pageable
     );
 
-    Optional<WaseelItemMapping> findByItemTypeAndSourceIdAndIsActiveTrue(
+    /** The oldest active mapping of the item; a duplicate active mapping must not break the lookup. */
+    Optional<WaseelItemMapping> findFirstByItemTypeAndSourceIdAndIsActiveTrueOrderByIdAsc(
             BillingItemTypes itemType,
             Long sourceId
     );

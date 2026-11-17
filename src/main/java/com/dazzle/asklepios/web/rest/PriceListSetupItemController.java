@@ -200,7 +200,7 @@ public class PriceListSetupItemController {
         return ResponseEntity.ok(
                 priceListSetupItemService
                         .findInsuranceWaseelCodes(itemType, sourceId, facilityId, payerId)
-                        .orElse(new PriceListItemWaseelCodesDTO(null, null))
+                        .orElse(PriceListItemWaseelCodesDTO.EMPTY)
         );
     }
 

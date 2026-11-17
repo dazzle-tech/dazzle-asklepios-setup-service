@@ -548,7 +548,7 @@ public class WaseelSbsSetupService {
     @Transactional(readOnly = true)
     public Optional<WaseelItemMappingDTO> getMappingByItem(BillingItemTypes itemType, Long sourceId) {
         return itemMappingRepository
-                .findByItemTypeAndSourceIdAndIsActiveTrue(itemType, sourceId)
+                .findFirstByItemTypeAndSourceIdAndIsActiveTrueOrderByIdAsc(itemType, sourceId)
                 .map(this::toMappingDto);
     }
 }

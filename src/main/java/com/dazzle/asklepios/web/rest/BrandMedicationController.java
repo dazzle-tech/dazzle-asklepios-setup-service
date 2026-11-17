@@ -75,9 +75,9 @@ public class BrandMedicationController {
      * {@code GET /brand-medication} : Get a paginated list of BrandMedications.
      */
     @GetMapping("/brand-medication")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getAll(@RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications page={}", pageable);
-        Page<BrandMedication> page = brandMedicationService.findAll(pageable);
+        Page<BrandMedication> page = brandMedicationService.findAll(isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -126,9 +126,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-name/{name}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByName(@PathVariable String name, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByName(@PathVariable String name, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by name='{}' page={}", name, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByName(name, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByName(name, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -145,9 +145,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-manufacturer/{manufacturer}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByManufacturer(@PathVariable String manufacturer, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByManufacturer(@PathVariable String manufacturer, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by manufacturer='{}' page={}", manufacturer, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByManufacturer(manufacturer, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByManufacturer(manufacturer, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -164,9 +164,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-dosage-form/{dosageForm}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByDosageForm(@PathVariable String dosageForm, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByDosageForm(@PathVariable String dosageForm, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by dosageForm='{}' page={}", dosageForm, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByDosageForm(dosageForm, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByDosageForm(dosageForm, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -202,9 +202,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-roa/{roa}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByRoa(@PathVariable String roa, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByRoa(@PathVariable String roa, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by roa='{}' page={}", roa, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByRoa(roa, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByRoa(roa, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -221,9 +221,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-expires-after-opening/{expiresAfterOpening}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByExpiresAfterOpening(@PathVariable Boolean expiresAfterOpening, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByExpiresAfterOpening(@PathVariable Boolean expiresAfterOpening, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by expiresAfterOpening={} page={}", expiresAfterOpening, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByExpiresAfterOpening(expiresAfterOpening, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByExpiresAfterOpening(expiresAfterOpening, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
@@ -240,9 +240,9 @@ public class BrandMedicationController {
     }
 
     @GetMapping("/brand-medication/by-use-single-patient/{useSinglePatient}")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getByUseSinglePatient(@PathVariable Boolean useSinglePatient, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getByUseSinglePatient(@PathVariable Boolean useSinglePatient, @RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications by useSinglePatient={} page={}", useSinglePatient, pageable);
-        Page<BrandMedication> page = brandMedicationService.findByUseSinglePatient(useSinglePatient, pageable);
+        Page<BrandMedication> page = brandMedicationService.findByUseSinglePatient(useSinglePatient, isActive, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

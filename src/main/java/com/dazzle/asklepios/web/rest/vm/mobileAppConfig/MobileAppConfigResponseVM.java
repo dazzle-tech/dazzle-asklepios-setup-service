@@ -5,19 +5,25 @@ import com.dazzle.asklepios.domain.enumeration.MobileAppConfigKey;
 import com.dazzle.asklepios.domain.enumeration.MobileAppConfigType;
 
 import java.time.Instant;
+import java.util.List;
 
 public record MobileAppConfigResponseVM(
         Long id,
         MobileAppConfigKey configKey,
         MobileAppConfigType configType,
         String configValue,
+        List<String> configValues,
         String description,
         String createdBy,
         Instant createdDate,
         String lastModifiedBy,
         Instant lastModifiedDate
 ) {
-    public static MobileAppConfigResponseVM ofEntity(MobileAppConfig entity, String resolvedValue) {
+    public static MobileAppConfigResponseVM ofEntity(
+            MobileAppConfig entity,
+            String resolvedValue,
+            List<String> resolvedValues
+    ) {
         if (entity == null) {
             return null;
         }
@@ -26,6 +32,7 @@ public record MobileAppConfigResponseVM(
                 entity.getConfigKey(),
                 entity.getConfigType(),
                 resolvedValue,
+                resolvedValues,
                 entity.getDescription(),
                 entity.getCreatedBy(),
                 entity.getCreatedDate(),
