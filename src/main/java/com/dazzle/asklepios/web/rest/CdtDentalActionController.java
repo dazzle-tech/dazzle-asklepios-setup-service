@@ -44,7 +44,7 @@ public class CdtDentalActionController {
     }
 
     @GetMapping("/cdt-dental-action/by-code/{cdtCode}")
-    public List<CdtDentalActionResponseVM> findByCode(@PathVariable Long cdtId) {
+    public List<CdtDentalActionResponseVM> findByCode(@PathVariable("cdtCode") Long cdtId) {
         return service.findByCdtCode(cdtId)
                 .stream().map(CdtDentalActionResponseVM::ofEntity).toList();
     }
