@@ -2,6 +2,8 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.BillingRule;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingRulePaymentType;
+import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import com.dazzle.asklepios.service.BillingRuleService;
 import com.dazzle.asklepios.service.dto.BillingRuleDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -13,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -198,6 +202,109 @@ public class BillingRuleController {
                         pageable
                 );
 
+        HttpHeaders headers =
+                PaginationUtil.generatePaginationHttpHeaders(
+                        ServletUriComponentsBuilder
+                                .fromCurrentRequest(),
+                        page
+                );
+
+        return new ResponseEntity<>(
+                page.getContent(),
+                headers,
+                HttpStatus.OK
+        );
+    }
+
+    @GetMapping("/billing-rule/search/by-payment-type/{paymentType}")
+    public ResponseEntity<List<BillingRule>> findByPaymentType(
+            @PathVariable("paymentType")
+            @NotNull
+            BillingRulePaymentType paymentType,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to get BillingRules by paymentType={} pageable={}",
+                paymentType,
+                pageable
+        );
+
+        return toPagedResponse(
+                billingRuleService.findByPaymentType(paymentType, pageable)
+        );
+    }
+
+    @GetMapping("/billing-rule/search/by-trigger/{billingTrigger}")
+    public ResponseEntity<List<BillingRule>> findByBillingTrigger(
+            @PathVariable("billingTrigger")
+            @NotNull
+            BillingTrigger billingTrigger,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to get BillingRules by trigger={} pageable={}",
+                billingTrigger,
+                pageable
+        );
+
+        return toPagedResponse(
+                billingRuleService.findByBillingTrigger(billingTrigger, pageable)
+        );
+    }
+
+    @GetMapping("/billing-rule/search/by-default/{isDefault}")
+    public ResponseEntity<List<BillingRule>> findByIsDefault(
+            @PathVariable("isDefault")
+            @NotNull
+            Boolean isDefault,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to get BillingRules by isDefault={} pageable={}",
+                isDefault,
+                pageable
+        );
+
+        return toPagedResponse(
+                billingRuleService.findByIsDefault(isDefault, pageable)
+        );
+    }
+
+    // from/to bound the selected day in the user's time zone (to is exclusive)
+    @GetMapping("/billing-rule/search/by-created-date")
+    public ResponseEntity<List<BillingRule>> findByCreatedDate(
+            @RequestParam("from")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant from,
+
+            @RequestParam("to")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant to,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to get BillingRules by createdDate from={} to={} pageable={}",
+                from,
+                to,
+                pageable
+        );
+
+        return toPagedResponse(
+                billingRuleService.findByCreatedDate(from, to, pageable)
+        );
+    }
+
+    private ResponseEntity<List<BillingRule>> toPagedResponse(
+            Page<BillingRule> page
+    ) {
         HttpHeaders headers =
                 PaginationUtil.generatePaginationHttpHeaders(
                         ServletUriComponentsBuilder
