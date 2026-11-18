@@ -142,6 +142,19 @@ public final class SecurityUtils {
         return hasCurrentUserAnyOfAuthorities(authority);
     }
 
+    /**
+     * Checks the space-separated "auth" claim of the current JWT. The gateway puts the user's authorities
+     * there, but this service does not map that claim to Spring authorities, so hasAuthority(...) cannot see it.
+     */
+    public static boolean hasJwtAuthority(String authority) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            String claim = jwt.getClaimAsString(AUTHORITIES_CLAIM);
+            return claim != null && Arrays.asList(claim.split(" ")).contains(authority);
+        }
+        return false;
+    }
+
     private static Stream<String> getAuthorities(Authentication authentication) {
         return authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority);
     }
