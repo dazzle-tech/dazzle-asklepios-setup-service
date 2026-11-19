@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.MedFrequencySetup;
 import com.dazzle.asklepios.domain.enumeration.FrequencyList;
 import com.dazzle.asklepios.domain.enumeration.MedFrequency;
 import com.dazzle.asklepios.repository.MedFrequencySetupRepository;
+import com.dazzle.asklepios.repository.MedFrequencySetupSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import com.dazzle.asklepios.service.dto.medFrequencySetup.MedFrequencySetupCreateDTO;
@@ -77,6 +78,19 @@ public class MedFrequencySetupService {
     @Transactional(readOnly = true)
     public Page<MedFrequencySetup> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<MedFrequencySetup> findAll(
+            Boolean isActive,
+            MedFrequency frequency,
+            Integer frequencyNumber,
+            FrequencyList frequencyUnit,
+            Pageable pageable
+    ) {
+        return repository.findAll(
+                MedFrequencySetupSpecifications.search(isActive, frequency, frequencyNumber, frequencyUnit), pageable);
     }
 
     @Transactional(readOnly = true)
