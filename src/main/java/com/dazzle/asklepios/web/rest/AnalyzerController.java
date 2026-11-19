@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -84,10 +85,13 @@ public class AnalyzerController {
     // ====================== READ (Paged) ======================
     @GetMapping("/analyzer")
     public ResponseEntity<List<AnalyzerResponseVM>> getAllAnalyzersPaged(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String code,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Analyzers pageable={}", pageable);
-        final Page<Analyzer> page = analyzerService.findAll(pageable);
+        final Page<Analyzer> page = analyzerService.findAll(isActive, type, code, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

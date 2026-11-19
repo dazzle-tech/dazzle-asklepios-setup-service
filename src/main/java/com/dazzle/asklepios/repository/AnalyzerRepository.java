@@ -4,10 +4,11 @@ import com.dazzle.asklepios.domain.Analyzer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AnalyzerRepository extends JpaRepository<Analyzer, Long> {
+public interface AnalyzerRepository extends JpaRepository<Analyzer, Long>, JpaSpecificationExecutor<Analyzer> {
     Page<Analyzer> findByType(String type, Pageable pageable);
 
     Page<Analyzer> findByCodeContainingIgnoreCase(String code, Pageable pageable);
