@@ -67,8 +67,11 @@ public class SurveyTextController {
 
     /** GET all (paged) */
     @GetMapping("/survey-text")
-    public ResponseEntity<List<SurveyTextResponseVM>> getAll(@ParameterObject Pageable pageable) {
-        return paged(service.findAll(pageable));
+    public ResponseEntity<List<SurveyTextResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String text,
+            @ParameterObject Pageable pageable) {
+        return paged(service.findAll(isActive, text, pageable));
     }
 
     /** GET by status (paged) */

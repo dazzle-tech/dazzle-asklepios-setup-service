@@ -4,10 +4,11 @@ import com.dazzle.asklepios.domain.SurveyText;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface SurveyTextRepository extends JpaRepository<SurveyText, Long> {
+public interface SurveyTextRepository extends JpaRepository<SurveyText, Long>, JpaSpecificationExecutor<SurveyText> {
 
     boolean existsByTextKey(String textKey);
 
