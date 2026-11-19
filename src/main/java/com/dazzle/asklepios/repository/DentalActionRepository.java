@@ -5,13 +5,14 @@ import com.dazzle.asklepios.domain.enumeration.DentalActionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 /**
  * Repository for {@link com.dazzle.asklepios.domain.DentalAction}.
  */
 @Repository
-public interface DentalActionRepository extends JpaRepository<DentalAction, Long> {
+public interface DentalActionRepository extends JpaRepository<DentalAction, Long>, JpaSpecificationExecutor<DentalAction> {
 
     Page<DentalAction> findByType(DentalActionType type , Pageable pageable);
 

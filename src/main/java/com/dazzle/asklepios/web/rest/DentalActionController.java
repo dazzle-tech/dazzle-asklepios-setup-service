@@ -89,9 +89,13 @@ public class DentalActionController {
      * @return paginated list of {@link DentalActionResponseVM} with headers for pagination.
      */
     @GetMapping
-    public ResponseEntity<List<DentalActionResponseVM>> findAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<DentalActionResponseVM>> findAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) DentalActionType type,
+            @RequestParam(required = false) String description,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST request to get all DentalActions page={}", pageable);
-        Page<DentalAction> page = service.findAll(pageable);
+        Page<DentalAction> page = service.findAll(isActive, type, description, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
