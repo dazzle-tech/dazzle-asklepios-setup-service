@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.SurveyText;
 import com.dazzle.asklepios.repository.SurveyTextRepository;
+import com.dazzle.asklepios.repository.SurveyTextSpecifications;
 import com.dazzle.asklepios.service.dto.surveyText.SurveyTextCreateDTO;
 import com.dazzle.asklepios.service.dto.surveyText.SurveyTextUpdateDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -62,6 +63,12 @@ public class SurveyTextService {
     @Transactional(readOnly = true)
     public Page<SurveyText> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<SurveyText> findAll(Boolean isActive, String text, Pageable pageable) {
+        return repository.findAll(SurveyTextSpecifications.search(isActive, text), pageable);
     }
 
     @Transactional(readOnly = true)

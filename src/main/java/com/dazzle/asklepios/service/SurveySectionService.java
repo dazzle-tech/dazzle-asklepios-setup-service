@@ -2,12 +2,15 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.SurveySection;
 import com.dazzle.asklepios.repository.SurveySectionRepository;
+import com.dazzle.asklepios.repository.SurveySectionSpecifications;
 import com.dazzle.asklepios.service.dto.surveySection.SurveySectionDTO;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +60,17 @@ public class SurveySectionService {
     @Transactional(readOnly = true)
     public Page<SurveySection> findAll(Pageable pageable) {
         return repository.findAllByOrderByDisplayOrderAscIdAsc(pageable);
+    }
+
+    /**
+     * Optional filters combined with AND, so the setup screen can search several columns at once.
+     * Keeps the usual order (display order, then oldest first) ahead of any requested sort.
+     */
+    @Transactional(readOnly = true)
+    public Page<SurveySection> findAll(Boolean isActive, String name, Pageable pageable) {
+        Sort sort = Sort.by(Sort.Order.asc("displayOrder"), Sort.Order.asc("id")).and(pageable.getSort());
+        Pageable ordered = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        return repository.findAll(SurveySectionSpecifications.search(isActive, name), ordered);
     }
 
     @Transactional(readOnly = true)

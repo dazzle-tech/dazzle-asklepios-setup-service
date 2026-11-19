@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -81,10 +82,13 @@ public class VisitDurationController {
 
     @GetMapping("/visit-duration")
     public ResponseEntity<List<VisitDurationResponseVM>> getAllVisitDurations(
+            @RequestParam(required = false) VisitType visitType,
+            @RequestParam(required = false) Integer durationInMinutes,
+            @RequestParam(required = false) Boolean resourceSpecific,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list VisitDurations pageable={}", pageable);
-        Page<VisitDuration> page = visitDurationService.findAll(pageable);
+        Page<VisitDuration> page = visitDurationService.findAll(visitType, durationInMinutes, resourceSpecific, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

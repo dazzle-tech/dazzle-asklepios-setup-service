@@ -66,8 +66,11 @@ public class SurveySectionController {
 
     /** GET all (paged) */
     @GetMapping("/survey-section")
-    public ResponseEntity<List<SurveySectionResponseVM>> getAll(@ParameterObject Pageable pageable) {
-        return paged(service.findAll(pageable));
+    public ResponseEntity<List<SurveySectionResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable) {
+        return paged(service.findAll(isActive, name, pageable));
     }
 
     /** GET by status (paged) */

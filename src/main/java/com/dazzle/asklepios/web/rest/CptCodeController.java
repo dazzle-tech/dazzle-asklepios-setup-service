@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.CptCode;
 import com.dazzle.asklepios.repository.CptCodeRepository;
+import com.dazzle.asklepios.repository.CptCodeSpecifications;
 import com.dazzle.asklepios.service.CptCodeService;
 import com.dazzle.asklepios.service.dto.CptImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -45,9 +46,17 @@ public class CptCodeController {
         return ResponseEntity.ok(result);
     }
 
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
     @GetMapping("/cpt/all")
-    public ResponseEntity<List<CptCode>> getAll(@ParameterObject Pageable pageable) {
-        Page<CptCode> page = repository.findAll(pageable);
+    public ResponseEntity<List<CptCode>> getAll(
+            @RequestParam(required = false) String mainCategory,
+            @RequestParam(required = false) String serviceCategory,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String description,
+            @ParameterObject Pageable pageable
+    ) {
+        Page<CptCode> page = repository.findAll(
+                CptCodeSpecifications.search(mainCategory, serviceCategory, code, description), pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

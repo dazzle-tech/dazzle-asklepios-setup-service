@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.VisitDuration;
 import com.dazzle.asklepios.domain.enumeration.VisitType;
 import com.dazzle.asklepios.repository.VisitDurationRepository;
+import com.dazzle.asklepios.repository.VisitDurationSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -109,6 +110,18 @@ public class VisitDurationService {
     public Page<VisitDuration> findAll(Pageable pageable) {
         LOG.debug("Fetching paged VisitDurations pageable={}", pageable);
         return visitDurationRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<VisitDuration> findAll(
+            VisitType visitType,
+            Integer durationInMinutes,
+            Boolean resourceSpecific,
+            Pageable pageable
+    ) {
+        return visitDurationRepository.findAll(
+                VisitDurationSpecifications.search(visitType, durationInMinutes, resourceSpecific), pageable);
     }
 
     @Transactional(readOnly = true)

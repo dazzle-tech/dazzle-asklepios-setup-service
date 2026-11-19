@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.LoincCategory;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
+import com.dazzle.asklepios.repository.LoincCodeSpecifications;
 import com.dazzle.asklepios.service.LoincCodeService;
 import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
@@ -65,9 +66,14 @@ public class LoincCodeController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
     @GetMapping("/loinc/all")
-    public ResponseEntity<List<LoincCode>> getAll(@ParameterObject Pageable pageable) {
-        Page<LoincCode> page = repository.findAll(pageable);
+    public ResponseEntity<List<LoincCode>> getAll(
+            @RequestParam(required = false) LoincCategory category,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String description,
+            @ParameterObject Pageable pageable) {
+        Page<LoincCode> page = repository.findAll(LoincCodeSpecifications.search(category, code, description), pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
