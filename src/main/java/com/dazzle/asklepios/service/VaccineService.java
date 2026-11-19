@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Vaccine;
 import com.dazzle.asklepios.domain.enumeration.RouteOfAdministration;
 import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.repository.VaccineRepository;
+import com.dazzle.asklepios.repository.VaccineSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -117,6 +118,19 @@ public class VaccineService {
     public Page<Vaccine> findAll(Pageable pageable) {
         LOG.debug("Fetching paged Vaccines pageable={}", pageable);
         return vaccineRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Vaccine> findAll(
+            Boolean isActive,
+            String name,
+            VaccineType type,
+            RouteOfAdministration roa,
+            Pageable pageable
+    ) {
+        LOG.debug("Fetching paged Vaccines isActive={} name={} type={} roa={} pageable={}", isActive, name, type, roa, pageable);
+        return vaccineRepository.findAll(VaccineSpecifications.search(isActive, name, type, roa), pageable);
     }
 
     @Transactional(readOnly = true)

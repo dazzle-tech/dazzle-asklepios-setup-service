@@ -107,10 +107,14 @@ public class VaccineController {
 
     @GetMapping("/vaccine")
     public ResponseEntity<List<VaccineResponseVM>> getAllVaccines(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) VaccineType type,
+            @RequestParam(required = false) RouteOfAdministration roa,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Vaccines pageable={}", pageable);
-        final Page<Vaccine> page = vaccineService.findAll(pageable);
+        final Page<Vaccine> page = vaccineService.findAll(isActive, name, type, roa, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
