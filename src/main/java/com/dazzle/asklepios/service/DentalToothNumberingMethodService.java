@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.DentalToothNumberingMethod;
 import com.dazzle.asklepios.repository.DentalToothNumberingMethodRepository;
+import com.dazzle.asklepios.repository.DentalToothNumberingMethodSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -73,6 +74,12 @@ public class DentalToothNumberingMethodService {
     @Transactional(readOnly = true)
     public Page<DentalToothNumberingMethod> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<DentalToothNumberingMethod> findAll(Boolean isActive, String name, Pageable pageable) {
+        return repository.findAll(DentalToothNumberingMethodSpecifications.search(isActive, name), pageable);
     }
 
     @Transactional(readOnly = true)

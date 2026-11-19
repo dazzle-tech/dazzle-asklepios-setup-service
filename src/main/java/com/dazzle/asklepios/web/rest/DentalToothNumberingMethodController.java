@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -68,9 +69,12 @@ public class DentalToothNumberingMethodController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DentalToothNumberingMethodResponseVM>> findAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<DentalToothNumberingMethodResponseVM>> findAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list DentalToothNumberingMethod page={}", pageable);
-        return page(service.findAll(pageable));
+        return page(service.findAll(isActive, name, pageable));
     }
 
     /** Active methods for selectors (Dental Chart Setup). */
