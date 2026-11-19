@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
+import com.dazzle.asklepios.repository.DiagnosticTestSpecifications;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
@@ -399,9 +400,23 @@ public class DiagnosticTestService {
 
     @Transactional(readOnly = true)
     public Page<DiagnosticTest> findAll(Boolean isActive, Pageable pageable) {
-        return isActive == null
-                ? repository.findAll(pageable)
-                : repository.findByIsActive(isActive, pageable);
+        return findAll(isActive, null, null, null, null, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findAll(
+            Boolean isActive,
+            TestType type,
+            String name,
+            String shortName,
+            String internalCode,
+            Pageable pageable
+    ) {
+        return repository.findAll(
+                DiagnosticTestSpecifications.search(isActive, type, name, shortName, internalCode),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
