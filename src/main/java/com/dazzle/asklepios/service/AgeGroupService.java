@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.AgeGroupType;
 import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.repository.AgeGroupRepository;
+import com.dazzle.asklepios.repository.AgeGroupSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
@@ -146,6 +147,19 @@ public class AgeGroupService {
     public Page<AgeGroup> findAll(Pageable pageable) {
         LOG.debug("Fetching paged AgeGroups (all facilities) pageable={}", pageable);
         return ageGroupRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<AgeGroup> findAll(
+            Long facilityId,
+            AgeGroupType ageGroup,
+            BigDecimal fromAge,
+            BigDecimal toAge,
+            Pageable pageable
+    ) {
+        return ageGroupRepository.findAll(
+                AgeGroupSpecifications.search(facilityId, ageGroup, fromAge, toAge), pageable);
     }
 
     @Transactional(readOnly = true)
