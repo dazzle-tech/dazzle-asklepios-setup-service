@@ -72,9 +72,13 @@ public class DentalChartAgeRuleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DentalChartAgeRuleResponseVM>> findAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<DentalChartAgeRuleResponseVM>> findAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) DentalChartType chartType,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list DentalChartAgeRule page={}", pageable);
-        Page<DentalChartAgeRule> page = service.findAll(pageable);
+        Page<DentalChartAgeRule> page = service.findAll(isActive, name, chartType, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
                 page
