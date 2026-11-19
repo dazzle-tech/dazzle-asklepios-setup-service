@@ -209,13 +209,38 @@ public class RoomController {
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);
     }
 
+    /**
+     * Room list with optional filters combined with AND.
+     * gender: a {@link Gender} name, or NONE for rooms that are not gender specific.
+     */
     @GetMapping
     public ResponseEntity<List<Room>> findAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String floor,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) RoomType type,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) Integer parallelCapacityValue,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST find all Rooms pageable={}", pageable);
 
-        Page<Room> page = roomService.findAll(pageable);
+        boolean notGenderSpecific = "NONE".equalsIgnoreCase(gender);
+        Gender genderValue = null;
+        if (!notGenderSpecific && gender != null && !gender.isBlank()) {
+            try {
+                genderValue = Gender.valueOf(gender.trim());
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestAlertException("Invalid gender", "room", "gender.invalid");
+            }
+        }
+
+        Page<Room> page = roomService.findAll(
+                isActive, name, facilityId, floor, departmentId, type,
+                genderValue, notGenderSpecific, parallelCapacityValue, pageable
+        );
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
