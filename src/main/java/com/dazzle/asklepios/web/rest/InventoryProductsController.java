@@ -3,6 +3,7 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.InventoryProducts;
 import com.dazzle.asklepios.domain.enumeration.InventoryType;
 import com.dazzle.asklepios.domain.enumeration.ProductTypes;
+import com.dazzle.asklepios.repository.InventoryProductsSpecifications;
 import com.dazzle.asklepios.service.InventoryProductsService;
 import com.dazzle.asklepios.service.dto.InventoryProductsCreateDTO;
 import com.dazzle.asklepios.service.dto.InventoryProductsUpdateDTO;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,10 +27,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -98,9 +102,28 @@ public class InventoryProductsController {
      *         products view models in the body, and pagination headers.
      */
     @GetMapping("/inventory-products")
-    public ResponseEntity<List<InventoryProductsResponseVM>> getAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<InventoryProductsResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) ProductTypes type,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String barcode,
+            @RequestParam(required = false) String erpIntegrationId,
+            @RequestParam(required = false) Long uomGroupId,
+            @RequestParam(required = false) Long baseUom,
+            @RequestParam(required = false) Long dispenseUom,
+            @RequestParam(required = false) InventoryType inventoryType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate warrantyStartDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate warrantyEndDate,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list InventoryProducts page={}", pageable);
-        Page<InventoryProducts> page = inventoryProductsService.getAll(pageable);
+        Page<InventoryProducts> page = inventoryProductsService.getAll(
+                new InventoryProductsSpecifications.Filter(
+                        isActive, name, type, code, barcode, erpIntegrationId, uomGroupId,
+                        baseUom, dispenseUom, inventoryType, warrantyStartDate, warrantyEndDate
+                ),
+                pageable
+        );
         HttpHeaders headers =
                 PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

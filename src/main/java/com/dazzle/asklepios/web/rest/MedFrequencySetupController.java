@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -68,8 +69,13 @@ public class MedFrequencySetupController {
 
     /** GET all (paged) */
     @GetMapping("/med-frequency-setup")
-    public ResponseEntity<List<MedFrequencySetupResponseVM>> getAll(@ParameterObject Pageable pageable) {
-        Page<MedFrequencySetup> page = service.findAll(pageable);
+    public ResponseEntity<List<MedFrequencySetupResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) MedFrequency frequency,
+            @RequestParam(required = false) Integer frequencyNumber,
+            @RequestParam(required = false) FrequencyList frequencyUnit,
+            @ParameterObject Pageable pageable) {
+        Page<MedFrequencySetup> page = service.findAll(isActive, frequency, frequencyNumber, frequencyUnit, pageable);
         return paged(page);
     }
 

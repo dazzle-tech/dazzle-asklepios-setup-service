@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.ActiveIngredients;
 import com.dazzle.asklepios.domain.Bed;
 import com.dazzle.asklepios.domain.MedicationCategoriesClass;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
+import com.dazzle.asklepios.repository.ActiveIngredientsSpecifications;
 import com.dazzle.asklepios.repository.MedicationCategoriesClassRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -104,6 +105,19 @@ public class ActiveIngredientsService {
     public Page<ActiveIngredients> getAll(Pageable pageable) {
         LOG.debug("get all active ingredients: page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
         return activeRepo.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<ActiveIngredients> getAll(
+            Boolean isActive,
+            String name,
+            String atcCode,
+            List<Long> drugClassIds,
+            Pageable pageable
+    ) {
+        return activeRepo.findAll(
+                ActiveIngredientsSpecifications.search(isActive, name, atcCode, drugClassIds), pageable);
     }
 
     @Transactional(readOnly = true)

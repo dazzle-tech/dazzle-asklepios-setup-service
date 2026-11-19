@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.InventoryProducts;
 import com.dazzle.asklepios.domain.enumeration.InventoryType;
 import com.dazzle.asklepios.domain.enumeration.ProductTypes;
 import com.dazzle.asklepios.repository.InventoryProductsRepository;
+import com.dazzle.asklepios.repository.InventoryProductsSpecifications;
 import com.dazzle.asklepios.service.dto.InventoryProductsCreateDTO;
 import com.dazzle.asklepios.service.dto.InventoryProductsUpdateDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -110,6 +111,12 @@ public class InventoryProductsService {
     public Page<InventoryProducts> getAll(Pageable pageable) {
         LOG.debug("get all inventory products: page={} size={}", pageable.getPageNumber(), pageable.getPageSize());
         return inventoryRepo.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<InventoryProducts> getAll(InventoryProductsSpecifications.Filter filter, Pageable pageable) {
+        return inventoryRepo.findAll(InventoryProductsSpecifications.search(filter), pageable);
     }
     @Transactional(readOnly = true)
     public Optional<InventoryProducts> findOne(Long id) {

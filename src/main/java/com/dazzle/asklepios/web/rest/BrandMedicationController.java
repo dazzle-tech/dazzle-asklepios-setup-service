@@ -75,9 +75,21 @@ public class BrandMedicationController {
      * {@code GET /brand-medication} : Get a paginated list of BrandMedications.
      */
     @GetMapping("/brand-medication")
-    public ResponseEntity<List<BrandMedicationResponseVM>> getAll(@RequestParam(required = false) Boolean isActive, @ParameterObject Pageable pageable) {
+    public ResponseEntity<List<BrandMedicationResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String manufacturer,
+            @RequestParam(required = false) String dosageForm,
+            @RequestParam(required = false) String usageInstructions,
+            @RequestParam(required = false) String roa,
+            @RequestParam(required = false) Boolean expiresAfterOpening,
+            @RequestParam(required = false) Boolean useSinglePatient,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list BrandMedications page={}", pageable);
-        Page<BrandMedication> page = brandMedicationService.findAll(isActive, pageable);
+        Page<BrandMedication> page = brandMedicationService.findAll(
+                isActive, name, manufacturer, dosageForm, usageInstructions, roa,
+                expiresAfterOpening, useSinglePatient, pageable
+        );
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

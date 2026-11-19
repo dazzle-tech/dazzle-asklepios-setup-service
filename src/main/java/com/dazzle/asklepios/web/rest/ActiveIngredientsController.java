@@ -94,9 +94,14 @@ public class ActiveIngredientsController {
      *         and pagination headers.
      */
     @GetMapping("/active-ingredients")
-    public ResponseEntity<List<ActiveIngredientsResponseVM>> getAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<ActiveIngredientsResponseVM>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String atcCode,
+            @RequestParam(required = false) List<Long> drugClassIds,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list ActiveIngredients page={}", pageable);
-        Page<ActiveIngredients> page = activeIngredientsService.getAll(pageable);
+        Page<ActiveIngredients> page = activeIngredientsService.getAll(isActive, name, atcCode, drugClassIds, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
         List<ActiveIngredientsResponseVM> body = page.getContent()
