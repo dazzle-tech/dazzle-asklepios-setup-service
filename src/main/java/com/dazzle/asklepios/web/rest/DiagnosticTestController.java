@@ -69,11 +69,18 @@ public class DiagnosticTestController {
     @GetMapping("/diagnostic-test")
     public ResponseEntity<List<DiagnosticTestResponseVM>> list(
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String shortName,
+            @RequestParam(required = false) String internalCode,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
+        LOG.debug(
+                "REST request to list DiagnosticTests isActive={} type={} name={} shortName={} internalCode={} page={}",
+                isActive, type, name, shortName, internalCode, pageable
+        );
 
-        Page<DiagnosticTest> page = service.findAll(isActive, pageable);
+        Page<DiagnosticTest> page = service.findAll(isActive, type, name, shortName, internalCode, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
