@@ -123,10 +123,19 @@ public class ServiceController {
     @GetMapping("/service")
     public ResponseEntity<List<ServiceResponseVM>> getAllServices(
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) ServiceCategory category,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String abbreviation,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) BigDecimal price,
+            @RequestParam(required = false) Currency currency,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Services pageable={}", pageable);
-        final Page<ServiceSetup> page = serviceService.findAll(isActive, pageable);
+        final Page<ServiceSetup> page = serviceService.findAll(
+                isActive, facilityId, category, name, abbreviation, code, price, currency, pageable
+        );
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(

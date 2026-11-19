@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.ServiceCategory;
 import com.dazzle.asklepios.domain.enumeration.ServiceItemsType;
 import com.dazzle.asklepios.repository.ServiceItemsRepository;
 import com.dazzle.asklepios.repository.ServiceRepository;
+import com.dazzle.asklepios.repository.ServiceSetupSpecifications;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -232,10 +233,30 @@ public class ServiceService {
 
     @Transactional(readOnly = true)
     public Page<ServiceSetup> findAll(Boolean isActive, Pageable pageable) {
-        LOG.debug("Fetching paged Services (no facility filter) pageable={}", pageable);
-        return isActive == null
-                ? serviceRepository.findAll(pageable)
-                : serviceRepository.findByIsActive(isActive, pageable);
+        return findAll(isActive, null, null, null, null, null, null, null, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<ServiceSetup> findAll(
+            Boolean isActive,
+            Long facilityId,
+            ServiceCategory category,
+            String name,
+            String abbreviation,
+            String code,
+            BigDecimal price,
+            Currency currency,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching paged Services isActive={} facilityId={} category={} name={} abbreviation={} code={} price={} currency={} pageable={}",
+                isActive, facilityId, category, name, abbreviation, code, price, currency, pageable
+        );
+        return serviceRepository.findAll(
+                ServiceSetupSpecifications.search(isActive, facilityId, category, name, abbreviation, code, price, currency),
+                pageable
+        );
     }
 
 
