@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Allergens;
 import com.dazzle.asklepios.domain.enumeration.AllergenType;
 import com.dazzle.asklepios.repository.AllergensRepository;
+import com.dazzle.asklepios.repository.AllergensSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -129,6 +130,13 @@ public class AllergensService {
     public Page<Allergens> findAll(Pageable pageable) {
         LOG.debug("Fetching paged Allergens pageable={}", pageable);
         return allergenRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Allergens> findAll(Boolean isActive, AllergenType type, String name, Pageable pageable) {
+        LOG.debug("Fetching paged Allergens isActive={} type={} name={} pageable={}", isActive, type, name, pageable);
+        return allergenRepository.findAll(AllergensSpecifications.search(isActive, type, name), pageable);
     }
 
     @Transactional(readOnly = true)
