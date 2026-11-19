@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import com.dazzle.asklepios.repository.ProcedureRepository;
+import com.dazzle.asklepios.repository.ProcedureSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
@@ -170,10 +171,27 @@ public class ProcedureService {
 
     @Transactional(readOnly = true)
     public Page<Procedure> findAll(Boolean isActive, Pageable pageable) {
-        LOG.debug("Fetching paged Procedures pageable={}", pageable);
-        return isActive == null
-                ? procedureRepository.findAll(pageable)
-                : procedureRepository.findByIsActive(isActive, pageable);
+        return findAll(isActive, null, null, null, null, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Procedure> findAll(
+            Boolean isActive,
+            Long facilityId,
+            ProcedureCategory categoryType,
+            String name,
+            String code,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching paged Procedures isActive={} facilityId={} categoryType={} name={} code={} pageable={}",
+                isActive, facilityId, categoryType, name, code, pageable
+        );
+        return procedureRepository.findAll(
+                ProcedureSpecifications.search(isActive, facilityId, categoryType, name, code),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)

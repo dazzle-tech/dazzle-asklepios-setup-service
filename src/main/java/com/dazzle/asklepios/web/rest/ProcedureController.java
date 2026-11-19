@@ -123,10 +123,14 @@ public class ProcedureController {
     @GetMapping("/procedure")
     public ResponseEntity<List<ProcedureResponseVM>> getAllProcedures(
             @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) ProcedureCategory categoryType,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String code,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Procedures pageable={}", pageable);
-        final Page<Procedure> page = procedureService.findAll(isActive, pageable);
+        final Page<Procedure> page = procedureService.findAll(isActive, facilityId, categoryType, name, code, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );
