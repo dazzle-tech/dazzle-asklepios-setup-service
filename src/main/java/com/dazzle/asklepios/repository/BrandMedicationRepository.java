@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface BrandMedicationRepository extends JpaRepository<BrandMedication, Long> {
+public interface BrandMedicationRepository extends JpaRepository<BrandMedication, Long>, JpaSpecificationExecutor<BrandMedication> {
     Page<BrandMedication> findByNameContainsIgnoreCase(String name, Pageable pageable);
 
     Page<BrandMedication> findByManufacturerContainsIgnoreCase(String manufacturer, Pageable pageable);

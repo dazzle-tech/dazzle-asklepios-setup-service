@@ -11,6 +11,7 @@ import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.ActiveIngredientsRepository;
 import com.dazzle.asklepios.repository.BrandMedicationActiveIngredientRepository;
 import com.dazzle.asklepios.repository.BrandMedicationRepository;
+import com.dazzle.asklepios.repository.BrandMedicationSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.UomGroupRepository;
 import com.dazzle.asklepios.repository.UomGroupUnitRepository;
@@ -242,6 +243,28 @@ public class BrandMedicationService {
         return isActive == null
                 ? brandMedicationRepository.findAll(pageable)
                 : brandMedicationRepository.findByIsActive(isActive, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<BrandMedication> findAll(
+            Boolean isActive,
+            String name,
+            String manufacturer,
+            String dosageForm,
+            String usageInstructions,
+            String roa,
+            Boolean expiresAfterOpening,
+            Boolean useSinglePatient,
+            Pageable pageable
+    ) {
+        return brandMedicationRepository.findAll(
+                BrandMedicationSpecifications.search(
+                        isActive, name, manufacturer, dosageForm, usageInstructions, roa,
+                        expiresAfterOpening, useSinglePatient
+                ),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
