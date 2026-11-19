@@ -81,9 +81,14 @@ public class DepartmentController {
      * {@code GET /department} : Get a paginated list of all Departments.
      */
     @GetMapping("/department")
-    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<DepartmentResponseVM>> getAllDepartments(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) DepartmentType type,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list Departments page={}", pageable);
-        final Page<Department> page = departmentService.findAll(pageable);
+        final Page<Department> page = departmentService.findAll(isActive, facilityId, name, type, pageable);
         LOG.debug("REST list Departments page={}", page.getContent());
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
