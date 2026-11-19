@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.DentalAction;
 import com.dazzle.asklepios.domain.enumeration.DentalActionType;
 import com.dazzle.asklepios.repository.DentalActionRepository;
+import com.dazzle.asklepios.repository.DentalActionSpecifications;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,11 @@ public class DentalActionService {
 
     public Page<DentalAction> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    public Page<DentalAction> findAll(Boolean isActive, DentalActionType type, String description, Pageable pageable) {
+        return repository.findAll(DentalActionSpecifications.search(isActive, type, description), pageable);
     }
 
     public Optional<DentalAction> findOne(Long id) {

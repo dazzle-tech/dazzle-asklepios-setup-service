@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.ReportTemplate;
 import com.dazzle.asklepios.repository.ReportTemplateRepository;
+import com.dazzle.asklepios.repository.ReportTemplateSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.reporttemplate.ReportTemplateSaveVM;
 import org.slf4j.Logger;
@@ -60,6 +61,12 @@ public class ReportTemplateService {
     @Transactional(readOnly = true)
     public Page<ReportTemplate> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<ReportTemplate> findAll(Boolean isActive, String name, Pageable pageable) {
+        return repository.findAll(ReportTemplateSpecifications.search(isActive, name), pageable);
     }
 
     @Transactional(readOnly = true)

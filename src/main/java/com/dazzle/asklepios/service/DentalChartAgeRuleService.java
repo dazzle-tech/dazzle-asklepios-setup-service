@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.DentalChartAgeRule;
 import com.dazzle.asklepios.domain.enumeration.DentalChartType;
 import com.dazzle.asklepios.domain.enumeration.ToothNumberingSystem;
 import com.dazzle.asklepios.repository.DentalChartAgeRuleRepository;
+import com.dazzle.asklepios.repository.DentalChartAgeRuleSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -111,6 +112,12 @@ public class DentalChartAgeRuleService {
     @Transactional(readOnly = true)
     public Page<DentalChartAgeRule> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<DentalChartAgeRule> findAll(Boolean isActive, String name, DentalChartType chartType, Pageable pageable) {
+        return repository.findAll(DentalChartAgeRuleSpecifications.search(isActive, name, chartType), pageable);
     }
 
     @Transactional(readOnly = true)

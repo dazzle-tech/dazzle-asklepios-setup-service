@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Analyzer;
 import com.dazzle.asklepios.repository.AnalyzerRepository;
+import com.dazzle.asklepios.repository.AnalyzerSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import org.slf4j.Logger;
@@ -98,6 +99,13 @@ public class AnalyzerService {
     public Page<Analyzer> findAll(Pageable pageable) {
         LOG.debug("Fetching paged Analyzers pageable={}", pageable);
         return analyzerRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Analyzer> findAll(Boolean isActive, String type, String code, Pageable pageable) {
+        LOG.debug("Fetching paged Analyzers isActive={} type={} code={} pageable={}", isActive, type, code, pageable);
+        return analyzerRepository.findAll(AnalyzerSpecifications.search(isActive, type, code), pageable);
     }
 
     @Transactional(readOnly = true)
