@@ -10,6 +10,7 @@ import com.dazzle.asklepios.repository.BedRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.RoomRepository;
+import com.dazzle.asklepios.repository.RoomSpecifications;
 import com.dazzle.asklepios.service.dto.room.RoomCreateDTO;
 import com.dazzle.asklepios.service.dto.room.RoomUpdateDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -238,6 +239,29 @@ public class RoomService {
         );
 
         return roomsPage;
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Room> findAll(
+            Boolean isActive,
+            String name,
+            Long facilityId,
+            String floor,
+            Long departmentId,
+            RoomType type,
+            Gender gender,
+            boolean notGenderSpecific,
+            Integer parallelCapacityValue,
+            Pageable pageable
+    ) {
+        return roomRepository.findAll(
+                RoomSpecifications.search(
+                        isActive, name, facilityId, floor, departmentId, type,
+                        gender, notGenderSpecific, parallelCapacityValue
+                ),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)

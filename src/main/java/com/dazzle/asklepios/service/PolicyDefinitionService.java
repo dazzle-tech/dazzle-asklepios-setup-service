@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.PolicyDefinition;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PolicyDefinitionRepository;
+import com.dazzle.asklepios.repository.PolicyDefinitionSpecifications;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionCreateDTO;
 import com.dazzle.asklepios.service.dto.PolicyDefinition.PolicyDefinitionUpdateDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -101,6 +102,13 @@ public class PolicyDefinitionService {
     public Page<PolicyDefinition> findAll(Pageable pageable) {
         LOG.debug("Request to get all PolicyDefinition");
        return policyDefinitionRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<PolicyDefinition> findAll(Boolean isActive, Long facilityId, String code, String name, Pageable pageable) {
+        return policyDefinitionRepository.findAll(
+                PolicyDefinitionSpecifications.search(isActive, facilityId, code, name), pageable);
     }
     @Transactional(readOnly = true)
     public Page<PolicyDefinition> findAllActive(Pageable pageable) {

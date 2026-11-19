@@ -65,9 +65,13 @@ public class PolicyDefinitionController {
 
     @GetMapping("/policy-definition")
     public ResponseEntity<List<PolicyDefinitionResponseVM>> getAllPolicyDefinition(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String name,
             @ParameterObject Pageable pageable) {
         LOG.debug("REST get all policy definition");
-        Page<PolicyDefinition> page = policyDefinitionService.findAll(pageable);
+        Page<PolicyDefinition> page = policyDefinitionService.findAll(isActive, facilityId, code, name, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);

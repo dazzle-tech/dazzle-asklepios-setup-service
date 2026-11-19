@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.CatalogDiagnosticTestRepository;
 import com.dazzle.asklepios.repository.CatalogRepository;
+import com.dazzle.asklepios.repository.CatalogSpecifications;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
@@ -158,6 +159,12 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Page<Catalog> findAll(Pageable pageable) {
         return catalogRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Catalog> findAll(String name, TestType type, Long departmentId, Pageable pageable) {
+        return catalogRepository.findAll(CatalogSpecifications.search(name, type, departmentId), pageable);
     }
 
     @Transactional(readOnly = true)
