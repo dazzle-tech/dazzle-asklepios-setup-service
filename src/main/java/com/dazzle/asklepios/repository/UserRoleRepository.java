@@ -11,6 +11,8 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRole.Use
 
     List<UserRole> findByRole_FacilityId(Long facilityId);
 
+    boolean existsByRole_FacilityIdAndUser_Id(Long facilityId, Long userId);
+
     List<UserRole> findByRole_FacilityIdAndUser_LoginContainingIgnoreCaseOrRole_FacilityIdAndUser_FirstNameContainingIgnoreCaseOrRole_FacilityIdAndUser_LastNameContainingIgnoreCaseOrRole_FacilityIdAndUser_EmailContainingIgnoreCase(
             Long facilityId,
             String login,

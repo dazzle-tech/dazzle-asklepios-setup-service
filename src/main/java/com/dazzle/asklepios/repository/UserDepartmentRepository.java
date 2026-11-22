@@ -57,6 +57,8 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findByDepartment_Facility_Id(Long facilityId);
 
+    boolean existsByDepartment_Facility_IdAndUser_IdAndIsActiveTrue(Long facilityId, Long userId);
+
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrue(Long departmentId);
 
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(Long departmentId, JobRole jobRole);
