@@ -147,11 +147,16 @@ public class NphiesPayerController {
 
     @GetMapping("/nphies-payers")
     public ResponseEntity<List<NphiesPayerResponseVM>> getAllNphiesPayers(
+            // Optional filters combined with AND
+            @RequestParam(required = false) String nphiesId,
+            @RequestParam(required = false) String nameEn,
+            @RequestParam(required = false) String nameAr,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list ALL NPHIES Payers pageable={}", pageable);
 
-        Page<NphiesPayer> page = nphiesPayerService.findAll(pageable);
+        Page<NphiesPayer> page = nphiesPayerService.findAll(nphiesId, nameEn, nameAr, isActive, pageable);
         return pagedResponse(page);
     }
 
