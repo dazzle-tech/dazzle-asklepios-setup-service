@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.DiscountRepository;
+import com.dazzle.asklepios.repository.DiscountSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.dto.DiscountDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -465,6 +466,38 @@ public class DiscountService {
 
         return discountRepository.findAllByFacilityId(
                 facilityId,
+                pageable
+        );
+    }
+
+    /** Discounts of a facility with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<Discount> findAllByFacilityId(
+            Long facilityId,
+            String code,
+            String name,
+            DiscountType discountType,
+            BigDecimal value,
+            DiscountApplicableOn applicableOn,
+            Boolean requiresApproval,
+            Boolean isDefault,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository.findAll(
+                DiscountSpecifications.search(
+                        facilityId,
+                        code,
+                        name,
+                        discountType,
+                        value,
+                        applicableOn,
+                        requiresApproval,
+                        isDefault,
+                        active
+                ),
                 pageable
         );
     }
