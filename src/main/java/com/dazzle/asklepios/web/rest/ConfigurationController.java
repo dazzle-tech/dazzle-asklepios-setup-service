@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.Configuration;
 import com.dazzle.asklepios.domain.User;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationKeys;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
+import com.dazzle.asklepios.domain.enumeration.ConfigurationScope;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
 import com.dazzle.asklepios.security.AuthoritiesConstants;
 import com.dazzle.asklepios.service.ConfigurationService;
@@ -207,10 +208,23 @@ public class ConfigurationController {
      */
     @GetMapping("/configuration")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<List<Configuration>> getAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<Configuration>> getAll(
+            // Optional filters combined with AND
+            @RequestParam(required = false) ConfigurationScope scopeType,
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) ConfigurationKeys key,
+            @RequestParam(required = false) ConfigurationValueType valueType,
+            @RequestParam(required = false) String value,
+            @RequestParam(required = false) ConfigurationReferenceType referenceType,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST get all Configuration");
 
-        Page<Configuration> page = configurationService.findAll(pageable);
+        Page<Configuration> page = configurationService.findAll(
+                scopeType, facilityId, key, valueType, value, referenceType, description, isActive, pageable
+        );
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),

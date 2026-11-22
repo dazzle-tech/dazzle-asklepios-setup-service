@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.ConfigurationReferenceType;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationScope;
 import com.dazzle.asklepios.domain.enumeration.ConfigurationValueType;
 import com.dazzle.asklepios.repository.ConfigurationRepository;
+import com.dazzle.asklepios.repository.ConfigurationSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.UserDepartmentRepository;
 import com.dazzle.asklepios.repository.UserRepository;
@@ -245,6 +246,24 @@ public class ConfigurationService {
     public Page<Configuration> findAll(Pageable pageable) {
         LOG.debug("Request to get all Configuration ");
         return configurationRepository.findAll(pageable);
+    }
+
+    /** List with optional filters combined with AND; nulls and blanks are ignored. */
+    public Page<Configuration> findAll(
+            ConfigurationScope scopeType,
+            Long facilityId,
+            ConfigurationKeys key,
+            ConfigurationValueType valueType,
+            String value,
+            ConfigurationReferenceType referenceType,
+            String description,
+            Boolean isActive,
+            Pageable pageable
+    ) {
+        return configurationRepository.findAll(
+                ConfigurationSpecifications.search(scopeType, facilityId, key, valueType, value, referenceType, description, isActive),
+                pageable
+        );
     }
 
     public Page<Configuration> quickSearch(String searchText, Pageable pageable) {
