@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.TaxType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ import java.util.Optional;
 
 @Repository
 public interface TaxRepository
-        extends JpaRepository<Tax, Long> {
+        extends JpaRepository<Tax, Long>, JpaSpecificationExecutor<Tax> {
 
     Page<Tax> findAllByFacilityId(
             Long facilityId,

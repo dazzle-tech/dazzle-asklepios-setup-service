@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -177,12 +178,36 @@ public class TaxController {
             @NotNull
             Long facilityId,
 
+            // Optional filters combined with AND
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) TaxType taxType,
+            @RequestParam(required = false) BigDecimal value,
+            @RequestParam(required = false) TaxCalculationType calculationType,
+            @RequestParam(required = false) TaxApplicableOn applicableOn,
+            @RequestParam(required = false) TaxCitizenCategory citizenCategory,
+            @RequestParam(required = false) Boolean applyOnPatientCopayment,
+            @RequestParam(required = false) Boolean applyOnClaimShare,
+            @RequestParam(required = false) Boolean isDefault,
+            @RequestParam(required = false) Boolean active,
+
             @ParameterObject
             Pageable pageable
     ) {
         Page<Tax> page =
                 taxService.findAllByFacilityId(
                         facilityId,
+                        code,
+                        name,
+                        taxType,
+                        value,
+                        calculationType,
+                        applicableOn,
+                        citizenCategory,
+                        applyOnPatientCopayment,
+                        applyOnClaimShare,
+                        isDefault,
+                        active,
                         pageable
                 );
 
