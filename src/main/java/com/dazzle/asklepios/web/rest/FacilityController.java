@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -86,9 +87,19 @@ public class FacilityController {
      * @return the {@link ResponseEntity} with status {@code 200 (OK)} and the list of all facilities.
      */
     @GetMapping
-    public ResponseEntity<List<FacilityResponseVM>> getAllFacilities() {
+    public ResponseEntity<List<FacilityResponseVM>> getAllFacilities(
+            // Optional filters combined with AND; without any the full list is returned as before
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) com.dazzle.asklepios.domain.enumeration.FacilityType type,
+            @RequestParam(required = false) String emailAddress,
+            @RequestParam(required = false) Boolean isActive
+    ) {
         LOG.debug("REST request to get all Facilities (cached)");
-        List<FacilityResponseVM> facilities = facilityService.findAll();
+        boolean noFilters = isBlank(code) && isBlank(name) && type == null && isBlank(emailAddress) && isActive == null;
+        List<FacilityResponseVM> facilities = noFilters
+                ? facilityService.findAll()
+                : facilityService.search(code, name, type, emailAddress, isActive);
         return ResponseEntity.ok(facilities);
     }
 
@@ -137,4 +148,9 @@ public class FacilityController {
 
         return ResponseEntity.ok(facilityService.findAllByIds(ids));
     }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
 }
+

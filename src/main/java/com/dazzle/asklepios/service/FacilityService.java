@@ -11,6 +11,7 @@ import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.FacilitySpecifications;
 import com.dazzle.asklepios.service.dto.workingDay.WorkingDayJson;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.facility.FacilityCreateVM;
@@ -153,6 +154,21 @@ public class FacilityService {
     public List<FacilityResponseVM> findAll() {
         LOG.debug("Request to get all Facilities");
         return facilityRepository.findAll()
+                .stream()
+                .map(FacilityResponseVM::ofEntity)
+                .collect(Collectors.toList());
+    }
+
+    /** Facilities with optional filters combined with AND; nulls and blanks are ignored. */
+    @Transactional(readOnly = true)
+    public List<FacilityResponseVM> search(
+            String code,
+            String name,
+            com.dazzle.asklepios.domain.enumeration.FacilityType type,
+            String emailAddress,
+            Boolean isActive
+    ) {
+        return facilityRepository.findAll(FacilitySpecifications.search(code, name, type, emailAddress, isActive))
                 .stream()
                 .map(FacilityResponseVM::ofEntity)
                 .collect(Collectors.toList());
