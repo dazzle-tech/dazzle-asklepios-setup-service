@@ -210,7 +210,8 @@ public enum Screen {
     MY_TASKS,
     TEAM_TASKS,
     ALL_TASKS,
-    TASK_CALENDAR;
+    TASK_CALENDAR,
+    PACKAGE_SETUP;
 
 
     @JsonCreator
