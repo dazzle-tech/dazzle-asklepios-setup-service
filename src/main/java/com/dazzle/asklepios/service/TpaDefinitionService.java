@@ -9,6 +9,7 @@ import com.dazzle.asklepios.repository.CountryDistrictRepository;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.TpaDefinitionRepository;
+import com.dazzle.asklepios.repository.TpaDefinitionSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaDefinitionResponseVM;
 import com.dazzle.asklepios.web.rest.vm.tpadefinition.TpaDefinitionSaveVM;
@@ -168,6 +169,21 @@ public class TpaDefinitionService {
     @Transactional(readOnly = true)
     public Page<TpaDefinitionResponseVM> findAll(Pageable pageable) {
         return toResponsePage(tpaDefinitionRepository.findAll(pageable));
+    }
+
+    /** List with optional filters combined with AND; nulls and blanks are ignored. */
+    @Transactional(readOnly = true)
+    public Page<TpaDefinitionResponseVM> findAll(
+            String tpaCode,
+            String name,
+            GuarantorType guarantorType,
+            Boolean isActive,
+            Pageable pageable
+    ) {
+        return toResponsePage(tpaDefinitionRepository.findAll(
+                TpaDefinitionSpecifications.search(tpaCode, name, guarantorType, isActive),
+                pageable
+        ));
     }
 
     @Transactional(readOnly = true)

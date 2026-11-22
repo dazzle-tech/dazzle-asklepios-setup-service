@@ -5,7 +5,9 @@ import com.dazzle.asklepios.domain.TpaDefinition;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,11 +17,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TpaDefinitionRepository extends JpaRepository<TpaDefinition, Long> {
+public interface TpaDefinitionRepository extends JpaRepository<TpaDefinition, Long>, JpaSpecificationExecutor<TpaDefinition> {
 
     @Override
     @EntityGraph(attributePaths = {"country", "city"})
     Page<TpaDefinition> findAll(Pageable pageable);
+
+    /** Filtered list; loads the same relations as the plain list */
+    @Override
+    @EntityGraph(attributePaths = {"country", "city"})
+    Page<TpaDefinition> findAll(Specification<TpaDefinition> spec, Pageable pageable);
 
     @Override
     @EntityGraph(attributePaths = {"country", "city", "insuranceCompanies"})

@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest;
 
+import com.dazzle.asklepios.domain.enumeration.GuarantorType;
 import com.dazzle.asklepios.domain.TpaDefinition;
 import com.dazzle.asklepios.service.TpaDefinitionService;
 import com.dazzle.asklepios.service.TpaResolutionService;
@@ -98,9 +99,16 @@ public class TpaDefinitionController {
     }
 
     @GetMapping("/tpa-definitions")
-    public ResponseEntity<List<TpaDefinitionResponseVM>> getAll(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<TpaDefinitionResponseVM>> getAll(
+            // Optional filters combined with AND
+            @RequestParam(required = false) String tpaCode,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) GuarantorType guarantorType,
+            @RequestParam(required = false) Boolean isActive,
+            @ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST list ALL TPAs pageable={}", pageable);
-        return pagedResponse(tpaDefinitionService.findAll(pageable));
+        return pagedResponse(tpaDefinitionService.findAll(tpaCode, name, guarantorType, isActive, pageable));
     }
 
     @GetMapping("/tpa-definitions/active")
