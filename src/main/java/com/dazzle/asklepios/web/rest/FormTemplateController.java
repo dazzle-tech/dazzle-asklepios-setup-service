@@ -72,9 +72,8 @@ public class FormTemplateController {
             @RequestParam(required = false) String description,
             Pageable pageable
     ) {
-        Page<FormTemplateResponseVM> page = (description != null && !description.isBlank())
-                ? service.listByDescription(description, pageable)
-                : service.list(facilityId, departmentId, q, pageable);
+        // Optional filters combined with AND (q = template name contains)
+        Page<FormTemplateResponseVM> page = service.search(facilityId, departmentId, q, description, pageable);
 
         LOG.debug("REST request to list FormTemplates: facilityId={}, departmentId={}, page={}, size={}, sort={}",
                 facilityId, departmentId,
