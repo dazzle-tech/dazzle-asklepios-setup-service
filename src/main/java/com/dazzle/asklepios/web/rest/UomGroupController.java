@@ -49,12 +49,13 @@ public class UomGroupController {
         return service.updateGroup(id, body);
     }
     @GetMapping
-    public ResponseEntity<List<UomGroup>> listGroups(@RequestParam(required = false) String name, @ParameterObject Pageable pageable) {
-         Page<UomGroup> page;
-        if (name != null && !name.isBlank())
-            page = service.searchByName(name.trim(), pageable);
-        else
-            page = service.listGroups(pageable);
+    public ResponseEntity<List<UomGroup>> listGroups(
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String description,
+        @ParameterObject Pageable pageable
+    ) {
+        // Optional filters combined with AND
+        Page<UomGroup> page = service.listGroups(name, description, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().toList(), headers, HttpStatus.OK);
     }

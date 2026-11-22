@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.UomGroupsRelation;
 import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.dazzle.asklepios.repository.UomGroupRelationRepository;
 import com.dazzle.asklepios.repository.UomGroupRepository;
+import com.dazzle.asklepios.repository.UomGroupSpecifications;
 import com.dazzle.asklepios.repository.UomGroupUnitRepository;
 import com.dazzle.asklepios.web.rest.vm.uom.UomGroupVM;
 import org.slf4j.Logger;
@@ -43,6 +44,10 @@ public class UomGroupService {
     public UomGroup createGroup(UomGroup g) { return groupRepo.save(g); }
     public UomGroup getGroup(Long id) { return groupRepo.findById(id).orElseThrow(); }
     public Page<UomGroup> listGroups(Pageable pageable) { return groupRepo.findAll(pageable); }
+    /** List with optional name / description filters combined with AND; blanks are ignored. */
+    public Page<UomGroup> listGroups(String name, String description, Pageable pageable) {
+        return groupRepo.findAll(UomGroupSpecifications.search(name, description), pageable);
+    }
     public void deleteGroup(Long id) { groupRepo.deleteById(id); }
 
     public Optional<UomGroup> updateGroup(Long id, UomGroupVM vm) {

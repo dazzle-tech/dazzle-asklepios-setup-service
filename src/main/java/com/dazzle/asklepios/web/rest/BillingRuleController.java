@@ -148,6 +148,17 @@ public class BillingRuleController {
 
     @GetMapping("/billing-rule")
     public ResponseEntity<List<BillingRule>> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) BillingItemTypes billingItemType,
+            @RequestParam(required = false) BillingRulePaymentType paymentType,
+            @RequestParam(required = false) BillingTrigger billingTrigger,
+            @RequestParam(required = false) Boolean isDefault,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant createdFrom,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant createdTo,
             @ParameterObject
             Pageable pageable
     ) {
@@ -156,8 +167,9 @@ public class BillingRuleController {
                 pageable
         );
 
+        // Optional filters combined with AND
         Page<BillingRule> page =
-                billingRuleService.findAll(pageable);
+                billingRuleService.findAll(name, billingItemType, paymentType, billingTrigger, isDefault, createdFrom, createdTo, pageable);
 
         HttpHeaders headers =
                 PaginationUtil.generatePaginationHttpHeaders(

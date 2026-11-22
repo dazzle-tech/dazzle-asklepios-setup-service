@@ -7,13 +7,14 @@ import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
 import java.util.Optional;
 
 @Repository
-public interface BillingRuleRepository extends JpaRepository<BillingRule, Long> {
+public interface BillingRuleRepository extends JpaRepository<BillingRule, Long>, JpaSpecificationExecutor<BillingRule> {
 
     Page<BillingRule> findAllByOrderByNameAsc(Pageable pageable);
 

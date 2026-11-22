@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -61,8 +62,16 @@ public class PrescriptionInstructionController {
 
     /** GET all (paged) */
     @GetMapping("/prescription-instruction")
-    public ResponseEntity<List<PrescriptionInstruction>> getAll(@ParameterObject Pageable pageable) {
-        Page<PrescriptionInstruction> page = service.findAll(pageable);
+    public ResponseEntity<List<PrescriptionInstruction>> getAll(
+            @RequestParam(required = false) AgeGroupType category,
+            @RequestParam(required = false) BigDecimal dose,
+            @RequestParam(required = false) UOM unit,
+            @RequestParam(required = false) MedRoa rout,
+            @RequestParam(required = false) MedFrequency frequency,
+            @ParameterObject Pageable pageable
+    ) {
+        // Optional filters combined with AND
+        Page<PrescriptionInstruction> page = service.findAll(category, dose, unit, rout, frequency, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);

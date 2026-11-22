@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingRulePaymentType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingTrigger;
 import com.dazzle.asklepios.repository.BillingRuleRepository;
+import com.dazzle.asklepios.repository.BillingRuleSpecifications;
 import com.dazzle.asklepios.service.dto.BillingRuleDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -12,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -331,6 +334,41 @@ public class BillingRuleService {
 
         return billingRuleRepository
                 .findAllByOrderByNameAsc(pageable);
+    }
+
+    /**
+     * List with optional filters combined with AND; nulls are ignored.
+     * Keeps the plain list order: by name first, then the requested sort.
+     */
+    @Transactional(readOnly = true)
+    public Page<BillingRule> findAll(
+            String name,
+            BillingItemTypes billingItemType,
+            BillingRulePaymentType paymentType,
+            BillingTrigger billingTrigger,
+            Boolean isDefault,
+            Instant createdFrom,
+            Instant createdTo,
+            Pageable pageable
+    ) {
+        if (pageable == null) {
+            throw new BadRequestAlertException(
+                    "Pageable is required",
+                    ENTITY_NAME,
+                    "pageable.required"
+            );
+        }
+
+        Pageable byName = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by("name").ascending().and(pageable.getSort())
+        );
+
+        return billingRuleRepository.findAll(
+                BillingRuleSpecifications.search(name, billingItemType, paymentType, billingTrigger, isDefault, createdFrom, createdTo),
+                byName
+        );
     }
 
     @Transactional(readOnly = true)
