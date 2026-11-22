@@ -144,10 +144,22 @@ public class PriceListSetupController {
     @GetMapping("/price-list-setups")
     public ResponseEntity<List<PriceListSetupDTO>>
     getAllPriceListSetups(
+            // Optional filters combined with AND
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) PriceListSetupType type,
+            @RequestParam(required = false) Long payerId,
+            @RequestParam(required = false) Integer versionNumber,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate effectiveFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate effectiveTo,
+            @RequestParam(required = false) Currency currency,
+            @RequestParam(required = false) PriceListSetupStatus status,
             @ParameterObject Pageable pageable
     ) {
         Page<PriceListSetupDTO> page =
-                priceListSetupService.findAll(pageable);
+                priceListSetupService.findAll(
+                        facilityId, name, type, payerId, versionNumber, effectiveFrom, effectiveTo, currency, status, pageable
+                );
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),

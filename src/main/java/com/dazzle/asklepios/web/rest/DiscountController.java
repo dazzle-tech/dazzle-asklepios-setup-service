@@ -175,12 +175,30 @@ public class DiscountController {
             @NotNull
             Long facilityId,
 
+            // Optional filters combined with AND
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) DiscountType discountType,
+            @RequestParam(required = false) BigDecimal value,
+            @RequestParam(required = false) DiscountApplicableOn applicableOn,
+            @RequestParam(required = false) Boolean requiresApproval,
+            @RequestParam(required = false) Boolean isDefault,
+            @RequestParam(required = false) Boolean active,
+
             @ParameterObject
             Pageable pageable
     ) {
         Page<Discount> page =
                 discountService.findAllByFacilityId(
                         facilityId,
+                        code,
+                        name,
+                        discountType,
+                        value,
+                        applicableOn,
+                        requiresApproval,
+                        isDefault,
+                        active,
                         pageable
                 );
 

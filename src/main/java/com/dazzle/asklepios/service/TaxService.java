@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.TaxRepository;
+import com.dazzle.asklepios.repository.TaxSpecifications;
 import com.dazzle.asklepios.service.dto.TaxDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
@@ -345,6 +346,44 @@ public class TaxService {
 
         return taxRepository.findAllByFacilityId(
                 facilityId,
+                pageable
+        );
+    }
+
+    /** Taxes of a facility with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<Tax> findAllByFacilityId(
+            Long facilityId,
+            String code,
+            String name,
+            TaxType taxType,
+            BigDecimal value,
+            TaxCalculationType calculationType,
+            TaxApplicableOn applicableOn,
+            TaxCitizenCategory citizenCategory,
+            Boolean applyOnPatientCopayment,
+            Boolean applyOnClaimShare,
+            Boolean isDefault,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository.findAll(
+                TaxSpecifications.search(
+                        facilityId,
+                        code,
+                        name,
+                        taxType,
+                        value,
+                        calculationType,
+                        applicableOn,
+                        citizenCategory,
+                        applyOnPatientCopayment,
+                        applyOnClaimShare,
+                        isDefault,
+                        active
+                ),
                 pageable
         );
     }

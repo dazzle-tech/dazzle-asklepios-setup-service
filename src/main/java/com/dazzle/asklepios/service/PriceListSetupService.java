@@ -17,6 +17,7 @@ import com.dazzle.asklepios.repository.NphiesPayerRepository;
 import com.dazzle.asklepios.repository.PayorRepository;
 import com.dazzle.asklepios.repository.PriceListSetupItemRepository;
 import com.dazzle.asklepios.repository.PriceListSetupRepository;
+import com.dazzle.asklepios.repository.PriceListSetupSpecifications;
 import com.dazzle.asklepios.repository.TaxRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
 import com.dazzle.asklepios.service.dto.BillingPricingResolutionDTO;
@@ -217,6 +218,28 @@ public class PriceListSetupService {
     @Transactional(readOnly = true)
     public Page<PriceListSetupDTO> findAll(Pageable pageable) {
         return priceListSetupRepository.findAll(pageable).map(this::toDTO);
+    }
+
+    /** List with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<PriceListSetupDTO> findAll(
+            Long facilityId,
+            String name,
+            PriceListSetupType type,
+            Long payerId,
+            Integer versionNumber,
+            LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            Currency currency,
+            PriceListSetupStatus status,
+            Pageable pageable
+    ) {
+        return priceListSetupRepository.findAll(
+                PriceListSetupSpecifications.search(
+                        facilityId, name, type, payerId, versionNumber, effectiveFrom, effectiveTo, currency, status
+                ),
+                pageable
+        ).map(this::toDTO);
     }
 
     @Transactional(readOnly = true)

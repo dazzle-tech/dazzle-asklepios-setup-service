@@ -10,6 +10,7 @@ import com.dazzle.asklepios.repository.CountryDistrictRepository;
 import com.dazzle.asklepios.repository.CountryRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.NphiesPayerRepository;
+import com.dazzle.asklepios.repository.NphiesPayerSpecifications;
 import com.dazzle.asklepios.repository.TpaDefinitionRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.nphiespayer.NphiesPayerSaveVM;
@@ -245,6 +246,17 @@ public class NphiesPayerService {
                 payersPage.getTotalPages()
         );
 
+        return payersPage;
+    }
+
+    /** List with optional filters combined with AND; nulls and blanks are ignored. */
+    @Transactional(readOnly = true)
+    public Page<NphiesPayer> findAll(String nphiesId, String nameEn, String nameAr, Boolean isActive, Pageable pageable) {
+        Page<NphiesPayer> payersPage = nphiesPayerRepository.findAll(
+                NphiesPayerSpecifications.search(nphiesId, nameEn, nameAr, isActive),
+                pageable
+        );
+        attachLinks(payersPage.getContent());
         return payersPage;
     }
 
