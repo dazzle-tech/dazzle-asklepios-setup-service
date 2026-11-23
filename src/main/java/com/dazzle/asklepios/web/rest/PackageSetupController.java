@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -86,12 +85,6 @@ public class PackageSetupController {
     @PatchMapping("/packages/{id}/toggle-active")
     public ResponseEntity<PackageSetupResponseVM> toggleActive(@PathVariable Long id) {
         return ResponseEntity.ok(packageSetupService.toggleActive(id));
-    }
-
-    @DeleteMapping("/packages/{id}")
-    public ResponseEntity<Void> deletePackage(@PathVariable Long id) {
-        packageSetupService.delete(id);
-        return ResponseEntity.noContent().build();
     }
 
     /** Active items of one type that can be added to a package, searched by name or code. */

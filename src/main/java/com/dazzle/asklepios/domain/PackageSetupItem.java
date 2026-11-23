@@ -51,8 +51,8 @@ public class PackageSetupItem extends AbstractAuditingEntity<Long> implements Se
     @Column(name = "item_type", nullable = false, length = 50)
     private PriceListItemType itemType;
 
-    @NotNull
-    @Column(name = "source_id", nullable = false)
+    /** Empty for a category line (a whole item type). */
+    @Column(name = "source_id")
     private Long sourceId;
 
     @Column(name = "item_code", length = 255)
@@ -72,4 +72,17 @@ public class PackageSetupItem extends AbstractAuditingEntity<Long> implements Se
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;
+
+    /** A whole item type (e.g. any LABORATORY test): quantity is how many of that type are covered. */
+    @NotNull
+    @Column(name = "is_category", nullable = false)
+    @Builder.Default
+    private Boolean isCategory = false;
+
+    /** Category lines only: how many times the same item can be counted; empty = no limit. */
+    @Column(name = "max_repeat")
+    private Integer maxRepeat;
+
+    @Column(name = "discount_percent", precision = 5, scale = 2)
+    private java.math.BigDecimal discountPercent;
 }
