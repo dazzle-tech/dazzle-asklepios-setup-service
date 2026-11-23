@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
- * A package: one fixed price for a set of items, each with a quantity.
+ * A package: a set of items, each with a quantity, and an optional fixed price.
  * Named PackageSetup because "Package" clashes with java.lang.Package.
  */
 @Entity
@@ -58,7 +58,7 @@ public class PackageSetup extends AbstractAuditingEntity<Long> implements Serial
 
     @NotNull
     @DecimalMin("0.0000")
-    @Column(name = "price", nullable = false, precision = 19, scale = 4)
+    @Column(name = "price", precision = 19, scale = 4)
     private BigDecimal price;
 
     @NotNull

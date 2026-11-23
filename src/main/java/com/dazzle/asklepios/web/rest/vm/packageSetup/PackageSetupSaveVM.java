@@ -18,7 +18,7 @@ public record PackageSetupSaveVM(
         @NotBlank @Size(max = 50) String code,
         @NotBlank @Size(max = 255) String name,
         @Size(max = 1000) String description,
-        @NotNull @DecimalMin("0.0000") BigDecimal price,
+        @DecimalMin("0.0000") BigDecimal price,
         Boolean isActive,
         @NotEmpty List<@Valid PackageSetupItemVM> items
 ) implements Serializable {}

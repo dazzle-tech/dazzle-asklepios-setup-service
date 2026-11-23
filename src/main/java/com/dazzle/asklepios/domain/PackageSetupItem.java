@@ -66,4 +66,10 @@ public class PackageSetupItem extends AbstractAuditingEntity<Long> implements Se
     @Column(name = "quantity", nullable = false)
     @Builder.Default
     private Integer quantity = 1;
+
+    /** Inactive items stay in the setup but are left out of packages given to patients. */
+    @NotNull
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 }

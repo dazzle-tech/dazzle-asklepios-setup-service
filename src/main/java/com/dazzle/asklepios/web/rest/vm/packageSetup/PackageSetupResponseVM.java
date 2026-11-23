@@ -15,6 +15,7 @@ public record PackageSetupResponseVM(
         BigDecimal price,
         Boolean isActive,
         Integer itemCount,
+        Integer activeItemCount,
         List<PackageSetupItemVM> items
 ) implements Serializable {
 
@@ -28,6 +29,7 @@ public record PackageSetupResponseVM(
                 entity.getPrice(),
                 entity.getIsActive(),
                 lines.size(),
+                (int) lines.stream().filter(l -> !Boolean.FALSE.equals(l.isActive())).count(),
                 lines
         );
     }

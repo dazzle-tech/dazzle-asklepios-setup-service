@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 
-/** One package line. On save only itemType, sourceId and quantity are used; code and name come from the source. */
+/** One package line. On save only itemType, sourceId, quantity and isActive are used; code and name come from the source. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PackageSetupItemVM(
         Long id,
@@ -16,7 +16,8 @@ public record PackageSetupItemVM(
         @NotNull Long sourceId,
         String itemCode,
         String itemName,
-        @NotNull @Min(1) Integer quantity
+        @NotNull @Min(1) Integer quantity,
+        Boolean isActive
 ) implements Serializable {
 
     public static PackageSetupItemVM ofEntity(PackageSetupItem entity) {
@@ -26,7 +27,8 @@ public record PackageSetupItemVM(
                 entity.getSourceId(),
                 entity.getItemCode(),
                 entity.getItemName(),
-                entity.getQuantity()
+                entity.getQuantity(),
+                entity.getIsActive()
         );
     }
 }

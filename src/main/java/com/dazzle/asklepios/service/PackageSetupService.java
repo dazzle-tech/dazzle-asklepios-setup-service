@@ -152,6 +152,9 @@ public class PackageSetupService {
             }
             idsByType.computeIfAbsent(line.itemType(), t -> new HashSet<>()).add(line.sourceId());
         }
+        if (lines.stream().allMatch(l -> Boolean.FALSE.equals(l.isActive()))) {
+            throw new BadRequestAlertException("A package needs at least one active item", ENTITY, "items.noneActive");
+        }
 
         Map<PriceListItemType, Map<Long, PackageItemLookupVM>> found = new EnumMap<>(PriceListItemType.class);
         idsByType.forEach((type, ids) -> found.put(type, packageItemLookupService.findByIds(type, ids)));
@@ -170,6 +173,7 @@ public class PackageSetupService {
                     .itemCode(source.code())
                     .itemName(source.name())
                     .quantity(line.quantity())
+                    .isActive(!Boolean.FALSE.equals(line.isActive()))
                     .build());
         }
         return packageSetupItemRepository.saveAllAndFlush(toSave);
