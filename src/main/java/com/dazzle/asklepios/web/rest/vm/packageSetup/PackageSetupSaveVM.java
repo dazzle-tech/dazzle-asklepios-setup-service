@@ -25,6 +25,7 @@ public record PackageSetupSaveVM(
         Boolean isActive,
         LocalDate validFrom,
         LocalDate validTo,
+        Long discountId,
         Boolean allDepartments,
         List<Long> departmentIds,
         @NotEmpty List<@Valid PackageSetupItemVM> items

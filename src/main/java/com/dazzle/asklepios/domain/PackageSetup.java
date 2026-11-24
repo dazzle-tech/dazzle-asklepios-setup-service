@@ -67,6 +67,10 @@ public class PackageSetup extends AbstractAuditingEntity<Long> implements Serial
     @Column(name = "valid_to")
     private java.time.LocalDate validTo;
 
+    /** Optional link to a discount setup record. */
+    @Column(name = "discount_id")
+    private Long discountId;
+
     /** true: any department; false: only the departments in package_setup_department. */
     @NotNull
     @Column(name = "all_departments", nullable = false)

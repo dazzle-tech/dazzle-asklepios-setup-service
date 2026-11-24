@@ -26,7 +26,8 @@ public record PackageSetupItemVM(
         Boolean isActive,
         Boolean isCategory,
         @Min(1) Integer maxRepeat,
-        @DecimalMin("0") @DecimalMax("100") BigDecimal discountPercent
+        @DecimalMin("0") @DecimalMax("100") BigDecimal discountPercent,
+        Long discountId
 ) implements Serializable {
 
     public static PackageSetupItemVM ofEntity(PackageSetupItem entity) {
@@ -40,7 +41,8 @@ public record PackageSetupItemVM(
                 entity.getIsActive(),
                 entity.getIsCategory(),
                 entity.getMaxRepeat(),
-                entity.getDiscountPercent()
+                entity.getDiscountPercent(),
+                entity.getDiscountId()
         );
     }
 }

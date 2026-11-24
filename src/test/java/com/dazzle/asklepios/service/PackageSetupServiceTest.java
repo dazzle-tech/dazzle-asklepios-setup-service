@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.PackageSetup;
 import com.dazzle.asklepios.domain.PackageSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.dazzle.asklepios.repository.DiscountRepository;
 import com.dazzle.asklepios.repository.PackageSetupDepartmentRepository;
 import com.dazzle.asklepios.repository.PackageSetupItemRepository;
 import com.dazzle.asklepios.repository.PackageSetupRepository;
@@ -43,6 +44,7 @@ class PackageSetupServiceTest {
     @Mock private PackageSetupItemRepository packageSetupItemRepository;
     @Mock private PackageItemLookupService packageItemLookupService;
     @Mock private PackageSetupDepartmentRepository packageSetupDepartmentRepository;
+    @Mock private DiscountRepository discountRepository;
 
     private PackageSetupService service;
     private final List<PackageSetupItem> savedItems = new ArrayList<>();
@@ -52,7 +54,7 @@ class PackageSetupServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new PackageSetupService(packageSetupRepository, packageSetupItemRepository,
-                packageItemLookupService, packageSetupDepartmentRepository);
+                packageItemLookupService, packageSetupDepartmentRepository, discountRepository);
 
         when(packageSetupRepository.existsByCodeIgnoreCase(anyString())).thenReturn(false);
         when(packageSetupRepository.saveAndFlush(any())).thenAnswer(i -> {
@@ -77,17 +79,17 @@ class PackageSetupServiceTest {
     }
 
     private static PackageSetupItemVM item(PriceListItemType type, Long sourceId, int qty) {
-        return new PackageSetupItemVM(null, type, sourceId, null, null, qty, true, false, null, null);
+        return new PackageSetupItemVM(null, type, sourceId, null, null, qty, true, false, null, null, null);
     }
 
     private static PackageSetupItemVM category(PriceListItemType type, int qty, Integer repeat, String discount) {
         return new PackageSetupItemVM(null, type, null, null, null, qty, true, true, repeat,
-                discount == null ? null : new BigDecimal(discount));
+                discount == null ? null : new BigDecimal(discount), null);
     }
 
     private static PackageSetupSaveVM pkg(BigDecimal price, LocalDate from, LocalDate to, Boolean allDepartments,
                                           List<Long> departments, List<PackageSetupItemVM> items) {
-        return new PackageSetupSaveVM("PKG-T", "Test", null, price, true, from, to, allDepartments, departments, items);
+        return new PackageSetupSaveVM("PKG-T", "Test", null, price, true, from, to, null, allDepartments, departments, items);
     }
 
     @Test
@@ -172,7 +174,7 @@ class PackageSetupServiceTest {
 
     @Test
     void packageWithOnlyInactiveItemsIsRefused() {
-        PackageSetupItemVM off = new PackageSetupItemVM(null, PriceListItemType.SERVICE, 1501L, null, null, 1, false, false, null, null);
+        PackageSetupItemVM off = new PackageSetupItemVM(null, PriceListItemType.SERVICE, 1501L, null, null, 1, false, false, null, null, null);
 
         assertThatThrownBy(() -> service.create(pkg(null, null, null, true, null, List.of(off))))
                 .isInstanceOf(BadRequestAlertException.class).hasMessageContaining("active item");

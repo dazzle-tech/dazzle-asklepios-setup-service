@@ -1,5 +1,6 @@
 package com.dazzle.asklepios.web.rest.vm.packageSetup;
 
+import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.PackageSetup;
 import com.dazzle.asklepios.domain.PackageSetupItem;
 
@@ -17,6 +18,9 @@ public record PackageSetupResponseVM(
         Boolean isActive,
         LocalDate validFrom,
         LocalDate validTo,
+        Long discountId,
+        String discountCode,
+        String discountName,
         Boolean allDepartments,
         List<Long> departmentIds,
         Integer itemCount,
@@ -24,7 +28,12 @@ public record PackageSetupResponseVM(
         List<PackageSetupItemVM> items
 ) implements Serializable {
 
-    public static PackageSetupResponseVM ofEntity(PackageSetup entity, List<PackageSetupItem> items, List<Long> departmentIds) {
+    public static PackageSetupResponseVM ofEntity(
+            PackageSetup entity,
+            List<PackageSetupItem> items,
+            List<Long> departmentIds,
+            Discount discount
+    ) {
         List<PackageSetupItemVM> lines = items.stream().map(PackageSetupItemVM::ofEntity).toList();
         return new PackageSetupResponseVM(
                 entity.getId(),
@@ -35,6 +44,9 @@ public record PackageSetupResponseVM(
                 entity.getIsActive(),
                 entity.getValidFrom(),
                 entity.getValidTo(),
+                entity.getDiscountId(),
+                discount == null ? null : discount.getCode(),
+                discount == null ? null : discount.getName(),
                 entity.getAllDepartments(),
                 departmentIds,
                 lines.size(),

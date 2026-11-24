@@ -85,4 +85,8 @@ public class PackageSetupItem extends AbstractAuditingEntity<Long> implements Se
 
     @Column(name = "discount_percent", precision = 5, scale = 2)
     private java.math.BigDecimal discountPercent;
+
+    /** Optional discount for this item. Used only when the package itself has no discount. */
+    @Column(name = "discount_id")
+    private Long discountId;
 }

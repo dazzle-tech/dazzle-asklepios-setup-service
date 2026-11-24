@@ -1,9 +1,11 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.PackageSetup;
 import com.dazzle.asklepios.domain.PackageSetupDepartment;
 import com.dazzle.asklepios.domain.PackageSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.dazzle.asklepios.repository.DiscountRepository;
 import com.dazzle.asklepios.repository.PackageSetupDepartmentRepository;
 import com.dazzle.asklepios.repository.PackageSetupItemRepository;
 import com.dazzle.asklepios.repository.PackageSetupRepository;
@@ -27,6 +29,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,17 +45,20 @@ public class PackageSetupService {
     private final PackageSetupItemRepository packageSetupItemRepository;
     private final PackageItemLookupService packageItemLookupService;
     private final PackageSetupDepartmentRepository packageSetupDepartmentRepository;
+    private final DiscountRepository discountRepository;
 
     public PackageSetupService(
             PackageSetupRepository packageSetupRepository,
             PackageSetupItemRepository packageSetupItemRepository,
             PackageItemLookupService packageItemLookupService,
-            PackageSetupDepartmentRepository packageSetupDepartmentRepository
+            PackageSetupDepartmentRepository packageSetupDepartmentRepository,
+            DiscountRepository discountRepository
     ) {
         this.packageSetupRepository = packageSetupRepository;
         this.packageSetupItemRepository = packageSetupItemRepository;
         this.packageItemLookupService = packageItemLookupService;
         this.packageSetupDepartmentRepository = packageSetupDepartmentRepository;
+        this.discountRepository = discountRepository;
     }
 
     /** Optional filters combined with AND; each package comes with its items. */
@@ -71,9 +77,13 @@ public class PackageSetupService {
                         .collect(Collectors.groupingBy(PackageSetupItem::getPackageSetupId));
 
         Map<Long, List<Long>> departmentsByPackage = departmentsOf(ids);
+        Map<Long, Discount> discounts = discountsOf(page.getContent());
 
         return page.map(p -> PackageSetupResponseVM.ofEntity(
-                p, itemsByPackage.getOrDefault(p.getId(), List.of()), departmentsByPackage.getOrDefault(p.getId(), List.of())));
+                p,
+                itemsByPackage.getOrDefault(p.getId(), List.of()),
+                departmentsByPackage.getOrDefault(p.getId(), List.of()),
+                p.getDiscountId() == null ? null : discounts.get(p.getDiscountId())));
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +95,10 @@ public class PackageSetupService {
         return PackageSetupResponseVM.ofEntity(
                 entity,
                 packageSetupItemRepository.findByPackageSetupIdOrderByIdAsc(entity.getId()),
-                departmentsOf(List.of(entity.getId())).getOrDefault(entity.getId(), List.of()));
+                departmentsOf(List.of(entity.getId())).getOrDefault(entity.getId(), List.of()),
+                entity.getDiscountId() == null
+                        ? null
+                        : discountRepository.findById(entity.getDiscountId()).orElse(null));
     }
 
     private Map<Long, List<Long>> departmentsOf(List<Long> packageIds) {
@@ -96,6 +109,29 @@ public class PackageSetupService {
                 .collect(Collectors.groupingBy(
                         PackageSetupDepartment::getPackageSetupId,
                         Collectors.mapping(PackageSetupDepartment::getDepartmentId, Collectors.toList())));
+    }
+
+    private Long normalizeDiscountId(Long discountId) {
+        if (discountId == null) {
+            return null;
+        }
+        if (!discountRepository.existsById(discountId)) {
+            throw new BadRequestAlertException("Selected discount was not found", ENTITY, "discount.notfound");
+        }
+        return discountId;
+    }
+
+    private Map<Long, Discount> discountsOf(List<PackageSetup> packages) {
+        List<Long> discountIds = packages.stream()
+                .map(PackageSetup::getDiscountId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (discountIds.isEmpty()) {
+            return Map.of();
+        }
+        return discountRepository.findAllById(discountIds).stream()
+                .collect(Collectors.toMap(Discount::getId, discount -> discount));
     }
 
     /** Dates in order, at least one department when not for all, and no item discount with a fixed price. */
@@ -111,6 +147,15 @@ public class PackageSetupService {
             throw new BadRequestAlertException(
                     "A package with a fixed price cannot also have item discounts", ENTITY, "price.withDiscount");
         }
+        if (vm.discountId() != null && vm.items() != null && vm.items().stream().anyMatch(PackageSetupService::hasItemDiscount)) {
+            throw new BadRequestAlertException(
+                    "Item discounts are not allowed when the package has a discount", ENTITY, "item.discount.notAllowed");
+        }
+    }
+
+    private static boolean hasItemDiscount(PackageSetupItemVM item) {
+        return item.discountId() != null
+                || (item.discountPercent() != null && item.discountPercent().signum() > 0);
     }
 
     private void saveDepartments(Long packageSetupId, PackageSetupSaveVM vm) {
@@ -138,6 +183,7 @@ public class PackageSetupService {
                 .isActive(vm.isActive() == null || vm.isActive())
                 .validFrom(vm.validFrom())
                 .validTo(vm.validTo())
+                .discountId(normalizeDiscountId(vm.discountId()))
                 .allDepartments(!Boolean.FALSE.equals(vm.allDepartments()))
                 .build();
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
@@ -165,6 +211,7 @@ public class PackageSetupService {
         }
         entity.setValidFrom(vm.validFrom());
         entity.setValidTo(vm.validTo());
+        entity.setDiscountId(normalizeDiscountId(vm.discountId()));
         entity.setAllDepartments(!Boolean.FALSE.equals(vm.allDepartments()));
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
 
@@ -239,6 +286,7 @@ public class PackageSetupService {
                     .isCategory(category)
                     .maxRepeat(category ? line.maxRepeat() : null)
                     .discountPercent(line.discountPercent())
+                    .discountId(normalizeDiscountId(line.discountId()))
                     .build());
         }
         return packageSetupItemRepository.saveAllAndFlush(toSave);
