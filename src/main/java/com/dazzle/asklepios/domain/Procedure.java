@@ -82,6 +82,9 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     @Column(name = "recovery_notes", columnDefinition = "text")
     private String recoveryNotes;
 
+    @Column(name = "related_surfaces", length = 255)
+    private String relatedSurfaces;
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
