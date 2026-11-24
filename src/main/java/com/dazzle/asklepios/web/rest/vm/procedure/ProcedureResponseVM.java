@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 
 public record ProcedureResponseVM(
@@ -46,17 +45,7 @@ public record ProcedureResponseVM(
                 procedure.getBillingRule() != null
                         ? procedure.getBillingRule().getId()
                         : null,
-                parseSurfaces(procedure.getRelatedSurfaces())
+                procedure.getRelatedSurfaces() == null ? List.of() : List.copyOf(procedure.getRelatedSurfaces())
         );
-    }
-
-    private static List<String> parseSurfaces(String value) {
-        if (value == null || value.isBlank()) {
-            return List.of();
-        }
-        return Arrays.stream(value.split(","))
-                .map(String::trim)
-                .filter(token -> !token.isEmpty())
-                .toList();
     }
 }
