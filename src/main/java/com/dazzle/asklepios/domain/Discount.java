@@ -2,6 +2,7 @@ package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.DiscountStatus;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -197,6 +198,12 @@ public class Discount extends AbstractAuditingEntity<Long>
     @Builder.Default
     @Column(name = "active",nullable = false)
     private Boolean active = true;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    @Column(name = "status", nullable = false, length = 20)
+    private DiscountStatus status = DiscountStatus.ACTIVE;
 
     @Size(max = 500)
     @Column(name = "description")

@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.DiscountStatus;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiscountRepository;
@@ -163,12 +164,15 @@ public class DiscountService {
                 )
                 .isDefault(defaultDiscount)
                 .active(active)
+                .status(active ? DiscountStatus.ACTIVE : DiscountStatus.INACTIVE)
                 .description(
                         trimToNull(
                                 discountDTO.description()
                         )
                 )
                 .build();
+
+        applyStatus(discount);
 
         try {
             Discount created =
@@ -321,6 +325,7 @@ public class DiscountService {
 
         existing.setIsDefault(defaultDiscount);
         existing.setActive(active);
+        applyStatus(existing);
         existing.setDescription(
                 trimToNull(
                         discountDTO.description()
@@ -367,11 +372,21 @@ public class DiscountService {
                         discount.getActive()
                 );
 
+        if (newActive && isExpiredDate(discount)) {
+            throw new BadRequestAlertException(
+                    "An expired discount cannot be activated. Update the valid to date first.",
+                    ENTITY_NAME,
+                    "expired.activate"
+            );
+        }
+
         discount.setActive(newActive);
 
         if (!newActive) {
             discount.setIsDefault(false);
         }
+
+        applyStatus(discount);
 
         return discountRepository.saveAndFlush(discount);
     }
@@ -388,11 +403,21 @@ public class DiscountService {
 
         Discount discount = findById(id);
 
+        if (active && isExpiredDate(discount)) {
+            throw new BadRequestAlertException(
+                    "An expired discount cannot be activated. Update the valid to date first.",
+                    ENTITY_NAME,
+                    "expired.activate"
+            );
+        }
+
         discount.setActive(active);
 
         if (!active) {
             discount.setIsDefault(false);
         }
+
+        applyStatus(discount);
 
         return discountRepository.saveAndFlush(discount);
     }
@@ -567,6 +592,7 @@ public class DiscountService {
             Boolean requiresApproval,
             Boolean isDefault,
             Boolean active,
+            DiscountStatus status,
             Pageable pageable
     ) {
         validateFacility(facilityId);
@@ -581,10 +607,41 @@ public class DiscountService {
                         applicableOn,
                         requiresApproval,
                         isDefault,
-                        active
+                        active,
+                        status
                 ),
                 pageable
         );
+    }
+
+    @Transactional
+    public int expireOutdatedDiscounts() {
+        LocalDate today = LocalDate.now();
+        List<Discount> expiredDiscounts =
+                discountRepository.findByValidToBeforeAndStatusNot(
+                        today,
+                        DiscountStatus.EXPIRED
+                );
+
+        expiredDiscounts.forEach(discount -> {
+            discount.setStatus(DiscountStatus.EXPIRED);
+            discount.setActive(false);
+            discount.setIsDefault(false);
+        });
+
+        if (!expiredDiscounts.isEmpty()) {
+            discountRepository.saveAll(expiredDiscounts);
+        }
+
+        int updated = expiredDiscounts.size();
+
+        LOG.info(
+                "[EXPIRE] Marked {} discount(s) expired before {}",
+                updated,
+                today
+        );
+
+        return updated;
     }
 
     @Transactional(readOnly = true)
@@ -1266,6 +1323,26 @@ public class DiscountService {
             discountRepository.saveAll(discountsToUpdate);
             discountRepository.flush();
         }
+    }
+
+    private boolean isExpiredDate(Discount discount) {
+        return discount.getValidTo() != null
+                && discount.getValidTo().isBefore(LocalDate.now());
+    }
+
+    private void applyStatus(Discount discount) {
+        if (isExpiredDate(discount)) {
+            discount.setActive(false);
+            discount.setIsDefault(false);
+            discount.setStatus(DiscountStatus.EXPIRED);
+            return;
+        }
+
+        discount.setStatus(
+                Boolean.TRUE.equals(discount.getActive())
+                        ? DiscountStatus.ACTIVE
+                        : DiscountStatus.INACTIVE
+        );
     }
 
     private boolean isCurrentlyValid(

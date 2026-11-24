@@ -2,6 +2,7 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.DiscountStatus;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -119,5 +120,10 @@ public interface DiscountRepository
 
     List<Discount> findAllByFacilityIdAndActiveTrue(
             Long facilityId
+    );
+
+    List<Discount> findByValidToBeforeAndStatusNot(
+            LocalDate today,
+            DiscountStatus status
     );
 }

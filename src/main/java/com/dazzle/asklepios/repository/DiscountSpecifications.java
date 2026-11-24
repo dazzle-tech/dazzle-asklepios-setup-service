@@ -2,6 +2,7 @@ package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.DiscountStatus;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -28,7 +29,8 @@ public final class DiscountSpecifications {
             DiscountApplicableOn applicableOn,
             Boolean requiresApproval,
             Boolean isDefault,
-            Boolean active
+            Boolean active,
+            DiscountStatus status
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -59,6 +61,9 @@ public final class DiscountSpecifications {
             }
             if (active != null) {
                 predicates.add(cb.equal(root.get("active"), active));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

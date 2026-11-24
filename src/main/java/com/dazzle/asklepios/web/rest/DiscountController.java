@@ -2,6 +2,7 @@ package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
+import com.dazzle.asklepios.domain.enumeration.DiscountStatus;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.service.DiscountService;
 import com.dazzle.asklepios.service.dto.DiscountApprovalUserDTO;
@@ -224,6 +225,7 @@ public class DiscountController {
             @RequestParam(required = false) Boolean requiresApproval,
             @RequestParam(required = false) Boolean isDefault,
             @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) DiscountStatus status,
 
             @ParameterObject
             Pageable pageable
@@ -239,6 +241,7 @@ public class DiscountController {
                         requiresApproval,
                         isDefault,
                         active,
+                        status,
                         pageable
                 );
 
