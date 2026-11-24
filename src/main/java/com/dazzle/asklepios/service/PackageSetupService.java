@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.PackageSetup;
+import com.dazzle.asklepios.domain.PackageSetupDepartment;
 import com.dazzle.asklepios.domain.PackageSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
+import com.dazzle.asklepios.repository.PackageSetupDepartmentRepository;
 import com.dazzle.asklepios.repository.PackageSetupItemRepository;
 import com.dazzle.asklepios.repository.PackageSetupRepository;
 import com.dazzle.asklepios.repository.PackageSetupSpecifications;
@@ -39,15 +41,18 @@ public class PackageSetupService {
     private final PackageSetupRepository packageSetupRepository;
     private final PackageSetupItemRepository packageSetupItemRepository;
     private final PackageItemLookupService packageItemLookupService;
+    private final PackageSetupDepartmentRepository packageSetupDepartmentRepository;
 
     public PackageSetupService(
             PackageSetupRepository packageSetupRepository,
             PackageSetupItemRepository packageSetupItemRepository,
-            PackageItemLookupService packageItemLookupService
+            PackageItemLookupService packageItemLookupService,
+            PackageSetupDepartmentRepository packageSetupDepartmentRepository
     ) {
         this.packageSetupRepository = packageSetupRepository;
         this.packageSetupItemRepository = packageSetupItemRepository;
         this.packageItemLookupService = packageItemLookupService;
+        this.packageSetupDepartmentRepository = packageSetupDepartmentRepository;
     }
 
     /** Optional filters combined with AND; each package comes with its items. */
@@ -65,13 +70,56 @@ public class PackageSetupService {
                         .sorted((a, b) -> Long.compare(a.getId(), b.getId()))
                         .collect(Collectors.groupingBy(PackageSetupItem::getPackageSetupId));
 
-        return page.map(p -> PackageSetupResponseVM.ofEntity(p, itemsByPackage.getOrDefault(p.getId(), List.of())));
+        Map<Long, List<Long>> departmentsByPackage = departmentsOf(ids);
+
+        return page.map(p -> PackageSetupResponseVM.ofEntity(
+                p, itemsByPackage.getOrDefault(p.getId(), List.of()), departmentsByPackage.getOrDefault(p.getId(), List.of())));
     }
 
     @Transactional(readOnly = true)
     public PackageSetupResponseVM findOne(Long id) {
-        PackageSetup entity = getOrThrow(id);
-        return PackageSetupResponseVM.ofEntity(entity, packageSetupItemRepository.findByPackageSetupIdOrderByIdAsc(id));
+        return response(getOrThrow(id));
+    }
+
+    private PackageSetupResponseVM response(PackageSetup entity) {
+        return PackageSetupResponseVM.ofEntity(
+                entity,
+                packageSetupItemRepository.findByPackageSetupIdOrderByIdAsc(entity.getId()),
+                departmentsOf(List.of(entity.getId())).getOrDefault(entity.getId(), List.of()));
+    }
+
+    private Map<Long, List<Long>> departmentsOf(List<Long> packageIds) {
+        if (packageIds.isEmpty()) {
+            return Map.of();
+        }
+        return packageSetupDepartmentRepository.findByPackageSetupIdIn(packageIds).stream()
+                .collect(Collectors.groupingBy(
+                        PackageSetupDepartment::getPackageSetupId,
+                        Collectors.mapping(PackageSetupDepartment::getDepartmentId, Collectors.toList())));
+    }
+
+    /** Dates in order, at least one department when not for all, and no item discount with a fixed price. */
+    private static void validateHeader(PackageSetupSaveVM vm) {
+        if (vm.validFrom() != null && vm.validTo() != null && vm.validTo().isBefore(vm.validFrom())) {
+            throw new BadRequestAlertException("Valid To must be on or after Valid From", ENTITY, "validDates");
+        }
+        if (Boolean.FALSE.equals(vm.allDepartments()) && (vm.departmentIds() == null || vm.departmentIds().isEmpty())) {
+            throw new BadRequestAlertException("Choose at least one department, or All Departments", ENTITY, "departments.required");
+        }
+        if (vm.price() != null && vm.items() != null
+                && vm.items().stream().anyMatch(i -> i.discountPercent() != null && i.discountPercent().signum() > 0)) {
+            throw new BadRequestAlertException(
+                    "A package with a fixed price cannot also have item discounts", ENTITY, "price.withDiscount");
+        }
+    }
+
+    private void saveDepartments(Long packageSetupId, PackageSetupSaveVM vm) {
+        packageSetupDepartmentRepository.deleteByPackageSetupId(packageSetupId);
+        if (Boolean.FALSE.equals(vm.allDepartments()) && vm.departmentIds() != null) {
+            packageSetupDepartmentRepository.saveAll(vm.departmentIds().stream().distinct()
+                    .map(d -> PackageSetupDepartment.builder().packageSetupId(packageSetupId).departmentId(d).build())
+                    .toList());
+        }
     }
 
     public PackageSetupResponseVM create(PackageSetupSaveVM vm) {
@@ -80,6 +128,7 @@ public class PackageSetupService {
         if (packageSetupRepository.existsByCodeIgnoreCase(code)) {
             throw new BadRequestAlertException("A package with this code already exists", ENTITY, "code.exists");
         }
+        validateHeader(vm);
 
         PackageSetup entity = PackageSetup.builder()
                 .code(code)
@@ -87,11 +136,15 @@ public class PackageSetupService {
                 .description(blankToNull(vm.description()))
                 .price(vm.price())
                 .isActive(vm.isActive() == null || vm.isActive())
+                .validFrom(vm.validFrom())
+                .validTo(vm.validTo())
+                .allDepartments(!Boolean.FALSE.equals(vm.allDepartments()))
                 .build();
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
 
-        List<PackageSetupItem> items = saveItems(saved.getId(), vm.items());
-        return PackageSetupResponseVM.ofEntity(saved, items);
+        saveItems(saved.getId(), vm.items());
+        saveDepartments(saved.getId(), vm);
+        return response(saved);
     }
 
     public PackageSetupResponseVM update(Long id, PackageSetupSaveVM vm) {
@@ -101,6 +154,7 @@ public class PackageSetupService {
         if (packageSetupRepository.existsByCodeIgnoreCaseAndIdNot(code, id)) {
             throw new BadRequestAlertException("A package with this code already exists", ENTITY, "code.exists");
         }
+        validateHeader(vm);
 
         entity.setCode(code);
         entity.setName(vm.name().trim());
@@ -109,27 +163,22 @@ public class PackageSetupService {
         if (vm.isActive() != null) {
             entity.setIsActive(vm.isActive());
         }
+        entity.setValidFrom(vm.validFrom());
+        entity.setValidTo(vm.validTo());
+        entity.setAllDepartments(!Boolean.FALSE.equals(vm.allDepartments()));
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
 
-        // Items are replaced as a whole: the screen always sends the full list.
+        // Items and departments are replaced as a whole: the screen always sends the full lists.
         packageSetupItemRepository.deleteByPackageSetupId(id);
-        List<PackageSetupItem> items = saveItems(id, vm.items());
-        return PackageSetupResponseVM.ofEntity(saved, items);
+        saveItems(id, vm.items());
+        saveDepartments(id, vm);
+        return response(saved);
     }
 
     public PackageSetupResponseVM toggleActive(Long id) {
         PackageSetup entity = getOrThrow(id);
         entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
-        PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
-        return PackageSetupResponseVM.ofEntity(saved, packageSetupItemRepository.findByPackageSetupIdOrderByIdAsc(id));
-    }
-
-    public void delete(Long id) {
-        getOrThrow(id);
-        // package_setup_item rows go with it (on delete cascade)
-        packageSetupItemRepository.deleteByPackageSetupId(id);
-        packageSetupRepository.deleteById(id);
-        LOG.info("Deleted package id={}", id);
+        return response(packageSetupRepository.saveAndFlush(entity));
     }
 
     /** Checks the lines, takes code and name from each item's own setup table, and stores them. */
@@ -141,16 +190,31 @@ public class PackageSetupService {
         Set<String> seen = new HashSet<>();
         Map<PriceListItemType, Set<Long>> idsByType = new EnumMap<>(PriceListItemType.class);
         for (PackageSetupItemVM line : lines) {
-            if (line.itemType() == null || line.sourceId() == null) {
+            boolean category = Boolean.TRUE.equals(line.isCategory());
+            if (line.itemType() == null || (!category && line.sourceId() == null)) {
                 throw new BadRequestAlertException("Each item needs a type and an item", ENTITY, "item.required");
             }
             if (line.quantity() == null || line.quantity() < 1) {
                 throw new BadRequestAlertException("Quantity must be at least 1", ENTITY, "item.quantity");
             }
-            if (!seen.add(line.itemType() + ":" + line.sourceId())) {
-                throw new BadRequestAlertException("The same item is added twice", ENTITY, "item.duplicate");
+            if (line.maxRepeat() != null && line.maxRepeat() < 1) {
+                throw new BadRequestAlertException("Repeat must be at least 1", ENTITY, "item.repeat");
             }
-            idsByType.computeIfAbsent(line.itemType(), t -> new HashSet<>()).add(line.sourceId());
+            if (line.discountPercent() != null
+                    && (line.discountPercent().signum() < 0 || line.discountPercent().compareTo(BigDecimal.valueOf(100)) > 0)) {
+                throw new BadRequestAlertException("Discount must be between 0 and 100", ENTITY, "item.discount");
+            }
+            String key = category ? line.itemType() + ":ALL" : line.itemType() + ":" + line.sourceId();
+            if (!seen.add(key)) {
+                throw new BadRequestAlertException(
+                        category ? "The same category is added twice" : "The same item is added twice", ENTITY, "item.duplicate");
+            }
+            if (!category) {
+                idsByType.computeIfAbsent(line.itemType(), t -> new HashSet<>()).add(line.sourceId());
+            }
+        }
+        if (lines.stream().allMatch(l -> Boolean.FALSE.equals(l.isActive()))) {
+            throw new BadRequestAlertException("A package needs at least one active item", ENTITY, "items.noneActive");
         }
 
         Map<PriceListItemType, Map<Long, PackageItemLookupVM>> found = new EnumMap<>(PriceListItemType.class);
@@ -158,18 +222,23 @@ public class PackageSetupService {
 
         List<PackageSetupItem> toSave = new ArrayList<>();
         for (PackageSetupItemVM line : lines) {
-            PackageItemLookupVM source = found.get(line.itemType()).get(line.sourceId());
-            if (source == null) {
+            boolean category = Boolean.TRUE.equals(line.isCategory());
+            PackageItemLookupVM source = category ? null : found.get(line.itemType()).get(line.sourceId());
+            if (!category && source == null) {
                 throw new BadRequestAlertException(
                         "Item not found: " + line.itemType() + " id " + line.sourceId(), ENTITY, "item.notfound");
             }
             toSave.add(PackageSetupItem.builder()
                     .packageSetupId(packageSetupId)
                     .itemType(line.itemType())
-                    .sourceId(line.sourceId())
-                    .itemCode(source.code())
-                    .itemName(source.name())
+                    .sourceId(category ? null : line.sourceId())
+                    .itemCode(category ? null : source.code())
+                    .itemName(category ? null : source.name())
                     .quantity(line.quantity())
+                    .isActive(!Boolean.FALSE.equals(line.isActive()))
+                    .isCategory(category)
+                    .maxRepeat(category ? line.maxRepeat() : null)
+                    .discountPercent(line.discountPercent())
                     .build());
         }
         return packageSetupItemRepository.saveAllAndFlush(toSave);
