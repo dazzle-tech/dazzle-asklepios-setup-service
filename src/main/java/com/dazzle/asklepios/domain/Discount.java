@@ -3,13 +3,18 @@ package com.dazzle.asklepios.domain;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -23,6 +28,8 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "discount")
@@ -90,6 +97,42 @@ public class Discount extends AbstractAuditingEntity<Long>
     )
     private DiscountApplicableOn applicableOn;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "discount_department",
+            joinColumns = @JoinColumn(
+                    name = "discount_id",
+                    foreignKey = @ForeignKey(name = "fk_discount_department_discount")
+            )
+    )
+    @Column(name = "department_id", nullable = false)
+    @Builder.Default
+    private Set<Long> departmentIds = new LinkedHashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "discount_service",
+            joinColumns = @JoinColumn(
+                    name = "discount_id",
+                    foreignKey = @ForeignKey(name = "fk_discount_service_discount")
+            )
+    )
+    @Column(name = "service_id", nullable = false)
+    @Builder.Default
+    private Set<Long> serviceIds = new LinkedHashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "discount_approval_user",
+            joinColumns = @JoinColumn(
+                    name = "discount_id",
+                    foreignKey = @ForeignKey(name = "fk_discount_approval_user_discount")
+            )
+    )
+    @Column(name = "user_id", nullable = false)
+    @Builder.Default
+    private Set<Long> approvalUserIds = new LinkedHashSet<>();
+
     @NotNull
     @Column(
             name = "valid_from",
@@ -113,6 +156,10 @@ public class Discount extends AbstractAuditingEntity<Long>
             scale = 4
     )
     private BigDecimal minimumInvoiceAmount;
+
+    @NotNull
+    @Column(name = "max_usage_per_patient", nullable = false)
+    private Integer maxUsagePerPatient;
 
     @NotNull
     @Builder.Default

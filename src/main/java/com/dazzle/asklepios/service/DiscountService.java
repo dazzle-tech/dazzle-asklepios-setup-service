@@ -1,12 +1,15 @@
 package com.dazzle.asklepios.service;
 
+import com.dazzle.asklepios.domain.Department;
 import com.dazzle.asklepios.domain.Discount;
+import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
-import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
+import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.DiscountRepository;
 import com.dazzle.asklepios.repository.DiscountSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
+import com.dazzle.asklepios.repository.ServiceRepository;
 import com.dazzle.asklepios.service.dto.DiscountDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
@@ -23,8 +26,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
@@ -39,13 +45,22 @@ public class DiscountService {
 
     private final DiscountRepository discountRepository;
     private final FacilityRepository facilityRepository;
+    private final DepartmentsRepository departmentsRepository;
+    private final ServiceRepository serviceRepository;
+    private final UserDepartmentService userDepartmentService;
 
     public DiscountService(
             DiscountRepository discountRepository,
-            FacilityRepository facilityRepository
+            FacilityRepository facilityRepository,
+            DepartmentsRepository departmentsRepository,
+            ServiceRepository serviceRepository,
+            UserDepartmentService userDepartmentService
     ) {
         this.discountRepository = discountRepository;
         this.facilityRepository = facilityRepository;
+        this.departmentsRepository = departmentsRepository;
+        this.serviceRepository = serviceRepository;
+        this.userDepartmentService = userDepartmentService;
     }
 
     public Discount create(DiscountDTO discountDTO) {
@@ -106,6 +121,12 @@ public class DiscountService {
                 .fixedAmount(resolveFixedAmount(discountDTO))
                 .currency(resolveCurrency(discountDTO))
                 .applicableOn(discountDTO.applicableOn())
+                .departmentIds(
+                        normalizeDepartmentIds(
+                                discountDTO.facilityId(),
+                                discountDTO.departmentIds()
+                        )
+                )
                 .validFrom(discountDTO.validFrom())
                 .validTo(discountDTO.validTo())
                 .maximumDiscountAmount(
@@ -118,6 +139,11 @@ public class DiscountService {
                         normalizeOptionalAmount(
                                 discountDTO.minimumInvoiceAmount(),
                                 "Minimum invoice amount"
+                        )
+                )
+                .maxUsagePerPatient(
+                        normalizeMaxUsagePerPatient(
+                                discountDTO.maxUsagePerPatient()
                         )
                 )
                 .requiresReason(
@@ -245,6 +271,13 @@ public class DiscountService {
         existing.setFixedAmount(resolveFixedAmount(discountDTO));
         existing.setCurrency(resolveCurrency(discountDTO));
         existing.setApplicableOn(discountDTO.applicableOn());
+        replaceDepartmentIds(
+                existing,
+                normalizeDepartmentIds(
+                        discountDTO.facilityId(),
+                        discountDTO.departmentIds()
+                )
+        );
         existing.setValidFrom(discountDTO.validFrom());
         existing.setValidTo(discountDTO.validTo());
 
@@ -259,6 +292,12 @@ public class DiscountService {
                 normalizeOptionalAmount(
                         discountDTO.minimumInvoiceAmount(),
                         "Minimum invoice amount"
+                )
+        );
+
+        existing.setMaxUsagePerPatient(
+                normalizeMaxUsagePerPatient(
+                        discountDTO.maxUsagePerPatient()
                 )
         );
 
@@ -388,6 +427,52 @@ public class DiscountService {
         );
 
         discount.setIsDefault(true);
+
+        return discountRepository.saveAndFlush(discount);
+    }
+
+    public Discount updateApplicableServices(
+            Long id,
+            List<Long> serviceIds
+    ) {
+        LOG.info(
+                "[SERVICES] Discount id={} serviceIds={}",
+                id,
+                serviceIds
+        );
+
+        Discount discount = findById(id);
+
+        replaceServiceIds(
+                discount,
+                normalizeServiceIds(
+                        discount.getFacilityId(),
+                        serviceIds
+                )
+        );
+
+        return discountRepository.saveAndFlush(discount);
+    }
+
+    public Discount updateApprovalUsers(
+            Long id,
+            List<Long> approvalUserIds
+    ) {
+        LOG.info(
+                "[APPROVAL USERS] Discount id={} approvalUserIds={}",
+                id,
+                approvalUserIds
+        );
+
+        Discount discount = findById(id);
+
+        replaceApprovalUserIds(
+                discount,
+                normalizeApprovalUserIds(
+                        discount.getFacilityId(),
+                        approvalUserIds
+                )
+        );
 
         return discountRepository.saveAndFlush(discount);
     }
@@ -896,6 +981,196 @@ public class DiscountService {
         return amount;
     }
 
+    private Set<Long> normalizeDepartmentIds(
+            Long facilityId,
+            List<Long> departmentIds
+    ) {
+        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>();
+
+        if (departmentIds != null) {
+            for (Long departmentId : departmentIds) {
+                if (departmentId != null) {
+                    uniqueIds.add(departmentId);
+                }
+            }
+        }
+
+        if (uniqueIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<Department> departments =
+                departmentsRepository.findByIdIn(
+                        new ArrayList<>(uniqueIds)
+                );
+
+        if (departments.size() != uniqueIds.size()) {
+            throw new BadRequestAlertException(
+                    "One or more selected departments were not found",
+                    ENTITY_NAME,
+                    "department.notfound"
+            );
+        }
+
+        for (Department department : departments) {
+            Long departmentFacilityId =
+                    department.getFacility() == null
+                            ? null
+                            : department.getFacility().getId();
+
+            if (!facilityId.equals(departmentFacilityId)) {
+                throw new BadRequestAlertException(
+                        "Selected departments must belong to the discount facility",
+                        ENTITY_NAME,
+                        "department.facility.invalid"
+                );
+            }
+        }
+
+        return uniqueIds;
+    }
+
+    private Set<Long> normalizeServiceIds(
+            Long facilityId,
+            List<Long> serviceIds
+    ) {
+        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>();
+
+        if (serviceIds != null) {
+            for (Long serviceId : serviceIds) {
+                if (serviceId != null) {
+                    uniqueIds.add(serviceId);
+                }
+            }
+        }
+
+        if (uniqueIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        List<ServiceSetup> services =
+                serviceRepository.findAllById(uniqueIds);
+
+        if (services.size() != uniqueIds.size()) {
+            throw new BadRequestAlertException(
+                    "One or more selected services were not found",
+                    ENTITY_NAME,
+                    "service.notfound"
+            );
+        }
+
+        for (ServiceSetup service : services) {
+            Long serviceFacilityId =
+                    service.getFacility() == null
+                            ? null
+                            : service.getFacility().getId();
+
+            if (!facilityId.equals(serviceFacilityId)) {
+                throw new BadRequestAlertException(
+                        "Selected services must belong to the discount facility",
+                        ENTITY_NAME,
+                        "service.facility.invalid"
+                );
+            }
+        }
+
+        return uniqueIds;
+    }
+
+    private Set<Long> normalizeApprovalUserIds(
+            Long facilityId,
+            List<Long> approvalUserIds
+    ) {
+        LinkedHashSet<Long> uniqueIds = new LinkedHashSet<>();
+
+        if (approvalUserIds != null) {
+            for (Long approvalUserId : approvalUserIds) {
+                if (approvalUserId != null) {
+                    uniqueIds.add(approvalUserId);
+                }
+            }
+        }
+
+        if (uniqueIds.isEmpty()) {
+            return new LinkedHashSet<>();
+        }
+
+        Set<Long> facilityUserIds =
+                userDepartmentService
+                        .getActiveUsersByFacility(facilityId)
+                        .stream()
+                        .map(user -> user.getId())
+                        .collect(Collectors.toSet());
+
+        for (Long approvalUserId : uniqueIds) {
+            if (!facilityUserIds.contains(approvalUserId)) {
+                throw new BadRequestAlertException(
+                        "Approval users must be active users of the discount facility",
+                        ENTITY_NAME,
+                        "approval.user.invalid"
+                );
+            }
+        }
+
+        return uniqueIds;
+    }
+
+    private void replaceApprovalUserIds(
+            Discount discount,
+            Set<Long> approvalUserIds
+    ) {
+        if (discount.getApprovalUserIds() == null) {
+            discount.setApprovalUserIds(new LinkedHashSet<>());
+        }
+
+        discount.getApprovalUserIds().clear();
+        discount.getApprovalUserIds().addAll(approvalUserIds);
+    }
+
+    private void replaceServiceIds(
+            Discount discount,
+            Set<Long> serviceIds
+    ) {
+        if (discount.getServiceIds() == null) {
+            discount.setServiceIds(new LinkedHashSet<>());
+        }
+
+        discount.getServiceIds().clear();
+        discount.getServiceIds().addAll(serviceIds);
+    }
+
+    private void replaceDepartmentIds(
+            Discount discount,
+            Set<Long> departmentIds
+    ) {
+        if (discount.getDepartmentIds() == null) {
+            discount.setDepartmentIds(new LinkedHashSet<>());
+        }
+
+        discount.getDepartmentIds().clear();
+        discount.getDepartmentIds().addAll(departmentIds);
+    }
+
+    private Integer normalizeMaxUsagePerPatient(Integer times) {
+        if (times == null) {
+            throw new BadRequestAlertException(
+                    "How many times a patient can use this discount is required",
+                    ENTITY_NAME,
+                    "max.usage.per.patient.required"
+            );
+        }
+
+        if (times < 1) {
+            throw new BadRequestAlertException(
+                    "How many times a patient can use this discount must be at least 1",
+                    ENTITY_NAME,
+                    "max.usage.per.patient.invalid"
+            );
+        }
+
+        return times;
+    }
+
     private BigDecimal resolvePercentage(
             DiscountDTO dto
     ) {
@@ -1067,6 +1342,19 @@ public class DiscountService {
                     "Invalid facility reference",
                     ENTITY_NAME,
                     "facility.invalid"
+            );
+        }
+
+        if (
+                lowerMessage.contains(
+                        "fk_discount_department_department"
+                )
+                        || lowerMessage.contains("department_id")
+        ) {
+            throw new BadRequestAlertException(
+                    "One or more selected departments are invalid",
+                    ENTITY_NAME,
+                    "department.invalid"
             );
         }
 

@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -30,15 +32,18 @@ public class UserDepartmentService {
     private final UserDepartmentRepository userDepartmentRepository;
     private final UserRepository userRepository;
     private final DepartmentsRepository departmentRepository;
+    private final UserRoleService userRoleService;
 
     public UserDepartmentService(
             UserDepartmentRepository userDepartmentRepository,
             UserRepository userRepository,
-            DepartmentsRepository departmentRepository
+            DepartmentsRepository departmentRepository,
+            UserRoleService userRoleService
     ) {
         this.userDepartmentRepository = userDepartmentRepository;
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
+        this.userRoleService = userRoleService;
     }
 
     public UserDepartment createUserDepartment(UserDepartmentCreateVM vm) {
@@ -191,6 +196,29 @@ public class UserDepartmentService {
         userDepartment.setIsDefault(wantDefault);
 
         return userDepartmentRepository.save(userDepartment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getActiveUsersByFacility(Long facilityId) {
+        LOG.debug("Request to get active users for facilityId={}", facilityId);
+
+        Map<Long, User> users = new LinkedHashMap<>();
+
+        userRoleService
+                .findUsersByFacilityId(facilityId)
+                .forEach(user -> addIfActive(users, user));
+
+        userDepartmentRepository
+                .findByDepartment_Facility_IdAndIsActiveTrueAndUser_ActivatedTrue(facilityId)
+                .forEach(link -> addIfActive(users, link.getUser()));
+
+        return List.copyOf(users.values());
+    }
+
+    private void addIfActive(Map<Long, User> users, User user) {
+        if (user != null && user.getId() != null && user.isActivated()) {
+            users.putIfAbsent(user.getId(), user);
+        }
     }
 
     @Transactional(readOnly = true)

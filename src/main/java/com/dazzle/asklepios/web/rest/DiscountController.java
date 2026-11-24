@@ -4,7 +4,9 @@ import com.dazzle.asklepios.domain.Discount;
 import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.service.DiscountService;
+import com.dazzle.asklepios.service.dto.DiscountApprovalUserDTO;
 import com.dazzle.asklepios.service.dto.DiscountDTO;
+import com.dazzle.asklepios.service.dto.DiscountServicesDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
@@ -112,6 +114,44 @@ public class DiscountController {
                 discountService.update(
                         id,
                         discountDTO
+                )
+        );
+    }
+
+    @PutMapping("/discount/{id}/services")
+    public ResponseEntity<Discount> updateApplicableServices(
+            @PathVariable
+            @NotNull
+            Long id,
+
+            @RequestBody
+            DiscountServicesDTO request
+    ) {
+        return ResponseEntity.ok(
+                discountService.updateApplicableServices(
+                        id,
+                        request == null
+                                ? null
+                                : request.serviceIds()
+                )
+        );
+    }
+
+    @PutMapping("/discount/{id}/approval-user")
+    public ResponseEntity<Discount> updateApprovalUser(
+            @PathVariable
+            @NotNull
+            Long id,
+
+            @RequestBody
+            DiscountApprovalUserDTO request
+    ) {
+        return ResponseEntity.ok(
+                discountService.updateApprovalUsers(
+                        id,
+                        request == null
+                                ? null
+                                : request.approvalUserIds()
                 )
         );
     }

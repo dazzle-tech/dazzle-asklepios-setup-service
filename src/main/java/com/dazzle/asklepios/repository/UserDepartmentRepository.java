@@ -57,6 +57,9 @@ public interface UserDepartmentRepository extends JpaRepository<UserDepartment, 
 
     List<UserDepartment> findByDepartment_Facility_Id(Long facilityId);
 
+    @EntityGraph(attributePaths = {"user"})
+    List<UserDepartment> findByDepartment_Facility_IdAndIsActiveTrueAndUser_ActivatedTrue(Long facilityId);
+
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrue(Long departmentId);
 
     List<UserDepartment> findAllByDepartment_IdAndIsActiveTrueAndUser_JobRole(Long departmentId, JobRole jobRole);

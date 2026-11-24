@@ -4,5 +4,7 @@ public enum DiscountApplicableOn {
     INVOICE,
     INVOICE_LINE,
     SERVICE,
-    PRODUCT
+    PRODUCT,
+    GROSS_TOTAL,
+    NET_TOTAL
 }

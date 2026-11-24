@@ -198,6 +198,12 @@ public class UserDepartmentController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("/user-departments/facility/{facilityId}/active-users")
+    public ResponseEntity<List<User>> getActiveUsersByFacility(@PathVariable Long facilityId) {
+        log.debug("REST request to get active users for facilityId={}", facilityId);
+        return ResponseEntity.ok(userDepartmentService.getActiveUsersByFacility(facilityId));
+    }
+
     @GetMapping("/user-department/department/{departmentId}/users")
     public ResponseEntity<List<User>> getUsersForDepartments(@PathVariable Long departmentId) {
         log.debug("REST request to get users for department");
