@@ -18,7 +18,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -59,42 +58,6 @@ public class Payor extends AbstractAuditingEntity<Long> implements Serializable 
 
     @Column(name = "contract_manager_contact", length = 255)
     private String contractManagerContact;
-
-    // Contract Period
-    @Column(name = "start_date")
-    private LocalDate startDate;
-
-    @Column(name = "expiry_date")
-    private LocalDate expiryDate;
-
-    @NotNull
-    @Column(name = "renewable", nullable = false)
-    private Boolean renewable = false;
-
-    // Rules
-    @NotNull
-    @Column(name = "allow_partial_coverage", nullable = false)
-    private Boolean allowPartialCoverage = false;
-
-    @NotNull
-    @Column(name = "accept_copay", nullable = false)
-    private Boolean acceptCopay = false;
-
-    @NotNull
-    @Column(name = "accept_deductibles", nullable = false)
-    private Boolean acceptDeductibles = false;
-
-    @NotNull
-    @Column(name = "allow_package_pricing", nullable = false)
-    private Boolean allowPackagePricing = false;
-
-    @NotNull
-    @Column(name = "allow_drg_billing", nullable = false)
-    private Boolean allowDrgBilling = false;
-
-    @NotNull
-    @Column(name = "force_preapproval", nullable = false)
-    private Boolean forcePreApproval = false;
 
     @Column(name = "nphies_id", length = 100, unique = true)
     private String nphiesId;
