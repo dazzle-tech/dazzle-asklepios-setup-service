@@ -16,7 +16,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,8 +52,6 @@ public class PayorService {
             );
         }
 
-        validateDates(vm.startDate(), vm.expiryDate());
-
         Payor p = Payor.builder()
                 .code(vm.code())
                 .name(vm.name())
@@ -64,20 +61,10 @@ public class PayorService {
                 .phone(requiredText(vm.phone()))
                 .email(vm.email())
                 .contractManagerContact(requiredText(vm.contractManagerContact()))
-
-                .startDate(vm.startDate() != null ? vm.startDate() : LocalDate.now())
-                .expiryDate(vm.expiryDate())
-                .renewable(vm.renewable() != null ? vm.renewable() : false)
                 .nphiesId(vm.nphiesId())
                 .waseelPayerId(vm.waseelPayerId())
                 .tpaNphiesId(vm.tpaNphiesId())
                 .isWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : false)
-                .allowPartialCoverage(bool(vm.allowPartialCoverage()))
-                .acceptCopay(bool(vm.acceptCopay()))
-                .acceptDeductibles(bool(vm.acceptDeductibles()))
-                .allowPackagePricing(bool(vm.allowPackagePricing()))
-                .allowDrgBilling(bool(vm.allowDrgBilling()))
-                .forcePreApproval(bool(vm.forcePreApproval()))
 
                 .isActive(vm.isActive() != null ? vm.isActive() : true)
                 .build();
@@ -104,8 +91,6 @@ public class PayorService {
             );
         }
 
-        validateDates(vm.startDate(), vm.expiryDate());
-
         existing.setCode(vm.code());
         existing.setName(vm.name());
         existing.setCategory(vm.category());
@@ -114,20 +99,10 @@ public class PayorService {
         existing.setPhone(vm.phone());
         existing.setEmail(vm.email());
         existing.setContractManagerContact(vm.contractManagerContact());
-
-        existing.setStartDate(vm.startDate());
-        existing.setExpiryDate(vm.expiryDate());
-        existing.setRenewable(vm.renewable() != null ? vm.renewable() : existing.getRenewable());
         existing.setNphiesId(vm.nphiesId());
         existing.setWaseelPayerId(vm.waseelPayerId());
         existing.setTpaNphiesId(vm.tpaNphiesId());
         existing.setIsWaseelEnabled(vm.isWaseelEnabled() != null ? vm.isWaseelEnabled() : existing.getIsWaseelEnabled());
-        existing.setAllowPartialCoverage(vm.allowPartialCoverage() != null ? vm.allowPartialCoverage() : existing.getAllowPartialCoverage());
-        existing.setAcceptCopay(vm.acceptCopay() != null ? vm.acceptCopay() : existing.getAcceptCopay());
-        existing.setAcceptDeductibles(vm.acceptDeductibles() != null ? vm.acceptDeductibles() : existing.getAcceptDeductibles());
-        existing.setAllowPackagePricing(vm.allowPackagePricing() != null ? vm.allowPackagePricing() : existing.getAllowPackagePricing());
-        existing.setAllowDrgBilling(vm.allowDrgBilling() != null ? vm.allowDrgBilling() : existing.getAllowDrgBilling());
-        existing.setForcePreApproval(vm.forcePreApproval() != null ? vm.forcePreApproval() : existing.getForcePreApproval());
 
         existing.setIsActive(vm.isActive() != null ? vm.isActive() : existing.getIsActive());
         applyInsuranceCompanyIdentity(existing);
@@ -186,14 +161,6 @@ public class PayorService {
                 ));
 
         Payor linked = syncFromInsuranceCompany(payer);
-        validateDates(vm.startDate(), vm.expiryDate());
-        if (vm.startDate() != null) {
-            linked.setStartDate(vm.startDate());
-        }
-        linked.setExpiryDate(vm.expiryDate());
-        if (vm.renewable() != null) {
-            linked.setRenewable(vm.renewable());
-        }
         if (vm.waseelPayerId() != null && !vm.waseelPayerId().isBlank()) {
             linked.setWaseelPayerId(vm.waseelPayerId());
         }
@@ -203,12 +170,6 @@ public class PayorService {
         if (vm.isWaseelEnabled() != null) {
             linked.setIsWaseelEnabled(vm.isWaseelEnabled());
         }
-        linked.setAllowPartialCoverage(bool(vm.allowPartialCoverage()));
-        linked.setAcceptCopay(bool(vm.acceptCopay()));
-        linked.setAcceptDeductibles(bool(vm.acceptDeductibles()));
-        linked.setAllowPackagePricing(bool(vm.allowPackagePricing()));
-        linked.setAllowDrgBilling(bool(vm.allowDrgBilling()));
-        linked.setForcePreApproval(bool(vm.forcePreApproval()));
         return repo.save(linked);
     }
 
@@ -227,28 +188,12 @@ public class PayorService {
                 });
     }
 
-    private void validateDates(java.time.LocalDate start, java.time.LocalDate expiry) {
-        if (start != null && expiry != null && expiry.isBefore(start)) {
-            throw new BadRequestAlertException(
-                    "invalidDates",
-                    "payor",
-                    "Expiry date cannot be before start date."
-            );
-        }
-    }
-
-    private boolean bool(Boolean v) {
-        return v != null && v;
-    }
-
     // ------------ READ / SEARCH ------------
     @Transactional(readOnly = true)
     public Page<Payor> search(
             PayorCategory category,
             String name,
             String code,
-            LocalDate startDate,
-            LocalDate expiryDate,
             String nphiesId,
             Boolean isWaseelEnabled,
             Boolean isActive,
@@ -271,16 +216,6 @@ public class PayorService {
             String value = code.trim().toLowerCase();
             payorSpecification = payorSpecification.and((root, query, cb) ->
                     cb.like(cb.lower(root.get("code")), "%" + value + "%"));
-        }
-
-        if (startDate != null) {
-            payorSpecification = payorSpecification.and((root, query, cb) ->
-                    cb.equal(root.get("startDate"), startDate));
-        }
-
-        if (expiryDate != null) {
-            payorSpecification = payorSpecification.and((root, query, cb) ->
-                    cb.equal(root.get("expiryDate"), expiryDate));
         }
 
         if (nphiesId != null && !nphiesId.isBlank()) {
@@ -358,16 +293,8 @@ public class PayorService {
                 .waseelPayerId(payer.getNphiesId())
                 .phone(requiredText(firstNonBlank(payer.getPhone(), payer.getMobile())))
                 .contractManagerContact(requiredText(payer.getContactPerson()))
-                .startDate(LocalDate.now())
                 .address(payer.getHeadOfficeAddress())
                 .email(payer.getEmail())
-                .renewable(false)
-                .allowPartialCoverage(false)
-                .acceptCopay(false)
-                .acceptDeductibles(false)
-                .allowPackagePricing(false)
-                .allowDrgBilling(false)
-                .forcePreApproval(false)
                 .isWaseelEnabled(false)
                 .isActive(true)
                 .build();

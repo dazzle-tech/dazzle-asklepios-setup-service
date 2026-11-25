@@ -7,7 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.io.Serializable;
-import java.time.LocalDate;
 
 public record PayorUpdateVM(
 
@@ -37,17 +36,6 @@ public record PayorUpdateVM(
 
         @Size(max = 255)
         String contractManagerContact,
-
-        LocalDate startDate,
-        LocalDate expiryDate,
-        Boolean renewable,
-
-        Boolean allowPartialCoverage,
-        Boolean acceptCopay,
-        Boolean acceptDeductibles,
-        Boolean allowPackagePricing,
-        Boolean allowDrgBilling,
-        Boolean forcePreApproval,
 
         @Size(max = 100)
         String nphiesId,
