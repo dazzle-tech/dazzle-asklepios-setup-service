@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * View Model for updating a Procedure via REST.
@@ -28,7 +29,8 @@ public record ProcedureUpdateVM(
         @NotNull BigDecimal price,
         @NotNull Boolean isActive,
         String lastModifiedBy,
-        Long billingRuleId
+        Long billingRuleId,
+        List<String> relatedSurfaces
 ) implements Serializable {
 
     public static ProcedureUpdateVM ofEntity(Procedure procedure) {
@@ -48,7 +50,8 @@ public record ProcedureUpdateVM(
                 procedure.getLastModifiedBy(),
                 procedure.getBillingRule() != null
                         ? procedure.getBillingRule().getId()
-                        : null
+                        : null,
+                procedure.getRelatedSurfaces() == null ? List.of() : List.copyOf(procedure.getRelatedSurfaces())
         );
     }
 }

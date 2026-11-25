@@ -3,6 +3,7 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
+import com.dazzle.asklepios.domain.enumeration.ToothSurface;
 import com.dazzle.asklepios.repository.ProcedureRepository;
 import com.dazzle.asklepios.repository.ProcedureSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -65,6 +67,7 @@ public class ProcedureService {
                 .contraindications(incoming.getContraindications())
                 .preparationInstructions(incoming.getPreparationInstructions())
                 .recoveryNotes(incoming.getRecoveryNotes())
+                .relatedSurfaces(normalizeRelatedSurfaces(incoming.getRelatedSurfaces()))
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .facility(refFacility(facilityId))
                 .currency(incoming.getCurrency())
@@ -100,6 +103,30 @@ public class ProcedureService {
         }
     }
 
+    private List<String> normalizeRelatedSurfaces(List<String> relatedSurfaces) {
+        if (relatedSurfaces == null) {
+            return null;
+        }
+        List<String> normalized = relatedSurfaces.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .distinct()
+                .toList();
+        for (String surface : normalized) {
+            try {
+                ToothSurface.valueOf(surface);
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestAlertException(
+                        "Unknown surface: " + surface,
+                        "procedure",
+                        "relatedSurfaces.invalid"
+                );
+            }
+        }
+        return normalized;
+    }
+
     public Optional<Procedure> update(Long id, Long facilityId, Procedure incoming) {
         LOG.info("[UPDATE] Request to update Procedure id={} facilityId={} payload={}", id, facilityId, incoming);
 
@@ -122,6 +149,10 @@ public class ProcedureService {
         existing.setContraindications(incoming.getContraindications());
         existing.setPreparationInstructions(incoming.getPreparationInstructions());
         existing.setRecoveryNotes(incoming.getRecoveryNotes());
+        // Omitted (null) keeps the configured surfaces; an empty list clears them.
+        if (incoming.getRelatedSurfaces() != null) {
+            existing.setRelatedSurfaces(normalizeRelatedSurfaces(incoming.getRelatedSurfaces()));
+        }
         existing.setIsActive(incoming.getIsActive());
         existing.setFacility(refFacility(facilityId));
         existing.setCurrency(incoming.getCurrency());

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProcedureResponseVM(
         Long id,
@@ -22,7 +23,8 @@ public record ProcedureResponseVM(
         Long facilityId,
        Currency currency,
        BigDecimal price,
-       Long billingRuleId
+       Long billingRuleId,
+        List<String> relatedSurfaces
 ) implements Serializable {
 
     public static ProcedureResponseVM ofEntity(Procedure procedure) {
@@ -42,7 +44,8 @@ public record ProcedureResponseVM(
                 procedure.getPrice(),
                 procedure.getBillingRule() != null
                         ? procedure.getBillingRule().getId()
-                        : null
+                        : null,
+                procedure.getRelatedSurfaces() == null ? List.of() : List.copyOf(procedure.getRelatedSurfaces())
         );
     }
 }

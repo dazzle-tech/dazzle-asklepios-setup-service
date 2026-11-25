@@ -67,6 +67,7 @@ public class ProcedureController {
                 .contraindications(vm.contraindications())
                 .preparationInstructions(vm.preparationInstructions())
                 .recoveryNotes(vm.recoveryNotes())
+                .relatedSurfaces(vm.relatedSurfaces())
                 .price(vm.price())
                 .currency(vm.currency())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
@@ -103,6 +104,7 @@ public class ProcedureController {
         patch.setContraindications(vm.contraindications());
         patch.setPreparationInstructions(vm.preparationInstructions());
         patch.setRecoveryNotes(vm.recoveryNotes());
+        patch.setRelatedSurfaces(vm.relatedSurfaces());
         patch.setIsActive(vm.isActive());
         patch.setLastModifiedBy(vm.lastModifiedBy());
         patch.setPrice(vm.price());

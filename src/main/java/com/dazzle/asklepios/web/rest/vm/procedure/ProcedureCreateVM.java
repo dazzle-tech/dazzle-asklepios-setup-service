@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ProcedureCreateVM(
@@ -23,7 +24,8 @@ public record ProcedureCreateVM(
        @NotNull Currency currency,
         @NotNull BigDecimal price,
         @NotNull Boolean isActive,
-        Long billingRuleId
+        Long billingRuleId,
+        List<String> relatedSurfaces
 ) implements Serializable {
 
     public static ProcedureCreateVM ofEntity(Procedure procedure) {
@@ -41,7 +43,8 @@ public record ProcedureCreateVM(
                 procedure.getIsActive(),
                 procedure.getBillingRule() != null
                         ? procedure.getBillingRule().getId()
-                        : null
+                        : null,
+                procedure.getRelatedSurfaces() == null ? List.of() : List.copyOf(procedure.getRelatedSurfaces())
         );
     }
 }
