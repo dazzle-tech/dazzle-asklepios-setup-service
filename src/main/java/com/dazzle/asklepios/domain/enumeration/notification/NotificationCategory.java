@@ -33,4 +33,5 @@ public enum NotificationCategory {
     OPD_REPORT_APPROVED,
     PATIENT_APP_NOTIFICATION,
     TASK,
+    PATIENT_COMPLAINT,
 }
