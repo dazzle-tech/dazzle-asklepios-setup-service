@@ -3,13 +3,10 @@ package com.dazzle.asklepios.web.rest.vm.packageSetup;
 import com.dazzle.asklepios.domain.PackageSetupItem;
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 /**
  * One package line: either one item (sourceId) or a whole item type (isCategory, no sourceId).
@@ -26,7 +23,6 @@ public record PackageSetupItemVM(
         Boolean isActive,
         Boolean isCategory,
         @Min(1) Integer maxRepeat,
-        @DecimalMin("0") @DecimalMax("100") BigDecimal discountPercent,
         Long discountId
 ) implements Serializable {
 
@@ -41,7 +37,6 @@ public record PackageSetupItemVM(
                 entity.getIsActive(),
                 entity.getIsCategory(),
                 entity.getMaxRepeat(),
-                entity.getDiscountPercent(),
                 entity.getDiscountId()
         );
     }

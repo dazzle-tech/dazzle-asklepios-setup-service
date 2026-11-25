@@ -15,6 +15,7 @@ import java.util.List;
 /**
  * The whole package (header, departments and items) is saved in one request; items and departments
  * replace the stored ones. allDepartments = true (or empty) means any department.
+ * overrideDefaultService = true: the visit's default service is cancelled when the package is given.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record PackageSetupSaveVM(
@@ -28,5 +29,6 @@ public record PackageSetupSaveVM(
         Long discountId,
         Boolean allDepartments,
         List<Long> departmentIds,
+        Boolean overrideDefaultService,
         @NotEmpty List<@Valid PackageSetupItemVM> items
 ) implements Serializable {}

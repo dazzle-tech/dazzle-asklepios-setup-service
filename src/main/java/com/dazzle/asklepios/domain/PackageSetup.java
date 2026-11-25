@@ -77,6 +77,12 @@ public class PackageSetup extends AbstractAuditingEntity<Long> implements Serial
     @Builder.Default
     private Boolean allDepartments = true;
 
+    /** true: when the package is given to a visit, the visit's default service is cancelled. */
+    @NotNull
+    @Column(name = "override_default_service", nullable = false)
+    @Builder.Default
+    private Boolean overrideDefaultService = false;
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     @Builder.Default

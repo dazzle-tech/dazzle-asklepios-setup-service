@@ -23,6 +23,7 @@ public record PackageSetupResponseVM(
         String discountName,
         Boolean allDepartments,
         List<Long> departmentIds,
+        Boolean overrideDefaultService,
         Integer itemCount,
         Integer activeItemCount,
         List<PackageSetupItemVM> items
@@ -49,6 +50,7 @@ public record PackageSetupResponseVM(
                 discount == null ? null : discount.getName(),
                 entity.getAllDepartments(),
                 departmentIds,
+                entity.getOverrideDefaultService(),
                 lines.size(),
                 (int) lines.stream().filter(l -> !Boolean.FALSE.equals(l.isActive())).count(),
                 lines

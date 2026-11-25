@@ -134,7 +134,10 @@ public class PackageSetupService {
                 .collect(Collectors.toMap(Discount::getId, discount -> discount));
     }
 
-    /** Dates in order, at least one department when not for all, and no item discount with a fixed price. */
+    /**
+     * Dates in order, at least one department when not for all, and exactly one way of pricing the package:
+     * a fixed price, a discount for the whole package, or discounts linked to its items.
+     */
     private static void validateHeader(PackageSetupSaveVM vm) {
         if (vm.validFrom() != null && vm.validTo() != null && vm.validTo().isBefore(vm.validFrom())) {
             throw new BadRequestAlertException("Valid To must be on or after Valid From", ENTITY, "validDates");
@@ -142,20 +145,20 @@ public class PackageSetupService {
         if (Boolean.FALSE.equals(vm.allDepartments()) && (vm.departmentIds() == null || vm.departmentIds().isEmpty())) {
             throw new BadRequestAlertException("Choose at least one department, or All Departments", ENTITY, "departments.required");
         }
-        if (vm.price() != null && vm.items() != null
-                && vm.items().stream().anyMatch(i -> i.discountPercent() != null && i.discountPercent().signum() > 0)) {
+        boolean fixedPrice = vm.price() != null;
+        boolean packageDiscount = vm.discountId() != null;
+        boolean itemDiscounts = vm.items() != null && vm.items().stream().anyMatch(i -> i.discountId() != null);
+        int options = (fixedPrice ? 1 : 0) + (packageDiscount ? 1 : 0) + (itemDiscounts ? 1 : 0);
+        if (options == 0) {
             throw new BadRequestAlertException(
-                    "A package with a fixed price cannot also have item discounts", ENTITY, "price.withDiscount");
+                    "Choose how the package is priced: a fixed price, a discount for the whole package, or discounts on its items",
+                    ENTITY, "pricing.required");
         }
-        if (vm.discountId() != null && vm.items() != null && vm.items().stream().anyMatch(PackageSetupService::hasItemDiscount)) {
+        if (options > 1) {
             throw new BadRequestAlertException(
-                    "Item discounts are not allowed when the package has a discount", ENTITY, "item.discount.notAllowed");
+                    "Choose only one: a fixed price, a discount for the whole package, or discounts on its items",
+                    ENTITY, "pricing.onlyOne");
         }
-    }
-
-    private static boolean hasItemDiscount(PackageSetupItemVM item) {
-        return item.discountId() != null
-                || (item.discountPercent() != null && item.discountPercent().signum() > 0);
     }
 
     private void saveDepartments(Long packageSetupId, PackageSetupSaveVM vm) {
@@ -185,6 +188,7 @@ public class PackageSetupService {
                 .validTo(vm.validTo())
                 .discountId(normalizeDiscountId(vm.discountId()))
                 .allDepartments(!Boolean.FALSE.equals(vm.allDepartments()))
+                .overrideDefaultService(Boolean.TRUE.equals(vm.overrideDefaultService()))
                 .build();
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
 
@@ -213,6 +217,7 @@ public class PackageSetupService {
         entity.setValidTo(vm.validTo());
         entity.setDiscountId(normalizeDiscountId(vm.discountId()));
         entity.setAllDepartments(!Boolean.FALSE.equals(vm.allDepartments()));
+        entity.setOverrideDefaultService(Boolean.TRUE.equals(vm.overrideDefaultService()));
         PackageSetup saved = packageSetupRepository.saveAndFlush(entity);
 
         // Items and departments are replaced as a whole: the screen always sends the full lists.
@@ -246,10 +251,6 @@ public class PackageSetupService {
             }
             if (line.maxRepeat() != null && line.maxRepeat() < 1) {
                 throw new BadRequestAlertException("Repeat must be at least 1", ENTITY, "item.repeat");
-            }
-            if (line.discountPercent() != null
-                    && (line.discountPercent().signum() < 0 || line.discountPercent().compareTo(BigDecimal.valueOf(100)) > 0)) {
-                throw new BadRequestAlertException("Discount must be between 0 and 100", ENTITY, "item.discount");
             }
             String key = category ? line.itemType() + ":ALL" : line.itemType() + ":" + line.sourceId();
             if (!seen.add(key)) {
@@ -285,7 +286,6 @@ public class PackageSetupService {
                     .isActive(!Boolean.FALSE.equals(line.isActive()))
                     .isCategory(category)
                     .maxRepeat(category ? line.maxRepeat() : null)
-                    .discountPercent(line.discountPercent())
                     .discountId(normalizeDiscountId(line.discountId()))
                     .build());
         }
