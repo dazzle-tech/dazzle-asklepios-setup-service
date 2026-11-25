@@ -173,6 +173,15 @@ public class BedController {
         return ResponseEntity.ok(bed);
     }
 
+    @PostMapping("/bed/{id}/release-occupied")
+    public ResponseEntity<Bed> releaseOccupied(
+            @PathVariable("id") @NotNull Long bedId
+    ) {
+        LOG.debug("REST request to return OCCUPIED Bed to READY id={}", bedId);
+
+        return ResponseEntity.ok(bedService.releaseOccupied(bedId));
+    }
+
     @PostMapping("/bed/by-ids")
     public ResponseEntity<List<Bed>> findAllByIds(
             @RequestBody @NotNull List<Long> ids
