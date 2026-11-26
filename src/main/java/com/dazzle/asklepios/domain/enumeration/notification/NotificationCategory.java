@@ -34,4 +34,5 @@ public enum NotificationCategory {
     PATIENT_APP_NOTIFICATION,
     TASK,
     PATIENT_COMPLAINT,
+    APPOINTMENT_REMINDER,
 }
