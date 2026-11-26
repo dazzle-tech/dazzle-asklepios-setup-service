@@ -2,6 +2,7 @@ package com.dazzle.asklepios.service;
 
 import com.dazzle.asklepios.domain.Language;
 import com.dazzle.asklepios.domain.LanguageTranslation;
+import com.dazzle.asklepios.domain.enumeration.Direction;
 import com.dazzle.asklepios.repository.LanguageRepository;
 import com.dazzle.asklepios.repository.LanguageTranslationRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -85,6 +86,24 @@ public class LanguageService {
     public Optional<Language> findByLangKey(String langKey) {
         LOG.debug("Request to get LanguageMaster by langKey={}", langKey);
         return languageRepository.findByLangKey(langKey);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Language> findByName(String langName) {
+        LOG.debug("[FIND BY NAME] langName='{}'", langName);
+        return languageRepository.findByLangNameContainingIgnoreCase(langName);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Language> findByCode(String langKey) {
+        LOG.debug("[FIND BY CODE] langKey='{}'", langKey);
+        return languageRepository.findByLangKeyContainingIgnoreCase(langKey);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Language> findByDirection(Direction direction) {
+        LOG.debug("[FIND BY DIRECTION] direction={}", direction);
+        return languageRepository.findByDirection(direction);
     }
 
     public boolean delete(Long id) {

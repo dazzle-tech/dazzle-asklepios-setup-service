@@ -3,9 +3,13 @@ package com.dazzle.asklepios.web.rest;
 import com.dazzle.asklepios.domain.LoincCode;
 import com.dazzle.asklepios.domain.enumeration.LoincCategory;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
+import com.dazzle.asklepios.repository.LoincCodeSpecifications;
 import com.dazzle.asklepios.service.LoincCodeService;
 import com.dazzle.asklepios.service.dto.LoincImportResultDTO;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
+import com.dazzle.asklepios.web.rest.vm.loinc.LoincCodeCreateVM;
+import com.dazzle.asklepios.web.rest.vm.loinc.LoincCodeUpdateVM;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
@@ -16,12 +20,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -44,11 +51,29 @@ public class LoincCodeController {
         return ResponseEntity.ok(result);
     }
 
+    @PostMapping("/loinc")
+    public ResponseEntity<LoincCode> create(@Valid @RequestBody LoincCodeCreateVM vm) {
+        LoincCode created = service.create(vm.code(), vm.category(), vm.description());
+        return ResponseEntity
+                .created(URI.create("/api/setup/loinc/" + created.getId()))
+                .body(created);
+    }
 
+    @PutMapping("/loinc/{id:\\d+}")
+    public ResponseEntity<LoincCode> update(@PathVariable Long id, @Valid @RequestBody LoincCodeUpdateVM vm) {
+        return service.update(id, vm.code(), vm.category(), vm.description())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
     @GetMapping("/loinc/all")
-    public ResponseEntity<List<LoincCode>> getAll(@ParameterObject Pageable pageable) {
-        Page<LoincCode> page = repository.findAll(pageable);
+    public ResponseEntity<List<LoincCode>> getAll(
+            @RequestParam(required = false) LoincCategory category,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String description,
+            @ParameterObject Pageable pageable) {
+        Page<LoincCode> page = repository.findAll(LoincCodeSpecifications.search(category, code, description), pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

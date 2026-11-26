@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import com.dazzle.asklepios.service.PayorService;
 import com.dazzle.asklepios.web.rest.Helper.PaginationUtil;
-import com.dazzle.asklepios.web.rest.vm.payor.CchiPayorUpsertVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorResponseVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorSaveVM;
 import com.dazzle.asklepios.web.rest.vm.payor.PayorUpdateVM;
@@ -62,12 +61,17 @@ public class PayorController {
             @RequestParam(required = false) PayorCategory category,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String code,
+            @RequestParam(required = false) String nphiesId,
+            @RequestParam(required = false) Boolean isWaseelEnabled,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST search Payors category={}, name={}, code={}, page={}",
-                category, name, code, pageable);
+        LOG.debug("REST search Payors category={}, name={}, code={}, nphiesId={}, isWaseelEnabled={}, isActive={}, page={}",
+                category, name, code, nphiesId, isWaseelEnabled, isActive, pageable);
 
-        Page<Payor> page = service.search(category, name, code, pageable);
+        Page<Payor> page = service.search(
+                category, name, code, nphiesId, isWaseelEnabled, isActive, pageable
+        );
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(),
@@ -121,5 +125,12 @@ public class PayorController {
                 .map(PayorResponseVM::ofEntity)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/payor/ensure-from-nphies/{nphiesId}")
+    public ResponseEntity<PayorResponseVM> ensureFromNphies(@PathVariable String nphiesId) {
+        LOG.debug("REST ensure Payor from NPHIES id={}", nphiesId);
+        Payor payor = service.ensureFromNphiesId(nphiesId);
+        return ResponseEntity.ok(PayorResponseVM.ofEntity(payor));
     }
 }

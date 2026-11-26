@@ -5,14 +5,16 @@ import com.dazzle.asklepios.domain.BrandMedicationActiveIngredient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface BrandMedicationRepository extends JpaRepository<BrandMedication, Long> {
+public interface BrandMedicationRepository extends JpaRepository<BrandMedication, Long>, JpaSpecificationExecutor<BrandMedication> {
     Page<BrandMedication> findByNameContainsIgnoreCase(String name, Pageable pageable);
 
     Page<BrandMedication> findByManufacturerContainsIgnoreCase(String manufacturer, Pageable pageable);
@@ -28,6 +30,18 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
     Page<BrandMedication> findByUseSinglePatient(Boolean useSinglePatient, Pageable pageable);
 
     Page<BrandMedication> findByIsActive(Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByNameContainsIgnoreCaseAndIsActive(String name, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByManufacturerContainsIgnoreCaseAndIsActive(String manufacturer, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByDosageFormContainsIgnoreCaseAndIsActive(String dosageForm, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByRoaContainsIgnoreCaseAndIsActive(String roa, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByExpiresAfterOpeningAndIsActive(Boolean expiresAfterOpening, Boolean isActive, Pageable pageable);
+
+    Page<BrandMedication> findByUseSinglePatientAndIsActive(Boolean useSinglePatient, Boolean isActive, Pageable pageable);
 
     @Query("""
               SELECT DISTINCT bai.brandMedication
@@ -46,6 +60,8 @@ public interface BrandMedicationRepository extends JpaRepository<BrandMedication
     List<BrandMedication> findByNameContainsIgnoreCaseAndIsActiveTrueOrCodeContainsIgnoreCaseAndIsActiveTrue(
             String name, String code
     );
+
+    Optional<BrandMedication> findFirstByCodeIgnoreCase(String code);
 
 }
 

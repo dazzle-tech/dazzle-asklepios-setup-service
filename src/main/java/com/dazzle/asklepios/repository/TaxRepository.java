@@ -1,21 +1,24 @@
 package com.dazzle.asklepios.repository;
 
 import com.dazzle.asklepios.domain.Tax;
+import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
 import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface TaxRepository
-        extends JpaRepository<Tax, Long> {
+        extends JpaRepository<Tax, Long>, JpaSpecificationExecutor<Tax> {
 
     Page<Tax> findAllByFacilityId(
             Long facilityId,
@@ -48,6 +51,51 @@ public interface TaxRepository
     Page<Tax> findAllByFacilityIdAndCalculationType(
             Long facilityId,
             TaxCalculationType calculationType,
+            Pageable pageable
+    );
+
+    // Tax value is the percentage or the fixed amount, depending on the tax type
+    Page<Tax> findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+            Long facilityId,
+            BigDecimal percentage,
+            Long sameFacilityId,
+            BigDecimal fixedAmount,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndApplicableOn(
+            Long facilityId,
+            TaxApplicableOn applicableOn,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndCitizenCategory(
+            Long facilityId,
+            TaxCitizenCategory citizenCategory,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndApplyOnPatientCopayment(
+            Long facilityId,
+            Boolean applyOnPatientCopayment,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndApplyOnClaimShare(
+            Long facilityId,
+            Boolean applyOnClaimShare,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    );
+
+    Page<Tax> findAllByFacilityIdAndActive(
+            Long facilityId,
+            Boolean active,
             Pageable pageable
     );
 

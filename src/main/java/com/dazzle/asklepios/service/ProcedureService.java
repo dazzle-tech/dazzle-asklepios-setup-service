@@ -3,7 +3,9 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Procedure;
 import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
+import com.dazzle.asklepios.domain.enumeration.ToothSurface;
 import com.dazzle.asklepios.repository.ProcedureRepository;
+import com.dazzle.asklepios.repository.ProcedureSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.errors.NotFoundAlertException;
 import jakarta.persistence.EntityManager;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
@@ -29,11 +32,20 @@ public class ProcedureService {
     private static final Logger LOG = LoggerFactory.getLogger(ProcedureService.class);
 
     private final ProcedureRepository procedureRepository;
+    private final ProcedureItemsService procedureItemsService;
     private final EntityManager em;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
 
-    public ProcedureService(ProcedureRepository procedureRepository, EntityManager em) {
+    public ProcedureService(
+            ProcedureRepository procedureRepository,
+            ProcedureItemsService procedureItemsService,
+            EntityManager em,
+            PriceListCatalogSyncService priceListCatalogSyncService
+    ) {
         this.procedureRepository = procedureRepository;
+        this.procedureItemsService = procedureItemsService;
         this.em = em;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
     }
 
     public Procedure create(Long facilityId, Procedure incoming) {
@@ -55,6 +67,7 @@ public class ProcedureService {
                 .contraindications(incoming.getContraindications())
                 .preparationInstructions(incoming.getPreparationInstructions())
                 .recoveryNotes(incoming.getRecoveryNotes())
+                .relatedSurfaces(normalizeRelatedSurfaces(incoming.getRelatedSurfaces()))
                 .isActive(Boolean.TRUE.equals(incoming.getIsActive()))
                 .facility(refFacility(facilityId))
                 .currency(incoming.getCurrency())
@@ -90,6 +103,30 @@ public class ProcedureService {
         }
     }
 
+    private List<String> normalizeRelatedSurfaces(List<String> relatedSurfaces) {
+        if (relatedSurfaces == null) {
+            return null;
+        }
+        List<String> normalized = relatedSurfaces.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .distinct()
+                .toList();
+        for (String surface : normalized) {
+            try {
+                ToothSurface.valueOf(surface);
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestAlertException(
+                        "Unknown surface: " + surface,
+                        "procedure",
+                        "relatedSurfaces.invalid"
+                );
+            }
+        }
+        return normalized;
+    }
+
     public Optional<Procedure> update(Long id, Long facilityId, Procedure incoming) {
         LOG.info("[UPDATE] Request to update Procedure id={} facilityId={} payload={}", id, facilityId, incoming);
 
@@ -112,6 +149,10 @@ public class ProcedureService {
         existing.setContraindications(incoming.getContraindications());
         existing.setPreparationInstructions(incoming.getPreparationInstructions());
         existing.setRecoveryNotes(incoming.getRecoveryNotes());
+        // Omitted (null) keeps the configured surfaces; an empty list clears them.
+        if (incoming.getRelatedSurfaces() != null) {
+            existing.setRelatedSurfaces(normalizeRelatedSurfaces(incoming.getRelatedSurfaces()));
+        }
         existing.setIsActive(incoming.getIsActive());
         existing.setFacility(refFacility(facilityId));
         existing.setCurrency(incoming.getCurrency());
@@ -120,6 +161,12 @@ public class ProcedureService {
 
         try {
             Procedure updated = procedureRepository.saveAndFlush(existing);
+            if (!Boolean.TRUE.equals(updated.getIsActive())) {
+                priceListCatalogSyncService.deactivateCatalogItem(
+                        com.dazzle.asklepios.domain.enumeration.PriceListItemType.PROCEDURE,
+                        updated.getId()
+                );
+            }
             LOG.info("Successfully updated procedure id={} (name='{}')", updated.getId(), updated.getName());
             return Optional.of(updated);
         } catch (DataIntegrityViolationException | JpaSystemException ex) {
@@ -154,27 +201,52 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findAll(Pageable pageable) {
-        LOG.debug("Fetching paged Procedures pageable={}", pageable);
-        return procedureRepository.findAll(pageable);
+    public Page<Procedure> findAll(Boolean isActive, Pageable pageable) {
+        return findAll(isActive, null, null, null, null, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Procedure> findAll(
+            Boolean isActive,
+            Long facilityId,
+            ProcedureCategory categoryType,
+            String name,
+            String code,
+            Pageable pageable
+    ) {
+        LOG.debug(
+                "Fetching paged Procedures isActive={} facilityId={} categoryType={} name={} code={} pageable={}",
+                isActive, facilityId, categoryType, name, code, pageable
+        );
+        return procedureRepository.findAll(
+                ProcedureSpecifications.search(isActive, facilityId, categoryType, name, code),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Pageable pageable) {
+    public Page<Procedure> findByCategory(ProcedureCategory categoryType, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by categoryType={}", categoryType);
-        return procedureRepository.findByCategoryType(categoryType, pageable);
+        return isActive == null
+                ? procedureRepository.findByCategoryType(categoryType, pageable)
+                : procedureRepository.findByCategoryTypeAndIsActive(categoryType, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByCodeContainingIgnoreCase(String code, Pageable pageable) {
+    public Page<Procedure> findByCodeContainingIgnoreCase(String code, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by code='{}'", code);
-        return procedureRepository.findByCodeContainingIgnoreCase(code, pageable);
+        return isActive == null
+                ? procedureRepository.findByCodeContainingIgnoreCase(code, pageable)
+                : procedureRepository.findByCodeContainingIgnoreCaseAndIsActive(code, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByNameContainingIgnoreCase(String name, Pageable pageable) {
+    public Page<Procedure> findByNameContainingIgnoreCase(String name, Boolean isActive, Pageable pageable) {
         LOG.debug("Fetching Procedures by name='{}'", name);
-        return procedureRepository.findByNameContainingIgnoreCase(name, pageable);
+        return isActive == null
+                ? procedureRepository.findByNameContainingIgnoreCase(name, pageable)
+                : procedureRepository.findByNameContainingIgnoreCaseAndIsActive(name, isActive, pageable);
     }
 
     public Optional<Procedure> toggleIsActive(Long id) {
@@ -184,6 +256,12 @@ public class ProcedureService {
                     entity.setIsActive(!Boolean.TRUE.equals(entity.getIsActive()));
                     entity.setLastModifiedDate(Instant.now());
                     Procedure saved = procedureRepository.save(entity);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateCatalogItem(
+                                com.dazzle.asklepios.domain.enumeration.PriceListItemType.PROCEDURE,
+                                saved.getId()
+                        );
+                    }
                     LOG.info("Procedure id={} active status changed to {}", id, saved.getIsActive());
                     return saved;
                 });
@@ -206,16 +284,20 @@ public class ProcedureService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Pageable pageable) {
+    public Page<Procedure> findByFacilityAndOptionalCategory(Long facilityId, ProcedureCategory category, Boolean isActive, Pageable pageable) {
         if (facilityId == null) {
             throw new BadRequestAlertException("Facility id is required", "procedure", "facility.required");
         }
 
         if (category != null) {
-            return procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable);
+            return isActive == null
+                    ? procedureRepository.findByFacility_IdAndCategoryType(facilityId, category, pageable)
+                    : procedureRepository.findByFacility_IdAndCategoryTypeAndIsActive(facilityId, category, isActive, pageable);
         }
 
-        return procedureRepository.findByFacility_Id(facilityId, pageable);
+        return isActive == null
+                ? procedureRepository.findByFacility_Id(facilityId, pageable)
+                : procedureRepository.findByFacility_IdAndIsActive(facilityId, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -313,6 +395,23 @@ public class ProcedureService {
     }
 
 
+
+    /**
+     * Active procedures linked to a department (and specialty when given).
+     * These are the default procedures of a visit opened in that department.
+     */
+    @Transactional(readOnly = true)
+    public Page<Procedure> findProceduresByDepartment(Long departmentId, String specialty, Pageable pageable) {
+        LOG.debug("[GET PROCEDURES BY DEPARTMENT] departmentId={} specialty={} pageable={}",
+                departmentId, specialty, pageable);
+
+        List<Long> procedureIds = procedureItemsService.findLinkedProcedureIds(departmentId, specialty);
+        if (procedureIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return procedureRepository.findByIdInAndIsActiveTrue(procedureIds, pageable);
+    }
 
     private Facility refFacility(Long facilityId) {
         return em.getReference(Facility.class, facilityId);

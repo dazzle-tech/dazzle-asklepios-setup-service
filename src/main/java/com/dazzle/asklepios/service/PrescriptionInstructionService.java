@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.MedFrequency;
 import com.dazzle.asklepios.domain.enumeration.MedRoa;
 import com.dazzle.asklepios.domain.enumeration.UOM;
 import com.dazzle.asklepios.repository.PrescriptionInstructionRepository;
+import com.dazzle.asklepios.repository.PrescriptionInstructionSpecifications;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,12 @@ public class PrescriptionInstructionService {
     public Page<PrescriptionInstruction> findAll(Pageable pageable) {
         LOG.debug("List PrescriptionInstructions page={}", pageable);
         return repository.findAll(pageable);
+    }
+
+    /** List with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<PrescriptionInstruction> findAll(AgeGroupType category, BigDecimal dose, UOM unit, MedRoa rout, MedFrequency frequency, Pageable pageable) {
+        return repository.findAll(PrescriptionInstructionSpecifications.search(category, dose, unit, rout, frequency), pageable);
     }
 
     @Transactional(readOnly = true)

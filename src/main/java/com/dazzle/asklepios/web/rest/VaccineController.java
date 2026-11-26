@@ -55,6 +55,7 @@ public class VaccineController {
                 .type(vm.type())
                 .roa(vm.roa())
                 .atcCode(vm.atcCode())
+                .code(vm.code())
                 .siteOfAdministration(vm.siteOfAdministration())
                 .postOpeningDuration(vm.postOpeningDuration())
                 .durationUnit(vm.durationUnit())
@@ -63,8 +64,6 @@ public class VaccineController {
                 .possibleReactions(vm.possibleReactions())
                 .contraindicationsAndPrecautions(vm.contraindicationsAndPrecautions())
                 .storageAndHandling(vm.storageAndHandling())
-                .facilityId(vm.facilityId())
-                .price(vm.price())
                 .isActive(Boolean.TRUE.equals(vm.isActive()))
                 .build();
 
@@ -88,6 +87,7 @@ public class VaccineController {
         patch.setType(vm.type());
         patch.setRoa(vm.roa());
         patch.setAtcCode(vm.atcCode());
+        patch.setCode(vm.code());
         patch.setSiteOfAdministration(vm.siteOfAdministration());
         patch.setPostOpeningDuration(vm.postOpeningDuration());
         patch.setDurationUnit(vm.durationUnit());
@@ -96,8 +96,6 @@ public class VaccineController {
         patch.setPossibleReactions(vm.possibleReactions());
         patch.setContraindicationsAndPrecautions(vm.contraindicationsAndPrecautions());
         patch.setStorageAndHandling(vm.storageAndHandling());
-        patch.setFacilityId(vm.facilityId());
-        patch.setPrice(vm.price());
         patch.setIsActive(vm.isActive());
 
         return vaccineService.update(id, patch)
@@ -109,10 +107,14 @@ public class VaccineController {
 
     @GetMapping("/vaccine")
     public ResponseEntity<List<VaccineResponseVM>> getAllVaccines(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) VaccineType type,
+            @RequestParam(required = false) RouteOfAdministration roa,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Vaccines pageable={}", pageable);
-        final Page<Vaccine> page = vaccineService.findAll(pageable);
+        final Page<Vaccine> page = vaccineService.findAll(isActive, name, type, roa, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

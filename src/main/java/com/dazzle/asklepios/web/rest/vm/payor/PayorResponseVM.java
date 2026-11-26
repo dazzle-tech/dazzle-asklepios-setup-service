@@ -4,7 +4,6 @@ import com.dazzle.asklepios.domain.Payor;
 import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 
 import java.time.Instant;
-import java.time.LocalDate;
 
 public record PayorResponseVM(
         Long id,
@@ -16,17 +15,6 @@ public record PayorResponseVM(
         String phone,
         String email,
         String contractManagerContact,
-
-        LocalDate startDate,
-        LocalDate expiryDate,
-        Boolean renewable,
-
-        Boolean allowPartialCoverage,
-        Boolean acceptCopay,
-        Boolean acceptDeductibles,
-        Boolean allowPackagePricing,
-        Boolean allowDrgBilling,
-        Boolean forcePreApproval,
 
         String nphiesId,
         String waseelPayerId,
@@ -48,17 +36,6 @@ public record PayorResponseVM(
                 p.getPhone(),
                 p.getEmail(),
                 p.getContractManagerContact(),
-
-                p.getStartDate(),
-                p.getExpiryDate(),
-                p.getRenewable(),
-
-                p.getAllowPartialCoverage(),
-                p.getAcceptCopay(),
-                p.getAcceptDeductibles(),
-                p.getAllowPackagePricing(),
-                p.getAllowDrgBilling(),
-                p.getForcePreApproval(),
 
                 p.getNphiesId(),
                 p.getWaseelPayerId(),

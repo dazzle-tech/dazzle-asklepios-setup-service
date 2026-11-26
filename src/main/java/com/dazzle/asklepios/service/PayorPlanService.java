@@ -319,6 +319,9 @@ public class PayorPlanService {
         }
 
         CoverageType coverageTypeEnum = parseCoverageType(cleanCoverageType);
+        if (coverageTypeEnum == null) {
+            return Optional.empty();
+        }
 
         List<PayorPlan> candidatePlans;
 
@@ -354,11 +357,7 @@ public class PayorPlanService {
 
     private CoverageType parseCoverageType(String value) {
         if (isBlank(value)) {
-            throw new BadRequestAlertException(
-                    "coverageTypeRequired",
-                    "payorPlan",
-                    "Coverage type is required."
-            );
+            return null;
         }
 
         try {

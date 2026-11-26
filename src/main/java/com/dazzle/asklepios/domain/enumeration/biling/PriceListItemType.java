@@ -6,5 +6,6 @@ public enum PriceListItemType {
     RADIOLOGY,
     PATHOLOGY,
     SERVICE,
-    PROCEDURE
+    PROCEDURE,
+    VACCINE
 }

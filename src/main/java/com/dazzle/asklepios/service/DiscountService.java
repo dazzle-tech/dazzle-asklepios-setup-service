@@ -5,6 +5,7 @@ import com.dazzle.asklepios.domain.enumeration.DiscountApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import com.dazzle.asklepios.domain.enumeration.biling.BillingItemTypes;
 import com.dazzle.asklepios.repository.DiscountRepository;
+import com.dazzle.asklepios.repository.DiscountSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.service.dto.DiscountDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
@@ -469,6 +470,38 @@ public class DiscountService {
         );
     }
 
+    /** Discounts of a facility with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<Discount> findAllByFacilityId(
+            Long facilityId,
+            String code,
+            String name,
+            DiscountType discountType,
+            BigDecimal value,
+            DiscountApplicableOn applicableOn,
+            Boolean requiresApproval,
+            Boolean isDefault,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository.findAll(
+                DiscountSpecifications.search(
+                        facilityId,
+                        code,
+                        name,
+                        discountType,
+                        value,
+                        applicableOn,
+                        requiresApproval,
+                        isDefault,
+                        active
+                ),
+                pageable
+        );
+    }
+
     @Transactional(readOnly = true)
     public Page<Discount> findAllActiveByFacilityId(
             Long facilityId,
@@ -543,6 +576,72 @@ public class DiscountService {
                 .findAllByFacilityIdAndApplicableOn(
                         facilityId,
                         applicableOn,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByValue(
+            Long facilityId,
+            BigDecimal value,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+                        facilityId,
+                        value,
+                        facilityId,
+                        value,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByRequiresApproval(
+            Long facilityId,
+            Boolean requiresApproval,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndRequiresApproval(
+                        facilityId,
+                        requiresApproval,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Discount> findByActive(
+            Long facilityId,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return discountRepository
+                .findAllByFacilityIdAndActive(
+                        facilityId,
+                        active,
                         pageable
                 );
     }

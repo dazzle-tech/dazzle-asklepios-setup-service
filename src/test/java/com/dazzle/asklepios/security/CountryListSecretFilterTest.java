@@ -53,6 +53,52 @@ class CountryListSecretFilterTest {
     }
 
     @Test
+    void rejectsMobileConfigValueWithoutSecret() throws Exception {
+        CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
+        MockHttpServletRequest request = new MockHttpServletRequest(
+            "GET",
+            "/api/setup/mobile-app-config/value"
+        );
+        request.setQueryString("keys=SUPPORT_PHONE&keys=BANNER_IMAGE1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> {
+            throw new AssertionError("filter chain should not continue");
+        });
+
+        assertEquals(401, response.getStatus());
+    }
+
+    @Test
+    void allowsMobileConfigValueWithPortalSecret() throws Exception {
+        CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
+        MockHttpServletRequest request = new MockHttpServletRequest(
+            "GET",
+            "/api/setup/mobile-app-config/value"
+        );
+        request.setQueryString("keys=SUPPORT_PHONE&keys=BANNER_IMAGE1");
+        request.addHeader(CountryListSecretFilter.SECRET_HEADER, SECRET);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        boolean[] continued = { false };
+
+        filter.doFilter(request, response, (req, res) -> continued[0] = true);
+
+        assertTrue(continued[0]);
+    }
+
+    @Test
+    void ignoresMobileConfigAdminList() throws Exception {
+        CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/setup/mobile-app-config");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        boolean[] continued = { false };
+
+        filter.doFilter(request, response, (req, res) -> continued[0] = true);
+
+        assertTrue(continued[0]);
+    }
+
+    @Test
     void ignoresExistingActiveCountryRoute() throws Exception {
         CountryListSecretFilter filter = new CountryListSecretFilter(SECRET);
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/setup/country/active");

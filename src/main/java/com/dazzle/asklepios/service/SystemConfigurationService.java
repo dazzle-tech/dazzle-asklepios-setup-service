@@ -65,13 +65,20 @@ public class SystemConfigurationService {
         }
 
         if (isImageKey(config.getConfigKey())) {
-            String resolvedUrl =
-                    attachmentProperties.getCdnEndpoint().replaceAll("/$", "")
-                            + "/"
-                            + value;
+            String baseUrl = firstNonBlank(
+                    attachmentProperties.getCdnEndpoint(),
+                    attachmentProperties.getEndpoint()
+            );
+            if (baseUrl == null) {
+                LOG.warn(
+                        "CDN/endpoint is not configured. Returning raw image key for [{}]",
+                        config.getConfigKey()
+                );
+                return value;
+            }
 
+            String resolvedUrl = baseUrl.replaceAll("/$", "") + "/" + value;
             LOG.debug("Resolved image url for [{}]: {}", config.getConfigKey(), resolvedUrl);
-
             return resolvedUrl;
         }
 
@@ -221,6 +228,7 @@ public class SystemConfigurationService {
             case LOGIN_BACKGROUND -> "Login page background";
             case SIDEBAR_LOGO -> "Sidebar logo, used when sidebar is in expanded mode";
             case SIDEBAR_LOGO_DARK -> "Sidebar logo in dark mode, used when sidebar is in expanded mode";
+            case PRESCRIPTION_STAMP -> "Stamp printed at the bottom of the prescription report";
         };
     }
 
@@ -229,6 +237,7 @@ public class SystemConfigurationService {
                 key == SystemConfigKey.SYSTEM_LOGO ||
                 key==SystemConfigKey.SIDEBAR_LOGO||
                 key==SystemConfigKey.SIDEBAR_LOGO_DARK||
+                key == SystemConfigKey.PRESCRIPTION_STAMP ||
                 key == SystemConfigKey.LOGIN_BACKGROUND;
     }
 
@@ -252,7 +261,22 @@ public class SystemConfigurationService {
         if(key ==SystemConfigKey.SIDEBAR_LOGO_DARK){
             return "config/SIDEBAR_LOGO_DARK/sidebar-logo-dark" + timestamp + extension;
         }
+        if (key == SystemConfigKey.PRESCRIPTION_STAMP) {
+            return "config/PRESCRIPTION_STAMP/prescription-stamp-" + timestamp + extension;
+        }
         return "config/" + key.name() + "/" + key.name().toLowerCase() + "-" + timestamp + extension;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 
     private String getExtension(String filename) {

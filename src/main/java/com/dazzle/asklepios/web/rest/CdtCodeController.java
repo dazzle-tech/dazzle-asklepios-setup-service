@@ -4,6 +4,7 @@ import com.dazzle.asklepios.domain.CdtCode;
 import com.dazzle.asklepios.domain.ServiceSetup;
 import com.dazzle.asklepios.domain.enumeration.CdtClass;
 import com.dazzle.asklepios.repository.CdtCodeRepository;
+import com.dazzle.asklepios.repository.CdtCodeSpecifications;
 import com.dazzle.asklepios.service.CdtCodeService;
 import com.dazzle.asklepios.service.CdtServiceMappingService;
 import com.dazzle.asklepios.service.dto.CdtImportResultDTO;
@@ -50,9 +51,16 @@ public class CdtCodeController {
         return ResponseEntity.ok(result);
     }
 
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
     @GetMapping("/cdt/all")
-    public ResponseEntity<List<CdtCode>> getAll(@ParameterObject Pageable pageable) {
-        Page<CdtCode> page = repository.findAll(pageable);
+    public ResponseEntity<List<CdtCode>> getAll(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) CdtClass cdtClass,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String description,
+            @ParameterObject Pageable pageable) {
+        Page<CdtCode> page = repository.findAll(
+                CdtCodeSpecifications.search(isActive, cdtClass, code, description), pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent(), headers, HttpStatus.OK);

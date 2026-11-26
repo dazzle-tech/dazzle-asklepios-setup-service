@@ -168,14 +168,15 @@ public class OrganizationHolidayController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) Boolean recurring,
             @RequestParam(required = false) Boolean allFacilities,
-            @RequestParam(required = false) Long facilityId
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) Boolean isActive
     ) {
         LOG.debug(
                 "REST request to search OrganizationHolidays name={}, holidayType={}, startDate={}, endDate={}, recurring={}, allFacilities={}, facilityId={}",
                 name, holidayType, startDate, endDate, recurring, allFacilities, facilityId
         );
 
-        List<OrganizationHolidayResponseVM> result = organizationHolidayService.search(name, holidayType, startDate, endDate, recurring, allFacilities, facilityId)
+        List<OrganizationHolidayResponseVM> result = organizationHolidayService.search(name, holidayType, startDate, endDate, recurring, allFacilities, facilityId, isActive)
                 .stream()
                 .map(OrganizationHolidayResponseVM::ofEntity)
                 .toList();

@@ -9,6 +9,7 @@ import com.dazzle.asklepios.domain.enumeration.JobRole;
 import com.dazzle.asklepios.domain.enumeration.Specialty;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.PractitionerDepartmentRepository;
+import com.dazzle.asklepios.repository.PractitionerSpecifications;
 import com.dazzle.asklepios.repository.PractitionersRepository;
 import com.dazzle.asklepios.repository.UserRepository;
 import com.dazzle.asklepios.security.SecurityUtils;
@@ -263,6 +264,12 @@ public class PractitionerService {
     @Transactional(readOnly = true)
     public Page<Practitioner> findAll(Pageable pageable) {
         return practitionerRepository.findAll(pageable);
+    }
+
+    /** List with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<Practitioner> findAll(Boolean isActive, Long facilityId, String name, Specialty specialty, JobRole jobRole, Boolean linkedToUser, Pageable pageable) {
+        return practitionerRepository.findAll(PractitionerSpecifications.search(isActive, facilityId, name, specialty, jobRole, linkedToUser), pageable);
     }
 
     @Transactional(readOnly = true)

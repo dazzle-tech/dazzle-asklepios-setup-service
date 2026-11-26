@@ -51,9 +51,12 @@ public class ReportTemplateController {
 
     // الباقي مثل ما هو
     @GetMapping("/report-template")
-    public ResponseEntity<List<ReportTemplateResponseVM>> list(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<ReportTemplateResponseVM>> list(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String name,
+            @ParameterObject Pageable pageable) {
         LOG.debug("REST list ReportTemplate pageable={}", pageable);
-        Page<ReportTemplate> page = service.findAll(pageable);
+        Page<ReportTemplate> page = service.findAll(isActive, name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
         );

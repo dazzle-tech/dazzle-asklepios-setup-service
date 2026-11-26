@@ -12,6 +12,7 @@ public enum RouteOfAdministration {
     NASAL_IN,
     INTRAVENOUS_IV,
     TRANSDERMAL_PATCH,
-    TOPICAL
+    TOPICAL,
+    INHALATION
 }
 

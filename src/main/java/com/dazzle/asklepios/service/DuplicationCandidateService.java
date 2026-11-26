@@ -3,12 +3,14 @@ package com.dazzle.asklepios.service;
 import com.dazzle.asklepios.domain.DuplicationCandidate;
 import com.dazzle.asklepios.domain.enumeration.DuplicationField;
 import com.dazzle.asklepios.repository.DuplicationCandidateRepository;
+import com.dazzle.asklepios.repository.DuplicationCandidateSpecifications;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -67,6 +69,28 @@ public class DuplicationCandidateService {
     public List<DuplicationCandidate> findAll() {
         LOG.debug("Request to get all DuplicationCandidates");
         return repository.findAll();
+    }
+
+    /**
+     * List with optional filters combined with AND; nulls and empty lists are ignored.
+     * fieldsTrue / fieldsFalse: duplication fields that must be on / off (a missing key counts as off).
+     */
+    @Transactional(readOnly = true)
+    public List<DuplicationCandidate> search(
+            String rule,
+            Boolean isActive,
+            Collection<DuplicationField> fieldsTrue,
+            Collection<DuplicationField> fieldsFalse
+    ) {
+        // Fields are stored as jsonb, so they are checked here (same rule as findByField)
+        return repository.findAll(DuplicationCandidateSpecifications.search(rule, isActive)).stream()
+                .filter(c -> fieldsTrue == null || fieldsTrue.stream().allMatch(f -> isFieldOn(c, f)))
+                .filter(c -> fieldsFalse == null || fieldsFalse.stream().noneMatch(f -> isFieldOn(c, f)))
+                .toList();
+    }
+
+    private static boolean isFieldOn(DuplicationCandidate candidate, DuplicationField field) {
+        return candidate.getFields() != null && Boolean.TRUE.equals(candidate.getFields().get(field.name()));
     }
 
 

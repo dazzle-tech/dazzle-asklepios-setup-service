@@ -69,19 +69,21 @@ public class DuplicationCandidateController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    /** Get all or filter by role */
+    /**
+     * Get all, or filter with optional params combined with AND:
+     * role (rule contains), isActive, fieldsTrue / fieldsFalse (duplication fields that must be on / off).
+     */
     @GetMapping
     public ResponseEntity<List<DuplicationCandidateResponseVM>> findAll(
-            @RequestParam(required = false) String role
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) List<DuplicationField> fieldsTrue,
+            @RequestParam(required = false) List<DuplicationField> fieldsFalse
     ) {
-        LOG.debug("REST request to get DuplicationCandidates (filter role={})", role);
+        LOG.debug("REST request to get DuplicationCandidates (role={}, isActive={}, fieldsTrue={}, fieldsFalse={})",
+                role, isActive, fieldsTrue, fieldsFalse);
 
-        List<DuplicationCandidate> list;
-        if (role != null && !role.isBlank()) {
-            list = service.findByRoleFilter(role.trim());
-        } else {
-            list = service.findAll();
-        }
+        List<DuplicationCandidate> list = service.search(role, isActive, fieldsTrue, fieldsFalse);
 
         List<DuplicationCandidateResponseVM> result = list.stream()
                 .map(DuplicationCandidateResponseVM::ofEntity)

@@ -9,6 +9,7 @@ import com.dazzle.asklepios.domain.enumeration.AgeUnit;
 import com.dazzle.asklepios.domain.enumeration.DayOfWeek;
 import com.dazzle.asklepios.domain.enumeration.DepartmentType;
 import com.dazzle.asklepios.domain.enumeration.EncounterType;
+import com.dazzle.asklepios.repository.DepartmentSpecifications;
 import com.dazzle.asklepios.repository.DepartmentsRepository;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.ResourceRepository;
@@ -94,6 +95,7 @@ public class DepartmentService {
                 .requirePractitioner(true)
                 .requireBilling(departmentVM.requireBilling())
                 .requirePreAssessment(departmentVM.requirePreAssessment())
+                .assignPractitionerOnVisitStart(Boolean.TRUE.equals(departmentVM.assignPractitionerOnVisitStart()))
                 .ageSpecific(Boolean.TRUE.equals(departmentVM.ageSpecific()))
                 .fromAge(departmentVM.fromAge())
                 .fromAgeUnit(departmentVM.fromAgeUnit())
@@ -165,6 +167,9 @@ public class DepartmentService {
         }
         if (departmentVM.requirePreAssessment() != null) {
             department.setRequirePreAssessment(departmentVM.requirePreAssessment());
+        }
+        if (departmentVM.assignPractitionerOnVisitStart() != null) {
+            department.setAssignPractitionerOnVisitStart(departmentVM.assignPractitionerOnVisitStart());
         }
         if (departmentVM.ageSpecific() != null) {
             department.setAgeSpecific(departmentVM.ageSpecific());
@@ -453,6 +458,19 @@ public class DepartmentService {
     public Page<Department> findAll(Pageable pageable) {
         LOG.debug("Request to get Departments with pagination: {}", pageable);
         return departmentRepository.findAll(pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<Department> findAll(
+            Boolean isActive,
+            Long facilityId,
+            String name,
+            DepartmentType type,
+            Pageable pageable
+    ) {
+        return departmentRepository.findAll(
+                DepartmentSpecifications.search(isActive, facilityId, name, type), pageable);
     }
 
     @Transactional(readOnly = true)

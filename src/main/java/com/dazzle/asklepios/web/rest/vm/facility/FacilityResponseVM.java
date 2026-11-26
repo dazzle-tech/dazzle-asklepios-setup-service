@@ -41,6 +41,7 @@ public record FacilityResponseVM(
         String districtName,
         String streetAddress,
         String postalCode,
+        String defaultPhoneCountry,
         String facilityAddress
 ) implements Serializable {
 
@@ -83,6 +84,7 @@ public record FacilityResponseVM(
                 districtName,
                 facility.getStreetAddress(),
                 facility.getPostalCode(),
+                facility.getDefaultPhoneCountry(),
                 facilityAddress.isBlank() ? null : facilityAddress
         );
     }

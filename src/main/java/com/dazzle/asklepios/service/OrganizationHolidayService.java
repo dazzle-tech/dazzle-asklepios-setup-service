@@ -164,6 +164,11 @@ public class OrganizationHolidayService {
 
     @Transactional(readOnly = true)
     public List<OrganizationHoliday> search(String name, HolidayType holidayType, LocalDate startDate, LocalDate endDate, Boolean recurring, Boolean allFacilities, Long facilityId) {
+        return search(name, holidayType, startDate, endDate, recurring, allFacilities, facilityId, null);
+    }
+
+    /** Same search with an optional active flag; every filter given is combined with AND. */
+    public List<OrganizationHoliday> search(String name, HolidayType holidayType, LocalDate startDate, LocalDate endDate, Boolean recurring, Boolean allFacilities, Long facilityId, Boolean isActive) {
         LOG.debug("Request to search OrganizationHolidays name={}, holidayType={}, startDate={}, endDate={}, recurring={}, allFacilities={}, facilityId={}",
                 name, holidayType, startDate, endDate, recurring, allFacilities, facilityId);
 
@@ -209,6 +214,11 @@ public class OrganizationHolidayService {
                     cb.like(root.get("facilityIds"), "%," + idAsText),
                     cb.like(root.get("facilityIds"), "%," + idAsText + ",%")
             ));
+        }
+
+        if (isActive != null) {
+            organizationHolidaySpecification = organizationHolidaySpecification.and((root, query, cb) ->
+                    cb.equal(root.get("isActive"), isActive));
         }
 
         return organizationHolidayRepository.findAll(organizationHolidaySpecification).stream()

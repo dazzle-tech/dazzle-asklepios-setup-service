@@ -67,10 +67,20 @@ public class DiagnosticTestController {
     }
 
     @GetMapping("/diagnostic-test")
-    public ResponseEntity<List<DiagnosticTestResponseVM>> list(@ParameterObject Pageable pageable) {
-        LOG.debug("REST request to list DiagnosticTests page={}", pageable);
+    public ResponseEntity<List<DiagnosticTestResponseVM>> list(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String shortName,
+            @RequestParam(required = false) String internalCode,
+            @ParameterObject Pageable pageable
+    ) {
+        LOG.debug(
+                "REST request to list DiagnosticTests isActive={} type={} name={} shortName={} internalCode={} page={}",
+                isActive, type, name, shortName, internalCode, pageable
+        );
 
-        Page<DiagnosticTest> page = service.findAll(pageable);
+        Page<DiagnosticTest> page = service.findAll(isActive, type, name, shortName, internalCode, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -103,11 +113,12 @@ public class DiagnosticTestController {
     @GetMapping("/diagnostic-test/by-type/{type}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByType(
             @PathVariable TestType type,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST request to find DiagnosticTests by type={} page={}", type, pageable);
 
-        Page<DiagnosticTest> page = service.findByType(type, pageable);
+        Page<DiagnosticTest> page = service.findByType(type, isActive, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -123,11 +134,12 @@ public class DiagnosticTestController {
     @GetMapping("/diagnostic-test/by-name/{name}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByName(
             @PathVariable String name,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST request to search DiagnosticTests by name='{}' page={}", name, pageable);
 
-        Page<DiagnosticTest> page = service.findByName(name, pageable);
+        Page<DiagnosticTest> page = service.findByName(name, isActive, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -143,6 +155,7 @@ public class DiagnosticTestController {
     @GetMapping("/diagnostic-test/by-internal-code/{internalCode}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByInternalCode(
             @PathVariable String internalCode,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug(
@@ -151,7 +164,7 @@ public class DiagnosticTestController {
                 pageable
         );
 
-        Page<DiagnosticTest> page = service.findByInternalCode(internalCode, pageable);
+        Page<DiagnosticTest> page = service.findByInternalCode(internalCode, isActive, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page
@@ -167,6 +180,7 @@ public class DiagnosticTestController {
     @GetMapping("/diagnostic-test/by-short-name/{shortName}")
     public ResponseEntity<List<DiagnosticTestResponseVM>> findByShortName(
             @PathVariable String shortName,
+            @RequestParam(required = false) Boolean isActive,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug(
@@ -175,7 +189,7 @@ public class DiagnosticTestController {
                 pageable
         );
 
-        Page<DiagnosticTest> page = service.findByShortName(shortName, pageable);
+        Page<DiagnosticTest> page = service.findByShortName(shortName, isActive, pageable);
 
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page

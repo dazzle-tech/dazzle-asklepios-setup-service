@@ -1,8 +1,10 @@
 package com.dazzle.asklepios.domain;
 
+import com.dazzle.asklepios.domain.converter.RelatedSurfaceListConverter;
 import com.dazzle.asklepios.domain.enumeration.Currency;
 import com.dazzle.asklepios.domain.enumeration.ProcedureCategory;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -22,6 +24,8 @@ import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Getter
@@ -53,8 +57,8 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
     private Currency currency;
 
     @NotNull
-    @Column(nullable = false)
-    private  Long price;
+    @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal price;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -80,6 +84,10 @@ public class Procedure extends AbstractAuditingEntity<Long> implements Serializa
 
     @Column(name = "recovery_notes", columnDefinition = "text")
     private String recoveryNotes;
+
+    @Convert(converter = RelatedSurfaceListConverter.class)
+    @Column(name = "related_surfaces", length = 255)
+    private List<String> relatedSurfaces;
 
     @NotNull
     @Column(name = "is_active", nullable = false)

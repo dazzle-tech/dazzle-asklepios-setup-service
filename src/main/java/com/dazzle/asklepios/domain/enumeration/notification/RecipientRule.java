@@ -18,6 +18,9 @@ public enum RecipientRule {
     CREATED_BY_USER,
     CREATED_BY_USER_PHONE,
 
+    /** The staff member a task notice is about: the assignee, or a team member for an unassigned task. */
+    TASK_USER,
+
     DATA,
     STATIC
 }

@@ -1,7 +1,9 @@
 package com.dazzle.asklepios.web.rest;
 
 import com.dazzle.asklepios.domain.Tax;
+import com.dazzle.asklepios.domain.enumeration.TaxApplicableOn;
 import com.dazzle.asklepios.domain.enumeration.TaxCalculationType;
+import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.service.TaxService;
 import com.dazzle.asklepios.service.dto.TaxDTO;
@@ -26,9 +28,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
@@ -174,12 +178,36 @@ public class TaxController {
             @NotNull
             Long facilityId,
 
+            // Optional filters combined with AND
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) TaxType taxType,
+            @RequestParam(required = false) BigDecimal value,
+            @RequestParam(required = false) TaxCalculationType calculationType,
+            @RequestParam(required = false) TaxApplicableOn applicableOn,
+            @RequestParam(required = false) TaxCitizenCategory citizenCategory,
+            @RequestParam(required = false) Boolean applyOnPatientCopayment,
+            @RequestParam(required = false) Boolean applyOnClaimShare,
+            @RequestParam(required = false) Boolean isDefault,
+            @RequestParam(required = false) Boolean active,
+
             @ParameterObject
             Pageable pageable
     ) {
         Page<Tax> page =
                 taxService.findAllByFacilityId(
                         facilityId,
+                        code,
+                        name,
+                        taxType,
+                        value,
+                        calculationType,
+                        applicableOn,
+                        citizenCategory,
+                        applyOnPatientCopayment,
+                        applyOnClaimShare,
+                        isDefault,
+                        active,
                         pageable
                 );
 
@@ -291,6 +319,146 @@ public class TaxController {
                 taxService.findByCalculationType(
                         facilityId,
                         calculationType,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-value/{value}")
+    public ResponseEntity<List<Tax>> findByValue(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            BigDecimal value,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByValue(
+                        facilityId,
+                        value,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-applicable-on/{applicableOn}")
+    public ResponseEntity<List<Tax>> findByApplicableOn(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            TaxApplicableOn applicableOn,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByApplicableOn(
+                        facilityId,
+                        applicableOn,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-citizen-category/{citizenCategory}")
+    public ResponseEntity<List<Tax>> findByCitizenCategory(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            TaxCitizenCategory citizenCategory,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByCitizenCategory(
+                        facilityId,
+                        citizenCategory,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-patient-copayment/{applyOnPatientCopayment}")
+    public ResponseEntity<List<Tax>> findByApplyOnPatientCopayment(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean applyOnPatientCopayment,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByApplyOnPatientCopayment(
+                        facilityId,
+                        applyOnPatientCopayment,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-claim-share/{applyOnClaimShare}")
+    public ResponseEntity<List<Tax>> findByApplyOnClaimShare(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean applyOnClaimShare,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByApplyOnClaimShare(
+                        facilityId,
+                        applyOnClaimShare,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-default/{isDefault}")
+    public ResponseEntity<List<Tax>> findByIsDefault(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean isDefault,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                )
+        );
+    }
+
+    @GetMapping("/tax/by-active/{active}")
+    public ResponseEntity<List<Tax>> findByActive(
+            @NotNull
+            Long facilityId,
+
+            @PathVariable
+            Boolean active,
+
+            @ParameterObject
+            Pageable pageable
+    ) {
+        return pagedResponse(
+                taxService.findByActive(
+                        facilityId,
+                        active,
                         pageable
                 )
         );

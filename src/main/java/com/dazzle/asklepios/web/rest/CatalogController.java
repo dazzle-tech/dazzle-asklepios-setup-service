@@ -66,8 +66,12 @@ public class CatalogController {
 
     /** LIST (pageable) */
     @GetMapping("/catalog")
-    public ResponseEntity<List<CatalogResponseVM>> list(@ParameterObject Pageable pageable) {
-        Page<Catalog> page = catalogService.findAll(pageable);
+    public ResponseEntity<List<CatalogResponseVM>> list(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) TestType type,
+            @RequestParam(required = false) Long departmentId,
+            @ParameterObject Pageable pageable) {
+        Page<Catalog> page = catalogService.findAll(name, type, departmentId, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(CatalogResponseVM::ofEntity).toList(), headers, HttpStatus.OK);

@@ -6,12 +6,13 @@ import com.dazzle.asklepios.domain.enumeration.MedFrequency;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface MedFrequencySetupRepository extends JpaRepository<MedFrequencySetup, Long> {
+public interface MedFrequencySetupRepository extends JpaRepository<MedFrequencySetup, Long>, JpaSpecificationExecutor<MedFrequencySetup> {
 
     Optional<MedFrequencySetup> findByFrequency(MedFrequency frequency);
 

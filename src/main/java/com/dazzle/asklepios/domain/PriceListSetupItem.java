@@ -1,7 +1,6 @@
 package com.dazzle.asklepios.domain;
 
 import com.dazzle.asklepios.domain.enumeration.PriceListItemType;
-import com.dazzle.asklepios.domain.enumeration.PricingMethod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -69,6 +67,9 @@ public class PriceListSetupItem extends AbstractAuditingEntity<Long>
 
     @Column(name = "item_name", length = 1000)
     private String itemName;
+
+    @Column(name = "category", length = 50)
+    private String category;
 
     @NotNull
     @DecimalMin("0.0000")

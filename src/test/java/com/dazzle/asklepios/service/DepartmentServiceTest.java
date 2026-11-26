@@ -96,7 +96,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
@@ -122,7 +122,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", 99L, DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
@@ -139,7 +139,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentUpdateVM(
                 5000L, "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "NEW01", "111", "new@test.com", EncounterType.CLINIC, false, true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, AgeUnit.DAYS, 12, AgeUnit.YEARS,
                 List.of()
         );
@@ -162,7 +162,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 12, AgeUnit.YEARS, 1, AgeUnit.DAYS,
                 List.of()
         );
@@ -178,7 +178,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, AgeUnit.DAYS, null, null,
                 List.of()
         );
@@ -200,7 +200,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, null, null, 12, AgeUnit.YEARS,
                 List.of()
         );
@@ -222,7 +222,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentCreateVM(
                 "Cardiology", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "CARD01", "123456", "email@test.com", EncounterType.CLINIC, true, "tester", true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 true, 1, null, null, null,
                 List.of()
         );
@@ -244,7 +244,7 @@ class DepartmentServiceTest {
         var vm = new DepartmentUpdateVM(
                 department.getId(), "Updated Name", facility.getId(), DepartmentType.OUTPATIENT_CLINIC,
                 true, "NEW01", "111", "new@test.com", EncounterType.CLINIC, false, true, true,
-                false, 1, 30, 0, 0, true, false, false,
+                false, 1, 30, 0, 0, true, false, false, false,
                 false, null, null, null, null,
                 List.of()
         );

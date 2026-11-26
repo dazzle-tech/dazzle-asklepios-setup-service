@@ -7,6 +7,7 @@ import com.dazzle.asklepios.domain.enumeration.TestResultType;
 import com.dazzle.asklepios.domain.enumeration.TestType;
 import com.dazzle.asklepios.repository.DiagnosticTestProfileRepository;
 import com.dazzle.asklepios.repository.DiagnosticTestRepository;
+import com.dazzle.asklepios.repository.DiagnosticTestSpecifications;
 import com.dazzle.asklepios.repository.LoincCodeRepository;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import com.dazzle.asklepios.web.rest.vm.diagnostictest.DiagnosticTestCreateVM;
@@ -36,6 +37,7 @@ public class DiagnosticTestService {
     private final DiagnosticTestProfileRepository profileRepository;
     private final DiagnosticTestNormalRangeService normalRangeService;
     private final BillingRuleReferenceService billingRuleReferenceService;
+    private final PriceListCatalogSyncService priceListCatalogSyncService;
     private final LoincCodeRepository loincCodeRepository;
 
     public DiagnosticTestService(
@@ -43,12 +45,14 @@ public class DiagnosticTestService {
             DiagnosticTestProfileRepository profileRepository,
             DiagnosticTestNormalRangeService normalRangeService,
             BillingRuleReferenceService billingRuleReferenceService,
+            PriceListCatalogSyncService priceListCatalogSyncService,
             LoincCodeRepository loincCodeRepository
     ) {
         this.repository = repository;
         this.profileRepository = profileRepository;
         this.normalRangeService = normalRangeService;
         this.billingRuleReferenceService = billingRuleReferenceService;
+        this.priceListCatalogSyncService = priceListCatalogSyncService;
         this.loincCodeRepository = loincCodeRepository;
     }
     private void validateDefaultProfileFields(
@@ -184,6 +188,13 @@ public class DiagnosticTestService {
             validateAppointableRequirements(existing);
 
             DiagnosticTest saved = repository.save(existing);
+
+            if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                priceListCatalogSyncService.deactivateDiagnosticTest(
+                        saved.getId(),
+                        saved.getType()
+                );
+            }
 
             if (saved.getType() == TestType.LABORATORY) {
                 DiagnosticTestProfile defaultProfile = profileRepository
@@ -388,28 +399,52 @@ public class DiagnosticTestService {
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTest> findAll(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Page<DiagnosticTest> findAll(Boolean isActive, Pageable pageable) {
+        return findAll(isActive, null, null, null, null, pageable);
+    }
+
+    /** Optional filters combined with AND, so the setup screen can search several columns at once. */
+    @Transactional(readOnly = true)
+    public Page<DiagnosticTest> findAll(
+            Boolean isActive,
+            TestType type,
+            String name,
+            String shortName,
+            String internalCode,
+            Pageable pageable
+    ) {
+        return repository.findAll(
+                DiagnosticTestSpecifications.search(isActive, type, name, shortName, internalCode),
+                pageable
+        );
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTest> findByType(TestType type, Pageable pageable) {
-        return repository.findByType(type, pageable);
+    public Page<DiagnosticTest> findByType(TestType type, Boolean isActive, Pageable pageable) {
+        return isActive == null
+                ? repository.findByType(type, pageable)
+                : repository.findByTypeAndIsActive(type, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTest> findByName(String name, Pageable pageable) {
-        return repository.findByNameContainingIgnoreCase(name, pageable);
+    public Page<DiagnosticTest> findByName(String name, Boolean isActive, Pageable pageable) {
+        return isActive == null
+                ? repository.findByNameContainingIgnoreCase(name, pageable)
+                : repository.findByNameContainingIgnoreCaseAndIsActive(name, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTest> findByInternalCode(String internalCode, Pageable pageable) {
-        return repository.findByInternalCodeContainingIgnoreCase(internalCode, pageable);
+    public Page<DiagnosticTest> findByInternalCode(String internalCode, Boolean isActive, Pageable pageable) {
+        return isActive == null
+                ? repository.findByInternalCodeContainingIgnoreCase(internalCode, pageable)
+                : repository.findByInternalCodeContainingIgnoreCaseAndIsActive(internalCode, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<DiagnosticTest> findByShortName(String shortName, Pageable pageable) {
-        return repository.findByShortNameContainingIgnoreCase(shortName, pageable);
+    public Page<DiagnosticTest> findByShortName(String shortName, Boolean isActive, Pageable pageable) {
+        return isActive == null
+                ? repository.findByShortNameContainingIgnoreCase(shortName, pageable)
+                : repository.findByShortNameContainingIgnoreCaseAndIsActive(shortName, isActive, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -435,7 +470,14 @@ public class DiagnosticTestService {
         return repository.findById(id)
                 .map(p -> {
                     p.setIsActive(!Boolean.TRUE.equals(p.getIsActive()));
-                    return repository.save(p);
+                    DiagnosticTest saved = repository.save(p);
+                    if (!Boolean.TRUE.equals(saved.getIsActive())) {
+                        priceListCatalogSyncService.deactivateDiagnosticTest(
+                                saved.getId(),
+                                saved.getType()
+                        );
+                    }
+                    return saved;
                 });
     }
 

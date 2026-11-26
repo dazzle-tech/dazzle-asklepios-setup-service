@@ -96,9 +96,17 @@ public class PractitionerController {
      * and pagination headers.
      */
     @GetMapping("/practitioner")
-    public ResponseEntity<List<PractitionerResponseVM>> getAllPractitioners(@ParameterObject Pageable pageable) {
+    public ResponseEntity<List<PractitionerResponseVM>> getAllPractitioners(
+        @RequestParam(required = false) Boolean isActive,
+        @RequestParam(required = false) Long facilityId,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) Specialty specialty,
+        @RequestParam(required = false) JobRole jobRole,
+        @RequestParam(required = false) Boolean linkedToUser,
+        @ParameterObject Pageable pageable
+    ) {
         LOG.debug("REST list Practitioners page={}", pageable);
-        Page<Practitioner> page = practitionerService.findAll(pageable);
+        Page<Practitioner> page = practitionerService.findAll(isActive, facilityId, name, specialty, jobRole, linkedToUser, pageable);
         LOG.debug("REST list Practitioners results={}", page.getContent());
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(page.getContent().stream().map(PractitionerResponseVM::ofEntity).toList(), headers, HttpStatus.OK);

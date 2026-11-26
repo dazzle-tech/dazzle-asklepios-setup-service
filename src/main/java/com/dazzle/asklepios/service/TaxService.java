@@ -8,6 +8,7 @@ import com.dazzle.asklepios.domain.enumeration.TaxCitizenCategory;
 import com.dazzle.asklepios.domain.enumeration.TaxType;
 import com.dazzle.asklepios.repository.FacilityRepository;
 import com.dazzle.asklepios.repository.TaxRepository;
+import com.dazzle.asklepios.repository.TaxSpecifications;
 import com.dazzle.asklepios.service.dto.TaxDTO;
 import com.dazzle.asklepios.web.rest.errors.BadRequestAlertException;
 import org.slf4j.Logger;
@@ -84,6 +85,18 @@ public class TaxService {
                 .calculationType(taxDTO.calculationType())
                 .applicableOn(taxDTO.applicableOn())
                 .citizenCategory(resolveCitizenCategory(taxDTO))
+                .applyOnPatientCopayment(
+                        resolveApplyFlag(
+                                taxDTO.applyOnPatientCopayment(),
+                                true
+                        )
+                )
+                .applyOnClaimShare(
+                        resolveApplyFlag(
+                                taxDTO.applyOnClaimShare(),
+                                true
+                        )
+                )
                 .validFrom(taxDTO.validFrom())
                 .validTo(taxDTO.validTo())
                 .description(trimToNull(taxDTO.description()))
@@ -172,6 +185,18 @@ public class TaxService {
         existing.setCalculationType(taxDTO.calculationType());
         existing.setApplicableOn(taxDTO.applicableOn());
         existing.setCitizenCategory(resolveCitizenCategory(taxDTO));
+        existing.setApplyOnPatientCopayment(
+                resolveApplyFlag(
+                        taxDTO.applyOnPatientCopayment(),
+                        existing.getApplyOnPatientCopayment()
+                )
+        );
+        existing.setApplyOnClaimShare(
+                resolveApplyFlag(
+                        taxDTO.applyOnClaimShare(),
+                        existing.getApplyOnClaimShare()
+                )
+        );
         existing.setValidFrom(taxDTO.validFrom());
         existing.setValidTo(taxDTO.validTo());
         existing.setIsDefault(Boolean.TRUE.equals(taxDTO.isDefault()));
@@ -325,6 +350,44 @@ public class TaxService {
         );
     }
 
+    /** Taxes of a facility with optional filters combined with AND; nulls are ignored. */
+    @Transactional(readOnly = true)
+    public Page<Tax> findAllByFacilityId(
+            Long facilityId,
+            String code,
+            String name,
+            TaxType taxType,
+            BigDecimal value,
+            TaxCalculationType calculationType,
+            TaxApplicableOn applicableOn,
+            TaxCitizenCategory citizenCategory,
+            Boolean applyOnPatientCopayment,
+            Boolean applyOnClaimShare,
+            Boolean isDefault,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository.findAll(
+                TaxSpecifications.search(
+                        facilityId,
+                        code,
+                        name,
+                        taxType,
+                        value,
+                        calculationType,
+                        applicableOn,
+                        citizenCategory,
+                        applyOnPatientCopayment,
+                        applyOnClaimShare,
+                        isDefault,
+                        active
+                ),
+                pageable
+        );
+    }
+
     @Transactional(readOnly = true)
     public Page<Tax> findAllActiveByFacilityId(
             Long facilityId,
@@ -399,6 +462,120 @@ public class TaxService {
                 .findAllByFacilityIdAndCalculationType(
                         facilityId,
                         calculationType,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByValue(
+            Long facilityId,
+            BigDecimal value,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+                        facilityId,
+                        value,
+                        facilityId,
+                        value,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplicableOn(
+            Long facilityId,
+            TaxApplicableOn applicableOn,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplicableOn(
+                        facilityId,
+                        applicableOn,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByCitizenCategory(
+            Long facilityId,
+            TaxCitizenCategory citizenCategory,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndCitizenCategory(
+                        facilityId,
+                        citizenCategory,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplyOnPatientCopayment(
+            Long facilityId,
+            Boolean applyOnPatientCopayment,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplyOnPatientCopayment(
+                        facilityId,
+                        applyOnPatientCopayment,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByApplyOnClaimShare(
+            Long facilityId,
+            Boolean applyOnClaimShare,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndApplyOnClaimShare(
+                        facilityId,
+                        applyOnClaimShare,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndIsDefault(
+                        facilityId,
+                        isDefault,
+                        pageable
+                );
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Tax> findByActive(
+            Long facilityId,
+            Boolean active,
+            Pageable pageable
+    ) {
+        validateFacility(facilityId);
+
+        return taxRepository
+                .findAllByFacilityIdAndActive(
+                        facilityId,
+                        active,
                         pageable
                 );
     }
@@ -532,6 +709,21 @@ public class TaxService {
         return dto.citizenCategory() == null
                 ? TaxCitizenCategory.ALL
                 : dto.citizenCategory();
+    }
+
+    /**
+     * A missing flag keeps the current value; taxes created before the
+     * Patient Copayment / Claim Share toggles existed applied tax to both shares.
+     */
+    private Boolean resolveApplyFlag(
+            Boolean requested,
+            Boolean current
+    ) {
+        if (requested != null) {
+            return requested;
+        }
+
+        return current == null || current;
     }
 
     @Transactional(readOnly = true)

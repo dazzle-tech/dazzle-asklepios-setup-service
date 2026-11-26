@@ -5,10 +5,11 @@ import com.dazzle.asklepios.domain.enumeration.biling.PayorCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface PayorRepository extends JpaRepository<Payor, Long> {
+public interface PayorRepository extends JpaRepository<Payor, Long>, JpaSpecificationExecutor<Payor> {
 
     boolean existsByCodeIgnoreCase(String code);
 
@@ -25,4 +26,17 @@ public interface PayorRepository extends JpaRepository<Payor, Long> {
     );
 
     Optional<Payor> findFirstByNphiesId(String nphiesId);
+
+    Optional<Payor> findFirstByNphiesIdIgnoreCase(String nphiesId);
+
+    Page<Payor> findByIsActiveTrueAndCategory(
+            PayorCategory category,
+            Pageable pageable
+    );
+
+    Page<Payor> findByIsActiveTrueAndCategoryAndNameContainingIgnoreCase(
+            PayorCategory category,
+            String name,
+            Pageable pageable
+    );
 }

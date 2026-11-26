@@ -91,10 +91,14 @@ public class AgeGroupController {
 
     @GetMapping("/age-group")
     public ResponseEntity<List<AgeGroupResponseVM>> getAllAgeGroups(
+            @RequestParam(required = false) Long facilityId,
+            @RequestParam(required = false) AgeGroupType ageGroup,
+            @RequestParam(required = false) BigDecimal fromAge,
+            @RequestParam(required = false) BigDecimal toAge,
             @ParameterObject Pageable pageable
     ) {
-        LOG.debug("REST list ALL AgeGroups (paged, no facility filter)");
-        final Page<AgeGroup> page = ageGroupService.findAll(pageable);
+        LOG.debug("REST list ALL AgeGroups (paged, optional filters)");
+        final Page<AgeGroup> page = ageGroupService.findAll(facilityId, ageGroup, fromAge, toAge, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
         return new ResponseEntity<>(

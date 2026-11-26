@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -87,10 +88,13 @@ public class AllergensController {
     // ====================== READ (Paged) ======================
     @GetMapping("/allergen")
     public ResponseEntity<List<AllergensResponseVM>> getAllAllergensPaged(
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) AllergenType type,
+            @RequestParam(required = false) String name,
             @ParameterObject Pageable pageable
     ) {
         LOG.debug("REST list Allergens pageable={}", pageable);
-        final Page<Allergens> page = allergenService.findAll(pageable);
+        final Page<Allergens> page = allergenService.findAll(isActive, type, name, pageable);
         HttpHeaders headers = PaginationUtil.generatePaginationHttpHeaders(
                 ServletUriComponentsBuilder.fromCurrentRequest(), page);
 

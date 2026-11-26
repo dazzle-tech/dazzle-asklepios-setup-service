@@ -141,6 +141,14 @@ public class FormTemplateService {
     }
 
     @Transactional(readOnly = true)
+    /** List with optional filters combined with AND; nulls and blanks are ignored. */
+    public Page<FormTemplateResponseVM> search(Long facilityId, Long departmentId, String name, String description, Pageable pageable) {
+        return formTemplateRepository.findAll(
+                com.dazzle.asklepios.repository.FormTemplateSpecifications.search(facilityId, departmentId, name, description),
+                pageable
+        ).map(this::toVM);
+    }
+
     public Page<FormTemplateResponseVM> listByDescription(String description, Pageable pageable) {
         LOG.debug("List branch: description='{}'", description);
         return formTemplateRepository.findByDescriptionContainingIgnoreCase(description.trim(), pageable).map(this::toVM);

@@ -6,15 +6,17 @@ import com.dazzle.asklepios.domain.enumeration.DiscountType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface DiscountRepository
-        extends JpaRepository<Discount, Long> {
+        extends JpaRepository<Discount, Long>, JpaSpecificationExecutor<Discount> {
 
     Page<Discount> findAllByFacilityId(
             Long facilityId,
@@ -47,6 +49,33 @@ public interface DiscountRepository
     Page<Discount> findAllByFacilityIdAndApplicableOn(
             Long facilityId,
             DiscountApplicableOn applicableOn,
+            Pageable pageable
+    );
+
+    // Discount value is the percentage or the fixed amount, depending on the discount type
+    Page<Discount> findAllByFacilityIdAndPercentageOrFacilityIdAndFixedAmount(
+            Long facilityId,
+            BigDecimal percentage,
+            Long sameFacilityId,
+            BigDecimal fixedAmount,
+            Pageable pageable
+    );
+
+    Page<Discount> findAllByFacilityIdAndRequiresApproval(
+            Long facilityId,
+            Boolean requiresApproval,
+            Pageable pageable
+    );
+
+    Page<Discount> findAllByFacilityIdAndIsDefault(
+            Long facilityId,
+            Boolean isDefault,
+            Pageable pageable
+    );
+
+    Page<Discount> findAllByFacilityIdAndActive(
+            Long facilityId,
+            Boolean active,
             Pageable pageable
     );
 

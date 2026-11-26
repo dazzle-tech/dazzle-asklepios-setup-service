@@ -1,6 +1,5 @@
 package com.dazzle.asklepios.web.rest.vm.vaccine;
 
-import com.dazzle.asklepios.domain.Facility;
 import com.dazzle.asklepios.domain.Vaccine;
 import com.dazzle.asklepios.domain.enumeration.VaccineType;
 import com.dazzle.asklepios.domain.enumeration.RouteOfAdministration;
@@ -16,6 +15,7 @@ public record VaccineResponseVM(
         VaccineType type,
         RouteOfAdministration roa,
         String atcCode,
+        String code,
         String siteOfAdministration,
         BigDecimal postOpeningDuration,
         DurationUnit durationUnit,
@@ -24,8 +24,6 @@ public record VaccineResponseVM(
         String possibleReactions,
         String contraindicationsAndPrecautions,
         String storageAndHandling,
-        Facility facilityId,
-        BigDecimal price,
         Boolean isActive
 ) implements Serializable {
 
@@ -36,6 +34,7 @@ public record VaccineResponseVM(
                 vaccine.getType(),
                 vaccine.getRoa(),
                 vaccine.getAtcCode(),
+                vaccine.getCode(),
                 vaccine.getSiteOfAdministration(),
                 vaccine.getPostOpeningDuration(),
                 vaccine.getDurationUnit(),
@@ -44,8 +43,6 @@ public record VaccineResponseVM(
                 vaccine.getPossibleReactions(),
                 vaccine.getContraindicationsAndPrecautions(),
                 vaccine.getStorageAndHandling(),
-                vaccine.getFacilityId(),
-                vaccine.getPrice(),
                 vaccine.getIsActive()
         );
     }
